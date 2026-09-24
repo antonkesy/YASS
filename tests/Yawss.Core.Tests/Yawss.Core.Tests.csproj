@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Yawss.Core/Yawss.Core.csproj" />
+  </ItemGroup>
+
+</Project>

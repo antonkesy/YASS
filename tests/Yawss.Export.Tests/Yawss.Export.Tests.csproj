@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Yawss.Export/Yawss.Export.csproj" />
+  </ItemGroup>
+
+</Project>
