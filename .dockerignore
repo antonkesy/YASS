@@ -1,0 +1,15 @@
+# Build context: sources only. Outputs are produced inside the image build.
+**/bin/
+**/obj/
+**/node_modules/
+web/build/
+web/.svelte-kit/
+web/test-results/
+web/playwright-report/
+TestResults/
+.git/
+.direnv/
+result*
+*.log
+/data/
+yawss.yaml
