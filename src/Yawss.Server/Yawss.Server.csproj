@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <PublishTrimmed>true</PublishTrimmed>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Yawss.Core/Yawss.Core.csproj" />
+    <ProjectReference Include="../Yawss.Export/Yawss.Export.csproj" />
+    <ProjectReference Include="../Yawss.Fake/Yawss.Fake.csproj" />
+    <ProjectReference Include="../Yawss.Scanning/Yawss.Scanning.csproj" />
+  </ItemGroup>
+
+</Project>
