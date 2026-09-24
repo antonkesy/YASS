@@ -10,6 +10,7 @@
 	import {
 		applyOptimistic,
 		deleteEdit,
+		reorderEdit,
 		restoreEdit,
 		rotateEdit,
 		setColorEdit
@@ -175,6 +176,11 @@
 			{selection}
 			ontoggle={(i) => (selection = toggle(selection, i))}
 			onopen={open}
+			reorderable={editable}
+			onreorder={(order) => {
+				selection = clear();
+				send(reorderEdit(order));
+			}}
 		/>
 		{#if scanning}
 			<p class="mt-4 text-center text-stone-600" aria-live="polite">

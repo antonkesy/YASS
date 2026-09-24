@@ -34,7 +34,6 @@
 		{selected ? 'border-teal-600 ring-2 ring-teal-300' : 'border-stone-200'}
 		{page.Deleted ? 'opacity-50' : ''}"
 	data-testid="page-thumb"
-	data-index={page.Index}
 	data-selected={selected}
 	data-deleted={page.Deleted}
 >
@@ -70,6 +69,15 @@
 	>
 		{page.Index + 1}
 	</span>
+
+	{#if page.IsBlank}
+		<span
+			class="pointer-events-none absolute top-1 right-1 rounded-md bg-amber-400 px-1.5 py-0.5 text-xs font-semibold text-amber-950"
+			data-testid="blank-badge"
+		>
+			blank
+		</span>
+	{/if}
 
 	{#if page.Deleted}
 		<span

@@ -120,6 +120,7 @@
 
 		<div
 			class="relative flex min-h-0 flex-1 touch-pan-y items-center justify-center"
+			role="presentation"
 			onpointerdown={pointerdown}
 			onpointerup={pointerup}
 			onpointercancel={() => (start = null)}
