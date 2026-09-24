@@ -12,14 +12,49 @@
       nixpkgs,
       flake-utils,
     }:
-    flake-utils.lib.eachDefaultSystem (
+    {
+      nixosModules.default = import ./nix/module.nix { inherit self; };
+      nixosModules.yawss = self.nixosModules.default;
+    }
+    // flake-utils.lib.eachDefaultSystem (
       system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
         dotnet = pkgs.dotnet-sdk_8;
+        version = pkgs.lib.trim (builtins.readFile ./version.txt);
+        yawss = pkgs.callPackage ./nix/package.nix {
+          inherit version;
+          src = pkgs.lib.cleanSource ./.;
+        };
       in
       {
         formatter = pkgs.nixfmt;
+
+        packages = {
+          default = yawss;
+          web = yawss.passthru.web;
+          docker = pkgs.dockerTools.buildLayeredImage {
+            name = "yawss";
+            tag = version;
+            contents = [
+              yawss
+              pkgs.sane-backends
+              pkgs.dockerTools.caCertificates
+            ];
+            extraCommands = "mkdir -p data/sessions data/consume etc/yawss";
+            config = {
+              Cmd = [ "${pkgs.lib.getExe yawss}" ];
+              Env = [
+                "YAWSS_CONFIG=/etc/yawss/yawss.yaml"
+                "SANE_CONFIG_DIR=${pkgs.sane-backends}/etc/sane.d"
+                "DOTNET_CLI_TELEMETRY_OPTOUT=1"
+              ];
+              ExposedPorts."8080/tcp" = { };
+              Volumes."/data" = { };
+              WorkingDir = "/data";
+            };
+          };
+        };
 
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
