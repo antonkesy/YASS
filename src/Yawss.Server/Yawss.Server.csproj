@@ -7,6 +7,8 @@
     <TrimMode>partial</TrimMode>
     <!-- Our own assemblies are not trimmed (partial mode), so IL20xx analysis is noise. -->
     <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+    <!-- PublishTrimmed turns this off; session.json uses reflection-based System.Text.Json. -->
+    <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
     <UserSecretsId>yawss</UserSecretsId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
   </PropertyGroup>
