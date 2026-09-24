@@ -17,6 +17,7 @@
 	import { clear, prune, toggle } from '$lib/review/selection';
 	import PageGrid from '$lib/components/PageGrid.svelte';
 	import Toolbar from '$lib/components/Toolbar.svelte';
+	import Preview from '$lib/components/Preview.svelte';
 
 	const client = getHub();
 	const sessions = client.sessions;
@@ -28,6 +29,7 @@
 	let error = $state<string | null>(null);
 	let selection = $state<Set<number>>(clear());
 	let confirmDiscard = $state(false);
+	let previewIndex = $state<number | null>(null);
 
 	$effect(() => {
 		if ($connection === 'connected' && !$sessions.has(id)) {
@@ -83,9 +85,13 @@
 	}
 
 	function open(index: number) {
-		// Full-page preview lands in the next commit.
-		void index;
+		previewIndex = index;
 	}
+
+	$effect(() => {
+		if (previewIndex !== null && session && previewIndex >= session.Pages.length)
+			previewIndex = null;
+	});
 </script>
 
 <svelte:head
@@ -174,6 +180,17 @@
 			<p class="mt-4 text-center text-stone-600" aria-live="polite">
 				Scanning… {session.Pages.length} page{session.Pages.length === 1 ? '' : 's'} so far
 			</p>
+		{/if}
+
+		{#if previewIndex !== null}
+			<Preview
+				sessionId={id}
+				pages={session.Pages}
+				index={previewIndex}
+				onnavigate={(i) => (previewIndex = i)}
+				onclose={() => (previewIndex = null)}
+				onrotate={(i, deg) => send(rotateEdit(deg, new Set([i])))}
+			/>
 		{/if}
 
 		<div
