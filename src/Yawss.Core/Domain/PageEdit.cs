@@ -24,8 +24,6 @@ public sealed record PageEdit
     /// <summary>Payload for <see cref="PageEditOp.Reorder"/>: a permutation of every page index.</summary>
     public IReadOnlyList<int>? Order { get; init; }
 
-    public bool TargetsAll => Targets is null;
-
     public static PageEdit Rotate(int degrees, params int[] targets) =>
         new() { Op = PageEditOp.Rotate, Degrees = degrees, Targets = ToTargets(targets) };
 
