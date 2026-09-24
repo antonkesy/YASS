@@ -24,6 +24,8 @@ RUN --mount=type=cache,target=/root/.nuget/packages \
 FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-alpine AS runtime
 # sane-backends provides libsane for USB scanners; sane-utils is handy for `scanimage -L` diagnostics.
 RUN apk add --no-cache sane-backends sane-utils libusb tini \
+ # hpaio (HPLIP) aborts the whole process when no D-Bus is available; HP all-in-ones work over eSCL instead.
+ && rm -f /etc/sane.d/dll.d/hpaio && sed -i 's/^hpaio/#hpaio/' /etc/sane.d/dll.conf \
  && addgroup -S yawss && adduser -S -G yawss yawss \
  && mkdir -p /data/sessions /data/consume && chown -R yawss:yawss /data
 WORKDIR /app
