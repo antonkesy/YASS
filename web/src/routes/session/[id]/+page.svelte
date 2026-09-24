@@ -6,7 +6,7 @@
 	import { getHub } from '$lib/hub/hub';
 	import { SessionState, type ColorMode } from '$lib/hub/generated/Yawss.Core.Domain';
 	import type { PageEdit } from '$lib/hub/generated/Yawss.Core.Domain';
-	import { activePageCount, formatTime, sessionStateLabel } from '$lib/format';
+	import { formatTime, sessionStateLabel } from '$lib/format';
 	import {
 		applyOptimistic,
 		deleteEdit,
@@ -19,17 +19,31 @@
 	import PageGrid from '$lib/components/PageGrid.svelte';
 	import Toolbar from '$lib/components/Toolbar.svelte';
 	import Preview from '$lib/components/Preview.svelte';
+	import ExportBar from '$lib/components/ExportBar.svelte';
+	import { ExportMode } from '$lib/hub/generated/Yawss.Core.Hub';
 
 	const client = getHub();
 	const sessions = client.sessions;
 	const connection = client.connection;
+	const exportProgress = client.exportProgress;
 
 	const id = $derived(route.params.id ?? '');
 	const session = $derived($sessions.get(id) ?? null);
 	let missing = $state(false);
 	let error = $state<string | null>(null);
 	let selection = $state<Set<number>>(clear());
-	let confirmDiscard = $state(false);
+	let exporting = $state(false);
+	let savedPath = $state<string | null>(null);
+	let allowDownload = $state(false);
+
+	$effect(() => {
+		if ($connection === 'connected') {
+			client.hub
+				.getEffectiveOptions()
+				.then((o) => (allowDownload = o.AllowDownload ?? false))
+				.catch(() => undefined);
+		}
+	});
 	let previewIndex = $state<number | null>(null);
 
 	$effect(() => {
@@ -72,16 +86,34 @@
 	}
 
 	async function discard() {
-		if (!confirmDiscard) {
-			confirmDiscard = true;
-			return;
-		}
 		try {
 			await client.hub.deleteSession(id);
 			await goto(resolve('/'));
 		} catch (e) {
 			error = e instanceof Error ? e.message : String(e);
-			confirmDiscard = false;
+		}
+	}
+
+	async function exportAs(mode: ExportMode) {
+		error = null;
+		exporting = true;
+		try {
+			const result = await client.hub.export(id, { Mode: mode });
+			if (mode === ExportMode.Save) {
+				savedPath = result.SavedPath ?? '';
+			} else if (result.DownloadPath) {
+				const a = document.createElement('a');
+				a.href = result.DownloadPath;
+				a.download = '';
+				a.rel = 'noopener';
+				document.body.append(a);
+				a.click();
+				a.remove();
+			}
+		} catch (e) {
+			error = e instanceof Error ? e.message : String(e);
+		} finally {
+			exporting = false;
 		}
 	}
 
@@ -199,31 +231,15 @@
 			/>
 		{/if}
 
-		<div
-			class="fixed inset-x-0 bottom-0 z-10 border-t border-stone-200 bg-white/95 backdrop-blur"
-			data-testid="bottom-bar"
-		>
-			<div
-				class="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
-			>
-				<span class="mr-auto text-sm text-stone-700" data-testid="page-count">
-					{activePageCount(session)} of {session.Pages.length} page{session.Pages.length === 1
-						? ''
-						: 's'}
-				</span>
-				<button
-					type="button"
-					class="min-h-11 rounded-lg px-3 text-sm font-medium {confirmDiscard
-						? 'bg-rose-600 text-white'
-						: 'text-rose-700 hover:bg-rose-50'}"
-					onclick={discard}
-					onblur={() => (confirmDiscard = false)}
-					disabled={scanning}
-					data-testid="discard-button"
-				>
-					{confirmDiscard ? 'Really discard?' : 'Discard'}
-				</button>
-			</div>
-		</div>
+		<ExportBar
+			{session}
+			progress={$exportProgress[id] ?? null}
+			{allowDownload}
+			busy={exporting}
+			{savedPath}
+			onsave={() => exportAs(ExportMode.Save)}
+			ondownload={() => exportAs(ExportMode.Download)}
+			ondiscard={discard}
+		/>
 	{/if}
 </div>
