@@ -30,6 +30,7 @@
             pre-commit
             nixfmt
             git
+            python3 # scripts/coverage-gate.py
           ];
 
           DOTNET_ROOT = "${dotnet}";
