@@ -43,6 +43,7 @@ builder.Services.AddSingleton<SessionMapper>();
 builder.Services.AddSingleton<IThumbnailStatus, NoThumbnails>();
 builder.Services.AddSingleton<IPageSink, NoPageSink>();
 builder.Services.AddSingleton<ScanService>();
+builder.Services.AddSingleton<EditService>();
 builder.Services.AddSingleton<SessionRetentionService>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<SessionRetentionService>());
 
