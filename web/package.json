@@ -13,7 +13,9 @@
 		"format": "prettier --write .",
 		"test": "vitest run --passWithNoTests",
 		"test:unit": "vitest",
-		"test:e2e": "playwright test"
+		"test:e2e": "playwright test",
+		"hub:generate": "./scripts/hub-generate.sh",
+		"hub:check": "./scripts/hub-check.sh"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
@@ -46,5 +48,9 @@
 	"engines": {
 		"node": ">=22",
 		"pnpm": ">=9"
+	},
+	"dependencies": {
+		"@microsoft/signalr": "^10.0.11",
+		"@microsoft/signalr-protocol-msgpack": "^10.0.11"
 	}
 }

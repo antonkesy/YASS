@@ -21,8 +21,6 @@ export type PageEdit = {
     Color?: ColorMode;
     /** Transpiled from System.Collections.Generic.IReadOnlyList<int>? */
     Order?: number[];
-    /** Transpiled from bool */
-    TargetsAll: boolean;
 }
 
 /** Transpiled from Yawss.Core.Domain.PageEditOp */
