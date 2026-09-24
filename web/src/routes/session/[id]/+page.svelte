@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { page as route } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -34,7 +35,10 @@
 		}
 	});
 	$effect(() => {
-		if (session) selection = prune(selection, session.Pages.length);
+		const count = session?.Pages.length ?? 0;
+		const current = untrack(() => selection);
+		const pruned = prune(current, count);
+		if (pruned.size !== current.size) selection = pruned;
 	});
 
 	const scanning = $derived(session?.State === SessionState.Scanning);
