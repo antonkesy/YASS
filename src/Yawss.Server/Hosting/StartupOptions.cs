@@ -7,17 +7,18 @@ namespace Yawss.Server.Hosting;
 public sealed record StartupOptions(string ConfigPath, bool Fake, string? FakeScenario)
 {
     public const string ConfigEnv = "YAWSS_CONFIG";
+    public const string FakeEnv = "YAWSS_FAKE";
     public const string FakeScenarioEnv = "YAWSS_FAKE_SCENARIO";
 
     /// <summary>
-    /// <c>--config PATH</c>, <c>--fake [SCENARIO]</c>. Environment fallbacks: <c>YAWSS_CONFIG</c>, <c>YAWSS_FAKE_SCENARIO</c>.
+    /// <c>--config PATH</c>, <c>--fake [SCENARIO]</c>. Environment fallbacks: <c>YAWSS_CONFIG</c>, <c>YAWSS_FAKE=1</c>, <c>YAWSS_FAKE_SCENARIO</c>.
     /// Unknown arguments are left for ASP.NET Core.
     /// </summary>
     public static StartupOptions Parse(IReadOnlyList<string> args)
     {
         ArgumentNullException.ThrowIfNull(args);
         string configPath = Environment.GetEnvironmentVariable(ConfigEnv) ?? "yawss.yaml";
-        bool fake = false;
+        bool fake = Environment.GetEnvironmentVariable(FakeEnv) is "1" or "true";
         string? scenario = Environment.GetEnvironmentVariable(FakeScenarioEnv);
 
         for (int i = 0; i < args.Count; i++)

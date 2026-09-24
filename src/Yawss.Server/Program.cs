@@ -5,6 +5,7 @@ using Yawss.Server.Config;
 using Yawss.Server.Hosting;
 using Yawss.Server.Hub;
 using Yawss.Server.Scanning;
+using Yawss.Server.Sessions;
 
 StartupOptions startup = StartupOptions.Parse(args);
 
@@ -36,6 +37,14 @@ BackendRegistration.Add(builder.Services, startup);
 builder.Services.AddSingleton<EffectiveOptions>();
 builder.Services.AddSingleton<ScannerStatusMonitor>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<ScannerStatusMonitor>());
+
+builder.Services.AddSingleton<SessionStore>();
+builder.Services.AddSingleton<SessionMapper>();
+builder.Services.AddSingleton<IThumbnailStatus, NoThumbnails>();
+builder.Services.AddSingleton<IPageSink, NoPageSink>();
+builder.Services.AddSingleton<ScanService>();
+builder.Services.AddSingleton<SessionRetentionService>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<SessionRetentionService>());
 
 builder.Services
     .AddSignalR(o => o.EnableDetailedErrors = true)
