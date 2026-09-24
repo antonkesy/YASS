@@ -27,7 +27,7 @@ public sealed record PageDto(
 /// <summary>
 /// Scan options on the wire. Every field is optional: as a <c>StartScan</c> argument only the keys in
 /// <c>scanner.ui_editable</c> are honoured; as a <c>GetEffectiveOptions</c> result every field is filled in and
-/// <see cref="Editable"/> lists the keys the UI may change.
+/// <see cref="Editable"/> lists the keys the UI may change and <see cref="AllowDownload"/> mirrors <c>output.allow_download</c>.
 /// </summary>
 [TranspilationSource]
 public sealed record ScanOptionsDto(
@@ -40,7 +40,8 @@ public sealed record ScanOptionsDto(
     bool? BlankPageDetection = null,
     double? BlankPageThreshold = null,
     bool? AutoDeskew = null,
-    string[]? Editable = null);
+    string[]? Editable = null,
+    bool? AllowDownload = null);
 
 [TranspilationSource]
 public sealed record ScannerStatusDto(ScannerState State, string? DeviceName, string? Message, string CheckedAt);

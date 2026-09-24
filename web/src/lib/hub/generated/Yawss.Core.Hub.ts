@@ -60,6 +60,8 @@ export type ScanOptionsDto = {
     AutoDeskew?: boolean;
     /** Transpiled from string[]? */
     Editable?: string[];
+    /** Transpiled from bool */
+    AllowDownload?: boolean;
 }
 
 /** Transpiled from Yawss.Core.Hub.ScannerStatusDto */

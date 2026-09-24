@@ -12,7 +12,7 @@ public sealed class EffectiveOptions(ConfigStore config)
     public ScanOptionsDto Current()
     {
         ScannerConfig scanner = config.Current.Scanner;
-        return ToDto(scanner.Defaults, scanner.UiEditable);
+        return ToDto(scanner.Defaults, scanner.UiEditable) with { AllowDownload = config.Current.Output.AllowDownload };
     }
 
     /// <summary>Applies <paramref name="requested"/> on top of the defaults; non-editable keys are ignored.</summary>
