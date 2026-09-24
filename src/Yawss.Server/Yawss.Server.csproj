@@ -7,6 +7,9 @@
     <TrimMode>partial</TrimMode>
     <!-- Our own assemblies are not trimmed (partial mode), so IL20xx analysis is noise. -->
     <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+    <!-- Partial trimming keeps every non-opted-in assembly whole; the linker still reports their IL2xxx warnings. -->
+    <ILLinkTreatWarningsAsErrors>false</ILLinkTreatWarningsAsErrors>
+    <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
     <!-- PublishTrimmed turns this off; session.json uses reflection-based System.Text.Json. -->
     <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
     <UserSecretsId>yawss</UserSecretsId>
