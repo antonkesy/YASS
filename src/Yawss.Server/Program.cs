@@ -65,6 +65,15 @@ builder.Services
 WebApplication app = builder.Build();
 
 app.Logger.LogWarning("YAWSS has no authentication. Listening on {Listen}; keep it on a trusted LAN.", config.Server.Listen);
+if (!File.Exists(startup.ConfigPath))
+{
+    app.Logger.LogWarning("Config file {Path} not found; running with built-in defaults", Path.GetFullPath(startup.ConfigPath));
+}
+else
+{
+    app.Logger.LogInformation("Config loaded from {Path}", Path.GetFullPath(startup.ConfigPath));
+}
+
 if (startup.Fake)
 {
     app.Logger.LogInformation("Fake mode: scanner and PDF writer are simulated (scenario: {Scenario})", startup.FakeScenario ?? "default");
