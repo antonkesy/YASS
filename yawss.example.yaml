@@ -1,0 +1,48 @@
+# YAWSS configuration. Copy to yawss.yaml and adjust.
+# Every key can also be set through the environment as YAWSS__section__key,
+# e.g. YAWSS__output__directory=/mnt/consume.
+#
+# Keys outside `server:` are re-read by the ReloadConfig hub method.
+
+server:
+  listen: "0.0.0.0:8080" # LAN bind; NO AUTH — never expose publicly
+  base_path: "/"
+
+scanner:
+  driver: auto # auto | sane | escl
+  device: "" # NAPS2 device id or substring; empty = first found
+  poll_interval_seconds: 5
+  defaults:
+    source: feeder # flatbed | feeder | duplex
+    dpi: 300
+    color: grayscale # bw | grayscale | color
+    page_size: a4 # a4 | a5 | letter | legal
+    brightness: 0 # -100..100
+    contrast: 0 # -100..100
+    blank_page_detection: true
+    blank_page_threshold: 0.02 # 0..1, fraction of dark pixels
+    auto_deskew: false
+  # Keys of `defaults` the web UI may override (stored in the browser).
+  ui_editable: [source, dpi, color, page_size, blank_page_detection]
+
+output:
+  directory: /data/consume # paperless-ngx consume dir
+  filename_template: "{date:yyyy-MM-dd}_{time:HHmm}_scan.pdf"
+  pdf:
+    compression: jpeg # jpeg | lossless
+    jpeg_quality: 75 # 1..100
+  allow_download: true # offer browser "save as" in addition to server-side save
+  on_success: keep_session # keep_session | delete_session
+
+processing:
+  max_concurrent_renders: 2 # upper bound on decoded bitmaps in memory
+  thumbnail_width: 320
+  preview_max_width: 1600
+
+sessions:
+  directory: /data/sessions
+  retention_hours: 24 # 0 disables cleanup
+
+logging:
+  level: info # trace | debug | info | warning | error | critical
+  format: text # text | json
