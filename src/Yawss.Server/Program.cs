@@ -1,6 +1,10 @@
+using MessagePack;
+using MessagePack.Resolvers;
 using Yawss.Core.Config;
 using Yawss.Server.Config;
 using Yawss.Server.Hosting;
+using Yawss.Server.Hub;
+using Yawss.Server.Scanning;
 
 StartupOptions startup = StartupOptions.Parse(args);
 
@@ -26,6 +30,18 @@ builder.WebHost.UseUrls("http://" + config.Server.Listen);
 
 builder.Services.AddSingleton(startup);
 builder.Services.AddSingleton(sp => new ConfigStore(config, startup.ConfigPath, sp.GetRequiredService<ILogger<ConfigStore>>()));
+builder.Services.AddSingleton(TimeProvider.System);
+BackendRegistration.Add(builder.Services, startup);
+
+builder.Services.AddSingleton<EffectiveOptions>();
+builder.Services.AddSingleton<ScannerStatusMonitor>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<ScannerStatusMonitor>());
+
+builder.Services
+    .AddSignalR(o => o.EnableDetailedErrors = true)
+    .AddMessagePackProtocol(o => o.SerializerOptions = MessagePackSerializerOptions.Standard
+        .WithResolver(ContractlessStandardResolver.Instance)
+        .WithSecurity(MessagePackSecurity.UntrustedData));
 
 WebApplication app = builder.Build();
 
@@ -41,6 +57,7 @@ if (config.Server.BasePath != "/")
 }
 
 app.MapGet("/healthz", () => Results.Text("ok"));
+app.MapHub<YawssHub>("/hub");
 
 StaticFrontend.Map(app);
 
