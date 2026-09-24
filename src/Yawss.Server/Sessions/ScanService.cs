@@ -86,7 +86,7 @@ public sealed class ScanService(
                 });
 
                 await hub.Clients.All.PageAdded(sessionId, mapper.ToDto(session, added!)).ConfigureAwait(false);
-                sink.PageAdded(session, added!);
+                sink.Enqueue(session, added!);
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

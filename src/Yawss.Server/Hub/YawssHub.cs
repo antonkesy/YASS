@@ -15,6 +15,7 @@ public sealed class YawssHub(
     SessionStore sessions,
     SessionMapper mapper,
     ScanService scans,
+    EditService editor,
     ILogger<YawssHub> logger)
     : Hub<IYawssClient>, IYawssHub
 {
@@ -57,7 +58,18 @@ public sealed class YawssHub(
         await Clients.All.SessionChanged(mapper.ToDto(session with { State = SessionState.Done, Pages = [], Error = "deleted" })).ConfigureAwait(false);
     }
 
-    public Task<SessionDto> ApplyEdits(string sessionId, PageEdit[] edits) => throw NotYet();
+    public async Task<SessionDto> ApplyEdits(string sessionId, PageEdit[] edits)
+    {
+        Find(sessionId);
+        try
+        {
+            return mapper.ToDto(await editor.ApplyAsync(sessionId, edits ?? []).ConfigureAwait(false));
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+        {
+            throw new HubException(ex.Message);
+        }
+    }
 
     public Task<ExportResult> Export(string sessionId, ExportRequest request) => throw NotYet();
 

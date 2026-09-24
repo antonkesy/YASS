@@ -2,15 +2,15 @@ using Yawss.Core.Domain;
 
 namespace Yawss.Server.Sessions;
 
-/// <summary>Notified when a page's source file is on disk, so derived images can be produced in the background.</summary>
+/// <summary>Receives pages whose derived images need (re)rendering, so it can happen in the background.</summary>
 public interface IPageSink
 {
-    void PageAdded(Session session, Page page);
+    void Enqueue(Session session, Page page);
 }
 
 internal sealed class NoPageSink : IPageSink
 {
-    public void PageAdded(Session session, Page page)
+    public void Enqueue(Session session, Page page)
     {
     }
 }
