@@ -11,4 +11,7 @@ dotnet tsrts \
   --serializer MessagePack \
   --naming-style None \
   --eol Lf > /dev/null
+# The generator ends files with a blank line; pre-commit's end-of-file-fixer strips it. Normalise so the
+# committed output is byte-identical to a fresh generation.
+find "$OUT" -name '*.ts' -exec sed -i -e :a -e '/^\n*$/{$d;N;ba' -e '}' {} +
 echo "Hub client generated into $OUT"
