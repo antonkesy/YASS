@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.SignalR;
 using Yawss.Core.Domain;
 using Yawss.Core.Hub;
 using Yawss.Server.Config;
+using Yawss.Server.Export;
 using Yawss.Server.Scanning;
 using Yawss.Server.Sessions;
 
@@ -16,6 +17,7 @@ public sealed class YawssHub(
     SessionMapper mapper,
     ScanService scans,
     EditService editor,
+    ExportService exporter,
     ILogger<YawssHub> logger)
     : Hub<IYawssClient>, IYawssHub
 {
@@ -71,7 +73,22 @@ public sealed class YawssHub(
         }
     }
 
-    public Task<ExportResult> Export(string sessionId, ExportRequest request) => throw NotYet();
+    public async Task<ExportResult> Export(string sessionId, ExportRequest request)
+    {
+        Find(sessionId);
+        try
+        {
+            return await exporter.ExportAsync(sessionId, request ?? new ExportRequest(ExportMode.Save), Context.ConnectionAborted).ConfigureAwait(false);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new HubException(ex.Message);
+        }
+        catch (IOException ex)
+        {
+            throw new HubException("Export failed: " + ex.Message);
+        }
+    }
 
     public Task<ScannerStatusDto> GetScannerStatus() => Task.FromResult(scanner.Current);
 
@@ -96,5 +113,4 @@ public sealed class YawssHub(
             ? session
             : throw new HubException($"Session {sessionId} not found.");
 
-    private static HubException NotYet() => new("Not available yet.");
 }

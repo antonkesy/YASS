@@ -2,6 +2,7 @@ using MessagePack;
 using MessagePack.Resolvers;
 using Yawss.Core.Config;
 using Yawss.Server.Config;
+using Yawss.Server.Export;
 using Yawss.Server.Hosting;
 using Yawss.Server.Hub;
 using Yawss.Server.Rendering;
@@ -49,6 +50,8 @@ builder.Services.AddSingleton<IPageSink>(sp => sp.GetRequiredService<ThumbnailWo
 builder.Services.AddHostedService(sp => sp.GetRequiredService<ThumbnailWorker>());
 builder.Services.AddSingleton<ScanService>();
 builder.Services.AddSingleton<EditService>();
+builder.Services.AddSingleton<DownloadTokens>();
+builder.Services.AddSingleton<ExportService>();
 builder.Services.AddSingleton<SessionRetentionService>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<SessionRetentionService>());
 
@@ -74,6 +77,7 @@ if (config.Server.BasePath != "/")
 app.MapGet("/healthz", () => Results.Text("ok"));
 app.MapHub<YawssHub>("/hub");
 ImageEndpoints.Map(app);
+ExportEndpoints.Map(app);
 
 StaticFrontend.Map(app);
 
