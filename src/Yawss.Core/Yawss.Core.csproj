@@ -4,4 +4,9 @@
     <RootNamespace>$(MSBuildProjectName)</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- Attribute-only assemblies used to generate the TypeScript hub client; see ADR-002. -->
+    <PackageReference Include="TypedSignalR.Client.TypeScript.Attributes" />
+  </ItemGroup>
+
 </Project>

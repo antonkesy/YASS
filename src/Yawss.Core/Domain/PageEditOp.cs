@@ -1,6 +1,9 @@
+using Tapper;
+
 namespace Yawss.Core.Domain;
 
 /// <summary>Kind of a <see cref="PageEdit"/>.</summary>
+[TranspilationSource]
 public enum PageEditOp
 {
     /// <summary>Rotate the target pages by <see cref="PageEdit.Degrees"/>.</summary>

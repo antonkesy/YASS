@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup Label="Runtime">
+    <PackageVersion Include="TypedSignalR.Client.TypeScript.Attributes" Version="1.17.0" />
     <PackageVersion Include="YamlDotNet" Version="18.1.0" />
   </ItemGroup>
 

@@ -1,3 +1,5 @@
+using Tapper;
+
 namespace Yawss.Core.Domain;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace Yawss.Core.Domain;
 /// Modelled as a flat record (op + optional payload) rather than a class hierarchy so it
 /// serialises unchanged over MessagePack and generates a plain TypeScript type.
 /// </summary>
+[TranspilationSource]
 public sealed record PageEdit
 {
     public required PageEditOp Op { get; init; }

@@ -1,6 +1,9 @@
+using Tapper;
+
 namespace Yawss.Core.Domain;
 
 /// <summary>Clockwise rotation applied to a page, in degrees.</summary>
+[TranspilationSource]
 public enum Rotation
 {
     R0 = 0,
