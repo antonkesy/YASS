@@ -26,6 +26,7 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
     Args = args,
     ContentRootPath = AppContext.BaseDirectory,
+    WebRootPath = StaticFrontend.ResolveWebRoot(),
 });
 
 LoggingSetup.Configure(builder.Logging, config.Logging);
