@@ -1,0 +1,24 @@
+# Example deployment next to paperless-ngx. Copy to docker-compose.yml and adjust paths.
+# YAWSS has NO authentication: bind to a LAN address and never publish it to the internet.
+services:
+  yawss:
+    image: ghcr.io/OWNER/yawss:latest # replace OWNER, or `build: .`
+    container_name: yawss
+    restart: unless-stopped
+    ports:
+      - "192.168.1.10:8080:8080" # LAN address of the host; not 0.0.0.0 on an internet-facing box
+    volumes:
+      - ./yawss.yaml:/etc/yawss/yawss.yaml:ro
+      - yawss-sessions:/data/sessions
+      - /srv/paperless/consume:/data/consume # paperless-ngx PAPERLESS_CONSUMPTION_DIR
+    devices:
+      - /dev/bus/usb:/dev/bus/usb # USB/SANE scanners; not needed for network (eSCL) scanners
+    # eSCL discovery uses mDNS; host networking makes that work out of the box:
+    # network_mode: host   (then drop `ports`)
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 3s
+
+volumes:
+  yawss-sessions:
