@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" />
+    <PackageReference Include="SixLabors.ImageSharp" />
     <PackageReference Include="YamlDotNet" />
   </ItemGroup>
 
