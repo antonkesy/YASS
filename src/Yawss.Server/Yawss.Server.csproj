@@ -3,6 +3,12 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <PublishTrimmed>true</PublishTrimmed>
+    <!-- Only trim assemblies that opt in; NAPS2, YamlDotNet and MessagePack rely on reflection. -->
+    <TrimMode>partial</TrimMode>
+    <!-- Our own assemblies are not trimmed (partial mode), so IL20xx analysis is noise. -->
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+    <UserSecretsId>yawss</UserSecretsId>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
   </PropertyGroup>
 
   <ItemGroup>
@@ -10,6 +16,14 @@
     <ProjectReference Include="../Yawss.Export/Yawss.Export.csproj" />
     <ProjectReference Include="../Yawss.Fake/Yawss.Fake.csproj" />
     <ProjectReference Include="../Yawss.Scanning/Yawss.Scanning.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="YamlDotNet" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Yawss.Server.Tests" />
   </ItemGroup>
 
 </Project>
