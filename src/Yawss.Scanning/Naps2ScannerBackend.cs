@@ -124,7 +124,9 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
     private async Task<(ScanDevice? Device, string? Error)> FindDeviceAsync(bool force, CancellationToken cancellationToken)
     {
         ScannerConfig config = _config();
-        TimeSpan ttl = TimeSpan.FromSeconds(Math.Max(config.PollIntervalSeconds, 1));
+        // Enumerating SANE backends can take tens of seconds; never re-probe more often than every 30 s
+        // on the status poll. Starting a scan always forces a fresh look.
+        TimeSpan ttl = TimeSpan.FromSeconds(Math.Max(config.PollIntervalSeconds, 30));
         if (!force && _time.GetUtcNow() - _cache.At < ttl)
         {
             return (_cache.Device, _cache.Error);
