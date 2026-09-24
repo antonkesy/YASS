@@ -7,10 +7,3 @@ public interface IPageSink
 {
     void Enqueue(Session session, Page page);
 }
-
-internal sealed class NoPageSink : IPageSink
-{
-    public void Enqueue(Session session, Page page)
-    {
-    }
-}

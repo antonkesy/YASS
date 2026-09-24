@@ -4,6 +4,7 @@ using Yawss.Core.Config;
 using Yawss.Server.Config;
 using Yawss.Server.Hosting;
 using Yawss.Server.Hub;
+using Yawss.Server.Rendering;
 using Yawss.Server.Scanning;
 using Yawss.Server.Sessions;
 
@@ -40,8 +41,12 @@ builder.Services.AddHostedService(sp => sp.GetRequiredService<ScannerStatusMonit
 
 builder.Services.AddSingleton<SessionStore>();
 builder.Services.AddSingleton<SessionMapper>();
-builder.Services.AddSingleton<IThumbnailStatus, NoThumbnails>();
-builder.Services.AddSingleton<IPageSink, NoPageSink>();
+builder.Services.AddSingleton<ImageRenderer>();
+builder.Services.AddSingleton<RenderCache>();
+builder.Services.AddSingleton<IThumbnailStatus>(sp => sp.GetRequiredService<RenderCache>());
+builder.Services.AddSingleton<ThumbnailWorker>();
+builder.Services.AddSingleton<IPageSink>(sp => sp.GetRequiredService<ThumbnailWorker>());
+builder.Services.AddHostedService(sp => sp.GetRequiredService<ThumbnailWorker>());
 builder.Services.AddSingleton<ScanService>();
 builder.Services.AddSingleton<EditService>();
 builder.Services.AddSingleton<SessionRetentionService>();
@@ -68,6 +73,7 @@ if (config.Server.BasePath != "/")
 
 app.MapGet("/healthz", () => Results.Text("ok"));
 app.MapHub<YawssHub>("/hub");
+ImageEndpoints.Map(app);
 
 StaticFrontend.Map(app);
 
