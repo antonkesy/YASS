@@ -13,6 +13,7 @@ repos:
         args: [--fix=lf]
       - id: check-yaml
       - id: check-json
+        exclude: ^web/tsconfig\.json$ # JSONC with comments
       - id: check-toml
       - id: check-merge-conflict
       - id: check-added-large-files
@@ -27,13 +28,6 @@ repos:
           - --strict
           - --scopes
           - core,fake,server,web,scanning,export,nix,docker,ci,dotnet,deps
-
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
-    hooks:
-      - id: prettier
-        files: ^web/
-        exclude: ^web/(pnpm-lock\.yaml|src/lib/hub/generated/)
 
   - repo: local
     hooks:
@@ -51,11 +45,11 @@ repos:
         files: \.(cs|csproj|props|targets|sln)$
 
       - id: eslint
-        name: eslint (web)
+        name: prettier + eslint (web)
         entry: pnpm --dir web run lint
         language: system
         pass_filenames: false
-        files: ^web/.*\.(js|ts|svelte|json)$
+        files: ^web/.*\.(js|ts|svelte|json|css|html|md)$
 
       - id: svelte-check
         name: svelte-check (web)

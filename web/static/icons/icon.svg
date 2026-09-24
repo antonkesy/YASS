@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- YAWSS logo: an original flat-colour "nailed it" figure pumping a fist and holding a scanned sheet.
+       Safe zone for maskable icons: keep everything inside the central 80%. -->
+  <rect width="512" height="512" rx="96" fill="#0f766e"/>
+  <!-- scanned sheet -->
+  <g transform="rotate(-8 300 300)">
+    <rect x="236" y="196" width="150" height="196" rx="10" fill="#ffffff"/>
+    <rect x="256" y="224" width="110" height="12" rx="6" fill="#94a3b8"/>
+    <rect x="256" y="252" width="90" height="12" rx="6" fill="#94a3b8"/>
+    <rect x="256" y="280" width="104" height="12" rx="6" fill="#94a3b8"/>
+    <rect x="256" y="308" width="70" height="12" rx="6" fill="#94a3b8"/>
+    <rect x="256" y="336" width="96" height="12" rx="6" fill="#0f766e"/>
+  </g>
+  <!-- body -->
+  <rect x="140" y="236" width="128" height="150" rx="44" fill="#fbbf24"/>
+  <!-- head -->
+  <circle cx="204" cy="176" r="52" fill="#fde68a"/>
+  <!-- grin -->
+  <path d="M180 190 q24 22 48 0" stroke="#78350f" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <circle cx="188" cy="168" r="6" fill="#78350f"/>
+  <circle cx="222" cy="168" r="6" fill="#78350f"/>
+  <!-- raised arm with fist -->
+  <path d="M150 262 L96 180" stroke="#fbbf24" stroke-width="34" stroke-linecap="round"/>
+  <circle cx="90" cy="168" r="30" fill="#fde68a"/>
+  <!-- arm holding sheet -->
+  <path d="M256 290 L288 302" stroke="#fbbf24" stroke-width="30" stroke-linecap="round"/>
+  <!-- legs -->
+  <path d="M176 380 L164 438 M232 380 L244 438" stroke="#fbbf24" stroke-width="30" stroke-linecap="round"/>
+</svg>
