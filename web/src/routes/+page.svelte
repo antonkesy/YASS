@@ -6,6 +6,7 @@
 	import StatusPill from '$lib/components/StatusPill.svelte';
 	import ScanButton from '$lib/components/ScanButton.svelte';
 	import SessionList from '$lib/components/SessionList.svelte';
+	import { pickEditable, settings } from '$lib/settings';
 
 	const client = getHub();
 	const scanner = client.scanner;
@@ -24,7 +25,8 @@
 		starting = true;
 		error = null;
 		try {
-			const session = await client.hub.startScan({});
+			const effective = await client.hub.getEffectiveOptions();
+			const session = await client.hub.startScan(pickEditable($settings, effective.Editable));
 			await goto(resolve('/session/[id]', { id: session.Id }));
 		} catch (e) {
 			error = e instanceof Error ? e.message : String(e);
