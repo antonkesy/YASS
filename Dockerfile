@@ -26,6 +26,8 @@ FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-alpine AS runtime
 RUN apk add --no-cache sane-backends sane-utils libusb tini \
  # hpaio (HPLIP) aborts the whole process when no D-Bus is available; HP all-in-ones work over eSCL instead.
  && rm -f /etc/sane.d/dll.d/hpaio && sed -i 's/^hpaio/#hpaio/' /etc/sane.d/dll.conf \
+ # camera/video backends are irrelevant for document scanning and make every probe take ~20 s
+ && for b in gphoto2 v4l dc210 dc240 dc25 qcam stv680 pnm net; do rm -f /etc/sane.d/dll.d/$b; sed -i "s/^$b\$/#$b/" /etc/sane.d/dll.conf; done \
  && addgroup -S yawss && adduser -S -G yawss yawss \
  && mkdir -p /data/sessions /data/consume && chown -R yawss:yawss /data
 WORKDIR /app
