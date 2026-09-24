@@ -10,6 +10,7 @@ namespace Yawss.Core.Domain;
 /// <param name="ColorOverride">Per-page colour mode override; <c>null</c> keeps the scan's colour mode.</param>
 /// <param name="Deleted">Excluded from export. Reversible.</param>
 /// <param name="IsBlank">Flagged by blank-page detection at scan time; such pages start out deleted.</param>
+/// <param name="SourceHash">Hash of the source file bytes, fixed at scan time.</param>
 /// <param name="Hash">Content hash of (source, edits); changes whenever a derived image would change.</param>
 public sealed record Page(
     int Index,
@@ -18,4 +19,5 @@ public sealed record Page(
     ColorMode? ColorOverride,
     bool Deleted,
     bool IsBlank,
+    string SourceHash,
     string Hash);

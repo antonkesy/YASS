@@ -6,9 +6,15 @@ namespace Yawss.Core.Domain;
 /// <param name="State">Current lifecycle state.</param>
 /// <param name="Pages">Pages in display order.</param>
 /// <param name="OptionsUsed">Effective options the scan was started with.</param>
+/// <param name="Error">Why the session is <see cref="SessionState.Failed"/>; otherwise <c>null</c>.</param>
 public sealed record Session(
     string Id,
     DateTimeOffset CreatedAt,
     SessionState State,
     IReadOnlyList<Page> Pages,
-    ScanOptions OptionsUsed);
+    ScanOptions OptionsUsed,
+    string? Error = null)
+{
+    /// <summary>Pages that will be exported, in order.</summary>
+    public IEnumerable<Page> ActivePages => Pages.Where(p => !p.Deleted);
+}
