@@ -1,7 +1,14 @@
 <script lang="ts">
 	import './layout.css';
+	import { onMount } from 'svelte';
+	import { getHub } from '$lib/hub/hub';
 
 	let { children } = $props();
+
+	onMount(() => {
+		const hub = getHub();
+		void hub.start();
+	});
 </script>
 
 <svelte:head>
