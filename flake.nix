@@ -36,6 +36,9 @@
           DOTNET_CLI_TELEMETRY_OPTOUT = "1";
           DOTNET_NOLOGO = "1";
           DOTNET_SKIP_FIRST_TIME_EXPERIENCE = "1";
+          # Worker nodes and the build server outlive the command and hold pipes open.
+          MSBUILDDISABLENODEREUSE = "1";
+          DOTNET_CLI_USE_MSBUILD_SERVER = "0";
           # NAPS2 dlopens libsane; make the host backends visible.
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ pkgs.sane-backends ];
           SANE_CONFIG_DIR = "${pkgs.sane-backends}/etc/sane.d";
