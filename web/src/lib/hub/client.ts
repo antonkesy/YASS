@@ -27,6 +27,8 @@ export type YawssHubClient = {
 	stop(): Promise<void>;
 	/** Fetches one session from the server and puts it in the store. */
 	refresh(sessionId: string): Promise<SessionDto>;
+	/** Optimistic local change; the next SessionChanged/PageUpdated from the server wins. */
+	updateLocal(sessionId: string, update: (session: SessionDto) => SessionDto): void;
 };
 
 /** Minimal surface of HubConnection this client needs; lets tests pass a fake. */
@@ -118,6 +120,13 @@ export function createHubClient(connection: ConnectionLike): YawssHubClient {
 		return session;
 	}
 
+	function updateLocal(sessionId: string, update: (session: SessionDto) => SessionDto) {
+		sessions.update((m) => {
+			const current = m.get(sessionId);
+			return current ? new Map(m).set(sessionId, update(current)) : m;
+		});
+	}
+
 	return {
 		hub,
 		connection: { subscribe: connectionState.subscribe },
@@ -126,6 +135,7 @@ export function createHubClient(connection: ConnectionLike): YawssHubClient {
 		exportProgress: { subscribe: exportProgress.subscribe },
 		start,
 		stop,
-		refresh
+		refresh,
+		updateLocal
 	};
 }
