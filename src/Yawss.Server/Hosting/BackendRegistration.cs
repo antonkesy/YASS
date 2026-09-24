@@ -1,5 +1,6 @@
 using Yawss.Core.Export;
 using Yawss.Core.Scanning;
+using Yawss.Export;
 using Yawss.Fake;
 using Yawss.Scanning;
 using Yawss.Server.Config;
@@ -28,8 +29,8 @@ public static class BackendRegistration
             return new Naps2ScannerBackend(() => config.Current.Scanner, sp.GetRequiredService<ILogger<Naps2ScannerBackend>>(), sp.GetRequiredService<TimeProvider>());
         });
 
-        // Until Yawss.Export provides the NAPS2 PDF writer, real scans still export through the fake writer.
-        services.AddSingleton<IDocumentWriter, FakeDocumentWriter>();
+        services.AddSingleton<IDocumentWriter, Naps2PdfWriter>();
+        // Until Yawss.Export provides filename templating, real saves still go through the fake store.
         services.AddSingleton<IDocumentStore>(sp => new FakeDocumentStore(sp.GetRequiredService<ConfigStore>().Current.Output.Directory));
     }
 }
