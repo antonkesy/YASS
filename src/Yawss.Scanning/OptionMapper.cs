@@ -42,7 +42,13 @@ public static class OptionMapper
         _ => Naps2PageSize.A4,
     };
 
-    /// <summary>Builds NAPS2 options for one scan run. Blank-page handling and deskew are mapped too (see ADR-004).</summary>
+    /// <summary>
+    /// NAPS2 expresses the blank-page coverage threshold as 0..100 (mapped internally onto 0..1 % ink coverage);
+    /// our <c>blank_page_threshold</c> is a 0..1 fraction. Scale and clamp.
+    /// </summary>
+    public static int MapBlankThreshold(double threshold) => (int)Math.Clamp(Math.Round(threshold * 100), 0, 100);
+
+    /// <summary>Builds NAPS2 options for one scan run. Blank pages are excluded and deskew applied by NAPS2 itself (ADR-004).</summary>
     public static Naps2Options ToNaps2(Core.Domain.ScanOptions options, ScannerDriver driver, ScanDevice device)
     {
         ArgumentNullException.ThrowIfNull(options);
@@ -61,6 +67,9 @@ public static class OptionMapper
             BrightnessContrastAfterScan = true,
             MaxQuality = true,
             ThumbnailSize = null,
+            ExcludeBlankPages = options.BlankPageDetection,
+            BlankPageCoverageThreshold = MapBlankThreshold(options.BlankPageThreshold),
+            AutoDeskew = options.AutoDeskew,
         };
     }
 
