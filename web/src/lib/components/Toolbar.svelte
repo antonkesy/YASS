@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ColorMode } from '$lib/hub/generated/Yawss.Core.Domain';
+	import { ColorMode } from '$lib/hub/generated/Yass.Core.Domain';
 	import { colorModeLabels } from '$lib/review/edits';
 
 	let {

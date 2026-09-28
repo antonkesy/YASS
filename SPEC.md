@@ -1,4 +1,4 @@
-# YAWSS — Yet Another Web Scanner Service
+# YASS — Yet Another Scanner Service
 
 Base prompt / project specification for a coding agent. Read fully before writing code. Sections marked **DECIDED** are not up for debate; sections marked **OPEN** may be resolved by the agent with a one-line justification in `docs/decisions/`.
 
@@ -6,7 +6,7 @@ Base prompt / project specification for a coding agent. Read fully before writin
 
 ## 1. One-paragraph summary
 
-YAWSS is a headless scanning service for a home server on Linux (bare metal, NixOS, Docker). A scanner is attached to the host (USB/SANE or network/eSCL). YAWSS exposes a small web UI where a user can see scanner readiness, start a scan that runs until the feeder is empty, review pages in a preview (rotate / delete / color mode, per page or for all), and save the result as a PDF into a configured directory — primarily the paperless-ngx consume folder. Everything is configured through a single file. Backend is .NET with **NAPS2.Sdk**; frontend is a **SvelteKit** mobile-first PWA. **There is no authentication**: the service is trusted-LAN only and must never be exposed to the internet (document this prominently in the README).
+YASS is a headless scanning service for a home server on Linux (bare metal, NixOS, Docker). A scanner is attached to the host (USB/SANE or network/eSCL). YASS exposes a small web UI where a user can see scanner readiness, start a scan that runs until the feeder is empty, review pages in a preview (rotate / delete / color mode, per page or for all), and save the result as a PDF into a configured directory — primarily the paperless-ngx consume folder. Everything is configured through a single file. Backend is .NET with **NAPS2.Sdk**; frontend is a **SvelteKit** mobile-first PWA. **There is no authentication**: the service is trusted-LAN only and must never be exposed to the internet (document this prominently in the README).
 
 ## 2. Guiding principle — DECIDED
 
@@ -20,15 +20,15 @@ YAWSS is a headless scanning service for a home server on Linux (bare metal, Nix
 | Runtime | **.NET 8 LTS**, ASP.NET Core Minimal API, `PublishTrimmed`, `InvariantGlobalization=true` | |
 | Transport — state, commands, events | **SignalR** hub over WebSocket with **MessagePack** protocol (`Microsoft.AspNetCore.SignalR.Protocols.MessagePack`, `@microsoft/signalr` + `@microsoft/signalr-protocol-msgpack` on the client) | One persistent bidirectional connection: server pushes scanner status, page-added, progress; client invokes `StartScan`, `ApplyEdits`, `Export`. Auto-reconnect, typed hub, .NET-native, no polling, no per-request overhead. Better fit than REST for a local single-user app. |
 | Transport — binary | **Plain HTTP GET** for thumbnails/previews/PDF download | Browser cache + `ETag` + `Cache-Control: immutable` + `<img loading="lazy">` beats any custom channel for images. These are the only HTTP endpoints besides `/healthz`. |
-| Config | **YAML** via `YamlDotNet`, file `yawss.yaml`, env overrides via ASP.NET's built-in configuration (`YAWSS__section__key`) | Bound to C# records with `IOptions<T>` + `ValidateDataAnnotations().ValidateOnStart()`. Fail fast, name the bad key. |
+| Config | **YAML** via `YamlDotNet`, file `yass.yaml`, env overrides via ASP.NET's built-in configuration (`YASS__section__key`) | Bound to C# records with `IOptions<T>` + `ValidateDataAnnotations().ValidateOnStart()`. Fail fast, name the bad key. |
 | Frontend | **SvelteKit** (`@sveltejs/adapter-static`, SPA fallback), TypeScript, **Tailwind**, **`@vite-pwa/sveltekit`** | Installable PWA = "export as app". No component library. |
-| Shared types | Hub contract defined once in C# (`IYawssHub`, `IYawssClient`); TS types generated with **`TypedSignalR.Client.TypeScript`** in CI; drift fails the build | |
+| Shared types | Hub contract defined once in C# (`IYassHub`, `IYassClient`); TS types generated with **`TypedSignalR.Client.TypeScript`** in CI; drift fails the build | |
 | Backend tests | **xUnit** + `WebApplicationFactory` + `NSubstitute` | Scanner behind `IScannerBackend`; `FakeScannerBackend` yields PNG fixtures. |
 | Frontend tests | **Vitest** + `@testing-library/svelte`; **Playwright** E2E (desktop Chromium + Pixel 7 profile) against server in `--fake` mode | |
 | Lint/format | `dotnet format` + analyzers (`TreatWarningsAsErrors`), `eslint`, `prettier`, `svelte-check`; **`pre-commit`** framework | |
 | Commits/releases | **Conventional Commits** enforced by `conventional-pre-commit`; **`release-please`** for changelog + tags | |
 | CI | **GitHub Actions** — `ci.yml`, `release.yml` (`nix build`) | |
-| Packaging | **Nix flake** (dev shell, package, docker image via `dockerTools`, NixOS module `services.yawss`) + plain multi-stage `Dockerfile` | |
+| Packaging | **Nix flake** (dev shell, package, docker image via `dockerTools`, NixOS module `services.yass`) + plain multi-stage `Dockerfile` | |
 | Storage | Filesystem only; session = directory with `session.json` + `page-NNN.png` | |
 
 **Not in v1:** auth of any kind, OCR (paperless does it), multi-scanner UI, cloud upload, barcode splitting, Tauri wrapper.
@@ -36,23 +36,23 @@ YAWSS is a headless scanning service for a home server on Linux (bare metal, Nix
 ## 4. Repository layout — DECIDED
 
 ```
-yawss/
+yass/
 ├── flake.nix / flake.lock
 ├── Dockerfile
 ├── docker-compose.example.yml
-├── yawss.example.yaml
+├── yass.example.yaml
 ├── .pre-commit-config.yaml
 ├── .editorconfig
 ├── .github/workflows/{ci,release}.yml
 ├── release-please-config.json
 ├── docs/decisions/ADR-000-template.md
 ├── src/
-│   ├── Yawss.Core/        # domain records, IScannerBackend, IDocumentWriter, hub contracts (IYawssHub/IYawssClient)
-│   ├── Yawss.Scanning/    # NAPS2 adapter
-│   ├── Yawss.Export/      # PDF via NAPS2 PdfExporter, filename templating, atomic write to consume dir
-│   ├── Yawss.Server/      # host: SignalR hub, HTTP image endpoints, static frontend, /healthz
-│   └── Yawss.Fake/        # FakeScannerBackend + fixtures (tests and `--fake` dev mode)
-├── tests/Yawss.{Core,Scanning,Export,Server}.Tests/
+│   ├── Yass.Core/        # domain records, IScannerBackend, IDocumentWriter, hub contracts (IYassHub/IYassClient)
+│   ├── Yass.Scanning/    # NAPS2 adapter
+│   ├── Yass.Export/      # PDF via NAPS2 PdfExporter, filename templating, atomic write to consume dir
+│   ├── Yass.Server/      # host: SignalR hub, HTTP image endpoints, static frontend, /healthz
+│   └── Yass.Fake/        # FakeScannerBackend + fixtures (tests and `--fake` dev mode)
+├── tests/Yass.{Core,Scanning,Export,Server}.Tests/
 ├── web/                   # SvelteKit
 │   ├── src/lib/hub/       # generated hub types + one thin `hub.ts` wrapper (svelte store of connection state)
 │   ├── src/lib/components/
@@ -61,7 +61,7 @@ yawss/
 └── assets/logo/
 ```
 
-Rule: `Yawss.Core` references nothing outside the BCL (plus `Microsoft.AspNetCore.SignalR.Core` abstractions for the hub interfaces).
+Rule: `Yass.Core` references nothing outside the BCL (plus `Microsoft.AspNetCore.SignalR.Core` abstractions for the hub interfaces).
 
 ## 5. Configuration — DECIDED
 
@@ -167,7 +167,7 @@ Idle RSS ≤ 80 MB; 50-page 300 dpi color scan ≤ 400 MB peak; container image 
 
 ## 10. Testing — DECIDED
 
-80 % line coverage gate on `Yawss.*` (excl. `Yawss.Fake`). Fake scenarios: N pages, blank at k, error after k, slow pages, feeder-empty-after-N. Export tests assert page count, rotation, deleted pages absent, atomic write (watch dir for partial files). Config tests: round-trip every key; invalid value names the key. Hub contract test: generated TS matches C#; drift fails CI. Playwright: desktop + mobile viewport, real server in `--fake` mode.
+80 % line coverage gate on `Yass.*` (excl. `Yass.Fake`). Fake scenarios: N pages, blank at k, error after k, slow pages, feeder-empty-after-N. Export tests assert page count, rotation, deleted pages absent, atomic write (watch dir for partial files). Config tests: round-trip every key; invalid value names the key. Hub contract test: generated TS matches C#; drift fails CI. Playwright: desktop + mobile viewport, real server in `--fake` mode.
 
 ## 11. Commit plan — DECIDED
 
@@ -217,7 +217,7 @@ Scopes: `core`, `fake`, `server`, `web`, `scanning`, `export`, `nix`, `docker`, 
 
 ## 12. Agent working rules
 
-1. Follow the commit plan order. The app must be fully usable in `--fake` mode before `Yawss.Scanning` is written.
+1. Follow the commit plan order. The app must be fully usable in `--fake` mode before `Yass.Scanning` is written.
 2. No new dependency without a one-line ADR in `docs/decisions/`. Prefer BCL / already-listed packages.
 3. Never block a hub or request thread on scanning or rendering.
 4. If the NAPS2 API differs from assumptions here, adapt the adapter, keep the domain model, and note it in an ADR.
@@ -225,7 +225,7 @@ Scopes: `core`, `fake`, `server`, `web`, `scanning`, `export`, `nix`, `docker`, 
 
 ## 13. Branding
 
-**YAWSS** — Yet Another Web Scanner Service. Logo: an original triumphant "nailed it" character — flat-color figure pumping a fist while holding a scanned sheet; readable at 16 px, maskable at 512 px. SVG + PNG 192/512 + favicon. No recognisable actor, film still or existing meme image.
+**YASS** — Yet Another Scanner Service. Logo: an original triumphant "nailed it" character — flat-color figure pumping a fist while holding a scanned sheet; readable at 16 px, maskable at 512 px. SVG + PNG 192/512 + favicon. No recognisable actor, film still or existing meme image.
 
 ## 14. OPEN
 

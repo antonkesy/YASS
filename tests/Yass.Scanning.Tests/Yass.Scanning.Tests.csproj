@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Yass.Scanning/Yass.Scanning.csproj" />
+  </ItemGroup>
+
+</Project>

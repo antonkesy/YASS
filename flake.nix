@@ -1,5 +1,5 @@
 {
-  description = "YAWSS - Yet Another Web Scanner Service";
+  description = "YASS - Yet Another Scanner Service";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -14,7 +14,7 @@
     }:
     {
       nixosModules.default = import ./nix/module.nix { inherit self; };
-      nixosModules.yawss = self.nixosModules.default;
+      nixosModules.yass = self.nixosModules.default;
     }
     // flake-utils.lib.eachDefaultSystem (
       system:
@@ -22,7 +22,7 @@
         pkgs = nixpkgs.legacyPackages.${system};
         dotnet = pkgs.dotnet-sdk_8;
         version = pkgs.lib.trim (builtins.readFile ./version.txt);
-        yawss = pkgs.callPackage ./nix/package.nix {
+        yass = pkgs.callPackage ./nix/package.nix {
           inherit version;
           src = pkgs.lib.cleanSource ./.;
         };
@@ -31,21 +31,21 @@
         formatter = pkgs.nixfmt;
 
         packages = {
-          default = yawss;
-          web = yawss.passthru.web;
+          default = yass;
+          web = yass.passthru.web;
           docker = pkgs.dockerTools.buildLayeredImage {
-            name = "yawss";
+            name = "yass";
             tag = version;
             contents = [
-              yawss
+              yass
               pkgs.sane-backends
               pkgs.dockerTools.caCertificates
             ];
-            extraCommands = "mkdir -p data/sessions data/consume etc/yawss";
+            extraCommands = "mkdir -p data/sessions data/consume etc/yass";
             config = {
-              Cmd = [ "${pkgs.lib.getExe yawss}" ];
+              Cmd = [ "${pkgs.lib.getExe yass}" ];
               Env = [
-                "YAWSS_CONFIG=/etc/yawss/yawss.yaml"
+                "YASS_CONFIG=/etc/yass/yass.yaml"
                 "SANE_CONFIG_DIR=${pkgs.sane-backends}/etc/sane.d"
                 "DOTNET_CLI_TELEMETRY_OPTOUT=1"
               ];

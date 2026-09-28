@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { SessionState } from '$lib/hub/generated/Yawss.Core.Domain';
-import type { PageDto, SessionDto } from '$lib/hub/generated/Yawss.Core.Hub';
+import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
+import type { PageDto, SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 import {
 	applyPageAdded,
 	applyPageUpdated,

@@ -1,26 +1,26 @@
-# One-command YAWSS demo: fake scanner, no hardware, no paperless.
+# One-command YASS demo: fake scanner, no hardware, no paperless.
 #
 #   cd demo && docker compose up --build   ->   http://localhost:8080
 #
 # Scan, reorder/rotate/delete pages, then "Save": the PDF appears
 # in ./output on the host. Sessions live in the container's /tmp and are gone
 # when it stops, so the demo leaves nothing behind but the PDFs.
-name: yawss-demo
+name: yass-demo
 
 services:
-  yawss:
+  yass:
     build:
       context: .. # the repo root; no prebuilt image is published
       dockerfile: Dockerfile
-    container_name: yawss-demo
+    container_name: yass-demo
     # --fake swaps in the scripted scanner: 5 pages, page 3 blank, 400 ms each.
     # Other keys: pages, blank (a;b;c), error, delay, nodevice, device.
-    command: ["--fake", "pages=5,blank=3,delay=400ms,device=YAWSS Demo ADF"]
-    # Write ./output as you, not as the image's `yawss` account. Override if
+    command: ["--fake", "pages=5,blank=3,delay=400ms,device=YASS Demo ADF"]
+    # Write ./output as you, not as the image's `yass` account. Override if
     # your uid is not 1000:  UID=$(id -u) GID=$(id -g) docker compose up --build
     user: "${UID:-1000}:${GID:-1000}"
     ports:
-      - "127.0.0.1:8080:8080" # localhost only; YAWSS has no authentication
+      - "127.0.0.1:8080:8080" # localhost only; YASS has no authentication
     volumes:
-      - ./yawss.yaml:/etc/yawss/yawss.yaml:ro
+      - ./yass.yaml:/etc/yass/yass.yaml:ro
       - ./output:/data/consume

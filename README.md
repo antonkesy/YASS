@@ -1,6 +1,6 @@
-# YAWSS — Yet Another Web Scanner Service
+# YASS — Yet Another Scanner Service
 
-<img src="assets/logo/yawss.svg" alt="" width="96" align="right">
+<img src="assets/logo/yass.svg" alt="" width="96" align="right">
 
 Headless scanning service for a home server. Attach a scanner (USB/SANE or
 network/eSCL), open the mobile-first web UI, scan until the feeder is empty,
@@ -9,7 +9,7 @@ review the pages, and save a PDF straight into your
 
 > ## ⚠️ No authentication — LAN only
 >
-> YAWSS has **no login, no tokens, no TLS**. Anyone who can reach the port can
+> YASS has **no login, no tokens, no TLS**. Anyone who can reach the port can
 > scan, view and delete documents. It is designed for a trusted home network and
 > must **never be exposed to the internet**: bind it to a LAN address, keep it
 > behind your firewall, and do not put it behind a public reverse proxy.
@@ -27,7 +27,7 @@ review the pages, and save a PDF straight into your
   **Download** hands the PDF to the browser instead.
 - **Installable PWA**, works without a service worker, everything reachable by
   keyboard, touch targets ≥ 44 px.
-- **Single config file** (`yawss.yaml`), every key overridable through the
+- **Single config file** (`yass.yaml`), every key overridable through the
   environment; non-`server` keys reload at runtime.
 - **Fake mode** (`--fake`) simulates a scanner so you can try the UI, run the
   test-suite, or develop without hardware.
@@ -51,24 +51,24 @@ saved PDFs land in `demo/output/`. See [`demo/README.md`](demo/README.md).
 
 ```yaml
 services:
-  yawss:
+  yass:
     build: .                            # clone this repo; no prebuilt image is published
     restart: unless-stopped
     ports:
       - "192.168.1.10:8080:8080"        # LAN address of the host
     volumes:
-      - ./yawss.yaml:/etc/yawss/yawss.yaml:ro
-      - yawss-sessions:/data/sessions
+      - ./yass.yaml:/etc/yass/yass.yaml:ro
+      - yass-sessions:/data/sessions
       - /srv/paperless/consume:/data/consume
     devices:
       - /dev/bus/usb:/dev/bus/usb       # USB/SANE scanners
 volumes:
-  yawss-sessions:
+  yass-sessions:
 ```
 
 See [`docker-compose.example.yml`](docker-compose.example.yml) for the
 commented version (eSCL scanners want `network_mode: host` for mDNS discovery).
-Copy [`yawss.example.yaml`](yawss.example.yaml) to `yawss.yaml`, set
+Copy [`yass.example.yaml`](yass.example.yaml) to `yass.yaml`, set
 `output.directory` to `/data/consume`, and start:
 
 ```sh
@@ -79,20 +79,20 @@ open http://192.168.1.10:8080
 Try it without a scanner:
 
 ```sh
-docker build -t yawss .
-docker run --rm -p 8080:8080 yawss --fake
+docker build -t yass .
+docker run --rm -p 8080:8080 yass --fake
 ```
 
 ### NixOS
 
 ```nix
 {
-  inputs.yawss.url = "github:OWNER/yawss";
+  inputs.yass.url = "github:OWNER/yass";
 
   # in your configuration:
-  imports = [ inputs.yawss.nixosModules.default ];
+  imports = [ inputs.yass.nixosModules.default ];
   hardware.sane.enable = true;
-  services.yawss = {
+  services.yass = {
     enable = true;
     settings = {
       server.listen = "192.168.1.10:8080";
@@ -103,21 +103,21 @@ docker run --rm -p 8080:8080 yawss --fake
 }
 ```
 
-`nix run github:OWNER/yawss -- --fake` starts the simulated scanner locally.
+`nix run github:OWNER/yass -- --fake` starts the simulated scanner locally.
 
 ### From source
 
 ```sh
 nix develop                      # dotnet 8, node 22, pnpm, sane-backends, pre-commit
 pnpm --dir web install && pnpm --dir web build
-YAWSS_WEBROOT=$PWD/web/build dotnet run --project src/Yawss.Server -- --fake
+YASS_WEBROOT=$PWD/web/build dotnet run --project src/Yass.Server -- --fake
 ```
 
 ## Configuration
 
-Everything lives in one YAML file (`--config PATH`, or `YAWSS_CONFIG`; missing
+Everything lives in one YAML file (`--config PATH`, or `YASS_CONFIG`; missing
 file = defaults). Any key can be overridden with an environment variable:
-`YAWSS__section__key`, e.g. `YAWSS__output__directory=/mnt/consume`. Invalid
+`YASS__section__key`, e.g. `YASS__output__directory=/mnt/consume`. Invalid
 values stop startup and name the offending key.
 
 | Key | Default | Meaning |
@@ -150,7 +150,7 @@ values stop startup and name the offending key.
 | `logging.level` | `info` | `trace` … `critical`. |
 | `logging.format` | `text` | `text` or `json`. |
 
-Files are written atomically: the PDF is streamed to a hidden `._yawss-*.tmp`
+Files are written atomically: the PDF is streamed to a hidden `._yass-*.tmp`
 file in the consume directory (matched by paperless' default ignore pattern) and
 renamed into place once complete, so the consumer never sees a partial document.
 
@@ -189,9 +189,9 @@ The commit plan, stack decisions and domain model are in [SPEC.md](SPEC.md);
 deviations are recorded in [`docs/decisions/`](docs/decisions/). Commits follow
 Conventional Commits; releases are cut by release-please.
 
-Layout: `src/Yawss.Core` (domain, config, hub contract), `Yawss.Scanning`
-(NAPS2 adapter), `Yawss.Export` (PDF, templating, atomic write),
-`Yawss.Server` (host, hub, image endpoints), `Yawss.Fake` (simulated scanner),
+Layout: `src/Yass.Core` (domain, config, hub contract), `Yass.Scanning`
+(NAPS2 adapter), `Yass.Export` (PDF, templating, atomic write),
+`Yass.Server` (host, hub, image endpoints), `Yass.Fake` (simulated scanner),
 `web/` (SvelteKit PWA), `nix/` (package, NixOS module).
 
 ## License

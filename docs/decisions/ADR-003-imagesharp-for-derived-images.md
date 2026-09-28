@@ -11,13 +11,13 @@ already depends on `SixLabors.ImageSharp` through `NAPS2.Images.ImageSharp`.
 
 ## Decision
 
-`Yawss.Server` references `SixLabors.ImageSharp` directly (same major as
+`Yass.Server` references `SixLabors.ImageSharp` directly (same major as
 NAPS2's dependency) and renders derived images itself: load PNG, rotate,
 grayscale/threshold, resize, encode WebP. Decoded bitmaps are bounded by a
 semaphore sized from `processing.max_concurrent_renders`.
 
 Rejected: going through NAPS2's `ImageContext` for thumbnails, which would
-pull the scanning SDK into the server before `Yawss.Scanning` exists and adds
+pull the scanning SDK into the server before `Yass.Scanning` exists and adds
 nothing over the ImageSharp calls.
 
 ## Consequences

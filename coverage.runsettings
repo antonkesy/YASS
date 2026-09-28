@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Coverage settings for dotnet test (pass with the settings switch). Yawss.Fake is test scaffolding (SPEC §10). -->
+<!-- Coverage settings for dotnet test (pass with the settings switch). Yass.Fake is test scaffolding (SPEC §10). -->
 <RunSettings>
   <DataCollectionRunSettings>
     <DataCollectors>
       <DataCollector friendlyName="XPlat Code Coverage">
         <Configuration>
           <Format>cobertura</Format>
-          <Include>[Yawss.*]*</Include>
-          <Exclude>[Yawss.Fake]*,[Yawss.*.Tests]*</Exclude>
+          <Include>[Yass.*]*</Include>
+          <Exclude>[Yass.Fake]*,[Yass.*.Tests]*</Exclude>
           <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
           <SkipAutoProps>true</SkipAutoProps>
         </Configuration>

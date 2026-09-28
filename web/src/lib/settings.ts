@@ -1,10 +1,10 @@
 import { writable } from 'svelte/store';
-import type { ScanOptionsDto } from './hub/generated/Yawss.Core.Hub';
+import type { ScanOptionsDto } from './hub/generated/Yass.Core.Hub';
 
 /** Per-browser scan overrides (SPEC §8: settings live in localStorage, never on the server). */
 export type ScanOverrides = Omit<ScanOptionsDto, 'Editable'>;
 
-export const STORAGE_KEY = 'yawss.scanOverrides';
+export const STORAGE_KEY = 'yass.scanOverrides';
 
 /** snake_case config key → DTO property, i.e. what `scanner.ui_editable` refers to. */
 export const editableKeys: Record<string, keyof ScanOverrides> = {

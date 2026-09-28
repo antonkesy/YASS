@@ -1,4 +1,4 @@
-# YAWSS server + frontend as one Nix package: $out/bin/Yawss.Server with the SvelteKit build in wwwroot.
+# YASS server + frontend as one Nix package: $out/bin/Yass.Server with the SvelteKit build in wwwroot.
 {
   lib,
   stdenv,
@@ -14,7 +14,7 @@
 }:
 let
   web = stdenv.mkDerivation (finalAttrs: {
-    pname = "yawss-web";
+    pname = "yass-web";
     inherit version;
     src = src + "/web";
 
@@ -45,10 +45,10 @@ let
   });
 in
 buildDotnetModule {
-  pname = "yawss";
+  pname = "yass";
   inherit version src;
 
-  projectFile = "src/Yawss.Server/Yawss.Server.csproj";
+  projectFile = "src/Yass.Server/Yass.Server.csproj";
   nugetDeps = ./deps.json;
 
   dotnet-sdk = dotnetCorePackages.sdk_8_0;
@@ -58,13 +58,13 @@ buildDotnetModule {
   selfContainedBuild = false;
   dotnetPublishFlags = [ "-p:PublishTrimmed=false" ];
 
-  executables = [ "Yawss.Server" ];
+  executables = [ "Yass.Server" ];
   # NAPS2 dlopens libsane.
   runtimeDeps = [ sane-backends ];
 
   postInstall = ''
-    cp -r ${web} $out/lib/yawss/wwwroot
-    install -Dm644 yawss.example.yaml $out/share/yawss/yawss.example.yaml
+    cp -r ${web} $out/lib/yass/wwwroot
+    install -Dm644 yass.example.yaml $out/share/yass/yass.example.yaml
   '';
 
   passthru = {
@@ -72,10 +72,10 @@ buildDotnetModule {
   };
 
   meta = {
-    description = "Yet Another Web Scanner Service: headless scan-to-PDF with a mobile-first web UI";
-    homepage = "https://github.com/antonkesy/yawss";
+    description = "Yet Another Scanner Service: headless scan-to-PDF with a mobile-first web UI";
+    homepage = "https://github.com/antonkesy/yass";
     license = lib.licenses.mit;
-    mainProgram = "Yawss.Server";
+    mainProgram = "Yass.Server";
     platforms = lib.platforms.linux;
   };
 }

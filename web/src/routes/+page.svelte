@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { base, resolve } from '$app/paths';
 	import { getHub, sortedSessions } from '$lib/hub/hub';
-	import { ScannerState } from '$lib/hub/generated/Yawss.Core.Scanning';
+	import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 	import StatusPill from '$lib/components/StatusPill.svelte';
 	import ScanButton from '$lib/components/ScanButton.svelte';
 	import SessionList from '$lib/components/SessionList.svelte';
@@ -36,13 +36,13 @@
 	}
 </script>
 
-<svelte:head><title>YAWSS</title></svelte:head>
+<svelte:head><title>YASS</title></svelte:head>
 
 <main class="mx-auto flex max-w-lg flex-col items-center gap-8 px-4 pt-6 pb-12">
 	<header class="flex w-full items-center justify-between">
 		<h1 class="flex items-center gap-2 text-xl font-bold">
 			<img src="{base}/icons/icon.svg" alt="" class="h-8 w-8 rounded-lg" />
-			YAWSS
+			YASS
 		</h1>
 		<a
 			href={resolve('/settings')}

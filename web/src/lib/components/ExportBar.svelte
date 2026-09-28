@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { SessionDto } from '$lib/hub/generated/Yawss.Core.Hub';
-	import { SessionState } from '$lib/hub/generated/Yawss.Core.Domain';
+	import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
+	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 	import { activePageCount } from '$lib/format';
 
 	let {

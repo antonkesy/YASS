@@ -1,5 +1,5 @@
-import type { PageDto, SessionDto } from './generated/Yawss.Core.Hub';
-import { SessionState } from './generated/Yawss.Core.Domain';
+import type { PageDto, SessionDto } from './generated/Yass.Core.Hub';
+import { SessionState } from './generated/Yass.Core.Domain';
 
 /** Pure reducers over the session map, kept separate from the connection so they are unit-testable. */
 export type SessionMap = ReadonlyMap<string, SessionDto>;

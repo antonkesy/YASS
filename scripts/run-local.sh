@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Build the frontend once and run the server from source against ./yawss.yaml (or $1).
+# Build the frontend once and run the server from source against ./yass.yaml (or $1).
 # Usage: scripts/run-local.sh [config.yaml] [-- extra server args, e.g. --fake]
 set -euo pipefail
 cd "$(dirname "$0")/.."
-config="$(realpath "${1:-yawss.yaml}")"; shift || true # absolute: dotnet run changes the working directory
+config="$(realpath "${1:-yass.yaml}")"; shift || true # absolute: dotnet run changes the working directory
 [ "${1:-}" = "--" ] && shift
 if ! command -v dotnet >/dev/null || [[ "$(dotnet --version)" != 8.* ]]; then
   exec nix develop -c "$0" "$config" -- "$@"
 fi
 [ -f web/build/index.html ] || pnpm --dir web install --frozen-lockfile
 pnpm --dir web build
-YAWSS_WEBROOT="$PWD/web/build" exec dotnet run --project src/Yawss.Server -- --config "$config" "$@"
+YASS_WEBROOT="$PWD/web/build" exec dotnet run --project src/Yass.Server -- --config "$config" "$@"

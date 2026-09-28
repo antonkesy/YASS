@@ -11,7 +11,7 @@ permissions:
   packages: write
 
 env:
-  IMAGE: ghcr.io/${{ github.repository_owner }}/yawss
+  IMAGE: ghcr.io/${{ github.repository_owner }}/yass
 
 jobs:
   # Opens/updates the release PR from Conventional Commits; creates the GitHub release + tag when merged.
@@ -76,6 +76,6 @@ jobs:
       - run: nix build .#default .#docker --print-build-logs
       - uses: actions/upload-artifact@v7
         with:
-          name: yawss-docker-image-nix
+          name: yass-docker-image-nix
           path: result-1
           retention-days: 14

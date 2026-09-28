@@ -1,8 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <ItemGroup>
-    <ProjectReference Include="../../src/Yawss.Export/Yawss.Export.csproj" />
-    <ProjectReference Include="../../src/Yawss.Fake/Yawss.Fake.csproj" />
-  </ItemGroup>
-
-</Project>

@@ -4,8 +4,8 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { getHub } from '$lib/hub/hub';
-	import { SessionState, type ColorMode } from '$lib/hub/generated/Yawss.Core.Domain';
-	import type { PageEdit } from '$lib/hub/generated/Yawss.Core.Domain';
+	import { SessionState, type ColorMode } from '$lib/hub/generated/Yass.Core.Domain';
+	import type { PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
 	import { formatTime, sessionStateLabel } from '$lib/format';
 	import {
 		applyOptimistic,
@@ -20,7 +20,7 @@
 	import Toolbar from '$lib/components/Toolbar.svelte';
 	import Preview from '$lib/components/Preview.svelte';
 	import ExportBar from '$lib/components/ExportBar.svelte';
-	import { ExportMode } from '$lib/hub/generated/Yawss.Core.Hub';
+	import { ExportMode } from '$lib/hub/generated/Yass.Core.Hub';
 
 	const client = getHub();
 	const sessions = client.sessions;
@@ -128,7 +128,7 @@
 </script>
 
 <svelte:head
-	><title>{session ? formatTime(session.CreatedAt) : 'Session'} · YAWSS</title></svelte:head
+	><title>{session ? formatTime(session.CreatedAt) : 'Session'} · YASS</title></svelte:head
 >
 
 <div class="mx-auto flex min-h-dvh max-w-6xl flex-col px-3 pt-3 pb-28">

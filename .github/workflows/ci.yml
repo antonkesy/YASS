@@ -43,7 +43,7 @@ jobs:
         run: nix develop -c bash -c 'dotnet restore && dotnet build --no-restore -c Release'
       - name: Test with coverage
         run: nix develop -c dotnet test --no-build -c Release --settings coverage.runsettings --results-directory TestResults --logger "trx"
-      - name: Coverage gate (80 % lines on Yawss.*, excluding Yawss.Fake)
+      - name: Coverage gate (80 % lines on Yass.*, excluding Yass.Fake)
         run: nix develop -c python3 scripts/coverage-gate.py --min 80
       - uses: actions/upload-artifact@v7
         if: always()

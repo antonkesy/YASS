@@ -1,0 +1,44 @@
+# Config for the demo container only. See ../yass.example.yaml for every key.
+# Paths are container paths; ./output is bind-mounted onto /data/consume.
+
+server:
+  listen: "0.0.0.0:8080" # inside the container; compose publishes it on 127.0.0.1
+  base_path: "/"
+
+scanner:
+  driver: auto # ignored: --fake replaces the backend entirely
+  device: ""
+  poll_interval_seconds: 5
+  defaults:
+    source: feeder # `flatbed` makes the fake scanner yield a single page
+    dpi: 300
+    color: color
+    page_size: a4
+    brightness: 0
+    contrast: 0
+    blank_page_detection: true # page 3 of the scripted scenario comes out blank
+    blank_page_threshold: 0.02
+    auto_deskew: false
+  ui_editable: [source, dpi, color, page_size, blank_page_detection]
+
+output:
+  directory: /data/consume # -> demo/output on the host
+  filename_template: "{date:yyyy-MM-dd}_{time:HHmm}_scan.pdf" # fake mode names files fake_<timestamp>.pdf
+  pdf:
+    compression: jpeg
+    jpeg_quality: 75
+  allow_download: true
+  on_success: keep_session
+
+processing:
+  max_concurrent_renders: 2
+  thumbnail_width: 320
+  preview_max_width: 1600
+
+sessions:
+  directory: /tmp/yass-sessions # throwaway: not a volume, dies with the container
+  retention_hours: 24
+
+logging:
+  level: info
+  format: text
