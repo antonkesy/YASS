@@ -22,4 +22,7 @@ public sealed record YassConfig
 
     [Required]
     public LoggingConfig Logging { get; init; } = new();
+
+    [Required]
+    public NamingConfig Naming { get; init; } = new();
 }

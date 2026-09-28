@@ -1,7 +1,9 @@
 using Yass.Core.Export;
+using Yass.Core.Naming;
 using Yass.Core.Scanning;
 using Yass.Export;
 using Yass.Fake;
+using Yass.Naming;
 using Yass.Scanning;
 using Yass.Server.Config;
 
@@ -30,7 +32,31 @@ public static class BackendRegistration
         });
 
         services.AddSingleton<IDocumentWriter, Naps2PdfWriter>();
-        // Until Yass.Export provides filename templating, real saves still go through the fake store.
-        services.AddSingleton<IDocumentStore>(sp => new FakeDocumentStore(sp.GetRequiredService<ConfigStore>().Current.Output.Directory));
+        services.AddSingleton<IDocumentStore>(sp =>
+        {
+            ConfigStore config = sp.GetRequiredService<ConfigStore>();
+            return new ConsumeDirectoryStore(() => config.Current.Output, sp.GetRequiredService<ILogger<ConsumeDirectoryStore>>());
+        });
+    }
+
+    /// <summary>
+    /// Name suggestion, which is off unless configured. Registered for both real and fake
+    /// backends: reading text off a fake page is exactly as meaningful a test as reading a
+    /// real one, and the suggester degrades to the template when it cannot read.
+    /// </summary>
+    public static void AddNaming(IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.AddSingleton<TesseractTextReader>();
+        services.AddHttpClient<AiNamer>();
+        services.AddSingleton<INameSuggester>(sp =>
+        {
+            ConfigStore config = sp.GetRequiredService<ConfigStore>();
+            return new NameSuggester(
+                sp.GetRequiredService<TesseractTextReader>(),
+                sp.GetRequiredService<AiNamer>(),
+                () => config.Current.Naming,
+                sp.GetRequiredService<ILogger<NameSuggester>>());
+        });
     }
 }

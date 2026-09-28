@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using Yass.Core.Export;
 
 namespace Yass.Export;
 
@@ -14,9 +15,6 @@ public static partial class FilenameTemplate
 {
     [GeneratedRegex(@"\{(?<key>[A-Za-z]+)(?::(?<fmt>[^}]*))?\}", RegexOptions.CultureInvariant)]
     private static partial Regex Placeholder();
-
-    [GeneratedRegex(@"[\x00-\x1f<>:""/\\|?*]+", RegexOptions.CultureInvariant)]
-    private static partial Regex Unsafe();
 
     /// <summary>The tokens the settings editor offers, for its chip row and its validation.</summary>
     public static readonly IReadOnlyList<string> Tokens =
@@ -68,7 +66,7 @@ public static partial class FilenameTemplate
             };
         });
 
-        string name = Unsafe().Replace(expanded, "_").Trim().TrimStart('.');
+        string name = FileNames.Sanitize(expanded);
         if (!name.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
         {
             name += extension;

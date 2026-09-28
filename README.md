@@ -13,6 +13,15 @@ review the pages, and save a PDF straight into your
 > scan, view and delete documents. It is designed for a trusted home network and
 > must **never be exposed to the internet**: bind it to a LAN address, keep it
 > behind your firewall, and do not put it behind a public reverse proxy.
+>
+> Two consequences worth knowing:
+>
+> - The **export folder is set in the browser**, so anyone who can reach the port
+>   can make YASS write a PDF to any directory its user can write to. The server
+>   checks the path is absolute, existing, a directory and writable, and nothing
+>   more. Run it as a user with no more filesystem reach than it needs.
+> - `naming.provider: anthropic` **sends the text of your documents to a third
+>   party**. It is off by default; `ollama` keeps the text on your own machine.
 
 ## What it does
 
@@ -153,6 +162,28 @@ values stop startup and name the offending key.
 Files are written atomically: the PDF is streamed to a hidden `._yass-*.tmp`
 file in the consume directory (matched by paperless' default ignore pattern) and
 renamed into place once complete, so the consumer never sees a partial document.
+
+### Naming (optional)
+
+YASS can suggest a file name from what is printed on the page. Everything here is
+off by default — this is the only part of YASS that reads your documents.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `naming.ocr` | `false` | Read page text. Needs the `tesseract` binary on PATH (in the Docker image and the Nix package already). |
+| `naming.ocr_language` | `eng` | Tesseract language code. |
+| `naming.ocr_pages` | `2` | How many pages to read; a title is almost always on the first. |
+| `naming.provider` | `off` | `off`, `ollama` or `anthropic`. |
+| `naming.endpoint` | `""` | Base URL; defaults to `http://127.0.0.1:11434` for `ollama`. |
+| `naming.model` | `llama3.2` | Model name to ask. |
+| `naming.api_key_file` | `""` | Path to a file holding the API key. Never the key itself. |
+| `naming.timeout_seconds` | `20` | Per-request timeout. |
+
+With `ocr: true` and `provider: off` you get a suggestion from the largest heading
+on the page plus one from your filename template, and nothing leaves the machine.
+Adding `provider: ollama` asks a local model to summarise the page instead;
+`anthropic` sends the page text to Anthropic's API. The suggestions popover says
+which of those is happening.
 
 ## Scanner setup
 

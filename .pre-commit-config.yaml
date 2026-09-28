@@ -27,7 +27,7 @@ repos:
         args:
           - --strict
           - --scopes
-          - core,fake,server,web,scanning,export,nix,docker,ci,dotnet,deps
+          - core,fake,server,web,scanning,export,naming,nix,docker,ci,dotnet,deps
 
   - repo: local
     hooks:

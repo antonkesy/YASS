@@ -1,5 +1,6 @@
 using Tapper;
 using Yass.Core.Domain;
+using Yass.Core.Naming;
 using Yass.Core.Scanning;
 
 namespace Yass.Core.Hub;
@@ -60,6 +61,12 @@ public sealed record ScanOptionsDto(
     bool? AutoDeskew = null,
     string[]? Editable = null,
     bool? AllowDownload = null);
+
+/// <param name="Suggestions">Best first.</param>
+/// <param name="CanRead">Whether page text could be read at all; the UI hides Find name when not.</param>
+/// <param name="Local">Whether the text stayed on the scanner server, which the UI says out loud.</param>
+[TranspilationSource]
+public sealed record NameSuggestionsDto(NameSuggestion[] Suggestions, bool CanRead, bool Local);
 
 [TranspilationSource]
 public sealed record ScannerStatusDto(ScannerState State, string? DeviceName, string? Message, string CheckedAt);
