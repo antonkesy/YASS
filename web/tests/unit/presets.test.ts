@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ColorMode, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
+import { ColorMode, PageSize, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
 import { activePreset, defaultPresets, matchesPreset } from '$lib/presets';
 
 describe('presets', () => {
@@ -17,5 +17,31 @@ describe('presets', () => {
 		expect(
 			activePreset(defaultPresets, { Source: ScanSource.Feeder, Color: ColorMode.Bw, Dpi: 1200 })
 		).toBeNull();
+	});
+});
+
+describe('preset matching against planned options', () => {
+	// The stage compares presets to what the next scan will do (defaults + overrides),
+	// so a browser that has never changed anything still lights up the matching preset.
+	it('matches the server defaults when nothing is overridden', () => {
+		const planned = {
+			Source: ScanSource.Feeder,
+			Color: ColorMode.Color,
+			Dpi: 300,
+			PageSize: PageSize.A4,
+			BlankPageDetection: true,
+			Editable: ['source', 'dpi']
+		};
+		expect(activePreset(defaultPresets, planned)?.id).toBe('document');
+	});
+
+	it('falls back to no preset once an override diverges', () => {
+		const planned = {
+			Source: ScanSource.Duplex,
+			Color: ColorMode.Color,
+			Dpi: 600,
+			PageSize: PageSize.A4
+		};
+		expect(activePreset(defaultPresets, planned)).toBeNull();
 	});
 });
