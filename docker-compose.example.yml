@@ -2,7 +2,7 @@
 # YAWSS has NO authentication: bind to a LAN address and never publish it to the internet.
 services:
   yawss:
-    image: ghcr.io/OWNER/yawss:latest # replace OWNER, or `build: .`
+    build: . # built from a checkout of this repo; no prebuilt image is published
     container_name: yawss
     restart: unless-stopped
     ports:

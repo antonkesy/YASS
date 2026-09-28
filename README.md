@@ -42,7 +42,7 @@ directories, no database.
 ```yaml
 services:
   yawss:
-    image: ghcr.io/OWNER/yawss:latest
+    build: .                            # clone this repo; no prebuilt image is published
     restart: unless-stopped
     ports:
       - "192.168.1.10:8080:8080"        # LAN address of the host
@@ -69,7 +69,8 @@ open http://192.168.1.10:8080
 Try it without a scanner:
 
 ```sh
-docker run --rm -p 8080:8080 ghcr.io/OWNER/yawss:latest --fake
+docker build -t yawss .
+docker run --rm -p 8080:8080 yawss --fake
 ```
 
 ### NixOS
