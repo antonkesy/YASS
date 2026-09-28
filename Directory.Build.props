@@ -25,7 +25,11 @@
   <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <!-- CA1707: underscores in test method names are conventional. CA1001: xunit IAsyncLifetime owns fixtures. -->
+    <!-- xunit.v3 test projects must be executables; the package supplies the entry point and sets
+         UseAppHost, GenerateProgramFile and TestProject itself. -->
+    <OutputType>Exe</OutputType>
+    <!-- CA1707: underscores in test method names are conventional.
+         CA1001: v3's IAsyncLifetime derives from IAsyncDisposable, which CA1001 does not accept. -->
     <NoWarn>$(NoWarn);CA1707;CA1001</NoWarn>
   </PropertyGroup>
 
@@ -34,7 +38,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="NSubstitute" />
     <PackageReference Include="NSubstitute.Analyzers.CSharp" />
-    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.v3.mtp-off" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <Using Include="Xunit" />
   </ItemGroup>

@@ -30,6 +30,10 @@ dotnet_diagnostic.CA1515.severity = none
 # CA1873: the flagged log arguments are property reads and counts, not work worth guarding.
 # Same reasoning as CA1848 above: this is a single-user home server, not a hot path.
 dotnet_diagnostic.CA1873.severity = none
+# xUnit1051: v3 offers TestContext.Current.CancellationToken so tests honour their own timeout.
+# Worth adopting, but it is ~50 call sites of behaviour change and does not belong in a version
+# migration. Off until that is done deliberately.
+dotnet_diagnostic.xUnit1051.severity = none
 
 [*.{csproj,props,targets,sln}]
 indent_size = 2
