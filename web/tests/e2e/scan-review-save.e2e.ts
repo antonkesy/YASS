@@ -82,11 +82,12 @@ test('scan, review, edit, download and save', async ({ page }) => {
 	await expect(page.getByTestId('saved-message')).toBeVisible({ timeout: 20_000 });
 	await expect(page.getByTestId('session-state')).toHaveText('Saved');
 
-	// Home lists it as saved with the active page count.
+	// Home lists it as exported with the active page count. Save writes to the configured
+	// output directory, which is what "Exported" means; "Saved" is a chosen folder.
 	await page.getByRole('link', { name: 'Back to home' }).click();
 	const list = page.getByTestId('session-list');
-	await expect(list.getByText('Saved').first()).toBeVisible();
-	await expect(list.getByText('2 / 3 pages').first()).toBeVisible();
+	await expect(list.getByTestId('session-status').first()).toHaveText('Exported');
+	await expect(list.getByTestId('session-tile').first()).toContainText('2 p');
 });
 
 test('settings only expose ui_editable keys and are applied to the next scan', async ({ page }) => {

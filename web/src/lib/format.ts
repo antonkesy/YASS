@@ -1,4 +1,10 @@
-import { ColorMode, PageSize, ScanSource, SessionState } from './hub/generated/Yass.Core.Domain';
+import {
+	ColorMode,
+	PageSize,
+	ScanSource,
+	SessionEventKind,
+	SessionState
+} from './hub/generated/Yass.Core.Domain';
 import { ScannerState } from './hub/generated/Yass.Core.Scanning';
 import type { SessionDto } from './hub/generated/Yass.Core.Hub';
 
@@ -93,4 +99,67 @@ export function pageSizeLabel(size: PageSize | undefined): string {
 /** True when the scan will pull sheets through the feeder rather than use the glass. */
 export function usesFeeder(source: ScanSource | undefined): boolean {
 	return source === ScanSource.Feeder || source === ScanSource.Duplex;
+}
+
+/**
+ * What a past scan shows as its status. Derived from the session's history rather
+ * than stored: no events means it is still a draft, and a busy state outranks the
+ * history because it says what is happening right now.
+ */
+export type SessionStatus =
+	'draft' | 'scanning' | 'exporting' | 'exported' | 'saved' | 'downloaded' | 'discarded' | 'failed';
+
+export function sessionStatus(session: SessionDto): SessionStatus {
+	if (session.State === SessionState.Scanning) return 'scanning';
+	if (session.State === SessionState.Exporting) return 'exporting';
+	if (session.State === SessionState.Failed) return 'failed';
+
+	const last = session.Events.at(-1);
+	if (!last) return 'draft';
+	switch (last.Kind) {
+		case SessionEventKind.Exported:
+			return 'exported';
+		case SessionEventKind.Saved:
+			return 'saved';
+		case SessionEventKind.Downloaded:
+			return 'downloaded';
+		case SessionEventKind.Discarded:
+			return 'discarded';
+		default:
+			return 'draft';
+	}
+}
+
+export const statusLabels: Record<SessionStatus, string> = {
+	draft: 'Draft',
+	scanning: 'Scanning',
+	exporting: 'Saving',
+	exported: 'Exported',
+	saved: 'Saved',
+	downloaded: 'Downloaded',
+	discarded: 'Discarded',
+	failed: 'Failed'
+};
+
+/** The name the user gave a scan, or its timestamp when they have not named it. */
+export function sessionTitle(session: SessionDto, now: Date = new Date()): string {
+	return session.Name?.trim() || formatTime(session.CreatedAt, now);
+}
+
+/** Where a session's document ended up, when its last event produced a file. */
+export function lastEventPath(session: SessionDto): string | null {
+	return session.Events.at(-1)?.Path ?? null;
+}
+
+export function formatBytes(bytes: number): string {
+	if (bytes <= 0) return '0 kB';
+	if (bytes < 1000) return '1 kB';
+	const units = ['kB', 'MB', 'GB'];
+	let value = bytes / 1000;
+	let unit = 0;
+	while (value >= 1000 && unit < units.length - 1) {
+		value /= 1000;
+		unit += 1;
+	}
+	return `${value < 10 && unit > 0 ? value.toFixed(1) : Math.round(value)} ${units[unit]}`;
 }

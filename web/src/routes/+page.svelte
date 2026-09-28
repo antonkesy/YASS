@@ -44,6 +44,15 @@
 		}
 	}
 
+	async function clearAll() {
+		error = null;
+		try {
+			await client.hub.clearSessions();
+		} catch (e) {
+			error = e instanceof Error ? e.message : String(e);
+		}
+	}
+
 	function openSettings() {
 		void goto(resolve('/settings'));
 	}
@@ -68,6 +77,6 @@
 			onscan={scan}
 			onsettings={openSettings}
 		/>
-		<PastScansPanel sessions={recent} />
+		<PastScansPanel sessions={recent} onclear={clearAll} />
 	</div>
 </main>
