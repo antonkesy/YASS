@@ -8,7 +8,7 @@ public class PageEditsTests
         "s1",
         DateTimeOffset.UnixEpoch,
         SessionState.Review,
-        Enumerable.Range(0, pages).Select(i => PageHash.Rehash(new Page(i, $"page-{i}.png", Rotation.R0, null, false, false, $"src{i}", ""), ColorMode.Grayscale)).ToArray(),
+        Enumerable.Range(0, pages).Select(i => PageHash.Rehash(new Page(i, $"page-{i}.png", Rotation.R0, PageFilter.Original, null, false, false, $"src{i}", ""), ColorMode.Grayscale)).ToArray(),
         new ScanOptions());
 
     [Fact]
@@ -55,27 +55,63 @@ public class PageEditsTests
     }
 
     [Fact]
-    public void SetColor_override_changes_hash_and_null_clears_it()
+    public void SetFilter_changes_hash_and_original_restores_it()
     {
         Session before = Session(1);
 
-        Session colored = PageEdits.Apply(before, [PageEdit.SetColor(ColorMode.Color, 0)]);
-        Session cleared = PageEdits.Apply(colored, [PageEdit.SetColor(null, 0)]);
+        Session bw = PageEdits.Apply(before, [PageEdit.SetFilter(PageFilter.Bw, 0)]);
+        Session back = PageEdits.Apply(bw, [PageEdit.SetFilter(PageFilter.Original, 0)]);
 
-        Assert.Equal(ColorMode.Color, colored.Pages[0].ColorOverride);
-        Assert.NotEqual(before.Pages[0].Hash, colored.Pages[0].Hash);
-        Assert.Null(cleared.Pages[0].ColorOverride);
+        Assert.Equal(PageFilter.Bw, bw.Pages[0].Filter);
+        Assert.NotEqual(before.Pages[0].Hash, bw.Pages[0].Hash);
+        Assert.Equal(PageFilter.Original, back.Pages[0].Filter);
+        Assert.Equal(before.Pages[0].Hash, back.Pages[0].Hash);
+    }
+
+    [Fact]
+    public void Grayscale_filter_on_a_grayscale_scan_still_gets_its_own_hash()
+    {
+        // The rendered pixels match, but the two are different edits and a later change to
+        // what Grayscale means must not be served from the Original cache entry.
+        Session before = Session(1);
+
+        Session same = PageEdits.Apply(before, [PageEdit.SetFilter(PageFilter.Grayscale, 0)]);
+
+        Assert.NotEqual(before.Pages[0].Hash, same.Pages[0].Hash);
+    }
+
+    [Fact]
+    public void Enhance_keeps_the_scan_colour_but_changes_the_hash()
+    {
+        Session before = Session(1);
+
+        Session enhanced = PageEdits.Apply(before, [PageEdit.SetFilter(PageFilter.Enhance, 0)]);
+
+        Assert.Equal(ColorMode.Grayscale, PageFilter.Enhance.ColorFor(ColorMode.Grayscale));
+        Assert.NotEqual(before.Pages[0].Hash, enhanced.Pages[0].Hash);
+    }
+
+    [Fact]
+    public void SetCrop_changes_hash_and_an_empty_box_clears_it()
+    {
+        Session before = Session(1);
+
+        Session cropped = PageEdits.Apply(before, [PageEdit.SetCrop(new CropBox(5, 10, 5, 10), 0)]);
+        Session cleared = PageEdits.Apply(cropped, [PageEdit.SetCrop(null, 0)]);
+
+        Assert.Equal(new CropBox(5, 10, 5, 10), cropped.Pages[0].Crop);
+        Assert.NotEqual(before.Pages[0].Hash, cropped.Pages[0].Hash);
+        Assert.Null(cleared.Pages[0].Crop);
         Assert.Equal(before.Pages[0].Hash, cleared.Pages[0].Hash);
     }
 
     [Fact]
-    public void Override_equal_to_session_color_yields_same_hash_as_no_override()
+    public void A_crop_that_would_leave_nothing_is_rejected()
     {
         Session before = Session(1);
 
-        Session same = PageEdits.Apply(before, [PageEdit.SetColor(ColorMode.Grayscale, 0)]);
-
-        Assert.Equal(before.Pages[0].Hash, same.Pages[0].Hash);
+        Assert.Throws<ArgumentException>(() => PageEdits.Apply(before, [PageEdit.SetCrop(new CropBox(60, 0, 60, 0), 0)]));
+        Assert.Throws<ArgumentException>(() => PageEdits.Apply(before, [PageEdit.SetCrop(new CropBox(-1, 0, 0, 0), 0)]));
     }
 
     [Fact]

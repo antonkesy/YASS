@@ -117,6 +117,10 @@ class IYassHub_HubProxy implements IYassHub {
         return await this.connection.invoke("ApplyEdits", sessionId, edits);
     }
 
+    public readonly rescanPage = async (sessionId: string, pageIndex: number): Promise<SessionDto> => {
+        return await this.connection.invoke("RescanPage", sessionId, pageIndex);
+    }
+
     public readonly export = async (sessionId: string, request: ExportRequest): Promise<ExportResult> => {
         return await this.connection.invoke("Export", sessionId, request);
     }

@@ -1,5 +1,5 @@
-import { ColorMode, PageEditOp, Rotation } from '$lib/hub/generated/Yass.Core.Domain';
-import type { PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
+import { ColorMode, PageEditOp, PageFilter, Rotation } from '$lib/hub/generated/Yass.Core.Domain';
+import type { CropBox, PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
 import type { PageDto, SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 
 /** Empty selection means "all pages", mirroring PageEdit.Targets = null on the server. */
@@ -7,27 +7,36 @@ export function targetsOf(selection: ReadonlySet<number>): number[] | undefined 
 	return selection.size === 0 ? undefined : [...selection].sort((a, b) => a - b);
 }
 
+/**
+ * Every edit carries the full payload shape, so one builder fills in the fields an op
+ * does not use rather than each of them repeating the defaults.
+ */
+function edit(Op: PageEditOp, extra: Partial<PageEdit> = {}): PageEdit {
+	return { Op, Degrees: 0, Filter: PageFilter.Original, ...extra };
+}
+
 export function rotateEdit(degrees: 90 | -90 | 180, selection: ReadonlySet<number>): PageEdit {
-	return { Op: PageEditOp.Rotate, Degrees: degrees, Targets: targetsOf(selection) };
+	return edit(PageEditOp.Rotate, { Degrees: degrees, Targets: targetsOf(selection) });
 }
 
 export function deleteEdit(selection: ReadonlySet<number>): PageEdit {
-	return { Op: PageEditOp.Delete, Degrees: 0, Targets: targetsOf(selection) };
+	return edit(PageEditOp.Delete, { Targets: targetsOf(selection) });
 }
 
 export function restoreEdit(selection: ReadonlySet<number>): PageEdit {
-	return { Op: PageEditOp.Restore, Degrees: 0, Targets: targetsOf(selection) };
+	return edit(PageEditOp.Restore, { Targets: targetsOf(selection) });
 }
 
-export function setColorEdit(
-	color: ColorMode | undefined,
-	selection: ReadonlySet<number>
-): PageEdit {
-	return { Op: PageEditOp.SetColor, Degrees: 0, Color: color, Targets: targetsOf(selection) };
+export function setFilterEdit(filter: PageFilter, selection: ReadonlySet<number>): PageEdit {
+	return edit(PageEditOp.SetFilter, { Filter: filter, Targets: targetsOf(selection) });
+}
+
+export function setCropEdit(crop: CropBox | undefined, selection: ReadonlySet<number>): PageEdit {
+	return edit(PageEditOp.SetCrop, { Crop: crop, Targets: targetsOf(selection) });
 }
 
 export function reorderEdit(order: number[]): PageEdit {
-	return { Op: PageEditOp.Reorder, Degrees: 0, Order: order };
+	return edit(PageEditOp.Reorder, { Order: order });
 }
 
 export function rotate(rotation: Rotation, degrees: number): Rotation {
@@ -55,8 +64,10 @@ export function applyOptimistic(session: SessionDto, edit: PageEdit): SessionDto
 				return { ...page, Deleted: true };
 			case PageEditOp.Restore:
 				return { ...page, Deleted: false };
-			case PageEditOp.SetColor:
-				return { ...page, ColorOverride: edit.Color };
+			case PageEditOp.SetFilter:
+				return { ...page, Filter: edit.Filter };
+			case PageEditOp.SetCrop:
+				return { ...page, Crop: edit.Crop };
 			default:
 				return page;
 		}
@@ -68,4 +79,22 @@ export const colorModeLabels: Record<ColorMode, string> = {
 	[ColorMode.Bw]: 'Black & white',
 	[ColorMode.Grayscale]: 'Grayscale',
 	[ColorMode.Color]: 'Color'
+};
+
+/**
+ * The four treatments the filter menu offers, with the swatch each one shows. The
+ * gradients are the mockup's: half blank page, half what the filter does to it.
+ */
+export const pageFilters = [
+	{ value: PageFilter.Original, label: 'Original', swatch: '#fff 50%, #60a5fa 50%' },
+	{ value: PageFilter.Enhance, label: 'Enhance', swatch: '#fff 50%, #2b5cf0 50%' },
+	{ value: PageFilter.Grayscale, label: 'Grayscale', swatch: '#f5f5f5 50%, #98989b 50%' },
+	{ value: PageFilter.Bw, label: 'Black & white', swatch: '#f5f5f5 50%, #111 50%' }
+] as const;
+
+export const pageFilterLabels: Record<PageFilter, string> = {
+	[PageFilter.Original]: 'Original',
+	[PageFilter.Enhance]: 'Enhance',
+	[PageFilter.Grayscale]: 'Grayscale',
+	[PageFilter.Bw]: 'Black & white'
 };

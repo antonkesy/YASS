@@ -33,6 +33,9 @@ public interface IYassHub
 
     Task<SessionDto> ApplyEdits(string sessionId, PageEdit[] edits);
 
+    /// <summary>Scans one sheet and puts it in place of <paramref name="pageIndex"/>, keeping that page's edits.</summary>
+    Task<SessionDto> RescanPage(string sessionId, int pageIndex);
+
     Task<ExportResult> Export(string sessionId, ExportRequest request);
 
     Task<ScannerStatusDto> GetScannerStatus();

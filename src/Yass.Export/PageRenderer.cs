@@ -26,25 +26,7 @@ public static class PageRenderer
         string path = Path.Combine(directory, Guid.NewGuid().ToString("N") + (lossless ? ".png" : ".jpg"));
 
         using Image image = await Image.LoadAsync(page.SourcePath, cancellationToken).ConfigureAwait(false);
-        image.Mutate(ctx =>
-        {
-            if (page.Rotation != Rotation.R0)
-            {
-                ctx.Rotate((float)(int)page.Rotation);
-            }
-
-            switch (page.ColorMode)
-            {
-                case ColorMode.Grayscale:
-                    ctx.Grayscale();
-                    break;
-                case ColorMode.Bw:
-                    ctx.Grayscale().BinaryThreshold(0.55f);
-                    break;
-                default:
-                    break;
-            }
-        });
+        image.Mutate(ctx => PagePipeline.Apply(ctx, page.Rotation, page.Filter, page.ScanColor, page.Crop));
 
         // ImageSharp reports 96 dpi for files without resolution metadata, so "absent" is indistinguishable
         // from "96"; the scan resolution is authoritative and is stamped unconditionally.

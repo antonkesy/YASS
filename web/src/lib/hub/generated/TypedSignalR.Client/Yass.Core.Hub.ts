@@ -62,6 +62,13 @@ export type IYassHub = {
     */
     applyEdits(sessionId: string, edits: PageEdit[]): Promise<SessionDto>;
     /**
+    * Scans one sheet and puts it in place of , keeping that page's edits.
+    * @param sessionId Transpiled from string
+    * @param pageIndex Transpiled from int
+    * @returns Transpiled from System.Threading.Tasks.Task<Yass.Core.Hub.SessionDto>
+    */
+    rescanPage(sessionId: string, pageIndex: number): Promise<SessionDto>;
+    /**
     * @param sessionId Transpiled from string
     * @param request Transpiled from Yass.Core.Hub.ExportRequest
     * @returns Transpiled from System.Threading.Tasks.Task<Yass.Core.Hub.ExportResult>

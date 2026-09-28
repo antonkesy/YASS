@@ -134,6 +134,20 @@ public sealed class YassHub(
         }
     }
 
+    public async Task<SessionDto> RescanPage(string sessionId, int pageIndex)
+    {
+        Find(sessionId);
+        try
+        {
+            await scans.RescanPageAsync(sessionId, pageIndex, Context.ConnectionAborted).ConfigureAwait(false);
+            return mapper.ToDto(Find(sessionId));
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentOutOfRangeException)
+        {
+            throw new HubException(ex.Message);
+        }
+    }
+
     public async Task<ExportResult> Export(string sessionId, ExportRequest request)
     {
         Find(sessionId);

@@ -4,16 +4,18 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { getHub, imageUrl } from '$lib/hub/hub';
-	import { SessionState, type ColorMode } from '$lib/hub/generated/Yass.Core.Domain';
-	import type { PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
-	import { activePageCount, colorLabel, formatTime, sessionStateLabel } from '$lib/format';
+	import { PageFilter, SessionState } from '$lib/hub/generated/Yass.Core.Domain';
+	import type { CropBox, PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
+	import { activePageCount, formatTime, sessionStateLabel } from '$lib/format';
 	import {
 		applyOptimistic,
 		deleteEdit,
 		reorderEdit,
 		restoreEdit,
 		rotateEdit,
-		setColorEdit
+		setCropEdit,
+		setFilterEdit,
+		pageFilterLabels
 	} from '$lib/review/edits';
 	import { clear, prune, toggle } from '$lib/review/selection';
 	import PageGrid from '$lib/components/PageGrid.svelte';
@@ -22,6 +24,7 @@
 	import ExportBar from '$lib/components/ExportBar.svelte';
 	import { Icon } from '$lib/icons';
 	import NameField from '$lib/components/NameField.svelte';
+	import CropModal from '$lib/components/CropModal.svelte';
 	import { ExportMode } from '$lib/hub/generated/Yass.Core.Hub';
 
 	const client = getHub();
@@ -49,6 +52,8 @@
 		}
 	});
 	let previewIndex = $state<number | null>(null);
+	/** Position of the page the crop dialog is open on, or null. */
+	let cropping = $state<number | null>(null);
 
 	$effect(() => {
 		if ($connection === 'connected' && !$sessions.has(id)) {
@@ -78,13 +83,12 @@
 
 	const shown = $derived(session?.Pages[current] ?? null);
 	const filters = $derived(
-		new Set((session?.Pages ?? []).filter((p) => !p.Deleted).map((p) => p.ColorOverride))
+		new Set((session?.Pages ?? []).filter((p) => !p.Deleted).map((p) => p.Filter))
 	);
 	const filterLabel = $derived(
-		filters.size > 1
-			? 'Mixed'
-			: colorLabel([...filters][0] ?? session?.OptionsUsed.Color) || 'Scan default'
+		filters.size > 1 ? 'Mixed' : pageFilterLabels[[...filters][0] ?? PageFilter.Original]
 	);
+	const cropped = $derived((session?.Pages ?? []).filter((p) => !p.Deleted && p.Crop).length);
 
 	async function send(edit: PageEdit) {
 		if (!session) return;
@@ -150,6 +154,33 @@
 		const at = session?.Pages.findIndex((p) => p.Index === index) ?? -1;
 		if (at >= 0) current = at;
 		selection = toggle(selection, index);
+	}
+
+	/** Crop and rescan act on the one selected page, or the one on screen. */
+	function targetPage() {
+		if (selection.size === 1) {
+			const only = [...selection][0];
+			const at = session?.Pages.findIndex((p) => p.Index === only) ?? -1;
+			if (at >= 0) return at;
+		}
+		return current;
+	}
+
+	async function rescan() {
+		const page = session?.Pages[targetPage()];
+		if (!page) return;
+		error = null;
+		try {
+			await client.hub.rescanPage(id, page.Index);
+		} catch (e) {
+			error = e instanceof Error ? e.message : String(e);
+		}
+	}
+
+	function applyCrop(crop: CropBox | undefined) {
+		const page = cropping !== null ? session?.Pages[cropping] : null;
+		cropping = null;
+		if (page) send(setCropEdit(crop, new Set([page.Index])));
 	}
 
 	function step(delta: number) {
@@ -305,7 +336,10 @@
 					onrotate={(deg) => send(rotateEdit(deg, selection))}
 					ondelete={() => send(deleteEdit(selection))}
 					onrestore={() => send(restoreEdit(selection))}
-					oncolor={(mode: ColorMode | undefined) => send(setColorEdit(mode, selection))}
+					onfilter={(filter) => send(setFilterEdit(filter, selection))}
+					oncrop={() => (cropping = targetPage())}
+					onrescan={rescan}
+					{scanning}
 					onclear={() => (selection = clear())}
 				/>
 			</main>
@@ -332,9 +366,13 @@
 						<p class="text-xs text-ink-muted">Documents</p>
 						<p class="text-[18px] font-extrabold tracking-[-0.01em] tabular-nums">1</p>
 					</div>
-					<div class="col-span-2 rounded-[14px] bg-app p-3">
+					<div class="rounded-[14px] bg-app p-3">
 						<p class="text-xs text-ink-muted">Filter</p>
-						<p class="text-[18px] font-extrabold tracking-[-0.01em]">{filterLabel}</p>
+						<p class="truncate text-[18px] font-extrabold tracking-[-0.01em]">{filterLabel}</p>
+					</div>
+					<div class="rounded-[14px] bg-app p-3">
+						<p class="text-xs text-ink-muted">Cropped</p>
+						<p class="text-[18px] font-extrabold tracking-[-0.01em] tabular-nums">{cropped}</p>
 					</div>
 				</div>
 
@@ -352,6 +390,16 @@
 		</div>
 	{/if}
 </div>
+
+{#if cropping !== null && session?.Pages[cropping]}
+	<CropModal
+		src={imageUrl(id, session.Pages[cropping].Index, session.Pages[cropping].Hash, 'preview')}
+		alt="Page {session.Pages[cropping].Index + 1}"
+		crop={session.Pages[cropping].Crop ?? null}
+		onapply={applyCrop}
+		oncancel={() => (cropping = null)}
+	/>
+{/if}
 
 <!-- Outside the container above: an animated ancestor would trap this overlay under the header. -->
 {#if previewIndex !== null && session}

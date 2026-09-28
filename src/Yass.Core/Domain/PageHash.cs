@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -10,10 +11,15 @@ public static class PageHash
 
     public static string OfBytes(ReadOnlySpan<byte> bytes) => Convert.ToHexString(SHA256.HashData(bytes))[..Length].ToLowerInvariant();
 
-    /// <summary>Hash for rendering <paramref name="sourceHash"/> with the given rotation and effective colour mode.</summary>
-    public static string Derive(string sourceHash, Rotation rotation, ColorMode colorMode)
+    /// <summary>Hash for rendering <paramref name="sourceHash"/> with the given edits. Every input that changes a pixel belongs here.</summary>
+    public static string Derive(string sourceHash, Rotation rotation, PageFilter filter, ColorMode scanned, CropBox? crop)
     {
-        string key = $"{sourceHash}|{(int)rotation}|{(int)colorMode}";
+        string box = crop is null || crop.IsEmpty()
+            ? "-"
+            : string.Create(CultureInfo.InvariantCulture, $"{crop.Top}/{crop.Right}/{crop.Bottom}/{crop.Left}");
+        string key = string.Create(
+            CultureInfo.InvariantCulture,
+            $"{sourceHash}|{(int)rotation}|{(int)filter}|{(int)filter.ColorFor(scanned)}|{box}");
         return OfBytes(Encoding.UTF8.GetBytes(key));
     }
 
@@ -21,6 +27,6 @@ public static class PageHash
     public static Page Rehash(Page page, ColorMode sessionColor)
     {
         ArgumentNullException.ThrowIfNull(page);
-        return page with { Hash = Derive(page.SourceHash, page.Rotation, page.ColorOverride ?? sessionColor) };
+        return page with { Hash = Derive(page.SourceHash, page.Rotation, page.Filter, sessionColor, page.Crop) };
     }
 }

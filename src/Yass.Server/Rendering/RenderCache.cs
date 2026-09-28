@@ -39,13 +39,12 @@ public sealed class RenderCache(SessionStore store, ImageRenderer renderer, Conf
 
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         int width = kind == ImageKind.Thumb ? config.Current.Processing.ThumbnailWidth : config.Current.Processing.PreviewMaxWidth;
-        ColorMode color = page.ColorOverride ?? session.OptionsUsed.Color;
         string temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try
         {
             await using (FileStream output = File.Create(temp))
             {
-                await renderer.RenderAsync(SessionPaths.Source(store.Root, session, page), page.Rotation, color, width, output, cancellationToken).ConfigureAwait(false);
+                await renderer.RenderAsync(SessionPaths.Source(store.Root, session, page), page, session.OptionsUsed.Color, width, output, cancellationToken).ConfigureAwait(false);
             }
 
             File.Move(temp, path, overwrite: true);

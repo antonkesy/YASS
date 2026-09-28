@@ -2,6 +2,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Processing;
 using Yass.Core.Domain;
+using Yass.Export;
 using Yass.Server.Config;
 
 namespace Yass.Server.Rendering;
@@ -17,31 +18,16 @@ public sealed class ImageRenderer : IDisposable
         _slots = new SemaphoreSlim(config.Current.Processing.MaxConcurrentRenders);
     }
 
-    public async Task RenderAsync(string sourcePath, Rotation rotation, ColorMode color, int maxWidth, Stream destination, CancellationToken cancellationToken)
+    public async Task RenderAsync(string sourcePath, Page page, ColorMode scanColor, int maxWidth, Stream destination, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(page);
         await _slots.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             using Image image = await Image.LoadAsync(sourcePath, cancellationToken).ConfigureAwait(false);
             image.Mutate(ctx =>
             {
-                if (rotation != Rotation.R0)
-                {
-                    ctx.Rotate((float)(int)rotation);
-                }
-
-                switch (color)
-                {
-                    case ColorMode.Grayscale:
-                        ctx.Grayscale();
-                        break;
-                    case ColorMode.Bw:
-                        ctx.Grayscale().BinaryThreshold(0.55f);
-                        break;
-                    case ColorMode.Color:
-                    default:
-                        break;
-                }
+                PagePipeline.Apply(ctx, page.Rotation, page.Filter, scanColor, page.Crop);
 
                 if (ctx.GetCurrentSize().Width > maxWidth)
                 {

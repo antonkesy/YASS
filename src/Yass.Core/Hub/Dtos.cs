@@ -33,11 +33,13 @@ public sealed record SessionEventDto(SessionEventKind Kind, string At, string? P
 public sealed record PageDto(
     int Index,
     Rotation Rotation,
-    ColorMode? ColorOverride,
+    PageFilter Filter,
+    CropBox? Crop,
     bool Deleted,
     bool IsBlank,
     string Hash,
     bool ThumbnailReady);
+
 
 /// <summary>
 /// Scan options on the wire. Every field is optional: as a <c>StartScan</c> argument only the keys in

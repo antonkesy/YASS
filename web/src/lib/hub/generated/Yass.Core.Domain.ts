@@ -9,6 +9,18 @@ export enum ColorMode {
     Color = 2,
 }
 
+/** Transpiled from Yass.Core.Domain.CropBox */
+export type CropBox = {
+    /** Transpiled from double */
+    Top: number;
+    /** Transpiled from double */
+    Right: number;
+    /** Transpiled from double */
+    Bottom: number;
+    /** Transpiled from double */
+    Left: number;
+}
+
 /** Transpiled from Yass.Core.Domain.PageEdit */
 export type PageEdit = {
     /** Transpiled from Yass.Core.Domain.PageEditOp */
@@ -17,8 +29,10 @@ export type PageEdit = {
     Targets?: number[];
     /** Transpiled from int */
     Degrees: number;
-    /** Transpiled from Yass.Core.Domain.ColorMode */
-    Color?: ColorMode;
+    /** Transpiled from Yass.Core.Domain.PageFilter */
+    Filter: PageFilter;
+    /** Transpiled from Yass.Core.Domain.CropBox? */
+    Crop?: CropBox;
     /** Transpiled from System.Collections.Generic.IReadOnlyList<int>? */
     Order?: number[];
 }
@@ -28,8 +42,17 @@ export enum PageEditOp {
     Rotate = 0,
     Delete = 1,
     Restore = 2,
-    SetColor = 3,
+    SetFilter = 3,
     Reorder = 4,
+    SetCrop = 5,
+}
+
+/** Transpiled from Yass.Core.Domain.PageFilter */
+export enum PageFilter {
+    Original = 0,
+    Enhance = 1,
+    Grayscale = 2,
+    Bw = 3,
 }
 
 /** Transpiled from Yass.Core.Domain.PageSize */

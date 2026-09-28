@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using Microsoft.AspNetCore.SignalR;
+using SixLabors.ImageSharp;
 using Yass.Core.Domain;
 using Yass.Core.Hub;
 using Yass.Fake;
@@ -32,16 +33,69 @@ public sealed class EditAndImageTests : IAsyncLifetime
         SessionDto done = await _hub.ScanToEnd();
         string hashBefore = done.Pages[0].Hash;
 
-        SessionDto edited = await _hub.ApplyEdits(done.Id, PageEdit.Rotate(90, 0), PageEdit.Restore(1), PageEdit.SetColor(ColorMode.Color, 2));
+        SessionDto edited = await _hub.ApplyEdits(done.Id, PageEdit.Rotate(90, 0), PageEdit.Restore(1), PageEdit.SetFilter(PageFilter.Bw, 2));
 
         Assert.Equal(Rotation.R90, edited.Pages[0].Rotation);
         Assert.NotEqual(hashBefore, edited.Pages[0].Hash);
         Assert.False(edited.Pages[1].Deleted);
-        Assert.Equal(ColorMode.Color, edited.Pages[2].ColorOverride);
+        Assert.Equal(PageFilter.Bw, edited.Pages[2].Filter);
         Assert.Contains(_hub.PagesUpdated, p => p.SessionId == done.Id && p.Page.Index == 0 && p.Page.Rotation == Rotation.R90);
 
         SessionDto reloaded = await _hub.GetSession(done.Id);
         Assert.Equal(edited.Pages.Select(p => p.Hash), reloaded.Pages.Select(p => p.Hash));
+    }
+
+    [Fact]
+    public async Task Crop_survives_the_round_trip_and_is_rendered()
+    {
+        SessionDto done = await _hub.ScanToEnd();
+        string before = done.Pages[0].Hash;
+
+        SessionDto cropped = await _hub.ApplyEdits(done.Id, PageEdit.SetCrop(new CropBox(10, 20, 10, 20), 0));
+
+        CropBox box = Assert.IsType<CropBox>(cropped.Pages[0].Crop);
+        Assert.Equal(10, box.Top);
+        Assert.Equal(20, box.Right);
+        Assert.NotEqual(before, cropped.Pages[0].Hash);
+
+        // A cropped page renders narrower than the same page uncropped.
+        HttpClient http = _factory.CreateClient();
+        using var full = await Image.LoadAsync(await (await http.GetAsync(new Uri($"/img/{done.Id}/1/preview?h={done.Pages[1].Hash}", UriKind.Relative))).Content.ReadAsStreamAsync());
+        using var trimmed = await Image.LoadAsync(await (await http.GetAsync(new Uri($"/img/{done.Id}/0/preview?h={cropped.Pages[0].Hash}", UriKind.Relative))).Content.ReadAsStreamAsync());
+        Assert.True(trimmed.Width < full.Width, $"cropped {trimmed.Width} should be narrower than {full.Width}");
+    }
+
+    [Fact]
+    public async Task Rescan_replaces_one_page_and_keeps_its_edits()
+    {
+        SessionDto done = await _hub.ScanToEnd();
+        SessionDto rotated = await _hub.ApplyEdits(done.Id, PageEdit.Rotate(90, 1), PageEdit.SetFilter(PageFilter.Bw, 1));
+        Assert.True(rotated.Pages[1].Deleted, "the blank page starts out deleted");
+
+        SessionDto after = await _hub.RescanPage(done.Id, 1);
+
+        // Same slot, same edits, and the replacement is no longer marked deleted.
+        Assert.Equal(rotated.Pages.Length, after.Pages.Length);
+        Assert.Equal(Rotation.R90, after.Pages[1].Rotation);
+        Assert.Equal(PageFilter.Bw, after.Pages[1].Filter);
+        Assert.False(after.Pages[1].Deleted);
+        Assert.Equal(done.Pages[0].Hash, after.Pages[0].Hash);
+    }
+
+    [Fact]
+    public async Task Rescan_is_refused_for_a_page_that_does_not_exist()
+    {
+        SessionDto done = await _hub.ScanToEnd();
+
+        await Assert.ThrowsAsync<HubException>(() => _hub.RescanPage(done.Id, 99));
+    }
+
+    [Fact]
+    public async Task An_impossible_crop_is_rejected()
+    {
+        SessionDto done = await _hub.ScanToEnd();
+
+        await Assert.ThrowsAsync<HubException>(() => _hub.ApplyEdits(done.Id, PageEdit.SetCrop(new CropBox(60, 0, 60, 0), 0)));
     }
 
     [Fact]
