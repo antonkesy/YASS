@@ -4,8 +4,16 @@ import StatusPill from '$lib/components/StatusPill.svelte';
 import Toolbar from '$lib/components/Toolbar.svelte';
 import ExportBar from '$lib/components/ExportBar.svelte';
 import PageThumb from '$lib/components/PageThumb.svelte';
+import SettingsChips from '$lib/components/SettingsChips.svelte';
+import SortMenu from '$lib/components/SortMenu.svelte';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
-import { PageFilter, SessionState } from '$lib/hub/generated/Yass.Core.Domain';
+import {
+	ColorMode,
+	PageFilter,
+	PageSize,
+	ScanSource,
+	SessionState
+} from '$lib/hub/generated/Yass.Core.Domain';
 import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 import { page, session as build } from './fixtures';
 
@@ -189,5 +197,48 @@ describe('PageThumb', () => {
 			onopen: vi.fn()
 		});
 		expect(container.querySelector('img')).toBeNull();
+	});
+});
+
+describe('SettingsChips', () => {
+	const options = {
+		Source: ScanSource.Feeder,
+		Dpi: 300,
+		Color: ColorMode.Color,
+		PageSize: PageSize.A4,
+		BlankPageDetection: true
+	};
+
+	it('leads with the export destination and ends with the format', () => {
+		render(SettingsChips, {
+			options,
+			destination: '/data/consume',
+			format: 'PDF',
+			onclick: vi.fn()
+		});
+		const chips = [...screen.getByTestId('settings-chips').children].map((c) =>
+			c.textContent?.trim()
+		);
+		expect(chips[0]).toBe('→ /data/consume');
+		expect(chips.at(-1)).toBe('PDF');
+		expect(chips).toContain('300 dpi');
+	});
+
+	it('leaves the destination out when there is none to show', () => {
+		render(SettingsChips, { options, onclick: vi.fn() });
+		const chips = [...screen.getByTestId('settings-chips').children].map((c) =>
+			c.textContent?.trim()
+		);
+		expect(chips.some((c) => c?.startsWith('→'))).toBe(false);
+	});
+});
+
+describe('SortMenu', () => {
+	it('names the order it is sorting by, not just "Sort"', async () => {
+		const onchange = vi.fn();
+		const { rerender } = render(SortMenu, { order: 'newest', onchange });
+		expect(screen.getByTestId('sort-button')).toHaveTextContent('Newest');
+		await rerender({ order: 'name', onchange });
+		expect(screen.getByTestId('sort-button')).toHaveTextContent('Name');
 	});
 });

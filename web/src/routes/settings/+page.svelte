@@ -12,6 +12,7 @@
 	import { Icon, presetIcons, type PresetIconName } from '$lib/icons';
 	import { activePreset, exportPrefs, presets, type Preset } from '$lib/presets';
 	import { ExportFormat } from '$lib/hub/generated/Yass.Core.Hub';
+	import { exportFormatLabels } from '$lib/format';
 	import { expandTemplate, templateTokens, unknownTokens } from '$lib/template';
 	import { colorModeLabels } from '$lib/review/edits';
 
@@ -415,15 +416,28 @@
 						? 'one file per document'
 						: 'one file per page'}
 					options={[
-						{ value: String(ExportFormat.Pdf), label: 'PDF' },
-						{ value: String(ExportFormat.Jpg), label: 'JPG' },
-						{ value: String(ExportFormat.Png), label: 'PNG' }
+						{ value: String(ExportFormat.Pdf), label: exportFormatLabels[ExportFormat.Pdf] },
+						{ value: String(ExportFormat.Jpg), label: exportFormatLabels[ExportFormat.Jpg] },
+						{ value: String(ExportFormat.Png), label: exportFormatLabels[ExportFormat.Png] }
 					]}
 					value={String($exportPrefs.format)}
 					onchange={(v) => exportPrefs.set({ ...$exportPrefs, format: Number(v) as ExportFormat })}
 				/>
 
-				<label class="flex flex-col gap-1.5">
+				<Toggle
+					name="export-button"
+					label="Export button"
+					hint="One-click export to a fixed folder. When off, use Save to… or Download."
+					checked={$exportPrefs.exportButton}
+					onchange={(v) => exportPrefs.set({ ...$exportPrefs, exportButton: v })}
+				/>
+
+				<!-- Dimmed rather than hidden: the folder is still where Save to… offers to write. -->
+				<label
+					class="flex flex-col gap-1.5 transition-opacity duration-200 {$exportPrefs.exportButton
+						? ''
+						: 'opacity-45'}"
+				>
 					<span class="text-[13px] font-bold text-ink-2">Export folder</span>
 					<span class="flex h-11 items-center gap-2 rounded-[12px] bg-ctl px-3">
 						<span class="text-ink-faint"><Icon name="folder" /></span>

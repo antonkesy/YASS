@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { sortLabels, type SortOrder } from '$lib/sessions/browse';
+	import { sortLabels, sortShortLabels, type SortOrder } from '$lib/sessions/browse';
 	import { Icon } from '$lib/icons';
 
 	let { order, onchange }: { order: SortOrder; onchange: (order: SortOrder) => void } = $props();
@@ -20,7 +20,7 @@
 		data-testid="sort-button"
 	>
 		<Icon name="sort" />
-		Sort
+		{sortShortLabels[order]}
 	</button>
 
 	{#if open}
