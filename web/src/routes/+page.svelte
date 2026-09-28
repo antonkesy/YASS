@@ -2,11 +2,10 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { getHub, sortedSessions } from '$lib/hub/hub';
-	import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
-	import ScanButton from '$lib/components/ScanButton.svelte';
-	import SessionList from '$lib/components/SessionList.svelte';
+	import type { ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
+	import ScanStage from '$lib/components/ScanStage.svelte';
+	import PastScansPanel from '$lib/components/PastScansPanel.svelte';
 	import { pickEditable, settings } from '$lib/settings';
-	import { Icon } from '$lib/icons';
 
 	const client = getHub();
 	const scanner = client.scanner;
@@ -15,18 +14,28 @@
 
 	let starting = $state(false);
 	let error = $state<string | null>(null);
+	let effective = $state<ScanOptionsDto | null>(null);
 
-	const recent = $derived(sortedSessions($sessions).slice(0, 10));
-	const canScan = $derived(
-		$connection === 'connected' && $scanner?.State === ScannerState.Ready && !starting
-	);
+	// The stage shows what the next scan will use, so the options are loaded up front
+	// rather than only at the moment Scan is pressed.
+	$effect(() => {
+		if ($connection === 'connected' && !effective) {
+			client.hub
+				.getEffectiveOptions()
+				.then((o) => (effective = o))
+				.catch(() => undefined);
+		}
+	});
+
+	const recent = $derived(sortedSessions($sessions));
 
 	async function scan() {
 		starting = true;
 		error = null;
 		try {
-			const effective = await client.hub.getEffectiveOptions();
-			const session = await client.hub.startScan(pickEditable($settings, effective.Editable));
+			const options = effective ?? (await client.hub.getEffectiveOptions());
+			effective = options;
+			const session = await client.hub.startScan(pickEditable($settings, options.Editable));
 			await goto(resolve('/session/[id]', { id: session.Id }));
 		} catch (e) {
 			error = e instanceof Error ? e.message : String(e);
@@ -34,27 +43,31 @@
 			starting = false;
 		}
 	}
+
+	function openSettings() {
+		void goto(resolve('/settings'));
+	}
 </script>
 
 <svelte:head><title>YASS</title></svelte:head>
 
-<main class="mx-auto flex max-w-lg flex-col items-center gap-8 px-4 pt-6 pb-12">
-	<a
-		href={resolve('/settings')}
-		class="flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-bold text-accent transition-colors hover:bg-accent-wash"
-	>
-		<Icon name="sliders" />
-		Change settings
-	</a>
-
-	<ScanButton disabled={!canScan} busy={starting} onclick={scan} />
-
+<main class="mx-auto flex max-w-[2200px] flex-col gap-6 px-4 pt-3 pb-7 sm:px-7">
 	{#if error}
-		<p class="rounded-lg bg-rose-100 px-4 py-2 text-rose-800" role="alert">{error}</p>
+		<p class="rounded-[14px] bg-danger-bg px-4 py-2 font-semibold text-danger" role="alert">
+			{error}
+		</p>
 	{/if}
 
-	<section class="w-full">
-		<h2 class="mb-2 text-sm font-semibold tracking-wide text-stone-500 uppercase">Recent scans</h2>
-		<SessionList sessions={recent} />
-	</section>
+	<!-- Header 4rem plus this main's padding, so the two panes fill the window. -->
+	<div class="flex min-h-[calc(100dvh-6.5rem)] flex-wrap items-stretch gap-6">
+		<ScanStage
+			status={$scanner}
+			connection={$connection}
+			options={effective}
+			busy={starting}
+			onscan={scan}
+			onsettings={openSettings}
+		/>
+		<PastScansPanel sessions={recent} />
+	</div>
 </main>
