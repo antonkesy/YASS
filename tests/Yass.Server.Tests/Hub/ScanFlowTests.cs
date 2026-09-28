@@ -11,9 +11,9 @@ public sealed class ScanFlowTests : IAsyncLifetime
     private readonly YassFactory _factory = new(FakeScenario.Pages(4, 2));
     private HubClient _hub = null!;
 
-    public async Task InitializeAsync() => _hub = await HubClient.ConnectAsync(_factory);
+    public async ValueTask InitializeAsync() => _hub = await HubClient.ConnectAsync(_factory);
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _hub.DisposeAsync();
         await _factory.DisposeAsync();
