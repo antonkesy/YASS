@@ -13,13 +13,15 @@ public sealed class ConsumeDirectoryStore(Func<OutputConfig> config, ILogger<Con
 {
     public const string TempPrefix = "._yass-";
 
-    public async Task<string> SaveAsync(Func<Stream, CancellationToken, Task> write, DateTimeOffset createdAt, CancellationToken cancellationToken)
+    public async Task<string> SaveAsync(Func<Stream, CancellationToken, Task> write, DocumentTarget target, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(write);
+        ArgumentNullException.ThrowIfNull(target);
         OutputConfig output = config();
-        Directory.CreateDirectory(output.Directory);
+        string directory = string.IsNullOrWhiteSpace(target.Directory) ? output.Directory : target.Directory;
+        Directory.CreateDirectory(directory);
 
-        string temp = Path.Combine(output.Directory, TempPrefix + Guid.NewGuid().ToString("N") + ".tmp");
+        string temp = Path.Combine(directory, TempPrefix + Guid.NewGuid().ToString("N") + ".tmp");
         try
         {
             FileStream stream = new(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1 << 16, FileOptions.Asynchronous);
@@ -32,7 +34,10 @@ public sealed class ConsumeDirectoryStore(Func<OutputConfig> config, ILogger<Con
 #pragma warning restore CA1849
             }
 
-            string final = UniquePath(output.Directory, FilenameTemplate.Expand(output.FilenameTemplate, createdAt));
+            string fileName = string.IsNullOrWhiteSpace(target.FileName)
+                ? FilenameTemplate.Expand(output.FilenameTemplate, target.CreatedAt, extension: target.Extension)
+                : FilenameTemplate.Expand(target.FileName, target.CreatedAt, extension: target.Extension);
+            string final = UniquePath(directory, fileName);
             File.Move(temp, final);
             logger.LogInformation("Stored {File}", final);
             return final;

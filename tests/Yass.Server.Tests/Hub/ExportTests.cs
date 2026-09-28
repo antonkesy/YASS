@@ -95,6 +95,56 @@ public sealed class ExportTests
     }
 
     [Fact]
+    public async Task A_chosen_name_and_folder_are_used()
+    {
+        await using var factory = new YassFactory(FakeScenario.Pages(1));
+        await using HubClient hub = await HubClient.ConnectAsync(factory);
+        SessionDto scanned = await hub.ScanToEnd();
+        string elsewhere = Path.Combine(factory.ConsumeDirectory, "elsewhere");
+        Directory.CreateDirectory(elsewhere);
+
+        ExportResult result = await hub.Export(
+            scanned.Id,
+            new ExportRequest(ExportMode.Save, ExportFormat.Pdf, "Tax return {YEAR}", elsewhere));
+
+        string saved = Assert.Single(result.Documents).SavedPath!;
+        Assert.Equal(elsewhere, Path.GetDirectoryName(saved));
+        Assert.Matches(@"^Tax return \d{4}\.pdf$", Path.GetFileName(saved));
+    }
+
+    [Theory]
+    [InlineData("relative/path")]
+    [InlineData("/does/not/exist/anywhere")]
+    public async Task An_unusable_export_folder_is_refused(string directory)
+    {
+        await using var factory = new YassFactory(FakeScenario.Pages(1));
+        await using HubClient hub = await HubClient.ConnectAsync(factory);
+        SessionDto scanned = await hub.ScanToEnd();
+
+        var ex = await Assert.ThrowsAsync<HubException>(
+            () => hub.Export(scanned.Id, new ExportRequest(ExportMode.Save, ExportFormat.Pdf, null, directory)));
+
+        Assert.Contains(directory, ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Image_formats_write_one_file_per_page()
+    {
+        await using var factory = new YassFactory(FakeScenario.Pages(3));
+        await using HubClient hub = await HubClient.ConnectAsync(factory);
+        SessionDto scanned = await hub.ScanToEnd();
+
+        ExportResult result = await hub.Export(
+            scanned.Id,
+            new ExportRequest(ExportMode.Save, ExportFormat.Png, "pages", null));
+
+        Assert.Single(result.Documents);
+        Assert.Equal(3, result.PageCount);
+        string[] files = [.. Directory.GetFiles(factory.ConsumeDirectory, "*.png").Select(Path.GetFileName)!];
+        Assert.Equal(["pages-01.png", "pages-02.png", "pages-03.png"], files.Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
     public async Task Download_is_one_shot()
     {
         await using var factory = new YassFactory(FakeScenario.Pages(2));

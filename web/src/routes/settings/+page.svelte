@@ -4,11 +4,15 @@
 	import { getHub } from '$lib/hub/hub';
 	import { PageSize, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
 	import type { ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
-	import { colorModeLabels } from '$lib/review/edits';
 	import { editableKeys, settings } from '$lib/settings';
 	import Segmented from '$lib/components/Segmented.svelte';
 	import Toggle from '$lib/components/Toggle.svelte';
-	import { Icon } from '$lib/icons';
+	import TemplateEditor from '$lib/components/TemplateEditor.svelte';
+	import { Icon, presetIcons, type PresetIconName } from '$lib/icons';
+	import { activePreset, exportPrefs, presets, type Preset } from '$lib/presets';
+	import { ExportFormat } from '$lib/hub/generated/Yass.Core.Hub';
+	import { expandTemplate, templateTokens, unknownTokens } from '$lib/template';
+	import { colorModeLabels } from '$lib/review/edits';
 
 	const client = getHub();
 	const connection = client.connection;
@@ -54,6 +58,49 @@
 		{ value: DEFAULT, label: 'Default' },
 		...options
 	];
+
+	const chosen = $derived(activePreset($presets, $settings));
+	let drafting = $state(false);
+	let draftName = $state('');
+	let draftIcon = $state<PresetIconName>('star');
+
+	const previewFacts = $derived({
+		preset: chosen?.name.replace(/\s+/g, '-') ?? 'Custom',
+		counter: 42,
+		dpi: $settings.Dpi ?? effective?.Dpi ?? 300,
+		color: colorModeLabels[$settings.Color ?? effective?.Color ?? 2] ?? 'Color'
+	});
+	const templatePreview = $derived(
+		$exportPrefs.nameTemplate.trim()
+			? expandTemplate($exportPrefs.nameTemplate, new Date(), previewFacts) + '.pdf'
+			: ''
+	);
+	const templateUnknown = $derived(unknownTokens($exportPrefs.nameTemplate));
+
+	function savePreset() {
+		const name = draftName.trim();
+		if (!name) return;
+		const preset: Preset = {
+			id: `${Date.now().toString(36)}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+			name,
+			icon: draftIcon,
+			settings: { ...$settings }
+		};
+		presets.set([...$presets, preset]);
+		drafting = false;
+		draftName = '';
+	}
+
+	function updatePreset() {
+		if (!chosen) return;
+		presets.set(
+			$presets.map((p) => (p.id === chosen.id ? { ...p, settings: { ...$settings } } : p))
+		);
+	}
+
+	function deletePreset(id: string) {
+		presets.set($presets.filter((p) => p.id !== id));
+	}
 
 	function close() {
 		void goto(resolve('/'));
@@ -124,6 +171,108 @@
 				Nothing is editable from the UI.
 			</p>
 		{:else}
+			<div
+				class="col-span-full flex flex-col gap-2.5 rounded-[18px] bg-app p-3.5"
+				data-testid="presets"
+			>
+				<div class="flex items-center gap-2">
+					<span class="text-[13px] font-bold text-ink-2">Presets</span>
+					{#if !chosen}
+						<span class="text-xs font-bold text-warning-ink">Unsaved changes</span>
+					{/if}
+				</div>
+
+				<div class="flex flex-wrap gap-1.5">
+					{#each $presets as preset (preset.id)}
+						<button
+							type="button"
+							class="flex h-[38px] items-center gap-2 rounded-full px-3.5 text-[13px] font-bold transition-all duration-200 {chosen?.id ===
+							preset.id
+								? 'bg-accent text-white shadow-preset'
+								: 'bg-surface text-accent-deep shadow-chip'}"
+							aria-pressed={chosen?.id === preset.id}
+							onclick={() => settings.set({ ...$settings, ...preset.settings })}
+						>
+							<Icon name={preset.icon} />
+							{preset.name}
+						</button>
+					{/each}
+				</div>
+
+				{#if drafting}
+					<div class="flex flex-col gap-2">
+						<div class="flex flex-wrap gap-2">
+							<input
+								class="h-9 min-w-[160px] flex-1 rounded-[10px] border-[1.5px] border-accent bg-surface px-3 text-sm outline-none"
+								type="text"
+								placeholder="Preset name"
+								bind:value={draftName}
+								data-testid="preset-name"
+							/>
+							<button
+								type="button"
+								class="h-9 rounded-full bg-accent px-3 text-xs font-extrabold text-white transition-opacity disabled:pointer-events-none disabled:opacity-45"
+								disabled={!draftName.trim()}
+								onclick={savePreset}
+								data-testid="preset-save"
+							>
+								Save
+							</button>
+							<button
+								type="button"
+								class="h-9 rounded-full px-3 text-xs font-bold text-ink-3 transition-colors hover:bg-ctl"
+								onclick={() => (drafting = false)}
+							>
+								Cancel
+							</button>
+						</div>
+						<div class="flex flex-wrap gap-1.5">
+							{#each presetIcons as icon (icon)}
+								<button
+									type="button"
+									class="flex h-9 w-9 items-center justify-center rounded-[10px] transition-transform duration-150 hover:scale-110 {draftIcon ===
+									icon
+										? 'bg-accent text-white shadow-swatch'
+										: 'bg-surface text-ink-2 shadow-chip'}"
+									aria-pressed={draftIcon === icon}
+									aria-label={icon}
+									onclick={() => (draftIcon = icon)}
+								>
+									<Icon name={icon} />
+								</button>
+							{/each}
+						</div>
+					</div>
+				{:else}
+					<div class="flex flex-wrap gap-1.5">
+						{#if chosen}
+							<button
+								type="button"
+								class="h-8 rounded-full bg-accent px-3 text-xs font-extrabold text-white transition-colors hover:bg-accent-hover"
+								onclick={updatePreset}
+							>
+								Update “{chosen.name}”
+							</button>
+							<button
+								type="button"
+								class="h-8 rounded-full px-3 text-xs font-bold text-danger transition-colors hover:bg-danger-bg"
+								onclick={() => deletePreset(chosen.id)}
+							>
+								Delete “{chosen.name}”
+							</button>
+						{/if}
+						<button
+							type="button"
+							class="h-8 rounded-full bg-surface px-3 text-xs font-bold text-accent-deep shadow-chip transition-colors hover:bg-accent-50"
+							onclick={() => (drafting = true)}
+							data-testid="preset-new"
+						>
+							Save as new preset
+						</button>
+					</div>
+				{/if}
+			</div>
+
 			<form
 				class="col-span-full grid items-start gap-x-7 gap-y-[18px] sm:grid-cols-[repeat(auto-fit,minmax(320px,1fr))]"
 				onsubmit={(e) => e.preventDefault()}
@@ -239,6 +388,57 @@
 					</label>
 				{/if}
 			</form>
+
+			<div
+				class="col-span-full flex flex-col gap-3 border-t border-line pt-3.5"
+				data-testid="export-section"
+			>
+				<Segmented
+					name="format"
+					label="File format"
+					hint={$exportPrefs.format === ExportFormat.Pdf
+						? 'one file per document'
+						: 'one file per page'}
+					options={[
+						{ value: String(ExportFormat.Pdf), label: 'PDF' },
+						{ value: String(ExportFormat.Jpg), label: 'JPG' },
+						{ value: String(ExportFormat.Png), label: 'PNG' }
+					]}
+					value={String($exportPrefs.format)}
+					onchange={(v) => exportPrefs.set({ ...$exportPrefs, format: Number(v) as ExportFormat })}
+				/>
+
+				<label class="flex flex-col gap-1.5">
+					<span class="text-[13px] font-bold text-ink-2">Export folder</span>
+					<span class="flex h-11 items-center gap-2 rounded-[12px] bg-ctl px-3">
+						<span class="text-ink-faint"><Icon name="folder" /></span>
+						<input
+							class="min-w-0 flex-1 bg-transparent font-mono text-sm font-medium outline-none"
+							type="text"
+							placeholder="Leave empty for the configured folder"
+							value={$exportPrefs.directory}
+							oninput={(e) =>
+								exportPrefs.set({ ...$exportPrefs, directory: e.currentTarget.value })}
+							data-testid="export-folder"
+						/>
+					</span>
+					<span class="text-[11px] text-ink-faint">
+						An absolute path on the scanner server, e.g. the paperless consume folder. The server
+						refuses anything that is not an existing, writable directory.
+					</span>
+				</label>
+
+				<div class="flex flex-col gap-1.5">
+					<span class="text-[13px] font-bold text-ink-2">File name template</span>
+					<TemplateEditor
+						value={$exportPrefs.nameTemplate}
+						tokens={templateTokens}
+						preview={templatePreview}
+						unknown={templateUnknown}
+						onchange={(v) => exportPrefs.set({ ...$exportPrefs, nameTemplate: v })}
+					/>
+				</div>
+			</div>
 
 			<p class="col-span-full text-[11px] text-ink-faint">
 				Editable keys: {[...editable].join(', ')} — set by

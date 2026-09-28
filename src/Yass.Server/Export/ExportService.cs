@@ -1,8 +1,10 @@
+using System.Globalization;
 using Microsoft.AspNetCore.SignalR;
 using Yass.Core.Config;
 using Yass.Core.Domain;
 using Yass.Core.Export;
 using Yass.Core.Hub;
+using Yass.Export;
 using Yass.Server.Config;
 using Yass.Server.Hub;
 using Yass.Server.Sessions;
@@ -25,6 +27,60 @@ public sealed class ExportService(
     IHubContext<YassHub, IYassClient> hub,
     ILogger<ExportService> logger)
 {
+    /// <summary>
+    /// Checks a user-supplied target directory. The service has no authentication, so this is
+    /// the only gate between a LAN client and an arbitrary write path; it refuses anything that
+    /// is not an existing, writable, absolute directory and names what was wrong.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The directory is unusable.</exception>
+    private static string? ResolveDirectory(string? requested)
+    {
+        if (string.IsNullOrWhiteSpace(requested))
+        {
+            return null;
+        }
+
+        string path = requested.Trim();
+        if (!Path.IsPathFullyQualified(path))
+        {
+            throw new InvalidOperationException($"Export folder must be an absolute path; got \"{path}\".");
+        }
+
+        if (!Directory.Exists(path))
+        {
+            throw new InvalidOperationException($"Export folder \"{path}\" does not exist.");
+        }
+
+        try
+        {
+            string probe = Path.Combine(path, "._yass-write-test-" + Guid.NewGuid().ToString("N"));
+            File.WriteAllBytes(probe, []);
+            File.Delete(probe);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            throw new InvalidOperationException($"Export folder \"{path}\" is not writable.");
+        }
+
+        return path;
+    }
+
+    /// <summary>The file name for one document, or <c>null</c> to fall back to the configured template.</summary>
+    private static string? NameFor(string? requested, Session session, TemplateFacts facts, int documentCount, int index)
+    {
+        string? stem = !string.IsNullOrWhiteSpace(requested) ? requested!.Trim()
+            : !string.IsNullOrWhiteSpace(session.Name) ? session.Name!.Trim()
+            : null;
+
+        if (stem is null)
+        {
+            return null;
+        }
+
+        stem = FilenameTemplate.Expand(stem, session.CreatedAt, session.Id, facts, extension: "");
+        return documentCount == 1 ? stem : $"{stem}-{(index + 1).ToString(CultureInfo.InvariantCulture)}";
+    }
+
     /// <exception cref="InvalidOperationException">Nothing to export or the session is busy.</exception>
     public async Task<ExportResult> ExportAsync(string sessionId, ExportRequest request, CancellationToken cancellationToken)
     {
@@ -45,6 +101,19 @@ public sealed class ExportService(
             return s with { State = SessionState.Exporting, Error = null };
         });
         await hub.Clients.All.SessionChanged(mapper.ToDto(session)).ConfigureAwait(false);
+
+        string? directory = ResolveDirectory(request.Directory);
+        string extension = request.Format switch
+        {
+            ExportFormat.Jpg => ".jpg",
+            ExportFormat.Png => ".png",
+            _ => ".pdf",
+        };
+        var facts = new TemplateFacts(
+            Preset: string.IsNullOrWhiteSpace(session.Name) ? "Scan" : session.Name!,
+            Counter: 1,
+            Dpi: session.OptionsUsed.Dpi,
+            Color: session.OptionsUsed.Color.ToString());
 
         ExportPage[][] documentPages = session.Documents
             .Select(doc => doc
@@ -78,14 +147,23 @@ public sealed class ExportService(
                 var produced = new List<ExportedDocumentDto>();
                 foreach (ExportPage[] document in documentPages)
                 {
-                    string token = tokens.Issue(sessionId, Path.Combine(dir, $"{Guid.NewGuid():N}.pdf"));
+                    string token = tokens.Issue(sessionId, Path.Combine(dir, $"{Guid.NewGuid():N}{extension}"));
                     tokens.TryPeekPath(token, out string path);
                     await using (FileStream output = File.Create(path))
                     {
-                        await writer.WritePdfAsync(document, pdf, output, progress, cancellationToken).ConfigureAwait(false);
+                        if (request.Format == ExportFormat.Pdf)
+                        {
+                            await writer.WritePdfAsync(document, pdf, output, progress, cancellationToken).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            // A browser download is one file, so an image download is the first
+                            // page of the document rather than a silent partial archive.
+                            await writer.WriteImageAsync(document[0], request.Format, pdf, output, cancellationToken).ConfigureAwait(false);
+                        }
                     }
 
-                    produced.Add(new ExportedDocumentDto(document.Length, null, $"/export/{sessionId}/{token}.pdf"));
+                    produced.Add(new ExportedDocumentDto(document.Length, null, $"/export/{sessionId}/{token}{extension}"));
                     finished++;
                 }
 
@@ -95,13 +173,40 @@ public sealed class ExportService(
             else
             {
                 var written = new List<ExportedDocumentDto>();
-                foreach (ExportPage[] document in documentPages)
+                for (int d = 0; d < documentPages.Length; d++)
                 {
-                    string saved = await documents.SaveAsync(
-                        (stream, ct) => writer.WritePdfAsync(document, pdf, stream, progress, ct),
-                        session.CreatedAt,
-                        cancellationToken).ConfigureAwait(false);
-                    written.Add(new ExportedDocumentDto(document.Length, saved, null));
+                    ExportPage[] document = documentPages[d];
+                    string? baseName = NameFor(request.Name, session, facts, documentPages.Length, d);
+
+                    if (request.Format == ExportFormat.Pdf)
+                    {
+                        string saved = await documents.SaveAsync(
+                            (stream, ct) => writer.WritePdfAsync(document, pdf, stream, progress, ct),
+                            new DocumentTarget(session.CreatedAt, baseName, directory, extension),
+                            cancellationToken).ConfigureAwait(false);
+                        written.Add(new ExportedDocumentDto(document.Length, saved, null));
+                    }
+                    else
+                    {
+                        // Images are one file per page, so the document's pages are numbered.
+                        string? firstPath = null;
+                        for (int p = 0; p < document.Length; p++)
+                        {
+                            ExportPage page = document[p];
+                            string pageName = document.Length == 1
+                                ? baseName ?? ""
+                                : $"{baseName}-{(p + 1).ToString("D2", CultureInfo.InvariantCulture)}";
+                            string saved = await documents.SaveAsync(
+                                (stream, ct) => writer.WriteImageAsync(page, request.Format, pdf, stream, ct),
+                                new DocumentTarget(session.CreatedAt, string.IsNullOrEmpty(pageName) ? null : pageName, directory, extension),
+                                cancellationToken).ConfigureAwait(false);
+                            firstPath ??= saved;
+                            ((IProgress<int>)progress).Report((p + 1) * 100 / document.Length);
+                        }
+
+                        written.Add(new ExportedDocumentDto(document.Length, firstPath, null));
+                    }
+
                     finished++;
                 }
 

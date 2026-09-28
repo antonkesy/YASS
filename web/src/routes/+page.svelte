@@ -8,6 +8,7 @@
 	import { pickEditable, settings } from '$lib/settings';
 	import { ExportMode } from '$lib/hub/generated/Yass.Core.Hub';
 	import { saveToBrowser } from '$lib/review/download';
+	import { exportPrefs } from '$lib/presets';
 
 	const client = getHub();
 	const scanner = client.scanner;
@@ -56,7 +57,9 @@
 		working = true;
 		try {
 			for (const id of ids) {
-				saveToBrowser(await client.hub.export(id, { Mode: ExportMode.Download }));
+				saveToBrowser(
+					await client.hub.export(id, { Mode: ExportMode.Download, Format: $exportPrefs.format })
+				);
 			}
 		} catch (e) {
 			error = e instanceof Error ? e.message : String(e);

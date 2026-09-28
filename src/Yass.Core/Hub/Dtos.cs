@@ -74,8 +74,21 @@ public enum ExportMode
     Download,
 }
 
+/// <summary>File type a session is exported as. Images write one file per page.</summary>
 [TranspilationSource]
-public sealed record ExportRequest(ExportMode Mode);
+public enum ExportFormat
+{
+    Pdf = 0,
+    Jpg,
+    Png,
+}
+
+/// <param name="Mode">Save to a folder, or hand the browser a download.</param>
+/// <param name="Format">File type to produce.</param>
+/// <param name="Name">Base file name, without extension; empty falls back to the configured template.</param>
+/// <param name="Directory">Where to write, for <see cref="ExportMode.Save"/>; empty means <c>output.directory</c>.</param>
+[TranspilationSource]
+public sealed record ExportRequest(ExportMode Mode, ExportFormat Format = ExportFormat.Pdf, string? Name = null, string? Directory = null);
 
 /// <param name="Mode">Echo of the request.</param>
 /// <param name="PageCount">Pages across every produced document.</param>

@@ -7,6 +7,7 @@ using SixLabors.ImageSharp.Processing;
 using Yass.Core.Config;
 using Yass.Core.Domain;
 using Yass.Core.Export;
+using Yass.Core.Hub;
 
 namespace Yass.Export;
 
@@ -40,5 +41,28 @@ public static class PageRenderer
             : new JpegEncoder { Quality = pdf.JpegQuality, ColorType = page.ColorMode == ColorMode.Color ? JpegEncodingColor.YCbCrRatio420 : JpegEncodingColor.Luminance };
         await image.SaveAsync(path, encoder, cancellationToken).ConfigureAwait(false);
         return path;
+    }
+
+    /// <summary>
+    /// Renders a page straight to a stream in the requested image format. This is the JPG and
+    /// PNG export path, where each page becomes a file of its own rather than a PDF page.
+    /// </summary>
+    public static async Task RenderToStreamAsync(ExportPage page, ExportFormat format, PdfConfig quality, Stream destination, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+        ArgumentNullException.ThrowIfNull(quality);
+
+        using Image image = await Image.LoadAsync(page.SourcePath, cancellationToken).ConfigureAwait(false);
+        image.Mutate(ctx => PagePipeline.Apply(ctx, page.Rotation, page.Filter, page.ScanColor, page.Crop));
+
+        ImageMetadata meta = image.Metadata;
+        meta.ResolutionUnits = PixelResolutionUnit.PixelsPerInch;
+        meta.HorizontalResolution = page.Dpi;
+        meta.VerticalResolution = page.Dpi;
+
+        IImageEncoder encoder = format == ExportFormat.Png
+            ? new PngEncoder { CompressionLevel = PngCompressionLevel.DefaultCompression }
+            : new JpegEncoder { Quality = quality.JpegQuality, ColorType = page.ColorMode == ColorMode.Color ? JpegEncodingColor.YCbCrRatio420 : JpegEncodingColor.Luminance };
+        await image.SaveAsync(destination, encoder, cancellationToken).ConfigureAwait(false);
     }
 }

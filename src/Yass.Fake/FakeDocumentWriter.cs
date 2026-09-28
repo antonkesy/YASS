@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using Yass.Core.Config;
 using Yass.Core.Export;
+using Yass.Core.Hub;
 
 namespace Yass.Fake;
 
@@ -24,6 +25,18 @@ public sealed class FakeDocumentWriter : IDocumentWriter
         byte[] bytes = Build(pages);
         await destination.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
         progress?.Report(100);
+    }
+
+    /// <summary>
+    /// Stands in for an encoded image: the same one-line label the fake PDF uses, so an image
+    /// export can be asserted on without decoding anything.
+    /// </summary>
+    public async Task WriteImageAsync(ExportPage page, ExportFormat format, PdfConfig quality, Stream destination, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+        ArgumentNullException.ThrowIfNull(destination);
+        byte[] bytes = Encoding.ASCII.GetBytes($"FAKE-{format.ToString().ToUpperInvariant()} {PageLabel(page)}\n");
+        await destination.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>Text lines of the fake PDF, one per page, in output order. Used by tests.</summary>

@@ -29,6 +29,7 @@
 	import CropModal from '$lib/components/CropModal.svelte';
 	import MergeModal from '$lib/components/MergeModal.svelte';
 	import { saveToBrowser, savedLabel } from '$lib/review/download';
+	import { exportPrefs } from '$lib/presets';
 	import { ExportMode } from '$lib/hub/generated/Yass.Core.Hub';
 
 	const client = getHub();
@@ -144,7 +145,13 @@
 		error = null;
 		exporting = true;
 		try {
-			const result = await client.hub.export(id, { Mode: mode });
+			const result = await client.hub.export(id, {
+				Mode: mode,
+				Format: $exportPrefs.format,
+				// The name field wins; the template is what an unnamed scan falls back to.
+				Name: session?.Name?.trim() || $exportPrefs.nameTemplate.trim() || undefined,
+				Directory: mode === ExportMode.Save ? $exportPrefs.directory.trim() || undefined : undefined
+			});
 			if (mode === ExportMode.Save) {
 				savedPath = savedLabel(result);
 			} else {

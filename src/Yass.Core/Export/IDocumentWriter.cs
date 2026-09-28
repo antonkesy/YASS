@@ -1,8 +1,9 @@
 using Yass.Core.Config;
+using Yass.Core.Hub;
 
 namespace Yass.Core.Export;
 
-/// <summary>Assembles the pages of a session into a PDF.</summary>
+/// <summary>Turns the pages of a session into files.</summary>
 public interface IDocumentWriter
 {
     /// <param name="pages">Pages in output order; deleted pages are already excluded.</param>
@@ -16,4 +17,7 @@ public interface IDocumentWriter
         Stream destination,
         IProgress<int>? progress,
         CancellationToken cancellationToken);
+
+    /// <summary>Writes one page as a standalone image. Used by the JPG and PNG formats, which produce a file per page.</summary>
+    Task WriteImageAsync(ExportPage page, ExportFormat format, PdfConfig quality, Stream destination, CancellationToken cancellationToken);
 }
