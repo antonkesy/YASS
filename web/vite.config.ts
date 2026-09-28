@@ -23,8 +23,8 @@ export default defineConfig({
 				name: 'YASS',
 				short_name: 'YASS',
 				description: 'Yet Another Scanner Service',
-				theme_color: '#0f766e',
-				background_color: '#0f766e',
+				theme_color: '#f5f7fc',
+				background_color: '#f5f7fc',
 				display: 'standalone',
 				start_url: '/',
 				icons: [
