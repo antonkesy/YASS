@@ -61,7 +61,7 @@
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
             dotnet
-            nodejs_22
+            nodejs_24
             pnpm
             sane-backends
             tesseract

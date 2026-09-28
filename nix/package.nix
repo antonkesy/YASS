@@ -7,7 +7,7 @@
   fetchPnpmDeps,
   pnpmConfigHook,
   pnpm,
-  nodejs_22,
+  nodejs_24,
   sane-backends,
   version,
   src,
@@ -19,7 +19,7 @@ let
     src = src + "/web";
 
     nativeBuildInputs = [
-      nodejs_22
+      nodejs_24
       pnpm
       pnpmConfigHook
     ];
@@ -28,7 +28,7 @@ let
       inherit (finalAttrs) pname version src;
       inherit pnpm;
       fetcherVersion = 4;
-      hash = "sha256-g6JByWmsLMNJtzVExlbddbIZPv2HcuiJAYlkuo05Biw=";
+      hash = "sha256-uV7Y7VtjvypRikMkotAjhqtpWWJoZLM0xz+dHBagXuo=";
     };
 
     buildPhase = ''
