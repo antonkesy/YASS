@@ -2,6 +2,8 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { hubError } from '$lib/hub/errors';
+	import { toast } from '$lib/toast';
+	import { cameFrom } from '$lib/navigation';
 	import { getHub, sortedSessions } from '$lib/hub/hub';
 	import type { ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import ScanStage from '$lib/components/ScanStage.svelte';
@@ -33,6 +35,11 @@
 	});
 
 	const recent = $derived(sortedSessions($sessions));
+
+	// Taken once on mount: coming back from a session slides in from the left and
+	// highlights that scan; a cold load just fades.
+	const landed = cameFrom.take();
+	const cameBack = landed !== null;
 
 	/**
 	 * What the next scan will actually use: the server's defaults with this browser's
@@ -66,11 +73,13 @@
 		error = null;
 		working = true;
 		try {
+			let files = 0;
 			for (const id of ids) {
-				saveToBrowser(
+				files += saveToBrowser(
 					await client.hub.export(id, { Mode: ExportMode.Download, Format: $exportPrefs.format })
 				);
 			}
+			toast.show(files === 1 ? 'Downloaded' : `Downloaded ${files} files`);
 		} catch (e) {
 			error = hubError(e);
 		} finally {
@@ -83,6 +92,7 @@
 		working = true;
 		try {
 			for (const id of ids) await client.hub.deleteSession(id);
+			toast.show(`${ids.length} scan${ids.length === 1 ? '' : 's'} deleted`);
 		} catch (e) {
 			error = hubError(e);
 		} finally {
@@ -93,7 +103,8 @@
 	async function clearAll() {
 		error = null;
 		try {
-			await client.hub.clearSessions();
+			const gone = await client.hub.clearSessions();
+			toast.show(`${gone} scan${gone === 1 ? '' : 's'} deleted`);
 		} catch (e) {
 			error = hubError(e);
 		}
@@ -106,7 +117,11 @@
 
 <svelte:head><title>YASS</title></svelte:head>
 
-<main class="mx-auto flex max-w-[2200px] flex-col gap-6 px-4 pt-3 pb-7 sm:px-7">
+<main
+	class="mx-auto flex max-w-[2200px] flex-col gap-6 px-4 pt-3 pb-7 sm:px-7 {cameBack
+		? 'animate-slide-from-left'
+		: 'animate-fade-in'}"
+>
 	{#if error}
 		<p class="rounded-[14px] bg-danger-bg px-4 py-2 font-semibold text-danger" role="alert">
 			{error}
@@ -129,6 +144,7 @@
 			onclear={clearAll}
 			ondownload={downloadAll}
 			ondelete={deleteAll}
+			{landed}
 		/>
 	</div>
 </main>

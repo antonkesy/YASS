@@ -2,6 +2,7 @@
 	import type { PageDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { Icon } from '$lib/icons';
 	import { isIdentity, moveIndex, slotAt } from '$lib/review/reorder';
+	import { measure, play, type Positions } from '$lib/review/flip';
 	import PageThumb from './PageThumb.svelte';
 
 	let {
@@ -75,7 +76,7 @@
 			}
 			if (over !== null && over !== from) {
 				const order = moveIndex(pages.length, from, over);
-				if (!isIdentity(order)) onreorder(order);
+				if (!isIdentity(order)) reorderWithFlip(order);
 			}
 			// Suppress the click that follows the drag.
 			suppressClick = true;
@@ -92,6 +93,24 @@
 
 	let suppressClick = false;
 
+	// Measured just before the order changes, replayed once the DOM has settled, so pages
+	// slide to their new slots instead of jumping.
+	let before: Positions | null = null;
+
+	function reorderWithFlip(order: number[]) {
+		before = measure(grid);
+		onreorder(order);
+	}
+
+	$effect(() => {
+		// Re-runs whenever the page order changes; `before` is only set by a reorder.
+		void pages.map((p) => p.Index).join();
+		if (!before) return;
+		const from = before;
+		before = null;
+		requestAnimationFrame(() => play(grid, from));
+	});
+
 	function toggle(index: number) {
 		if (!suppressClick) ontoggle(index);
 	}
@@ -107,7 +126,7 @@
 		const to = back ? from - 1 : from + 1;
 		if (to < 0 || to >= pages.length) return;
 		e.preventDefault();
-		onreorder(moveIndex(pages.length, from, to));
+		reorderWithFlip(moveIndex(pages.length, from, to));
 		queueMicrotask(() => slots()[to]?.querySelector<HTMLElement>('button')?.focus());
 	}
 </script>
@@ -131,7 +150,7 @@
 >
 	{#each pages as page (page.Index)}
 		<div
-			class="w-[70px] flex-none transition-transform duration-500 ease-spring lg:w-full {drag?.from ===
+			class="w-[70px] flex-none animate-page-in transition-transform duration-500 ease-spring lg:w-full {drag?.from ===
 			page.Index
 				? 'opacity-35'
 				: ''} {drag && drag.over === page.Index && drag.from !== page.Index
@@ -140,6 +159,7 @@
 			role="option"
 			aria-selected={selection.has(page.Index)}
 			data-index={page.Index}
+			style="animation-delay: {Math.min(page.Index, 10) * 45}ms"
 		>
 			<PageThumb
 				{sessionId}

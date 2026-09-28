@@ -5,6 +5,7 @@
 	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 	import StatusPill from './StatusPill.svelte';
 	import { Icon } from '$lib/icons';
+	import { cameFrom } from '$lib/navigation';
 
 	const client = getHub();
 	const scanner = client.scanner;
@@ -36,6 +37,7 @@
 		<!-- Label and arrow are one link: the words are the obvious thing to click. -->
 		<a
 			href={resolve('/')}
+			onclick={() => cameFrom.leaving(route.params.id ?? '')}
 			class="group flex items-center gap-2.5 rounded-[12px] text-[15px] font-bold text-ink-3 transition-colors hover:text-ink"
 		>
 			<span

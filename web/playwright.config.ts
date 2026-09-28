@@ -20,7 +20,10 @@ export default defineConfig({
 		{ name: 'mobile', use: { ...devices['Pixel 7'] } }
 	],
 	webServer: {
-		command: `pnpm build && dotnet run --project ../src/Yass.Server --no-launch-profile -- --fake pages=3,blank=2,delay=150ms`,
+		// 400 ms a page, not 150: "stop a scan early" needs a scan that is still running
+		// when the review screen has finished sliding in, or the test races the feeder
+		// rather than exercising Stop.
+		command: `pnpm build && dotnet run --project ../src/Yass.Server --no-launch-profile -- --fake pages=3,blank=2,delay=400ms`,
 		url: `http://127.0.0.1:${port}/healthz`,
 		timeout: 180_000,
 		reuseExistingServer: !process.env.CI,

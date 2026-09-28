@@ -34,7 +34,7 @@
 </script>
 
 <div
-	class="group relative flex flex-col gap-1 rounded-[14px] p-1.5 transition-colors {selected
+	class="group relative flex flex-col gap-1 rounded-[14px] p-1.5 transition-[background-color,box-shadow,opacity] duration-250 {selected
 		? 'bg-accent-50 shadow-ring-selected'
 		: ''} {page.Deleted ? 'opacity-50' : ''}"
 	data-testid="page-thumb"

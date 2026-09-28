@@ -13,12 +13,15 @@
 
 	let {
 		sessions,
+		landed = null,
 		busy = false,
 		onclear,
 		ondownload,
 		ondelete
 	}: {
 		sessions: SessionDto[];
+		/** Id of the scan to play the landing highlight on, once. */
+		landed?: string | null;
 		busy?: boolean;
 		onclear?: () => void;
 		ondownload?: (ids: string[]) => void;
@@ -167,6 +170,7 @@
 				<div class="animate-page-in" style="animation-delay: {Math.min(i, 10) * 45}ms">
 					<SessionTile
 						{session}
+						landed={session.Id === landed}
 						selectable={selecting}
 						selected={picked.has(session.Id)}
 						ontoggle={(id) => (picked = toggle(picked, id))}
@@ -180,6 +184,7 @@
 				<div class="animate-page-in" style="animation-delay: {Math.min(i, 10) * 45}ms">
 					<SessionRow
 						{session}
+						landed={session.Id === landed}
 						selectable={selecting}
 						selected={picked.has(session.Id)}
 						ontoggle={(id) => (picked = toggle(picked, id))}
