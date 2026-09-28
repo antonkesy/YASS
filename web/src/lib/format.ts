@@ -6,7 +6,7 @@ import {
 	SessionState
 } from './hub/generated/Yass.Core.Domain';
 import { ScannerState } from './hub/generated/Yass.Core.Scanning';
-import type { SessionDto } from './hub/generated/Yass.Core.Hub';
+import { ExportFormat, type SessionDto } from './hub/generated/Yass.Core.Hub';
 
 export function sessionStateLabel(state: SessionState): string {
 	switch (state) {
@@ -139,6 +139,12 @@ export const statusLabels: Record<SessionStatus, string> = {
 	downloaded: 'Downloaded',
 	discarded: 'Discarded',
 	failed: 'Failed'
+};
+
+export const exportFormatLabels: Record<ExportFormat, string> = {
+	[ExportFormat.Pdf]: 'PDF',
+	[ExportFormat.Jpg]: 'JPG',
+	[ExportFormat.Png]: 'PNG'
 };
 
 /** The name the user gave a scan, or its timestamp when they have not named it. */

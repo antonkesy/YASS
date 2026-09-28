@@ -467,7 +467,7 @@
 			</main>
 
 			<aside
-				class="order-3 flex w-full basis-full flex-col gap-3.5 rounded-[24px] bg-surface p-[22px] shadow-panel lg:sticky lg:top-[72px] lg:w-auto lg:basis-[clamp(300px,22vw,380px)]"
+				class="order-3 flex w-full min-w-0 basis-full flex-col gap-3.5 rounded-[24px] bg-surface p-[22px] shadow-panel lg:sticky lg:top-[72px] lg:w-auto lg:basis-[clamp(300px,22vw,380px)]"
 			>
 				<div class="flex items-center gap-2">
 					<p class="flex-1 text-xs font-bold tracking-[0.06em] text-ink-muted uppercase">

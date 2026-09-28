@@ -53,7 +53,7 @@
 		'flex h-12 items-center justify-center gap-2 rounded-[14px] bg-accent-50 text-[15px] font-bold text-accent-deep transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-40';
 </script>
 
-<div class="flex flex-col gap-3.5" data-testid="bottom-bar">
+<div class="flex min-w-0 flex-col gap-3.5" data-testid="bottom-bar">
 	{#if exporting || savedPath}
 		<!-- The mockup swaps the buttons for a progress card while a save is running. -->
 		<div
@@ -117,7 +117,7 @@
 			{#if exportDirectory}
 				<!-- Says where Export goes, and is the way to change it: the settings sheet. -->
 				<a
-					class="-mt-1.5 flex min-w-0 items-center gap-2 rounded-[10px] px-2 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-accent-hover50 hover:text-accent"
+					class="-mt-1.5 flex w-full min-w-0 items-center gap-2 rounded-[10px] px-2 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-accent-hover50 hover:text-accent"
 					href={resolve('/settings')}
 					title="Change export folder in settings"
 					data-testid="export-path"

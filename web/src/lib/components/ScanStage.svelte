@@ -3,7 +3,8 @@
 	import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 	import type { ConnectionState } from '$lib/hub/client';
 	import { pageSizeLabel, usesFeeder } from '$lib/format';
-	import { activePreset, presets } from '$lib/presets';
+	import { activePreset, exportPrefs, presets } from '$lib/presets';
+	import { exportFormatLabels } from '$lib/format';
 	import { settings } from '$lib/settings';
 	import PaperStack from './PaperStack.svelte';
 	import PresetPills from './PresetPills.svelte';
@@ -30,6 +31,14 @@
 	// Matched against what the scan will do, not against the stored overrides alone:
 	// a browser with no overrides still matches whichever preset the server defaults to.
 	const chosen = $derived(options ? activePreset($presets, options) : null);
+
+	// The configured folder stands in when nothing is typed, the same fallback the
+	// review screen and the settings sheet use.
+	const destination = $derived(
+		$exportPrefs.exportButton
+			? $exportPrefs.directory.trim() || options?.ExportRoots?.[0] || null
+			: null
+	);
 
 	const offline = $derived(connection !== 'connected');
 	const ready = $derived(!offline && status?.State === ScannerState.Ready);
@@ -62,7 +71,7 @@
 </script>
 
 <section
-	class="flex animate-fade-in flex-col items-center gap-[18px] rounded-[28px] px-5 py-8 shadow-stage sm:px-8 sm:py-12"
+	class="flex animate-fade-in flex-col items-center justify-center gap-[18px] rounded-[28px] px-5 py-8 shadow-stage sm:px-8 sm:py-12"
 	style="background: radial-gradient(120% 80% at 50% 0%, var(--color-accent-wash2) 0%, var(--color-surface) 60%)"
 	style:flex="2 1 520px"
 	data-testid="scan-stage"
@@ -99,7 +108,12 @@
 		onsave={onsettings}
 	/>
 
-	<SettingsChips {options} onclick={onsettings} />
+	<SettingsChips
+		{options}
+		{destination}
+		format={exportFormatLabels[$exportPrefs.format]}
+		onclick={onsettings}
+	/>
 
 	<button
 		type="button"

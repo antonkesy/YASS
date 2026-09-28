@@ -153,3 +153,19 @@ test('scan more appends pages and save to… writes to a listed folder', async (
 	await expect(page.getByTestId('saved-message')).toBeVisible({ timeout: 20_000 });
 	await expect(page.getByTestId('session-state')).toHaveText('Saved');
 });
+
+test('turning the export button off promotes save to… in its place', async ({ page }) => {
+	await page.goto('/settings');
+	const toggle = page.getByTestId('toggle-export-button');
+	await expect(toggle).toBeVisible();
+	await toggle.click();
+
+	await scanToReview(page);
+	await expect(page.getByTestId('save-button')).toHaveCount(0);
+	await expect(page.getByTestId('export-path')).toHaveCount(0);
+	await expect(page.getByTestId('save-to-button')).toBeVisible();
+
+	// Put it back so the following tests see the default sidebar.
+	await page.goto('/settings');
+	await page.getByTestId('toggle-export-button').click();
+});

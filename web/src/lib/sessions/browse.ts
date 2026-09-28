@@ -9,6 +9,13 @@ export const sortLabels: Record<SortOrder, string> = {
 	name: 'Name A–Z'
 };
 
+/** The same orders named for the button that opens the menu, where space is tight. */
+export const sortShortLabels: Record<SortOrder, string> = {
+	newest: 'Newest',
+	oldest: 'Oldest',
+	name: 'Name'
+};
+
 /** Statuses the filter row offers, in the order the mockup lists them. */
 export const filterableStatuses = [
 	'draft',
