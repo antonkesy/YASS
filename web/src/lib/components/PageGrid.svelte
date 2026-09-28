@@ -9,9 +9,11 @@
 		sessionId,
 		pages,
 		selection,
+		current = -1,
 		reorderable = true,
 		scanning = false,
 		documents,
+		onshow,
 		ontoggle,
 		onopen,
 		onreorder,
@@ -20,18 +22,21 @@
 		sessionId: string;
 		pages: PageDto[];
 		selection: ReadonlySet<number>;
+		/** Index of the page the stage is showing, ringed in the strip. */
+		current?: number;
 		reorderable?: boolean;
 		/** Shows a placeholder tile for the page currently coming off the feeder. */
 		scanning?: boolean;
 		/** Page index to document number, so a split shows where it falls. */
 		documents?: Map<number, number>;
+		onshow: (index: number) => void;
 		ontoggle: (index: number) => void;
 		onopen: (index: number) => void;
 		onreorder: (order: number[]) => void;
 		onscanmore?: () => void;
 	} = $props();
 
-	// Drag = press, hold ~250 ms without moving, then move. A quick tap stays a tap (selection).
+	// Drag = press, hold ~250 ms without moving, then move. A quick tap stays a tap (show/select).
 	let grid = $state<HTMLDivElement | null>(null);
 	let drag = $state<{ from: number; over: number | null } | null>(null);
 	let pressTimer: ReturnType<typeof setTimeout> | null = null;
@@ -111,6 +116,10 @@
 		requestAnimationFrame(() => play(grid, from));
 	});
 
+	function show(index: number) {
+		if (!suppressClick) onshow(index);
+	}
+
 	function toggle(index: number) {
 		if (!suppressClick) ontoggle(index);
 	}
@@ -165,9 +174,11 @@
 				{sessionId}
 				{page}
 				selected={selection.has(page.Index)}
+				current={page.Index === current}
 				document={page.StartsDocument && (documents?.get(page.Index) ?? 0) > 1
 					? documents!.get(page.Index)!
 					: null}
+				onshow={show}
 				ontoggle={toggle}
 				{onopen}
 			/>
