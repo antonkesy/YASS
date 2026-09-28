@@ -23,7 +23,7 @@ YASS is a headless scanning service for a home server on Linux (bare metal, NixO
 | Config | **YAML** via `YamlDotNet`, file `yass.yaml`, env overrides via ASP.NET's built-in configuration (`YASS__section__key`) | Bound to C# records with `IOptions<T>` + `ValidateDataAnnotations().ValidateOnStart()`. Fail fast, name the bad key. |
 | Frontend | **SvelteKit** (`@sveltejs/adapter-static`, SPA fallback), TypeScript, **Tailwind**, **`@vite-pwa/sveltekit`** | Installable PWA = "export as app". No component library. |
 | Shared types | Hub contract defined once in C# (`IYassHub`, `IYassClient`); TS types generated with **`TypedSignalR.Client.TypeScript`** in CI; drift fails the build | |
-| Backend tests | **xUnit** + `WebApplicationFactory` + `NSubstitute` | Scanner behind `IScannerBackend`; `FakeScannerBackend` yields PNG fixtures. |
+| Backend tests | **xUnit** + `WebApplicationFactory` | Scanner behind `IScannerBackend`; `FakeScannerBackend` yields PNG fixtures. |
 | Frontend tests | **Vitest** + `@testing-library/svelte`; **Playwright** E2E (desktop Chromium + Pixel 7 profile) against server in `--fake` mode | |
 | Lint/format | `dotnet format` + analyzers (`TreatWarningsAsErrors`), `eslint`, `prettier`, `svelte-check`; **`pre-commit`** framework | |
 | Commits/releases | **Conventional Commits** enforced by `conventional-pre-commit`; **`release-please`** for changelog + tags | |
