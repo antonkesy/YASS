@@ -16,6 +16,8 @@ it starts in seconds).
 1. **Scan** — the scripted fake scanner feeds five pages, ~400 ms each. Page 3
    comes out blank and is flagged as such.
 2. **Review** — rotate, reorder by dragging, delete the blank page.
+   Open a page and click it (or the zoom button, or `z`) to switch between
+   fit-to-screen and full width; `Esc` backs out of zoom, then closes.
 3. **Save to paperless** — the PDF lands in [`output/`](output) on your host.
    **Download** hands it to the browser instead.
 4. **Settings** — source, dpi, colour, page size and blank-page detection are
@@ -38,6 +40,10 @@ live in the container's `/tmp`, so nothing survives except the PDFs you saved.
 
 For real pages and a real PDF you need a scanner and the non-fake path — see the
 [main README](../README.md).
+
+The fixtures are also only 620 px wide, so zooming in looks soft here. Real
+scans are capped by `processing.preview_max_width` (1600 by default, up to
+4096) — raise it if zoom looks blurry on a large screen.
 
 ## Changing the scenario
 

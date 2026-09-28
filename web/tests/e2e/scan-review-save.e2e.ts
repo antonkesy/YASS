@@ -53,7 +53,18 @@ test('scan, review, edit, download and save', async ({ page }) => {
 	const preview = page.getByTestId('preview');
 	await expect(preview).toBeVisible();
 	await expect(page.getByTestId('preview-counter')).toHaveText('1 / 3');
+
+	// Zoom fills the viewport width instead of fitting the page; moving on resets it.
+	const zoom = page.getByTestId('preview-zoom');
+	const previewImg = preview.locator('img');
+	const fitted = await previewImg.boundingBox();
+	await zoom.click();
+	await expect(zoom).toHaveAttribute('aria-pressed', 'true');
+	const enlarged = await previewImg.boundingBox();
+	expect(enlarged!.width).toBeGreaterThan(fitted!.width);
+
 	await page.getByTestId('preview-next').click();
+	await expect(zoom).toHaveAttribute('aria-pressed', 'false');
 	await expect(page.getByTestId('preview-counter')).toHaveText(/2 \/ 3/);
 	await page.keyboard.press('ArrowRight');
 	await expect(page.getByTestId('preview-counter')).toHaveText('3 / 3');
