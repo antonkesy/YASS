@@ -61,6 +61,8 @@ public sealed class HubClient : IAsyncDisposable
 
     public Task<ExportResult> Export(string id, ExportMode mode) => _connection.InvokeAsync<ExportResult>(nameof(IYassHub.Export), id, new ExportRequest(mode));
 
+    public Task<ExportResult> Export(string id, ExportRequest request) => _connection.InvokeAsync<ExportResult>(nameof(IYassHub.Export), id, request);
+
     public Task<ScannerStatusDto> GetScannerStatus() => _connection.InvokeAsync<ScannerStatusDto>(nameof(IYassHub.GetScannerStatus));
 
     public Task<ScanOptionsDto> GetEffectiveOptions() => _connection.InvokeAsync<ScanOptionsDto>(nameof(IYassHub.GetEffectiveOptions));

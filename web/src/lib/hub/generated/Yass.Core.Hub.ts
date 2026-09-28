@@ -102,10 +102,23 @@ export enum ExportMode {
     Download = 1,
 }
 
+/** Transpiled from Yass.Core.Hub.ExportFormat */
+export enum ExportFormat {
+    Pdf = 0,
+    Jpg = 1,
+    Png = 2,
+}
+
 /** Transpiled from Yass.Core.Hub.ExportRequest */
 export type ExportRequest = {
     /** Transpiled from Yass.Core.Hub.ExportMode */
     Mode: ExportMode;
+    /** Transpiled from Yass.Core.Hub.ExportFormat */
+    Format: ExportFormat;
+    /** Transpiled from string? */
+    Name?: string;
+    /** Transpiled from string? */
+    Directory?: string;
 }
 
 /** Transpiled from Yass.Core.Hub.ExportResult */

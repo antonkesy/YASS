@@ -6,6 +6,7 @@ using NAPS2.Pdf;
 using NAPS2.Scan;
 using Yass.Core.Config;
 using Yass.Core.Export;
+using Yass.Core.Hub;
 
 namespace Yass.Export;
 
@@ -19,6 +20,14 @@ public sealed class Naps2PdfWriter : IDocumentWriter, IDisposable
     {
         _logger = logger;
         _context = new ScanningContext(new ImageSharpImageContext()) { Logger = logger };
+    }
+
+    public async Task WriteImageAsync(ExportPage page, ExportFormat format, PdfConfig quality, Stream destination, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+        ArgumentNullException.ThrowIfNull(destination);
+        ArgumentNullException.ThrowIfNull(quality);
+        await PageRenderer.RenderToStreamAsync(page, format, quality, destination, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task WritePdfAsync(IReadOnlyList<ExportPage> pages, PdfConfig pdf, Stream destination, IProgress<int>? progress, CancellationToken cancellationToken)

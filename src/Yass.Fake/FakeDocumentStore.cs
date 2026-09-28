@@ -8,11 +8,16 @@ public sealed class FakeDocumentStore(string directory) : IDocumentStore
 {
     public string Directory { get; } = directory;
 
-    public async Task<string> SaveAsync(Func<Stream, CancellationToken, Task> write, DateTimeOffset createdAt, CancellationToken cancellationToken)
+    public async Task<string> SaveAsync(Func<Stream, CancellationToken, Task> write, DocumentTarget target, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(write);
-        System.IO.Directory.CreateDirectory(Directory);
-        string final = Unique(Path.Combine(Directory, $"fake_{createdAt.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)}.pdf"));
+        ArgumentNullException.ThrowIfNull(target);
+        string directory = string.IsNullOrWhiteSpace(target.Directory) ? Directory : target.Directory;
+        System.IO.Directory.CreateDirectory(directory);
+        string stem = string.IsNullOrWhiteSpace(target.FileName)
+            ? $"fake_{target.CreatedAt.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)}"
+            : target.FileName;
+        string final = Unique(Path.Combine(directory, stem + target.Extension));
         string temp = final + ".part";
 
         await using (FileStream stream = File.Create(temp))

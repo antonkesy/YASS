@@ -3,7 +3,10 @@
 	import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 	import type { ConnectionState } from '$lib/hub/client';
 	import { pageSizeLabel, usesFeeder } from '$lib/format';
+	import { activePreset, presets } from '$lib/presets';
+	import { settings } from '$lib/settings';
 	import PaperStack from './PaperStack.svelte';
+	import PresetPills from './PresetPills.svelte';
 	import ScanButton from './ScanButton.svelte';
 	import SettingsChips from './SettingsChips.svelte';
 	import { Icon } from '$lib/icons';
@@ -23,6 +26,8 @@
 		onscan: () => void;
 		onsettings: () => void;
 	} = $props();
+
+	const chosen = $derived(activePreset($presets, $settings));
 
 	const offline = $derived(connection !== 'connected');
 	const ready = $derived(!offline && status?.State === ScannerState.Ready);
@@ -80,6 +85,17 @@
 	>
 		{headline}
 	</h1>
+
+	<PresetPills
+		presets={$presets}
+		active={chosen?.id ?? null}
+		modified={chosen === null}
+		onpick={(id) => {
+			const preset = $presets.find((p) => p.id === id);
+			if (preset) settings.set({ ...$settings, ...preset.settings });
+		}}
+		onsave={onsettings}
+	/>
 
 	<SettingsChips {options} onclick={onsettings} />
 
