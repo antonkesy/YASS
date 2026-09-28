@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:#e9edf5;font-family:Manrope,system-ui,sans-serif;color:#131a2b}
+a{color:#2b63f0}a:hover{color:#1c46c4}
+button,input{font-family:inherit}
+:focus-visible{outline:2px solid #2b63f0;outline-offset:2px}
+input[type=range]{accent-color:#2b63f0}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}70%{box-shadow:0 0 0 7px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+@keyframes pulseB{0%{box-shadow:0 0 0 0 rgba(43,99,240,.55)}70%{box-shadow:0 0 0 7px rgba(43,99,240,0)}100%{box-shadow:0 0 0 0 rgba(43,99,240,0)}}
+@keyframes pgIn{from{opacity:0;transform:translateY(12px) scale(.95)}to{opacity:1;transform:none}}
+@keyframes sweep{0%{top:0;opacity:0}12%{opacity:1}88%{opacity:1}100%{top:calc(100% - 2px);opacity:0}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,14px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes checkIn{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+@keyframes slideFromLeft{from{opacity:0;transform:translateX(-36px)}to{opacity:1;transform:none}}
+@keyframes slideFromRight{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+@keyframes slideOutRight{from{opacity:1;transform:none}to{opacity:0;transform:translateX(48px)}}
+@keyframes landIn{0%{opacity:0;transform:translateY(-28px) scale(.7) rotate(-4deg)}55%{opacity:1;transform:translateY(4px) scale(1.04) rotate(.5deg)}100%{opacity:1;transform:none}}
+@keyframes landGlow{0%{box-shadow:0 0 0 0 rgba(43,99,240,.55)}100%{box-shadow:0 0 0 16px rgba(43,99,240,0)}}
+@keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:{{ outerPad }};background:#e9edf5">
+<div style="position:relative;flex:none;width:{{ frameW }};height:{{ frameH }};background:#f5f7fc;overflow:hidden;border-radius:{{ frameRad }};box-shadow:{{ frameShadow }}">
+<div ref="{{ scrollRef }}" style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden">
+
+<header style="position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:10px;padding:0 {{ padX }};background:rgba(245,247,252,.82);backdrop-filter:blur(14px)">
+<sc-if value="{{ onHome }}" hint-placeholder-val="{{ true }}"><div style="display:flex;align-items:center;gap:10px"><img src="assets/yawss.svg" alt="" style="width:32px;height:32px;border-radius:9px"><span style="font-weight:800;font-size:19px;letter-spacing:-.01em">YAWSS</span></div></sc-if>
+<sc-if value="{{ notHome }}" hint-placeholder-val="{{ false }}"><button onClick="{{ goBack }}" title="Back" aria-label="Back" style="width:40px;height:40px;flex:none;display:flex;align-items:center;justify-content:center;border:0;border-radius:12px;background:#fff;box-shadow:0 1px 2px rgba(19,26,43,.08);color:#131a2b;cursor:pointer;transition:background .15s" style-hover="background:#eaf0ff">{{ ic.back }}</button><span style="font-size:15px;font-weight:700;color:#4b5468">Back to home</span></sc-if>
+<div style="flex:1"></div>
+<div style="display:flex;align-items:center;gap:8px;height:34px;padding:0 14px 0 12px;border-radius:999px;background:#fff;box-shadow:0 1px 2px rgba(19,26,43,.08);font-size:13px;font-weight:600;white-space:nowrap"><span style="width:8px;height:8px;border-radius:50%;background:{{ status.dot }};animation:{{ status.anim }}"></span><span>{{ status.text }}</span></div>
+<div style="position:absolute;left:0;bottom:0;height:3px;border-radius:0 3px 3px 0;width:{{ progPct }};background:linear-gradient(90deg,#38bdf8,#2b63f0);transition:width .12s linear,opacity .4s;opacity:{{ progOp }}"></div>
+</header>
+
+<sc-if value="{{ onHome }}" hint-placeholder-val="{{ true }}">
+<div style="animation:{{ homeAnim }};max-width:{{ homeMax }};min-height:{{ homeMinH }};margin:0 auto;padding:12px {{ padX }} {{ homeBottom }};display:flex;flex-wrap:wrap;gap:24px;align-items:stretch">
+<section style="position:relative;flex:2 1 520px;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:{{ stagePad }};border-radius:28px;background:radial-gradient(120% 80% at 50% 0%,#e3ebff 0%,#ffffff 60%);box-shadow:0 1px 2px rgba(19,26,43,.05),0 12px 40px rgba(43,99,240,.08);overflow:hidden">
+<div style="position:relative;width:{{ sheetW }};aspect-ratio:1/1.414;margin:6px 0 14px;animation:float 5s ease-in-out infinite">
+<div style="position:absolute;inset:0;transform:translate(16px,12px) rotate(4deg);border-radius:10px;background:#dfe7fb"></div>
+<div style="position:absolute;inset:0;transform:translate(8px,6px) rotate(2deg);border-radius:10px;background:#eef3ff;box-shadow:0 2px 6px rgba(43,99,240,.08)"></div>
+<div style="position:absolute;inset:0;border-radius:10px;background:#fff;box-shadow:0 18px 40px rgba(43,99,240,.18),0 0 0 1px rgba(43,99,240,.08);overflow:hidden;display:flex;align-items:flex-end;justify-content:center;padding-bottom:14px"><span style="font:600 11px ui-monospace,Menlo,monospace;color:#8793ad">{{ s.paper }} · {{ s.dpi }} dpi</span><div style="position:absolute;left:0;right:0;top:0;height:2px;background:#3b82f6;box-shadow:0 0 16px 6px rgba(56,189,248,.7);animation:sweep 3.2s ease-in-out infinite"></div></div>
+</div>
+<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:#e8f8ee;color:#157a3c;font-size:13px;font-weight:700"><span style="width:7px;height:7px;border-radius:50%;background:#22c55e"></span>Feeder loaded</div>
+<h1 style="margin:0;font-size:{{ h1Size }};font-weight:800;letter-spacing:-.03em;text-align:center">Ready to scan</h1>
+<div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;max-width:560px"><span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8791a8">Preset</span><div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px;padding:5px;border-radius:24px;background:rgba(238,242,255,.8)"><sc-for list="{{ presetOpts }}" as="pr" hint-placeholder-count="4"><button onClick="{{ pr.onClick }}" style="flex:none;display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 14px;border:0;border-radius:999px;background:{{ pr.bg }};box-shadow:{{ pr.sh }};color:{{ pr.fg }};font-size:13px;font-weight:700;cursor:pointer;transition:background .2s,color .2s,box-shadow .2s,transform .15s;white-space:nowrap" style-hover="transform:translateY(-1px)" style-active="transform:scale(.97)"><span style="display:flex">{{ pr.icon }}</span>{{ pr.name }}</button></sc-for><sc-if value="{{ isModified }}" hint-placeholder-val="{{ false }}"><span style="flex:none;display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 12px;border-radius:999px;background:#fff4db;color:#9a5800;font-size:13px;font-weight:700;animation:popIn .2s both">Custom<button onClick="{{ openSettings }}" style="border:0;background:transparent;padding:0;color:#9a5800;font-size:12px;font-weight:800;text-decoration:underline;text-underline-offset:2px;cursor:pointer">Save…</button></span></sc-if></div></div>
+<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:520px"><sc-for list="{{ chips }}" as="c" hint-placeholder-count="5"><button onClick="{{ openSettings }}" style="height:32px;padding:0 12px;border:0;border-radius:999px;background:#eef2ff;color:#1c3fae;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s,transform .15s" style-hover="background:#dce6ff;transform:translateY(-1px)">{{ c }}</button></sc-for></div>
+<button onClick="{{ openSettings }}" style="display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border:0;border-radius:999px;background:transparent;color:#2b63f0;font-size:14px;font-weight:700;cursor:pointer;transition:background .15s" style-hover="background:#eaf0ff">{{ ic.sliders }}Change settings</button>
+<button onClick="{{ startScan }}" style="margin-top:6px;width:min(340px,100%);height:64px;display:flex;align-items:center;justify-content:center;gap:12px;border:0;border-radius:18px;background:linear-gradient(135deg,#3b82f6 0%,#2b5cf0 100%);color:#fff;font-size:20px;font-weight:800;letter-spacing:-.01em;cursor:pointer;box-shadow:0 10px 30px rgba(43,99,240,.38),inset 0 1px 0 rgba(255,255,255,.25);transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s" style-hover="transform:translateY(-2px);box-shadow:0 16px 38px rgba(43,99,240,.45),inset 0 1px 0 rgba(255,255,255,.25)" style-active="transform:scale(.98)">{{ ic.scan }}<span>Scan</span></button>
+</section>
+
+<section style="flex:{{ pastFlex }};min-width:0;display:flex;flex-direction:column;gap:16px;padding:22px;border-radius:28px;background:#fff;box-shadow:0 1px 2px rgba(19,26,43,.05),0 12px 40px rgba(19,26,43,.05)">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><div style="display:flex;align-items:baseline;gap:10px"><h3 style="margin:0;font-size:19px;font-weight:800;letter-spacing:-.01em">Past scans</h3><span style="font-size:13px;color:#667089">{{ pastCount }}</span></div><div style="display:flex;padding:3px;border-radius:12px;background:#eef1f7"><button onClick="{{ viewGrid }}" title="Grid" aria-label="Grid view" style="width:34px;height:30px;display:flex;align-items:center;justify-content:center;border:0;border-radius:9px;background:{{ gridBg }};box-shadow:{{ gridSh }};color:{{ gridFg }};cursor:pointer;transition:all .2s">{{ ic.grid }}</button><button onClick="{{ viewList }}" title="List" aria-label="List view" style="width:34px;height:30px;display:flex;align-items:center;justify-content:center;border:0;border-radius:9px;background:{{ listBg }};box-shadow:{{ listSh }};color:{{ listFg }};cursor:pointer;transition:all .2s">{{ ic.list }}</button></div></div>
+<sc-if value="{{ notSelMode }}" hint-placeholder-val="{{ true }}"><div style="display:flex;align-items:center;gap:8px;animation:fadeIn .2s"><label style="flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;border-radius:12px;background:#f1f3f8;color:#8791a8;transition:box-shadow .15s">{{ ic.search }}<input value="{{ q }}" onChange="{{ onQ }}" placeholder="Search scans" aria-label="Search past scans" style="flex:1;min-width:0;height:100%;border:0;background:transparent;font-size:14px;font-weight:500;color:#131a2b;outline:none"><sc-if value="{{ hasQ }}"><button onClick="{{ clearQ }}" aria-label="Clear search" style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:#dfe3ec;color:#4b5468;cursor:pointer;padding:0">{{ ic.xs }}</button></sc-if></label><div style="position:relative;flex:none"><button onClick="{{ toggleSortMenu }}" title="Sort" aria-haspopup="menu" style="display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 12px;border:0;border-radius:12px;background:{{ sortBtnBg }};color:#3b4459;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s" style-hover="background:#e6eaf2">{{ ic.sort }}{{ sortLabel }}</button><sc-if value="{{ sortMenu }}" hint-placeholder-val="{{ false }}"><div onClick="{{ closeSortMenu }}" style="position:fixed;inset:0;z-index:29"></div><div role="menu" style="position:absolute;top:calc(100% + 6px);right:0;z-index:30;min-width:190px;padding:6px;border-radius:16px;background:#fff;box-shadow:0 16px 40px rgba(19,26,43,.16),0 0 0 1px rgba(19,26,43,.04);display:flex;flex-direction:column;animation:popIn .18s cubic-bezier(.2,.8,.2,1)"><span style="padding:6px 10px 4px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8791a8">Sort by</span><sc-for list="{{ sortOpts }}" as="so" hint-placeholder-count="3"><button role="menuitem" onClick="{{ so.onClick }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;height:40px;padding:0 10px;border:0;border-radius:10px;background:{{ so.bg }};text-align:left;font-size:14px;font-weight:{{ so.fw }};color:{{ so.fg }};cursor:pointer" style-hover="background:#f1f5ff"><span>{{ so.label }}</span><span style="color:#2b63f0;display:flex">{{ so.chk }}</span></button></sc-for></div></sc-if></div><button onClick="{{ enterSel }}" style="height:38px;padding:0 14px;border:0;border-radius:12px;background:#eef3ff;color:#1c3fae;font-size:13px;font-weight:700;cursor:pointer;opacity:{{ hasPastOp }};pointer-events:{{ hasPastPe }}" style-hover="background:#dce6ff">Select</button></div></sc-if>
+<sc-if value="{{ notSelMode }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:-4px"><sc-for list="{{ statusFilters }}" as="sf" hint-placeholder-count="5"><button onClick="{{ sf.onClick }}" style="flex:none;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border:0;border-radius:999px;background:{{ sf.bg }};color:{{ sf.fg }};font-size:12px;font-weight:700;cursor:pointer;transition:background .2s,color .2s;white-space:nowrap"><span style="width:7px;height:7px;border-radius:50%;background:{{ sf.dot }};display:{{ sf.dotD }}"></span>{{ sf.label }}<span style="opacity:.6">{{ sf.n }}</span></button></sc-for></div></sc-if>
+<sc-if value="{{ selMode }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:6px;padding:4px 4px 4px 14px;border-radius:14px;background:#2b63f0;color:#fff;animation:popIn .22s cubic-bezier(.2,.8,.2,1)"><span style="font-size:14px;font-weight:800;white-space:nowrap">{{ selCountText }}</span><button onClick="{{ toggleAll }}" style="height:30px;padding:0 10px;border:0;border-radius:9px;background:rgba(255,255,255,.16);color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap" style-hover="background:rgba(255,255,255,.26)">{{ toggleAllLabel }}</button><div style="flex:1"></div><button onClick="{{ bulkDownload }}" title="Download selected" aria-label="Download selected" style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:transparent;color:#fff;cursor:pointer;opacity:{{ selOp }};pointer-events:{{ selPe }}" style-hover="background:rgba(255,255,255,.18)">{{ ic.download }}</button><button onClick="{{ bulkMerge }}" title="Merge selected into one document" aria-label="Merge selected" style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:transparent;color:#fff;cursor:pointer;opacity:{{ mergeSelOp }};pointer-events:{{ mergeSelPe }}" style-hover="background:rgba(255,255,255,.18)">{{ ic.layers }}</button><button onClick="{{ bulkDelete }}" title="Delete selected" aria-label="Delete selected" style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:transparent;color:#fff;cursor:pointer;opacity:{{ selOp }};pointer-events:{{ selPe }}" style-hover="background:rgba(255,255,255,.18)">{{ ic.trash }}</button><button onClick="{{ exitSel }}" style="height:34px;padding:0 12px;border:0;border-radius:10px;background:#fff;color:#1c3fae;font-size:13px;font-weight:800;cursor:pointer">Done</button></div></sc-if>
+<sc-if value="{{ isGrid }}" hint-placeholder-val="{{ true }}"><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax({{ pastMin }},1fr));gap:12px"><sc-for list="{{ pastShown }}" as="it" hint-placeholder-count="6"><button data-pid="{{ it.id }}" onClick="{{ it.onClick }}" style="position:relative;display:flex;flex-direction:column;gap:8px;padding:10px;min-width:0;border:0;border-radius:16px;background:{{ it.bg }};box-shadow:{{ it.ring }};cursor:pointer;text-align:left;color:#131a2b;transition:background .5s,transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s;animation:{{ it.anim }}" style-hover="transform:translateY(-3px)"><div style="position:relative;padding:0 5px 5px 0"><sc-if value="{{ it.multi }}"><div style="position:absolute;inset:5px 0 0 5px;border-radius:6px;background:#dfe5f2"></div></sc-if><div style="position:relative;transform:{{ it.scale }};transition:transform .25s cubic-bezier(.2,.8,.2,1)"><dc-import name="ScanPage" page="{{ it.first }}" modern="{{ true }}" hint-size="100%,130px"></dc-import><span data-tag="1" style="position:absolute;right:6px;bottom:6px;display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:999px;background:{{ it.st.bg }};color:{{ it.st.fg }};font-size:10px;font-weight:800;letter-spacing:.02em;box-shadow:0 1px 3px rgba(19,26,43,.12)"><span style="width:6px;height:6px;border-radius:50%;background:{{ it.st.dot }};animation:{{ it.st.anim }}"></span>{{ it.st.label }}</span></div></div><div style="display:flex;flex-direction:column;min-width:0;gap:1px"><span style="font-weight:700;font-size:13px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ it.name }}</span><span style="font-size:11px;color:#667089">{{ it.meta }}</span></div><sc-if value="{{ selMode }}"><span style="position:absolute;top:16px;left:16px;width:24px;height:24px;border-radius:50%;border:{{ it.chkBd }};background:{{ it.chkBg }};color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(19,26,43,.18);transition:background .2s;animation:checkIn .3s both">{{ it.chk }}</span></sc-if></button></sc-for></div></sc-if>
+<sc-if value="{{ isList }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:4px"><sc-for list="{{ pastShown }}" as="it" hint-placeholder-count="6"><div data-pid="{{ it.id }}" role="button" tabindex="0" onClick="{{ it.onClick }}" style="display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:14px;background:{{ it.bg }};box-shadow:{{ it.ring }};cursor:pointer;color:#131a2b;transition:background .4s,box-shadow .2s;animation:{{ it.anim }}" style-hover="background:{{ it.hover }}"><sc-if value="{{ selMode }}"><span style="flex:none;width:22px;height:22px;border-radius:50%;border:{{ it.chkBd }};background:{{ it.chkBg }};color:#fff;display:flex;align-items:center;justify-content:center;transition:background .2s;animation:checkIn .3s both">{{ it.chk }}</span></sc-if><div style="width:32px;flex:none"><dc-import name="ScanPage" page="{{ it.first }}" modern="{{ true }}" hint-size="32px,45px"></dc-import></div><div style="flex:1;min-width:0;display:flex;flex-direction:column"><span style="font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ it.name }}</span><span style="display:flex;align-items:center;gap:6px;min-width:0;font-size:12px;color:#667089"><span data-tag="1" style="flex:none;display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 7px;border-radius:999px;background:{{ it.st.bg }};color:{{ it.st.fg }};font-size:10px;font-weight:800"><span style="width:6px;height:6px;border-radius:50%;background:{{ it.st.dot }};animation:{{ it.st.anim }}"></span>{{ it.st.label }}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ it.date }} · {{ it.short }}</span></span><span style="font-size:11px;color:#8791a8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,Menlo,monospace">{{ it.detail }}</span></div><sc-if value="{{ notSelMode }}"><button onClick="{{ it.onDownload }}" title="Download" aria-label="Download" style="width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:transparent;color:#667089;cursor:pointer" style-hover="background:#e6ecfb;color:#2b63f0">{{ ic.download }}</button><button onClick="{{ it.onDelete }}" title="Delete" aria-label="Delete" style="width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:transparent;color:#667089;cursor:pointer" style-hover="background:#fdecec;color:#c42b2b">{{ ic.trash }}</button></sc-if></div></sc-for></div></sc-if>
+<sc-if value="{{ pastEmpty }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:36px 12px;text-align:center;border-radius:18px;background:#f5f7fc;animation:fadeIn .3s"><span style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:14px;background:#fff;color:#2b63f0;box-shadow:0 2px 6px rgba(19,26,43,.08)">{{ ic.archive }}</span><span style="font-size:15px;font-weight:800;margin-top:6px">{{ emptyTitle }}</span><span style="font-size:13px;color:#667089;text-wrap:balance">{{ emptyBody }}</span></div></sc-if>
+<sc-if value="{{ showFooter }}"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:12px;margin-top:auto;border-top:1px solid #edf0f6"><span style="font-size:12px;color:#667089">{{ storageText }}</span><button onClick="{{ askClearAll }}" style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:0;border-radius:999px;background:transparent;color:#c42b2b;font-size:13px;font-weight:700;cursor:pointer" style-hover="background:#fdecec">{{ ic.trash }}Clear all</button></div></sc-if>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{ onPreview }}" hint-placeholder-val="{{ false }}">
+<div style="animation:{{ prevAnim }};display:flex;flex-wrap:wrap;gap:20px;padding:8px {{ padX }} 28px;min-height:calc(100% - 64px);align-items:flex-start">
+<nav style="order:{{ ordFilm }};flex:0 0 {{ filmBasis }};display:flex;flex-direction:{{ filmDir }};gap:12px;padding:12px;overflow:auto;max-height:{{ filmMaxH }};position:{{ filmPos }};top:72px;border-radius:22px;background:#fff;box-shadow:0 1px 2px rgba(19,26,43,.05),0 8px 28px rgba(19,26,43,.05)">
+<sc-for list="{{ pagesV }}" as="pg" hint-placeholder-count="0"><button data-fid="{{ pg.id }}" draggable="true" onDragStart="{{ pg.onDragStart }}" onDragEnter="{{ pg.onDragEnter }}" onDragOver="{{ pg.onDragOver }}" onDragEnd="{{ pg.onDragEnd }}" onClick="{{ pg.onClick }}" style="position:relative;flex:none;width:{{ filmW }};padding:6px;border:0;border-radius:14px;background:{{ pg.bg }};box-shadow:{{ pg.ring }};opacity:{{ pg.op }};cursor:grab;display:flex;flex-direction:column;gap:5px;color:#131a2b;transition:background .2s,box-shadow .2s;animation:pgIn .45s both"><dc-import name="ScanPage" page="{{ pg.page }}" sweep="{{ pg.sweep }}" modern="{{ true }}" hint-size="100%,100px"></dc-import><span style="font-size:11px;font-weight:700;color:{{ pg.numFg }}">{{ pg.num }}</span><sc-if value="{{ pg.docStart }}"><span style="position:absolute;top:-6px;left:4px;animation:popIn .3s cubic-bezier(.2,.8,.2,1) both;padding:3px 7px;border-radius:999px;background:#2b63f0;color:#fff;font-size:10px;font-weight:700">{{ pg.docShort }}</span></sc-if></button></sc-for>
+<sc-if value="{{ scanAppend }}"><div style="flex:none;width:{{ filmW }};padding:6px;border-radius:14px;background:#eef3ff;box-shadow:inset 0 0 0 2px #93b4ff;display:flex;flex-direction:column;gap:5px;animation:pgIn .45s both"><dc-import name="ScanPage" page="{{ scanCur }}" sweep="{{ scanP }}" modern="{{ true }}" hint-size="100%,100px"></dc-import><span style="font-size:11px;font-weight:700;color:#2b63f0">{{ scanNum }}</span></div></sc-if>
+<button onClick="{{ scanMore }}" title="Scan more pages" style="flex:none;width:{{ filmW }};aspect-ratio:1/1.2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1.5px dashed #b9c6e4;border-radius:14px;background:transparent;color:#2b63f0;font-size:12px;font-weight:700;cursor:pointer;transition:background .15s,border-color .15s" style-hover="background:#f1f5ff;border-color:#2b63f0">{{ ic.plus }}<span>Scan more</span></button>
+</nav>
+
+<main style="order:{{ ordMain }};flex:1 1 380px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:18px;padding-top:4px">
+<div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:12px;min-height:32px;font-size:13px;color:#667089"><span style="padding:6px 12px;border-radius:999px;background:#fff;box-shadow:0 1px 2px rgba(19,26,43,.08);font-weight:700;color:#131a2b">{{ bPageText }}</span><sc-if value="{{ scanning }}"><span style="display:flex;align-items:center;gap:10px;animation:fadeIn .3s"><span style="width:130px;height:6px;border-radius:999px;background:#dce6ff;overflow:hidden"><span style="display:block;height:100%;width:{{ progPct }};border-radius:999px;background:linear-gradient(90deg,#38bdf8,#2b63f0);transition:width .12s linear"></span></span><span style="font-weight:600;font-variant-numeric:tabular-nums">{{ scanText }}</span><button onClick="{{ stopScan }}" style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border:0;border-radius:999px;background:#fff;box-shadow:0 1px 2px rgba(19,26,43,.1);font-size:12px;font-weight:700;cursor:pointer;color:#131a2b" style-hover="background:#fdecec;color:#c42b2b">{{ ic.stop }}Stop</button></span></sc-if></div>
+<div style="display:flex;align-items:center;justify-content:center;gap:14px;width:100%">
+<button onClick="{{ prevPage }}" aria-label="Previous page" style="width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(19,26,43,.08);color:#131a2b;cursor:pointer;opacity:{{ prevOp }};transition:transform .15s,background .15s" style-hover="background:#eaf0ff;transform:scale(1.06)">{{ ic.chevL }}</button>
+<div ref="{{ bigRef }}" style="width:100%;max-width:{{ bigMax }};position:relative;filter:drop-shadow(0 18px 36px rgba(19,26,43,.14))"><sc-if value="{{ hasBig }}"><dc-import name="ScanPage" page="{{ bigPage }}" sweep="{{ bigSweep }}" modern="{{ true }}" hint-size="100%,480px"></dc-import></sc-if><sc-if value="{{ noBig }}"><div style="aspect-ratio:1/1.414;border:1.5px dashed #b9c6e4;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#667089;font-size:14px">No pages</div></sc-if></div>
+<button onClick="{{ nextPage }}" aria-label="Next page" style="width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(19,26,43,.08);color:#131a2b;cursor:pointer;opacity:{{ nextOp }};transition:transform .15s,background .15s" style-hover="background:#eaf0ff;transform:scale(1.06)">{{ ic.chevR }}</button>
+</div>
+<div style="position:relative;display:flex;flex-wrap:wrap;justify-content:center;gap:2px;padding:6px;border-radius:20px;background:#fff;box-shadow:0 2px 6px rgba(19,26,43,.05),0 12px 32px rgba(19,26,43,.08)">
+<sc-for list="{{ tools }}" as="t" hint-placeholder-count="7"><button onClick="{{ t.onClick }}" title="{{ t.label }}" style="min-width:62px;height:58px;padding:0 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:0;border-radius:14px;background:{{ t.bg }};color:{{ t.fg }};opacity:{{ t.op }};pointer-events:{{ t.pe }};font-size:11px;font-weight:700;cursor:pointer;transition:background .15s,color .15s" style-hover="background:{{ t.hover }}">{{ t.icon }}<span>{{ t.short }}</span></button></sc-for>
+<sc-if value="{{ menuFilter }}"><div style="position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);z-index:30;min-width:200px;padding:6px;border-radius:16px;background:#fff;box-shadow:0 16px 40px rgba(19,26,43,.16);display:flex;flex-direction:column;animation:fadeIn .18s ease-out"><sc-for list="{{ filterOpts }}" as="f" hint-placeholder-count="4"><button onClick="{{ f.onClick }}" style="display:flex;align-items:center;gap:12px;height:42px;padding:0 10px;border:0;border-radius:10px;background:transparent;text-align:left;font-size:14px;font-weight:600;cursor:pointer;color:#131a2b" style-hover="background:#f1f5ff"><span style="width:22px;height:28px;flex:none;border-radius:5px;background:{{ f.sw }};box-shadow:0 0 0 1px rgba(19,26,43,.1)"></span>{{ f.label }}</button></sc-for></div></sc-if>
+</div>
+</main>
+
+<aside style="order:{{ ordSide }};flex:{{ sideFlex }};display:flex;flex-direction:column;gap:14px;padding:22px;border-radius:24px;background:#fff;box-shadow:0 1px 2px rgba(19,26,43,.05),0 8px 28px rgba(19,26,43,.05);position:{{ filmPos }};top:72px">
+<div style="position:relative;display:flex;flex-direction:column;gap:6px"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#667089">Document name</span><button onClick="{{ toggleSug }}" style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border:0;border-radius:999px;background:{{ sugBtnBg }};color:{{ sugBtnFg }};font-size:12px;font-weight:800;cursor:pointer;opacity:{{ sugBtnOp }};pointer-events:{{ sugBtnPe }};transition:background .2s,color .2s,transform .15s" style-hover="transform:translateY(-1px)">{{ ic.sparkle }}Find name</button></div>
+<label style="display:flex;flex-direction:column;gap:6px"><span style="display:flex;align-items:center;gap:6px;min-height:48px;padding:0 12px;border-radius:14px;background:#f5f7fc;color:#8791a8;border:1.5px solid transparent;transition:border-color .15s,background .15s" style-hover="background:#eef2fa">{{ ic.pencil }}<input value="{{ name }}" onChange="{{ onName }}" aria-label="Document name" spellcheck="false" style="flex:1;min-width:0;height:44px;border:0;background:transparent;font-size:16px;font-weight:800;letter-spacing:-.01em;color:#131a2b;outline:none"><span style="flex:none;font:600 13px ui-monospace,Menlo,monospace;color:#8791a8">.{{ extLower }}</span></span></label>
+<sc-if value="{{ sugOpen }}" hint-placeholder-val="{{ false }}"><div onClick="{{ closeSug }}" style="position:fixed;inset:0;z-index:34"></div><div style="position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:35;min-width:0;padding:8px;border-radius:20px;background:#fff;box-shadow:0 20px 50px rgba(19,26,43,.2),0 0 0 1px rgba(19,26,43,.05);display:flex;flex-direction:column;gap:4px;animation:popIn .25s cubic-bezier(.2,.8,.2,1)">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px 4px"><span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#131a2b"><span style="display:flex;color:#7c4dff">{{ ic.sparkle }}</span>Name suggestions</span><sc-if value="{{ sugReady }}"><button onClick="{{ refreshSug }}" title="Read again" aria-label="Read again" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:transparent;color:#667089;cursor:pointer" style-hover="background:#f1f3f8;color:#2b63f0">{{ ic.rescan }}</button></sc-if></div>
+<sc-if value="{{ sugLoading }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:6px;padding:4px 8px 10px"><span style="font-size:12px;font-weight:600;color:#667089">{{ sugLoadText }}</span><sc-for list="{{ sugSkel }}" as="sk" hint-placeholder-count="3"><div style="height:52px;border-radius:14px;background:linear-gradient(90deg,#f1f3f8 0%,#e6ebf5 40%,#f1f3f8 80%);background-size:200% 100%;animation:shimmer 1.1s linear infinite;animation-delay:{{ sk }}"></div></sc-for></div></sc-if>
+<sc-if value="{{ sugReady }}"><sc-for list="{{ sugItems }}" as="sg" hint-placeholder-count="4"><button onClick="{{ sg.onClick }}" style="display:flex;flex-direction:column;align-items:stretch;gap:4px;padding:10px 12px;border:0;border-radius:14px;background:{{ sg.bg }};text-align:left;cursor:pointer;color:#131a2b;transition:background .15s;animation:pgIn .35s cubic-bezier(.2,.8,.2,1) both;animation-delay:{{ sg.delay }}" style-hover="background:#f1f5ff"><span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="flex:1;min-width:0;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ sg.name }}</span><span style="flex:none;height:20px;padding:0 7px;display:inline-flex;align-items:center;border-radius:999px;background:{{ sg.srcBg }};color:{{ sg.srcFg }};font-size:10px;font-weight:800;letter-spacing:.03em">{{ sg.src }}</span></span><span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="flex:1;min-width:0;font-size:11px;color:#667089;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-style:italic">{{ sg.why }}</span><span style="flex:none;width:40px;height:4px;border-radius:999px;background:#e6ebf5;overflow:hidden"><span style="display:block;height:100%;width:{{ sg.conf }};border-radius:999px;background:{{ sg.confC }}"></span></span></span></button></sc-for><div style="padding:6px 10px 4px;font-size:11px;color:#8791a8">Read from the page text (OCR) and summarised by AI. Nothing leaves the scanner server.</div></sc-if>
+</div></sc-if>
+</div>
+<div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#667089;margin-top:4px">Document</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><sc-for list="{{ stats }}" as="x" hint-placeholder-count="4"><div style="display:flex;flex-direction:column;gap:2px;padding:12px;border-radius:14px;background:#f5f7fc"><span style="font-size:12px;color:#667089">{{ x.k }}</span><span style="font-size:18px;font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums">{{ x.v }}</span></div></sc-for></div>
+<sc-if value="{{ notSaving }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column;gap:10px">
+<sc-if value="{{ exportOn }}" hint-placeholder-val="{{ true }}"><button onClick="{{ openExport }}" style="display:flex;align-items:center;justify-content:center;gap:8px;height:50px;border:0;border-radius:14px;background:linear-gradient(135deg,#3b82f6,#2b5cf0);color:#fff;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 8px 22px rgba(43,99,240,.32);opacity:{{ canSaveOp }};pointer-events:{{ canSavePe }};transition:transform .2s,box-shadow .2s" style-hover="transform:translateY(-1px);box-shadow:0 12px 28px rgba(43,99,240,.4)">{{ ic.export }}Export</button>
+<button onClick="{{ openSettings }}" title="Change export folder in settings" style="display:flex;align-items:center;gap:8px;margin-top:-6px;padding:6px 8px;border:0;border-radius:10px;background:transparent;color:#667089;font-size:12px;font-weight:600;cursor:pointer;text-align:left;min-width:0" style-hover="background:#f1f5ff;color:#2b63f0">{{ ic.folder }}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,Menlo,monospace">{{ s.exportPath }}</span></button></sc-if>
+<div style="position:relative;display:flex;flex-direction:column"><button onClick="{{ toggleSaveTo }}" aria-haspopup="dialog" style="display:flex;align-items:center;justify-content:center;gap:8px;height:{{ stH }};border:0;border-radius:14px;background:{{ stBg }};color:{{ stFg }};box-shadow:{{ stSh }};font-size:15px;font-weight:800;cursor:pointer;opacity:{{ canSaveOp }};pointer-events:{{ canSavePe }};transition:transform .2s,background .2s,box-shadow .2s" style-hover="transform:translateY(-1px)">{{ ic.folderOpen }}Save to…</button>
+<sc-if value="{{ saveToOpen }}" hint-placeholder-val="{{ false }}"><div onClick="{{ closeSaveTo }}" style="position:fixed;inset:0;z-index:34"></div><div style="position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:35;padding:8px;border-radius:20px;background:#fff;box-shadow:0 20px 50px rgba(19,26,43,.2),0 0 0 1px rgba(19,26,43,.05);display:flex;flex-direction:column;gap:2px;animation:popIn .25s cubic-bezier(.2,.8,.2,1)">
+<span style="padding:6px 10px 6px;font-size:13px;font-weight:800;color:#131a2b">Save to folder on the server</span>
+<sc-for list="{{ folderOpts }}" as="fo" hint-placeholder-count="4"><button onClick="{{ fo.onClick }}" style="display:flex;align-items:center;gap:10px;min-height:44px;padding:6px 10px;border:0;border-radius:12px;background:{{ fo.bg }};text-align:left;cursor:pointer;color:#131a2b;transition:background .15s;animation:pgIn .3s both;animation-delay:{{ fo.delay }}" style-hover="background:#f1f5ff"><span style="width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:10px;background:{{ fo.iconBg }};color:{{ fo.iconFg }}">{{ ic.folder }}</span><span style="flex:1;min-width:0;display:flex;flex-direction:column"><span style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,Menlo,monospace">{{ fo.path }}</span><span style="font-size:11px;color:#667089">{{ fo.hint }}</span></span></button></sc-for>
+<div style="display:flex;gap:6px;padding:8px 4px 4px;margin-top:4px;border-top:1px solid #edf0f6"><input value="{{ customPath }}" onChange="{{ onCustomPath }}" onKeyDown="{{ onCustomKey }}" placeholder="/other/path" aria-label="Custom folder" spellcheck="false" style="flex:1;min-width:0;height:38px;padding:0 10px;border:1.5px solid #e1e5ee;border-radius:10px;background:#fff;font:500 13px ui-monospace,Menlo,monospace;color:#131a2b;outline:none" style-focus="border-color:#2b63f0"><button onClick="{{ saveCustom }}" style="height:38px;padding:0 12px;border:0;border-radius:10px;background:#2b63f0;color:#fff;font-size:13px;font-weight:800;cursor:pointer;opacity:{{ customOp }};white-space:nowrap">Save here</button></div>
+</div></sc-if></div>
+<button onClick="{{ openDownload }}" style="display:flex;align-items:center;justify-content:center;gap:8px;height:48px;border:0;border-radius:14px;background:#eef3ff;color:#1c3fae;font-size:15px;font-weight:700;cursor:pointer;opacity:{{ canSaveOp }};pointer-events:{{ canSavePe }};transition:background .15s" style-hover="background:#dce6ff">{{ ic.download }}Download</button>
+</div></sc-if>
+<sc-if value="{{ saving }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:16px;background:{{ saveCardBg }};transition:background .3s;animation:popIn .25s cubic-bezier(.2,.8,.2,1)"><div style="display:flex;align-items:center;gap:12px"><sc-if value="{{ saveDone }}"><span style="width:36px;height:36px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#22c55e;color:#fff;box-shadow:0 6px 16px rgba(34,197,94,.35);animation:checkIn .5s cubic-bezier(.2,.8,.2,1) both">{{ ic.check }}</span></sc-if><sc-if value="{{ saveExport }}"><span style="width:36px;height:36px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#fff;color:#2b63f0;box-shadow:0 1px 3px rgba(19,26,43,.1)">{{ saveIcon }}</span></sc-if><div style="flex:1;min-width:0;display:flex;flex-direction:column"><span style="font-size:14px;font-weight:800;color:{{ saveTitleFg }}">{{ savingTitle }}</span><span style="font-size:12px;color:#667089;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,Menlo,monospace">{{ savingPath }}</span></div><span style="font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:#3b4459">{{ exportPct }}</span></div><div style="height:6px;border-radius:999px;background:#dce6ff;overflow:hidden"><div style="height:100%;width:{{ exportPct }};border-radius:999px;background:{{ saveBar }};transition:width .1s linear,background .3s"></div></div><sc-if value="{{ saveExport }}"><button onClick="{{ closeSave }}" style="align-self:flex-start;height:28px;padding:0 10px;border:0;border-radius:999px;background:transparent;color:#4b5468;font-size:12px;font-weight:700;cursor:pointer" style-hover="background:#fff">Cancel</button></sc-if></div></sc-if>
+<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;background:#e8f8ee;color:#157a3c;font-size:12px;font-weight:700"><span style="display:flex">{{ ic.cloudOk }}</span><span>{{ autosaveText }}</span></div>
+<div style="height:1px;background:#edf0f6;margin:4px 0"></div>
+<button onClick="{{ scanMore }}" style="display:flex;align-items:center;gap:10px;height:42px;padding:0 10px;border:0;border-radius:12px;background:transparent;color:#131a2b;font-size:14px;font-weight:600;cursor:pointer;text-align:left" style-hover="background:#f1f5ff">{{ ic.plus }}Scan more pages</button>
+<button onClick="{{ openMerge }}" style="display:flex;align-items:center;gap:10px;height:42px;padding:0 10px;border:0;border-radius:12px;background:transparent;color:#131a2b;font-size:14px;font-weight:600;cursor:pointer;text-align:left" style-hover="background:#f1f5ff">{{ ic.layers }}Add pages from past scan</button>
+<button onClick="{{ discard }}" style="display:flex;align-items:center;gap:10px;height:42px;padding:0 10px;border:0;border-radius:12px;background:transparent;color:#c42b2b;font-size:14px;font-weight:600;cursor:pointer;text-align:left" style-hover="background:#fdecec">{{ ic.trash }}Discard scan</button>
+</aside>
+</div>
+</sc-if>
+</div>
+
+<div onClick="{{ closeSettings }}" style="position:absolute;inset:0;z-index:40;background:rgba(19,26,43,.35);backdrop-filter:blur(3px);opacity:{{ setOp }};pointer-events:{{ setPe }};transition:opacity .3s"></div>
+<div style="position:absolute;z-index:41;top:{{ shT }};left:{{ shL }};right:{{ shR }};bottom:{{ shB }};width:{{ shW }};max-height:{{ sheetMaxH }};overflow-y:auto;padding:22px 22px 24px;border-radius:{{ sheetRad }};background:#fff;box-shadow:0 24px 60px rgba(19,26,43,.25);transform:{{ sheetTf }};opacity:{{ setOp }};pointer-events:{{ setPe }};transition:transform .4s cubic-bezier(.2,.8,.2,1),opacity .25s;display:{{ shDisp }};flex-direction:column;grid-template-columns:{{ shCols }};align-items:start;gap:18px 28px;padding:{{ shPad }}">
+<sc-if value="{{ mob }}"><div style="align-self:center;width:40px;height:4px;border-radius:999px;background:#d6dbe6;margin:-8px 0 -4px"></div></sc-if>
+<div style="grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px"><h3 style="margin:0;font-size:{{ shH }};font-weight:800;letter-spacing:-.01em">Scan settings</h3><div style="display:flex;gap:4px;align-items:center"><button onClick="{{ resetSettings }}" style="height:32px;padding:0 10px;border:0;border-radius:999px;background:transparent;cursor:pointer;font-size:13px;font-weight:700;color:#2b63f0" style-hover="background:#eaf0ff">Reset</button><button onClick="{{ closeSettings }}" aria-label="Close" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:#f1f3f8;cursor:pointer;color:#131a2b" style-hover="background:#e3e7f0">{{ ic.x }}</button></div></div>
+<div style="grid-column:1/-1;display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:18px;background:#f5f7fc">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:13px;font-weight:700;color:#3b4459">Presets</span><sc-if value="{{ isModified }}"><span style="font-size:12px;font-weight:700;color:#9a5800">Unsaved changes</span></sc-if></div>
+<div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ presetOpts }}" as="pr" hint-placeholder-count="4"><button onClick="{{ pr.onClick }}" style="flex:none;display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 14px;border:0;border-radius:999px;background:{{ pr.bg }};box-shadow:{{ pr.sh }};color:{{ pr.fg }};font-size:13px;font-weight:700;cursor:pointer;transition:background .2s,color .2s,box-shadow .2s,transform .15s;white-space:nowrap" style-hover="transform:translateY(-1px)" style-active="transform:scale(.97)"><span style="display:flex">{{ pr.icon }}</span>{{ pr.name }}</button></sc-for></div>
+<sc-if value="{{ notDrafting }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-if value="{{ canUpdate }}"><button onClick="{{ updatePreset }}" style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:0;border-radius:999px;background:#2b63f0;color:#fff;font-size:12px;font-weight:800;cursor:pointer;animation:popIn .2s both" style-hover="background:#1c46c4">{{ ic.check }}<span>Update “{{ activeName }}”</span></button></sc-if><button onClick="{{ startDraft }}" style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:0;border-radius:999px;background:#fff;box-shadow:0 1px 2px rgba(19,26,43,.1);color:#1c3fae;font-size:12px;font-weight:700;cursor:pointer" style-hover="background:#eef3ff">{{ ic.plus }}Save as new preset</button><sc-if value="{{ canDelete }}"><button onClick="{{ deletePreset }}" style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:0;border-radius:999px;background:transparent;color:#c42b2b;font-size:12px;font-weight:700;cursor:pointer" style-hover="background:#fdecec">{{ ic.trash }}<span>Delete “{{ activeName }}”</span></button></sc-if></div></sc-if>
+<sc-if value="{{ drafting }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:6px;animation:popIn .2s both"><input value="{{ presetDraft }}" onChange="{{ onDraft }}" onKeyDown="{{ onDraftKey }}" placeholder="Preset name" aria-label="Preset name" autofocus="autofocus" style="flex:1;min-width:0;height:36px;padding:0 12px;border:1.5px solid #2b63f0;border-radius:10px;background:#fff;font-size:14px;font-weight:600;color:#131a2b;outline:none"><button onClick="{{ saveDraft }}" style="height:36px;padding:0 14px;border:0;border-radius:10px;background:#2b63f0;color:#fff;font-size:13px;font-weight:800;cursor:pointer;opacity:{{ draftOp }}">Save</button><button onClick="{{ cancelDraft }}" style="height:36px;padding:0 10px;border:0;border-radius:10px;background:transparent;color:#4b5468;font-size:13px;font-weight:700;cursor:pointer">Cancel</button></div><div style="display:flex;flex-direction:column;gap:6px;animation:fadeIn .2s both"><span style="font-size:12px;font-weight:700;color:#667089">Icon</span><div style="display:flex;flex-wrap:wrap;gap:4px"><sc-for list="{{ iconOpts }}" as="io" hint-placeholder-count="12"><button onClick="{{ io.onClick }}" title="{{ io.k }}" aria-label="{{ io.k }} icon" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:{{ io.bg }};box-shadow:{{ io.sh }};color:{{ io.fg }};cursor:pointer;transition:background .15s,color .15s,transform .15s" style-hover="transform:scale(1.08)">{{ io.icon }}</button></sc-for></div></div></sc-if>
+<sc-if value="{{ showIconEdit }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:6px;padding-top:10px;border-top:1px solid #e6eaf2"><span style="font-size:12px;font-weight:700;color:#667089">Icon for “{{ activeName }}”</span><div style="display:flex;flex-wrap:wrap;gap:4px"><sc-for list="{{ iconOpts }}" as="io" hint-placeholder-count="12"><button onClick="{{ io.onClick }}" title="{{ io.k }}" aria-label="{{ io.k }} icon" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:{{ io.bg }};box-shadow:{{ io.sh }};color:{{ io.fg }};cursor:pointer;transition:background .15s,color .15s,transform .15s" style-hover="transform:scale(1.08)">{{ io.icon }}</button></sc-for></div></div></sc-if>
+</div>
+<sc-for list="{{ segRows }}" as="r" hint-placeholder-count="5"><div style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:700;color:#3b4459">{{ r.label }}</span><div style="display:flex;padding:4px;border-radius:14px;background:#eef1f7"><sc-for list="{{ r.opts }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.onClick }}" style="flex:1 1 0;min-width:0;height:34px;padding:0 4px;border:0;border-radius:10px;background:{{ o.bg }};box-shadow:{{ o.sh }};color:{{ o.fg }};font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap">{{ o.label }}</button></sc-for></div></div></sc-for>
+<div style="display:flex;flex-direction:column;gap:4px;padding:6px 14px;border-radius:16px;background:#f5f7fc"><sc-for list="{{ toggles }}" as="t" hint-placeholder-count="2"><button onClick="{{ t.onClick }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border:0;background:none;cursor:pointer;text-align:left;color:#131a2b"><span style="display:flex;flex-direction:column"><span style="font-size:14px;font-weight:700">{{ t.label }}</span><span style="font-size:12px;color:#667089">{{ t.hint }}</span></span><span style="position:relative;flex:none;width:44px;height:26px;border-radius:999px;background:{{ t.track }};transition:background .25s"><span style="position:absolute;top:3px;left:{{ t.knobX }};width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(19,26,43,.25);transition:left .25s cubic-bezier(.2,.8,.2,1)"></span></span></button></sc-for></div>
+<sc-for list="{{ sliders }}" as="sl" hint-placeholder-count="2"><label style="display:flex;flex-direction:column;gap:6px"><span style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#3b4459"><span>{{ sl.label }}</span><span style="color:#667089;font-variant-numeric:tabular-nums">{{ sl.valText }}</span></span><input type="range" min="-50" max="50" step="5" value="{{ sl.value }}" onChange="{{ sl.onChange }}" style="width:100%;margin:0"></label></sc-for>
+<div style="grid-column:1/-1;display:flex;flex-direction:column;gap:7px;padding-top:14px;border-top:1px solid #edf0f6"><button onClick="{{ exportToggle.onClick }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0 6px;border:0;background:none;cursor:pointer;text-align:left;color:#131a2b"><span style="display:flex;flex-direction:column"><span style="font-size:14px;font-weight:700">Export button</span><span style="font-size:12px;color:#667089">One-click export to a fixed folder. When off, use Save to… or Download.</span></span><span style="position:relative;flex:none;width:44px;height:26px;border-radius:999px;background:{{ exportToggle.track }};transition:background .25s"><span style="position:absolute;top:3px;left:{{ exportToggle.knobX }};width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(19,26,43,.25);transition:left .25s cubic-bezier(.2,.8,.2,1)"></span></span></button><div style="display:flex;flex-direction:column;gap:7px;opacity:{{ expFolderOp }};pointer-events:{{ expFolderPe }};transition:opacity .2s"><span style="font-size:13px;font-weight:700;color:#3b4459">Export folder</span><label style="display:flex;align-items:center;gap:8px;height:44px;padding:0 12px;border-radius:12px;background:#f1f3f8;color:#667089">{{ ic.folder }}<input value="{{ s.exportPath }}" onChange="{{ onPath }}" aria-label="Export folder" style="flex:1;min-width:0;height:100%;border:0;background:transparent;font:500 14px ui-monospace,Menlo,monospace;color:#131a2b;outline:none"></label><span style="font-size:12px;color:#667089">Save / Export writes files to this folder on the scanner server, e.g. the paperless consume folder.</span></div></div>
+<div style="grid-column:1/-1;display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:700;color:#3b4459">File name template</span><label style="display:flex;align-items:center;gap:8px;height:44px;padding:0 12px;border-radius:12px;background:#f1f3f8;color:#667089">{{ ic.tpl }}<input ref="{{ tplRef }}" value="{{ s.nameTpl }}" onChange="{{ onTpl }}" onSelect="{{ onTplSel }}" aria-label="File name template" spellcheck="false" style="flex:1;min-width:0;height:100%;border:0;background:transparent;font:500 14px ui-monospace,Menlo,monospace;color:#131a2b;outline:none"><span style="flex:none;font:500 13px ui-monospace,Menlo,monospace;color:#8791a8">.{{ extLower }}</span></label><div style="display:flex;flex-wrap:wrap;gap:5px"><sc-for list="{{ tokens }}" as="tk" hint-placeholder-count="10"><button onClick="{{ tk.onClick }}" title="{{ tk.hint }}" style="height:28px;padding:0 9px;border:0;border-radius:8px;background:#eef3ff;color:#1c3fae;font:600 12px ui-monospace,Menlo,monospace;cursor:pointer;transition:background .15s,transform .15s" style-hover="background:#dce6ff;transform:translateY(-1px)" style-active="transform:scale(.95)">{{ tk.t }}</button></sc-for></div><div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;background:#e8f8ee;color:#157a3c;min-width:0"><span style="flex:none;font-size:12px;font-weight:700">Preview</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 13px ui-monospace,Menlo,monospace">{{ tplPreview }}</span></div><sc-if value="{{ tplBad }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;font-weight:600;color:#c42b2b">Unknown: {{ tplBadList }}</span></sc-if><span style="font-size:12px;color:#667089">Click a tag to add it at the cursor. New scans are named with this template.</span></div>
+<button onClick="{{ closeSettings }}" style="grid-column:1/-1;justify-self:end;width:{{ doneW }};height:48px;border:0;border-radius:14px;background:linear-gradient(135deg,#3b82f6,#2b5cf0);color:#fff;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 8px 22px rgba(43,99,240,.3)" style-hover="box-shadow:0 12px 28px rgba(43,99,240,.4)">Done</button>
+</div>
+
+<sc-if value="{{ cropOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;z-index:50;background:rgba(19,26,43,.38);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn .2s">
+<div style="width:min(600px,100%);max-height:100%;overflow-y:auto;border-radius:26px;background:#fff;box-shadow:0 24px 60px rgba(19,26,43,.25);padding:24px;display:flex;flex-direction:column;gap:18px;animation:popIn .3s cubic-bezier(.2,.8,.2,1)">
+<div style="display:flex;align-items:center;justify-content:space-between"><h3 style="margin:0;font-size:20px;font-weight:800">Crop page {{ cropNum }}</h3><button onClick="{{ closeCrop }}" aria-label="Close" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:#f1f3f8;cursor:pointer;color:#131a2b" style-hover="background:#e3e7f0">{{ ic.x }}</button></div>
+<div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+<div style="flex:1 1 200px;max-width:250px;margin:0 auto;position:relative;overflow:hidden;border-radius:6px"><dc-import name="ScanPage" page="{{ cropPage }}" modern="{{ true }}" hint-size="100%,340px"></dc-import><div style="position:absolute;top:{{ cropT }};right:{{ cropR }};bottom:{{ cropB }};left:{{ cropL }};border-radius:4px;outline:2px solid #2b63f0;box-shadow:0 0 0 999px rgba(19,26,43,.4);transition:all .15s"><span style="position:absolute;top:-6px;left:-6px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #2b63f0"></span><span style="position:absolute;top:-6px;right:-6px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #2b63f0"></span><span style="position:absolute;bottom:-6px;left:-6px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #2b63f0"></span><span style="position:absolute;bottom:-6px;right:-6px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #2b63f0"></span></div></div>
+<div style="flex:1 1 200px;display:flex;flex-direction:column;gap:12px">
+<sc-for list="{{ cropSliders }}" as="c" hint-placeholder-count="4"><label style="display:flex;flex-direction:column;gap:4px"><span style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#3b4459"><span>{{ c.label }}</span><span style="color:#667089;font-variant-numeric:tabular-nums">{{ c.valText }}</span></span><input type="range" min="0" max="30" value="{{ c.value }}" onChange="{{ c.onChange }}" style="width:100%;margin:0"></label></sc-for>
+<div style="display:flex;gap:8px"><button onClick="{{ cropAuto }}" style="display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 14px;border:0;border-radius:999px;background:#eef3ff;color:#1c3fae;font-size:13px;font-weight:700;cursor:pointer" style-hover="background:#dce6ff">{{ ic.wand }}Detect edges</button><button onClick="{{ cropReset }}" style="height:38px;padding:0 12px;border:0;border-radius:999px;background:transparent;color:#2b63f0;font-size:13px;font-weight:700;cursor:pointer">Reset</button></div>
+</div>
+</div>
+<div style="display:flex;justify-content:flex-end;gap:10px"><button onClick="{{ closeCrop }}" style="height:46px;padding:0 18px;border:0;border-radius:14px;background:#f1f3f8;color:#131a2b;font-size:14px;font-weight:700;cursor:pointer" style-hover="background:#e3e7f0">Cancel</button><button onClick="{{ cropApply }}" style="height:46px;padding:0 22px;border:0;border-radius:14px;background:linear-gradient(135deg,#3b82f6,#2b5cf0);color:#fff;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 8px 22px rgba(43,99,240,.3)">Apply crop</button></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ mergeOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeMerge }}" style="position:absolute;inset:0;z-index:50;background:rgba(19,26,43,.38);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn .2s">
+<div onClick="{{ stop }}" style="width:min(460px,100%);max-height:100%;overflow-y:auto;border-radius:26px;background:#fff;box-shadow:0 24px 60px rgba(19,26,43,.25);padding:24px;display:flex;flex-direction:column;gap:12px;animation:popIn .3s cubic-bezier(.2,.8,.2,1)">
+<div style="display:flex;align-items:center;justify-content:space-between"><h3 style="margin:0;font-size:20px;font-weight:800">Merge a past scan</h3><button onClick="{{ closeMerge }}" aria-label="Close" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:#f1f3f8;cursor:pointer;color:#131a2b" style-hover="background:#e3e7f0">{{ ic.x }}</button></div>
+<p style="margin:0;font-size:14px;color:#667089">Its pages are added to the end of this document.</p>
+<div style="display:flex;flex-direction:column;gap:4px"><sc-for list="{{ mergeList }}" as="it" hint-placeholder-count="5"><button onClick="{{ it.onMerge }}" style="display:flex;align-items:center;gap:12px;padding:8px 10px;border:0;border-radius:14px;background:transparent;cursor:pointer;text-align:left;color:#131a2b" style-hover="background:#f1f5ff"><div style="width:30px;flex:none"><dc-import name="ScanPage" page="{{ it.first }}" modern="{{ true }}" hint-size="30px,42px"></dc-import></div><div style="flex:1;min-width:0;display:flex;flex-direction:column"><span style="font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ it.name }}</span><span style="font-size:12px;color:#667089">{{ it.date }} · {{ it.short }}</span></div><span style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#eef3ff;color:#2b63f0">{{ ic.plus }}</span></button></sc-for></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ confirmOpen }}" hint-placeholder-val="{{ false }}"><div onClick="{{ closeConfirm }}" style="position:absolute;inset:0;z-index:55;background:rgba(19,26,43,.38);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn .2s"><div onClick="{{ stop }}" style="width:min(400px,100%);border-radius:26px;background:#fff;box-shadow:0 24px 60px rgba(19,26,43,.25);padding:24px;display:flex;flex-direction:column;gap:12px;animation:popIn .3s cubic-bezier(.2,.8,.2,1)"><span style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:16px;background:#fdecec;color:#c42b2b">{{ ic.trash }}</span><h3 style="margin:4px 0 0;font-size:20px;font-weight:800">{{ confirm.title }}</h3><p style="margin:0;font-size:14px;line-height:1.5;color:#4b5468">{{ confirm.body }}</p><div style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px"><button onClick="{{ closeConfirm }}" style="height:44px;padding:0 18px;border:0;border-radius:14px;background:#f1f3f8;color:#131a2b;font-size:14px;font-weight:700;cursor:pointer" style-hover="background:#e3e7f0">Cancel</button><button onClick="{{ confirm.run }}" style="height:44px;padding:0 20px;border:0;border-radius:14px;background:#dc2f2f;color:#fff;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 8px 20px rgba(220,47,47,.28)" style-hover="background:#c42b2b">{{ confirm.label }}</button></div></div></div></sc-if>
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;left:50%;bottom:24px;z-index:60;display:flex;align-items:center;gap:16px;padding:12px 18px;border-radius:999px;background:#131a2b;color:#fff;font-size:14px;font-weight:600;box-shadow:0 12px 32px rgba(19,26,43,.3);white-space:nowrap;animation:toastIn .3s cubic-bezier(.2,.8,.2,1) both"><span>{{ toast.text }}</span><sc-if value="{{ toast.hasUndo }}"><button onClick="{{ toast.undo }}" style="border:0;background:transparent;color:#7fb0ff;font-size:14px;font-weight:800;cursor:pointer;padding:0">Undo</button></sc-if></div></sc-if>
+</div>
+
+<div style="position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:100;display:flex;gap:2px;padding:4px;border-radius:999px;background:#131a2b;box-shadow:0 10px 30px rgba(19,26,43,.3)">
+<sc-for list="{{ devOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" style="height:28px;padding:0 14px;border:0;border-radius:999px;background:{{ o.bg }};color:#fff;cursor:pointer;font-size:12px;font-weight:700;transition:background .2s">{{ o.label }}</button></sc-for>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;device&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Desktop&quot;,&quot;Mobile&quot;],&quot;default&quot;:&quot;Desktop&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;scanSeconds&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0.5,&quot;max&quot;:5,&quot;step&quot;:0.1,&quot;unit&quot;:&quot;s&quot;,&quot;default&quot;:1.8,&quot;tsType&quot;:&quot;number&quot;}}">
+const KINDS=['letter','invoice','form','letter','receipt','invoice','form','letter'];
+const nid=()=>'p'+Math.random().toString(36).slice(2,9);
+const mk=(kind,filter)=>({id:nid(),kind:kind||KINDS[Math.floor(Math.random()*KINDS.length)],rot:0,filter:filter||'original',crop:null});
+const FL={original:'Original',enhance:'Enhanced',gray:'Grayscale',bw:'B&W'};
+const FILT=[{k:'original',l:'Original',sw:'linear-gradient(135deg,#fff 50%,#60a5fa 50%)'},{k:'enhance',l:'Enhance',sw:'linear-gradient(135deg,#fff 50%,#2b5cf0 50%)'},{k:'gray',l:'Grayscale',sw:'linear-gradient(135deg,#f5f5f5 50%,#98989b 50%)'},{k:'bw',l:'Black & white',sw:'linear-gradient(135deg,#fff 50%,#111 50%)'}];
+const DEF={source:'Feeder',color:'Color',dpi:300,paper:'A4',format:'PDF',duplex:false,autocrop:true,brightness:0,contrast:0,exportPath:'/data/consume',exportOn:true,nameTpl:'{YEAR}-{MONTH}-{DAY}_{HOUR}{MINUTE}_{PRESET}'};
+const TOKENS=[['{YEAR}','Year, 4 digits'],['{MONTH}','Month, 01–12'],['{MONTHNAME}','Month name, e.g. Sep'],['{DAY}','Day, 01–31'],['{WEEKDAY}','Weekday, e.g. Mon'],['{HOUR}','Hour, 00–23'],['{MINUTE}','Minute, 00–59'],['{SECOND}','Second, 00–59'],['{PRESET}','Active preset name'],['{COUNTER}','Running scan number, 0001…'],['{DPI}','Resolution'],['{COLOR}','Color mode']];
+function fillTpl(tpl,ctx){const d=ctx.date, z=(n,l=2)=>String(n).padStart(l,'0');
+  const m={YEAR:d.getFullYear(),MONTH:z(d.getMonth()+1),MONTHNAME:d.toLocaleString('en-US',{month:'short'}),DAY:z(d.getDate()),WEEKDAY:d.toLocaleString('en-US',{weekday:'short'}),HOUR:z(d.getHours()),MINUTE:z(d.getMinutes()),SECOND:z(d.getSeconds()),PRESET:ctx.preset||'Custom',COUNTER:z(ctx.counter,4),DPI:ctx.dpi+'dpi',COLOR:ctx.color};
+  const bad=[]; const out=(tpl||'').replace(/\{([A-Z]+)\}/g,(all,k)=>k in m?m[k]:(bad.push(all),all)).replace(/[\\/:*?"<>|]/g,'-').trim();
+  return {out:out||'scan',bad};}
+const SUG={
+  invoice:[['Invoice Stadtwerke Nord #4821','OCR','“Rechnung Nr. 4821 · Stadtwerke Nord GmbH”',.94],['Electricity bill September 2026','AI','Invoice with kWh usage table, due 12 Oct',.86],['Stadtwerke invoice 2026-09','AI','Sender and billing month',.78]],
+  letter:[['Allianz letter – policy update','AI','Letter about changes to your policy terms',.88],['Allianz Versicherung 2026-09-22','OCR','“Allianz Versicherungs-AG · 22.09.2026”',.91],['Insurance correspondence','AI','General topic of the letter',.64]],
+  form:[['Tax form 2025 – Anlage N','OCR','“Anlage N · Einkünfte aus nichtselbständiger Arbeit 2025”',.93],['Tax return 2025 attachment','AI','Income tax form with 5 filled sections',.84],['Finanzamt form 2025','AI','Issuing office and tax year',.7]],
+  receipt:[['Receipt REWE 23.45 EUR','OCR','“REWE Markt · SUMME EUR 23,45”',.95],['Groceries 2026-09-28','AI','Supermarket receipt, 9 items',.82]],
+  photo:[['Photo 2026-09-28','AI','No readable text, looks like a photograph',.6]]
+};
+const PICONS=['star','file','copy','receipt','image','briefcase','heart','home','book','mail','tag','zap'];
+const PKEYS=['source','color','dpi','paper','format','duplex','autocrop','brightness','contrast'];
+const pick=s=>{const o={};PKEYS.forEach(k=>o[k]=s[k]);return o;};
+const same=(a,b)=>PKEYS.every(k=>a[k]===b[k]);
+const PRESETS=[
+  {id:'doc',name:'Document',icon:'file',s:{source:'Feeder',color:'Color',dpi:300,paper:'A4',format:'PDF',duplex:false,autocrop:true,brightness:0,contrast:0}},
+  {id:'duplex',name:'Double-sided',icon:'copy',s:{source:'Feeder',color:'Grayscale',dpi:300,paper:'A4',format:'PDF',duplex:true,autocrop:true,brightness:0,contrast:10}},
+  {id:'receipt',name:'Receipt',icon:'receipt',s:{source:'Flatbed',color:'Grayscale',dpi:300,paper:'Auto',format:'PDF',duplex:false,autocrop:true,brightness:10,contrast:20}},
+  {id:'photo',name:'Photo',icon:'image',s:{source:'Flatbed',color:'Color',dpi:600,paper:'Auto',format:'PNG',duplex:false,autocrop:true,brightness:0,contrast:0}}
+];
+const STS={draft:{label:'Draft',bg:'#fff4db',fg:'#9a5800',dot:'#f59e0b'},scanning:{label:'Scanning',bg:'#e3ebff',fg:'#1c3fae',dot:'#2b63f0',anim:'pulseB 1.2s infinite'},exported:{label:'Exported',bg:'#e3f7ea',fg:'#157a3c',dot:'#22c55e'},downloaded:{label:'Downloaded',bg:'#e6f0ff',fg:'#1c3fae',dot:'#3b82f6'},saved:{label:'Saved',bg:'#dff7f5',fg:'#0f766e',dot:'#14b8a6'},discarded:{label:'Discarded',bg:'#eef0f4',fg:'#5b6477',dot:'#9aa3b8'}};
+const EV={saved:'Saved',exported:'Exported',downloaded:'Downloaded',discarded:'Discarded'};
+const hhmm=()=>'Today · '+new Date().toTimeString().slice(0,5);
+const makePast=()=>[
+  {id:'s1',name:'Tax return 2025',date:'Sep 26 · 18:04',pages:[mk('form'),mk('form'),mk('letter'),mk('invoice'),mk('letter')],fmt:'PDF',size:'2.4 MB',events:[{t:'exported',at:'Sep 26 · 18:05',path:'/data/consume/Tax return 2025.pdf'},{t:'downloaded',at:'Sep 26 · 18:06'}]},
+  {id:'s2',name:'Utility invoice, September',date:'Sep 24 · 09:12',pages:[mk('invoice'),mk('letter')],fmt:'PDF',size:'640 KB',events:[{t:'exported',at:'Sep 24 · 09:13',path:'/data/consume/Utility invoice, September.pdf'}]},
+  {id:'s3',name:'Grocery receipt',date:'Sep 21 · 17:40',pages:[mk('receipt','gray')],fmt:'JPG',size:'310 KB',events:[{t:'discarded',at:'Sep 21 · 17:41'}]},
+  {id:'s4',name:'Family photo',date:'Sep 18 · 11:02',pages:[mk('photo')],fmt:'PNG',size:'8.1 MB',events:[{t:'downloaded',at:'Sep 18 · 11:03'}]},
+  {id:'s5',name:'Lease agreement',date:'Sep 12 · 16:55',pages:[mk('letter'),mk('letter'),mk('letter'),mk('form')],fmt:'PDF',size:'1.9 MB',events:[]},
+  {id:'s6',name:'Insurance letter',date:'Sep 03 · 08:30',pages:[mk('letter','bw')],fmt:'PDF',size:'420 KB',events:[{t:'exported',at:'Sep 03 · 08:31',path:'/data/consume/Insurance letter.pdf'}]}
+];
+let _I=null;
+function icons(){
+  if(_I)return _I;
+  const h=React.createElement;
+  const sv=(size,ch,w)=>h('svg',{width:size,height:size,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:w||1.75,strokeLinecap:'round',strokeLinejoin:'round',style:{display:'block',flex:'none'}},...ch);
+  const p=d=>h('path',{d}), R=(x,y,w,hh,rx)=>h('rect',{x,y,width:w,height:hh,rx}), C=(cx,cy,r)=>h('circle',{cx,cy,r});
+  const d={
+    rotL:[p('M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8'),p('M3 3v5h5')],
+    rotR:[p('M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8'),p('M21 3v5h-5')],
+    trash:[p('M3 6h18'),p('M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6'),p('M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2')],
+    crop:[p('M6 2v14a2 2 0 0 0 2 2h14'),p('M18 22V8a2 2 0 0 0-2-2H2')],
+    rescan:[p('M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8'),p('M21 3v5h-5'),p('M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16'),p('M8 16H3v5')],
+    wand:[p('m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72'),p('m14 7 3 3'),p('M5 6v4'),p('M19 14v4'),p('M10 2v2'),p('M7 8H3'),p('M21 16h-4'),p('M11 3H9')],
+    scissors:[C(6,6,3),C(6,18,3),p('M20 4 8.12 15.88'),p('M14.47 14.48 20 20'),p('M8.12 8.12 12 12')],
+    layers:[p('m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z'),p('m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65'),p('m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65')],
+    download:[p('M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'),p('m7 10 5 5 5-5'),p('M12 15V3')],
+    archive:[R(2,3,20,5,1),p('M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8'),p('M10 12h4')],
+    back:[p('m12 19-7-7 7-7'),p('M19 12H5')],
+    grid:[R(3,3,7,7,1.5),R(14,3,7,7,1.5),R(14,14,7,7,1.5),R(3,14,7,7,1.5)],
+    list:[p('M8 6h13'),p('M8 12h13'),p('M8 18h13'),p('M3 6h.01'),p('M3 12h.01'),p('M3 18h.01')],
+    plus:[p('M5 12h14'),p('M12 5v14')],
+    x:[p('M18 6 6 18'),p('m6 6 12 12')],
+    chevL:[p('m15 18-6-6 6-6')], chevR:[p('m9 18 6-6-6-6')],
+    scan:[p('M3 7V5a2 2 0 0 1 2-2h2'),p('M17 3h2a2 2 0 0 1 2 2v2'),p('M21 17v2a2 2 0 0 1-2 2h-2'),p('M7 21H5a2 2 0 0 1-2-2v-2'),p('M7 12h10')],
+    check:[p('M20 6 9 17l-5-5')],
+    sliders:[p('M21 4h-7'),p('M10 4H3'),p('M21 12h-9'),p('M8 12H3'),p('M21 20h-5'),p('M12 20H3'),p('M14 2v4'),p('M8 10v4'),p('M16 18v4')],
+    stop:[R(6,6,12,12,2)],
+    folder:[p('M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z')],
+    export:[p('M12 3v12'),p('m8 11 4 4 4-4'),p('M8 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2')],
+    cloudOk:[p('M20 6 9 17l-5-5')],
+    sparkle:[p('M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z'),p('M20 3v4'),p('M22 5h-4')],
+    folderOpen:[p('m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2')],
+    pencil:[p('M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z'),p('m15 5 4 4')],
+    tpl:[p('M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1'),p('M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1')],
+    file:[p('M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z'),p('M14 2v4a2 2 0 0 0 2 2h4'),p('M10 13H8'),p('M16 17H8'),p('M16 13h-2')],
+    copy:[R(8,8,14,14,2),p('M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2')],
+    receipt:[p('M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z'),p('M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8'),p('M12 17.5v-11')],
+    image:[R(3,3,18,18,2),C(9,9,2),p('m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21')],
+    briefcase:[p('M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16'),R(2,6,20,14,2)],
+    heart:[p('M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z')],
+    home:[p('M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8'),p('M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z')],
+    book:[p('M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20')],
+    mail:[R(2,4,20,16,2),p('m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7')],
+    tag:[p('M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z'),C(7.5,7.5,.5)],
+    zap:[p('M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z')],
+    star:[p('M11.5 2.3a.53.53 0 0 1 .95 0l2.31 4.68a2.12 2.12 0 0 0 1.6 1.16l5.16.76a.53.53 0 0 1 .3.9l-3.74 3.64a2.12 2.12 0 0 0-.61 1.88l.88 5.14a.53.53 0 0 1-.77.56l-4.62-2.43a2.12 2.12 0 0 0-1.97 0L6.4 21.01a.53.53 0 0 1-.77-.56l.88-5.14a2.12 2.12 0 0 0-.61-1.88L2.16 9.8a.53.53 0 0 1 .3-.9l5.16-.76a2.12 2.12 0 0 0 1.6-1.16Z')],
+    search:[C(11,11,8),p('m21 21-4.3-4.3')],
+    sort:[p('m3 16 4 4 4-4'),p('M7 20V4'),p('m21 8-4-4-4 4'),p('M17 4v16')]
+  };
+  _I={}; for(const k in d)_I[k]=sv(18,d[k]);
+  _I.xs=sv(12,d.x,2.5); _I.folder=sv(16,d.folder); _I.tpl=sv(16,d.tpl); _I.pencil=sv(15,d.pencil); _I.folderOpen=sv(18,d.folderOpen); _I.sparkle=sv(15,d.sparkle); PICONS.forEach(k=>_I['p_'+k]=sv(15,d[k])); _I.cloudOk=sv(14,d.cloudOk,2.5); _I.search=sv(16,d.search); _I.sort=sv(15,d.sort);
+  _I.scan=sv(24,d.scan,2); _I.check=sv(16,d.check,2.5);
+  return _I;
+}
+const nowName=()=>{const d=new Date();return 'Scan '+d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+', '+d.toTimeString().slice(0,5);};
+
+class Component extends DCLogic{
+  scrollRef=React.createRef(); tplRef=React.createRef(); bigRef=React.createRef();
+  presetName(){const st=this.state, a=st.presets.find(p=>p.id===st.activePreset); return a&&same(a.s,st.s)?a.name.replace(/\s+/g,'-'):'Custom';}
+  makeName(counter){const s=this.state.s; return fillTpl(s.nameTpl,{date:new Date(),preset:this.presetName(),counter,dpi:s.dpi,color:s.color});}
+  insertToken(t){const el=this.tplRef.current, v=this.state.s.nameTpl; let a=v.length,b=v.length; if(el&&document.activeElement===el){a=el.selectionStart;b=el.selectionEnd;} else if(el&&el._lastSel){[a,b]=el._lastSel;}
+    const nv=v.slice(0,a)+t+v.slice(b); this.set('nameTpl',nv); const pos=a+t.length; requestAnimationFrame(()=>{if(el){el.focus();el.setSelectionRange(pos,pos);el._lastSel=[pos,pos];}});}
+  state={dev:null,screen:'home',view:'grid',s:{...DEF},pages:[],cur:null,name:'',scan:null,splits:[],past:makePast(),menu:null,crop:null,save:null,merge:false,toast:null,settings:false,flash:null,dragId:null,editing:null,selMode:false,pastSel:[],q:'',sort:0,confirm:null,stFilter:'all',presets:PRESETS.map(p=>({...p,s:{...p.s}})),activePreset:'doc',presetDraft:null,presetIcon:'star',counter:42,nameSug:null,saveTo:null,recentFolders:['/data/documents/2026','/mnt/nas/shared/scans'],pendingId:null,landId:null,leaving:false,navDir:null};
+  applyPreset(id){const p=this.state.presets.find(x=>x.id===id); if(!p)return; this.setState(x=>({s:{...x.s,...p.s},activePreset:id,presetDraft:null}));}
+  savePresetDraft(){
+    const name=(this.state.presetDraft||'').trim(); if(!name)return;
+    const id='u'+Date.now();
+    this.setState(x=>({presets:[...x.presets,{id,name,icon:x.presetIcon,s:pick(x.s)}],activePreset:id,presetDraft:null}));
+    this.showToast(`Preset “${name}” saved`);
+  }
+  leave(fn){if(this.state.leaving)return; this.setState({leaving:true,menu:null}); setTimeout(()=>{this.setState({leaving:false,navDir:'back'}); fn();},230);}
+  measure(attr='data-pid'){const m={}, r=this.scrollRef.current; if(r)r.querySelectorAll('['+attr+']').forEach(el=>{m[el.getAttribute(attr)]=el.getBoundingClientRect();}); return m;}
+  withFlip(attr,fn,skip){const before=this.measure(attr); fn(); requestAnimationFrame(()=>requestAnimationFrame(()=>this.flip(before,skip,attr)));}
+  els(attr,ids){const r=this.scrollRef.current; if(!r)return []; return ids.map(id=>r.querySelector('['+attr+'="'+id+'"]')).filter(Boolean);}
+  animateOut(attr,ids,fn){const els=this.els(attr,ids); if(!els.length||!els[0].animate){this.withFlip(attr,fn);return;}
+    let max=0; els.forEach((el,i)=>{const d=Math.min(i,12)*35; max=Math.max(max,d); el.style.pointerEvents='none'; el.animate([{opacity:1,transform:'none',filter:'blur(0)'},{opacity:0,transform:'scale(.78) translateY(8px)',filter:'blur(2px)'}],{duration:260,delay:d,easing:'cubic-bezier(.4,0,.6,1)',fill:'forwards'});});
+    setTimeout(()=>{this.withFlip(attr,fn); requestAnimationFrame(()=>els.forEach(el=>{el.getAnimations().forEach(a=>a.cancel()); el.style.pointerEvents='';}));},260+max);}
+  pulse(id){requestAnimationFrame(()=>{const el=this.els('data-pid',[id])[0]; if(!el||!el.animate)return;
+    el.animate([{transform:'none',boxShadow:'0 0 0 0 rgba(59,130,246,.55)'},{transform:'translateY(4px) scale(.96)',offset:.28},{transform:'none',boxShadow:'0 0 0 16px rgba(59,130,246,0)'}],{duration:750,easing:'cubic-bezier(.2,.8,.2,1)'});
+    const tg=el.querySelector('[data-tag]'); if(tg)tg.animate([{transform:'scale(.5)',opacity:0},{transform:'scale(1.18)',opacity:1,offset:.6},{transform:'scale(1)',opacity:1}],{duration:500,delay:120,easing:'cubic-bezier(.2,.8,.2,1)',fill:'backwards'});});}
+  downloadPast(ids){const at=hhmm().replace('Today · ','Today ');
+    this.setState(x=>({past:x.past.map(p=>ids.includes(p.id)?{...p,events:[...(p.events||[]),{t:'downloaded',at}]}:p),selMode:false,pastSel:[]}));
+    ids.forEach((id,i)=>setTimeout(()=>this.pulse(id),i*80));
+    const it=this.state.past.find(p=>p.id===ids[0]); this.showToast(ids.length>1?`Downloading ${ids.length} scans as .zip`:`Downloading “${it?it.name:''}”`);}
+  flip(before,skip,attr='data-pid'){const r=this.scrollRef.current; if(!r)return;
+    r.querySelectorAll('['+attr+']').forEach(el=>{const id=el.getAttribute(attr), b=before[id]; if(!b||id===skip)return; const a=el.getBoundingClientRect(), dx=b.left-a.left, dy=b.top-a.top; if(Math.abs(dx)<1&&Math.abs(dy)<1)return;
+      const ot=el.style.transition; el.style.transition='none'; el.style.transform='translate('+dx+'px,'+dy+'px)'; el.getBoundingClientRect();
+      el.style.transition='transform .6s cubic-bezier(.2,.8,.2,1)'; el.style.transform=''; setTimeout(()=>{el.style.transition=ot;},650);});}
+  reveal(id){clearTimeout(this.rt); clearTimeout(this.lt);
+    this.rt=setTimeout(()=>{const before=this.measure(); this.setState({pendingId:null,landId:id,flash:id}); requestAnimationFrame(()=>requestAnimationFrame(()=>this.flip(before,id)));
+      this.lt=setTimeout(()=>this.setState({landId:null,flash:null}),2200);},700);}
+  findNames(){
+    clearTimeout(this.sgt); this.setState({nameSug:{phase:'loading',step:0}});
+    this.sgt=setTimeout(()=>{this.setState({nameSug:{phase:'loading',step:1}});
+      this.sgt=setTimeout(()=>{const pages=this.state.pages, kinds=[]; pages.forEach(p=>{if(!kinds.includes(p.kind))kinds.push(p.kind);});
+        const d=new Date(), ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+        let items=[]; kinds.forEach((k,ki)=>(SUG[k]||[]).forEach((s,i)=>items.push({name:s[0],src:s[1],why:s[2],conf:s[3]-ki*.08-(Math.random()*.03),k})));
+        items.sort((a,b)=>b.conf-a.conf); items=items.slice(0,4);
+        if(kinds.length>1)items.splice(1,0,{name:ds+' · '+kinds.slice(0,3).map(k=>k[0].toUpperCase()+k.slice(1)).join(' + '),src:'AI',why:`${pages.length} pages of mixed content`,conf:.72});
+        items.push({name:fillTpl(this.state.s.nameTpl,{date:d,preset:this.presetName(),counter:this.state.counter,dpi:this.state.s.dpi,color:this.state.s.color}).out,src:'Template',why:'From your file name template',conf:1});
+        this.setState({nameSug:{phase:'ready',items}});},850);},650);
+  }
+  newSession(name,pages){
+    const id='s'+Date.now()+Math.random().toString(36).slice(2,5);
+    const item={id,name,date:hhmm(),pages,fmt:this.state.s.format,size:'0.0 MB',events:[]};
+    this.setState(x=>({past:[item,...x.past]}));
+    return id;
+  }
+  addEvent(id,ev){this.setState(x=>({past:x.past.map(p=>p.id===id?{...p,events:[...(p.events||[]),ev]}:p)}));}
+  removePast(ids,label){
+    const set=new Set(ids); const prev=this.state.past;
+    this.setState({confirm:null});
+    this.animateOut('data-pid',ids,()=>{this.setState(x=>({past:x.past.filter(p=>!set.has(p.id)),pastSel:[],selMode:false}));
+      this.showToast(label,()=>this.withFlip('data-pid',()=>this.setState({past:prev,toast:null})));});
+  }
+  mergePast(ids){
+    const items=this.state.past.filter(p=>ids.includes(p.id));
+    const pages=items.flatMap(it=>it.pages.map(p=>({...p,id:nid()})));
+    const name='Merged · '+items.map(i=>i.name).join(' + ').slice(0,60); const sid=this.newSession(name,pages);
+    this.setState({screen:'preview',pages,name,splits:[],cur:pages[0].id,editing:sid,selMode:false,pastSel:[]});
+    this.showToast(`Merged ${items.length} scans · ${pages.length} pages`);
+  }
+  componentWillUnmount(){clearTimeout(this.sgt);clearTimeout(this.rt);clearTimeout(this.lt);clearInterval(this.t);clearInterval(this.et);clearTimeout(this.tt);}
+  componentDidUpdate(pp,ps){
+    if(this._lastScreen!==this.state.screen){this._lastScreen=this.state.screen; if(this.scrollRef.current)this.scrollRef.current.scrollTop=0;}
+    const st=this.state;
+    if(this._lastCur!==st.cur){const oi=st.pages.findIndex(p=>p.id===this._lastCur), ni=st.pages.findIndex(p=>p.id===st.cur); const had=this._lastCur!=null; this._lastCur=st.cur;
+      const b=this.bigRef.current; if(had&&b&&b.animate&&!this._noBigAnim&&st.screen==='preview'&&oi>=0&&ni>=0){const dx=ni>oi?36:-36; b.animate([{opacity:0,transform:'translateX('+dx+'px) scale(.97)'},{opacity:1,transform:'none'}],{duration:340,easing:'cubic-bezier(.2,.8,.2,1)'});}}
+    if(st.editing&&st.screen==='preview'){const it=st.past.find(p=>p.id===st.editing); if(it&&(it.pages!==st.pages||it.name!==st.name||it.fmt!==st.s.format)){const size=this.estSize(); this.setState(x=>({past:x.past.map(p=>p.id===x.editing?{...p,pages:x.pages,name:x.name,fmt:x.s.format,size}:p)}));}}
+    if(this._lastDevice!==this.props.device){const had=this._lastDevice!==undefined; this._lastDevice=this.props.device; if(had&&this.state.dev)this.setState({dev:null});}
+  }
+  dev(){return this.state.dev||this.props.device||'Desktop';}
+  set(k,v){this.setState(st=>({s:{...st.s,[k]:v}}));}
+  targets(){const {pages,cur}=this.state; return cur&&pages.some(p=>p.id===cur)?[cur]:[];}
+  edit(fn){const t=new Set(this.targets()); this.setState(st=>({pages:st.pages.map(p=>t.has(p.id)?fn(p):p),menu:null}));}
+  showToast(text,undo){clearTimeout(this.tt); this.setState({toast:{text,undo}}); this.tt=setTimeout(()=>this.setState({toast:null}),4200);}
+  del(){
+    const t=new Set(this.targets()); if(!t.size)return;
+    const prev={pages:this.state.pages,splits:this.state.splits,cur:this.state.cur};
+    const big=this.bigRef.current; if(big&&big.animate)big.animate([{opacity:1,transform:'none'},{opacity:0,transform:'scale(.9) translateY(18px)'}],{duration:260,easing:'cubic-bezier(.4,0,.6,1)',fill:'forwards'});
+    this._noBigAnim=true;
+    this.animateOut('data-fid',[...t],()=>{
+      this.setState(st=>{const pages=st.pages.filter(p=>!t.has(p.id)); const i=st.pages.findIndex(p=>p.id===st.cur); return {pages,cur:pages[Math.min(i,pages.length-1)]?.id||null,menu:null,splits:st.splits.filter(id=>!t.has(id))};});
+      requestAnimationFrame(()=>{const b=this.bigRef.current; if(b&&b.animate){b.getAnimations().forEach(a=>a.cancel()); b.animate([{opacity:0,transform:'scale(.94)'},{opacity:1,transform:'none'}],{duration:380,easing:'cubic-bezier(.2,.8,.2,1)'});} this._noBigAnim=false;});
+      this.showToast('Page deleted',()=>this.withFlip('data-fid',()=>this.setState({...prev,toast:null})));
+    });
+  }
+  toggleSplit(id){this.setState(st=>({splits:st.splits.includes(id)?st.splits.filter(x=>x!==id):[...st.splits,id],menu:null}));}
+  dragOver(id){
+    const {dragId,pages}=this.state; if(!dragId||dragId===id)return;
+    const from=pages.findIndex(p=>p.id===dragId), to=pages.findIndex(p=>p.id===id); if(from<0||to<0)return;
+    const a=[...pages]; const [m]=a.splice(from,1); a.splice(to,0,m); this.withFlip('data-fid',()=>this.setState({pages:a}),dragId);
+  }
+  startScan(mode,targetId){
+    if(this.state.scan)return;
+    const s=this.state.s; let total=mode==='replace'?1:(s.source==='Flatbed'?1:3); if(s.duplex&&mode!=='replace')total*=2;
+    const filt=s.color==='Grayscale'?'gray':s.color==='B&W'?'bw':'original';
+    const tgt=mode==='replace'?this.state.pages.find(p=>p.id===targetId):null;
+    const cur=tgt?{...tgt,filter:filt,crop:null}:mk(null,filt);
+    const nm=mode==='new'?this.makeName(this.state.counter+1).out:null; if(mode==='new')this.setState(x=>({counter:x.counter+1}));
+    const sid=mode==='new'?this.newSession(nm,[]):null;
+    this.setState(st=>({screen:mode==='new'?'preview':st.screen,pages:mode==='new'?[]:st.pages,splits:mode==='new'?[]:st.splits,name:mode==='new'?nm:st.name,editing:mode==='new'?sid:st.editing,menu:null,settings:false,scan:{mode,targetId,total,done:0,p:0,cur,filt}}));
+    clearInterval(this.t); let last=performance.now();
+    this.t=setInterval(()=>{
+      const now=performance.now(), dt=now-last; last=now; const per=(this.props.scanSeconds??1.8)*1000;
+      const sc=this.state.scan; if(!sc){clearInterval(this.t);return;}
+      const p=sc.p+dt/per;
+      if(p<1){this.setState({scan:{...sc,p}});return;}
+      let pages=this.state.pages; if(sc.mode==='replace')pages=pages.map(x=>x.id===sc.targetId?{...sc.cur}:x); else pages=[...pages,sc.cur];
+      const done=sc.done+1;
+      if(done>=sc.total){clearInterval(this.t); this.setState({pages,cur:sc.cur.id,scan:null}); this.showToast(sc.mode==='replace'?'Page rescanned':`${sc.total} page${sc.total>1?'s':''} scanned · feeder empty`); return;}
+      this.setState({pages,cur:sc.cur.id,scan:{...sc,p:0,done,cur:mk(null,sc.filt)}});
+    },40);
+  }
+  stopScan(){clearInterval(this.t); this.setState({scan:null}); this.showToast('Scan stopped');}
+  doSave(kind,path){
+    if(this.state.save)return;
+    const sv={export:kind==='export',download:kind==='download',saveto:kind==='saveto',path:kind==='saveto'?path:this.state.s.exportPath,phase:'export',p:0};
+    if(kind==='saveto')this.setState(x=>({saveTo:null,recentFolders:[path,...x.recentFolders.filter(p=>p!==path)].slice(0,4)}));
+    this.setState({save:sv,menu:null});
+    clearInterval(this.et);
+    this.et=setInterval(()=>{
+      const cur=this.state.save; if(!cur){clearInterval(this.et);return;}
+      const p=Math.min(1,cur.p+0.035);
+      if(p>=1){clearInterval(this.et); this.setState({save:{...cur,p:1,phase:'done'}}); setTimeout(()=>this.finishSave(),1000);}
+      else this.setState({save:{...cur,p}});
+    },40);
+  }
+  finishSave(){
+    const st=this.state, sv=st.save; if(!sv)return;
+    const id=st.editing, at=hhmm().replace('Today · ','Today '), fname=(st.name||'Untitled scan').trim()+'.'+st.s.format.toLowerCase();
+    const evs=[]; if(sv.export||sv.saveto)evs.push({t:sv.saveto?'saved':'exported',at,path:sv.path.replace(/\/$/,'')+'/'+fname}); if(sv.download)evs.push({t:'downloaded',at});
+    this.leave(()=>{this.setState(x=>{const it=x.past.find(p=>p.id===id); const upd={...it,events:[...(it.events||[]),...evs]}; return {past:[upd,...x.past.filter(p=>p.id!==id)],screen:'home',pages:[],splits:[],save:null,cur:null,flash:null,editing:null,pendingId:id};}); this.reveal(id);});
+    this.showToast(sv.saveto?'Saved to '+sv.path:sv.export?'Exported to '+sv.path:'Download started');
+  }
+  estSize(){const s=this.state.s; const m={PDF:.35,JPG:.5,PNG:1.8}[s.format]*(s.dpi/300)*(s.color==='Color'?1:.5); return (Math.max(.1,this.state.pages.length*m)).toFixed(1)+' MB';}
+  goBack(){
+    const st=this.state; clearInterval(this.t);
+    const keep=st.pages.length>0;
+    this.leave(()=>{this.setState(x=>({screen:'home',scan:null,menu:null,editing:null,pages:[],splits:[],cur:null,pendingId:keep?st.editing:null,past:keep?x.past:x.past.filter(p=>p.id!==st.editing)})); if(keep){this.reveal(st.editing);this.showToast('Kept in past scans');}});
+  }
+  discard(){
+    const st=this.state; clearInterval(this.t);
+    const prev={pages:st.pages,splits:st.splits,name:st.name,screen:'preview',cur:st.cur,editing:st.editing,past:st.past};
+    if(!st.pages.length){this.goBack();return;}
+    this.addEvent(st.editing,{t:'discarded',at:hhmm().replace('Today · ','Today ')});
+    this.leave(()=>{this.setState({screen:'home',scan:null,menu:null,editing:null,pages:[],splits:[],cur:null,pendingId:st.editing}); this.reveal(st.editing);});
+    this.showToast('Marked as discarded',()=>this.setState({...prev,toast:null}));
+  }
+  renderVals(){
+    const st=this.state, s=st.s, mob=this.dev()==='Mobile', I=icons();
+    const seg=(key,opts,fmt)=>opts.map(o=>{const on=s[key]===o;return {label:fmt?fmt(o):o,onClick:()=>this.set(key,o),bg:on?'#fff':'transparent',sh:on?'0 1px 3px rgba(19,26,43,.12)':'none',fg:on?'#2b63f0':'#4b5468'};});
+    const formatOpts=seg('format',['PDF','JPG','PNG']);
+    const segRows=[{label:'Source',opts:seg('source',['Flatbed','Feeder'])},{label:'Color mode',opts:seg('color',['Color','Grayscale','B&W'])},{label:'Resolution',opts:seg('dpi',[150,300,600],o=>o+' dpi')},{label:'Paper size',opts:seg('paper',['A4','Letter','Legal','Auto'])},{label:'File format',opts:formatOpts}];
+    const tg=(key,label,hint)=>{const on=!!s[key];return {label,hint,onClick:()=>this.set(key,!on),track:on?'#2b63f0':'#d3d9e6',knobX:on?'21px':'3px'};};
+    const sl=(key,label)=>({label,value:s[key],valText:(s[key]>0?'+':'')+s[key],onChange:e=>this.set(key,+e.target.value)});
+    const act=st.presets.find(p=>p.id===st.activePreset), isModified=!act||!same(act.s,s);
+    const tplRes=this.makeName(st.counter+1);
+    const presetOpts=st.presets.map(p=>{const on=p.id===st.activePreset&&!isModified, base=p.id===st.activePreset; return {name:p.name,icon:I['p_'+p.icon],onClick:()=>this.applyPreset(p.id),
+      bg:on?'#2b63f0':base?'#fff':'#fff',fg:on?'#fff':'#1c3fae',sh:on?'0 6px 16px rgba(43,99,240,.35)':base?'inset 0 0 0 1.5px #93b4ff':'0 1px 2px rgba(19,26,43,.08)'};});
+    const chips=[s.exportOn?'→ '+s.exportPath:null,s.source,s.dpi+' dpi',s.color,s.paper,s.duplex?'Duplex':null,s.autocrop?'Auto-crop':null,s.format,(s.brightness||s.contrast)?`B ${s.brightness} / C ${s.contrast}`:null].filter(Boolean);
+
+    const sc=st.scan, scanning=!!sc, prog=sc?(sc.done+sc.p)/sc.total:0;
+    const pages=st.pages, n=pages.length;
+    const status=scanning?{text:(mob?'':'Scanning · ')+`page ${sc.done+1} of ${sc.total}`,dot:'#2b63f0',anim:'pulseB 1.2s infinite'}:{text:mob?'Ready':'Ready · Brother ADS-1700W',dot:'#22c55e',anim:'pulse 2s infinite'};
+
+    let docN=1;
+    const pagesV=pages.map((p,i)=>{
+      const prevSplit=i>0&&st.splits.includes(pages[i-1].id); if(prevSplit)docN++;
+      const sel=st.cur===p.id;
+      return {id:p.id,page:p,num:String(i+1).padStart(2,'0'),sweep:sc&&sc.mode==='replace'&&sc.targetId===p.id?sc.p:null,
+        bg:sel?'#eef3ff':'transparent',ring:sel?'inset 0 0 0 2px #2b63f0':'none',numFg:sel?'#2b63f0':'#667089',op:st.dragId===p.id?.35:1,
+        docStart:prevSplit||(i===0&&st.splits.some(id=>id!==pages[n-1].id)),docShort:'Doc '+docN,
+        onClick:()=>this.setState({cur:p.id,menu:null}),
+        onDragStart:e=>{e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',p.id);}catch(_){} setTimeout(()=>this.setState({dragId:p.id}),0);},
+        onDragEnter:()=>this.dragOver(p.id),onDragOver:e=>e.preventDefault(),onDragEnd:()=>this.setState({dragId:null})};
+    });
+
+    const docs=[]; let cd=[]; pages.forEach((p,i)=>{cd.push(p); if(st.splits.includes(p.id)&&i<n-1){docs.push(cd);cd=[];}}); if(cd.length)docs.push(cd);
+    const ext=s.format.toLowerCase(), base=(st.name||'Untitled scan').trim();
+    const docsV=docs.map((d,i)=>{const suf=docs.length>1?` (${i+1})`:''; return {fname:base+suf+(ext==='pdf'||d.length===1?'.'+ext:`-01…${String(d.length).padStart(2,'0')}.${ext}`),count:ext==='pdf'?`${d.length} page${d.length>1?'s':''}`:`${d.length} file${d.length>1?'s':''}`};});
+
+    const tSet=this.targets(), on=tSet.length===1, busy=scanning;
+    const isSplit=on&&st.splits.includes(tSet[0]);
+    const tool=(icon,label,short,en,fn,active,danger)=>({icon,label,short,onClick:e=>{e.stopPropagation();fn();},op:en?1:.35,pe:en?'auto':'none',bg:active?'#eef3ff':'transparent',fg:danger?'#c42b2b':active?'#2b63f0':'#131a2b',hover:danger?'#fdecec':'#f1f5ff'});
+    const tools=[
+      tool(I.rotL,'Rotate left','Left',on,()=>this.edit(p=>({...p,rot:p.rot-90}))),
+      tool(I.rotR,'Rotate right','Right',on,()=>this.edit(p=>({...p,rot:p.rot+90}))),
+      tool(I.crop,'Crop','Crop',on&&!busy,()=>{const p=pages.find(x=>x.id===tSet[0]); this.setState({crop:{id:p.id,...(p.crop||{t:0,r:0,b:0,l:0})},menu:null});}),
+      tool(I.wand,'Filter','Filter',on,()=>this.setState(x=>({menu:x.menu==='filter'?null:'filter'})),st.menu==='filter'),
+      tool(I.rescan,'Rescan this page','Rescan',on&&!busy,()=>this.startScan('replace',tSet[0])),
+      tool(I.scissors,isSplit?'Join with next page':'Split after this page',isSplit?'Join':'Split',on&&tSet[0]!==pages[n-1]?.id,()=>this.toggleSplit(tSet[0]),isSplit),
+      tool(I.trash,'Delete page','Delete',on&&!busy,()=>this.del(),false,true)
+    ];
+    const filterOpts=FILT.map(f=>({label:f.l,sw:f.sw,onClick:e=>{e.stopPropagation();this.edit(p=>({...p,filter:f.k}));}}));
+
+    const stOf=it=>scanning&&it.id===st.editing?'scanning':((it.events||[]).length?it.events[it.events.length-1].t:'draft');
+    const detailOf=it=>{const e=it.events||[]; if(!e.length)return it.id===st.editing?'Open now · changes save automatically':'Not exported yet'; const last=e[e.length-1]; return (last.t==='exported'||last.t==='saved')?'→ '+last.path:EV[last.t]+' · '+last.at+(e.length>1?' · '+e.slice(0,-1).map(x=>EV[x.t]).filter((v,i,a)=>a.indexOf(v)===i).join(', ')+' before':'');};
+    if(st.screen==='home'){if(!this._anim)this._anim={};}else this._anim=null;
+    const AN=this._anim||{}; let aIdx=0;
+    const animOf=it=>{if(AN[it.id])return AN[it.id]; const v=st.landId===it.id?'landIn .75s cubic-bezier(.2,.9,.3,1) both, landGlow 1.4s ease-out .45s':'pgIn .45s cubic-bezier(.2,.8,.2,1) '+(120+Math.min(aIdx++,10)*45)+'ms both'; if(this._anim)AN[it.id]=v; return v;};
+    const pastV=st.past.filter(it=>it.id!==st.pendingId).map(it=>({...it,anim:animOf(it),st:STS[stOf(it)],stKey:stOf(it),detail:detailOf(it),first:it.pages[0],multi:it.pages.length>1,meta:`${it.pages.length} p · ${it.fmt} · ${it.date.split(' · ')[0]}`,short:`${it.pages.length} p · ${it.fmt} · ${it.size}`,bg:st.flash===it.id?'#dce6ff':'transparent',
+      onOpen:()=>it.pages.length&&this.setState({screen:'preview',pages:it.pages,name:it.name,splits:[],cur:it.pages[0].id,editing:it.id}),
+      onMerge:()=>{const add=it.pages.map(p=>({...p,id:nid()})); this.setState(x=>({pages:[...x.pages,...add],merge:false,cur:x.cur||add[0].id})); this.showToast(`Added ${add.length} page${add.length>1?'s':''} from “${it.name}”`);}}));
+
+    const SORTS=['Newest','Oldest','A–Z'];
+    const q=st.q.trim().toLowerCase(), pSel=new Set(st.pastSel), sm=st.selMode;
+    const FKEYS=[['all','All'],['draft','Drafts'],['exported','Exported'],['saved','Saved'],['downloaded','Downloaded'],['discarded','Discarded']];
+    const cnt=k=>k==='all'?pastV.length:pastV.filter(it=>it.stKey===k||(k==='draft'&&it.stKey==='scanning')).length;
+    const statusFilters=FKEYS.filter(([k])=>k==='all'||cnt(k)>0||st.stFilter===k).map(([k,l])=>{const on=st.stFilter===k;return {label:l,n:cnt(k),onClick:()=>this.setState({stFilter:k}),bg:on?'#131a2b':'#f1f3f8',fg:on?'#fff':'#3b4459',dot:k==='all'?'transparent':STS[k].dot,dotD:k==='all'?'none':'inline-block'};});
+    let shown=pastV.filter(it=>(!q||it.name.toLowerCase().includes(q))&&(st.stFilter==='all'||it.stKey===st.stFilter||(st.stFilter==='draft'&&it.stKey==='scanning')));
+    if(st.sort===1)shown=[...shown].reverse(); else if(st.sort===2)shown=[...shown].sort((a,b)=>a.name.localeCompare(b.name));
+    const pastShown=shown.map(it=>{const on=sm&&pSel.has(it.id); return {...it,
+      onClick:sm?()=>this.setState(x=>({pastSel:x.pastSel.includes(it.id)?x.pastSel.filter(y=>y!==it.id):[...x.pastSel,it.id]})):it.onOpen,
+      bg:on?'#eef3ff':it.bg, ring:on?'inset 0 0 0 2px #2b63f0':'none', hover:on?'#e3ebff':'#f1f5ff', scale:on?'scale(.94)':'none',
+      chk:on?I.check:null, chkBg:on?'#2b63f0':'rgba(255,255,255,.92)', chkBd:on?'0':'2px solid #c5cddd',
+      onDownload:e=>{e.stopPropagation();this.downloadPast([it.id]);},
+      onDelete:e=>{e.stopPropagation();this.removePast([it.id],`Deleted “${it.name}”`);}};});
+    const shownIds=shown.map(i=>i.id), allSel=shownIds.length>0&&shownIds.every(id=>pSel.has(id)), nSel=st.pastSel.length;
+    const mb=st.past.reduce((a,it)=>a+(parseFloat(it.size)*(/KB/.test(it.size)?.001:1)),0);
+    const curIdx=pages.findIndex(p=>p.id===st.cur);
+    const showScanBig=scanning&&sc.mode!=='replace';
+    const bigPage=showScanBig?sc.cur:(pages[curIdx]||pages[0]||null);
+    const bigSweep=showScanBig?sc.p:(sc&&sc.mode==='replace'&&bigPage&&sc.targetId===bigPage.id?sc.p:null);
+    const go=d=>()=>{const i=Math.max(0,Math.min(n-1,(curIdx<0?0:curIdx)+d)); if(pages[i])this.setState({cur:pages[i].id,menu:null});};
+
+    const sv=st.save;
+    const dest=(key,icon,label,hint)=>{const o=!!(sv&&sv[key]);return {icon,label,hint,onClick:()=>sv&&sv.phase==='form'&&this.setState({save:{...sv,[key]:!o}}),bg:o?'#eef3ff':'#f5f7fc',ring:o?'inset 0 0 0 2px #2b63f0':'none',chk:o?I.check:null,chkBg:o?'#2b63f0':'transparent',chkBd:o?'0':'2px solid #c5cddd'};};
+    const canSave=n>0&&!scanning, so=st.settings;
+    const grid=st.view==='grid';
+    return {
+      ic:I, s, mob, scrollRef:this.scrollRef, bigRef:this.bigRef,
+      onHome:st.screen==='home', notHome:st.screen!=='home', onPreview:st.screen==='preview',
+      outerPad:mob?'60px 24px 32px':'0', frameW:mob?'390px':'100%', frameH:mob?'844px':'100vh', frameRad:mob?'40px':'0', frameShadow:mob?'0 0 0 10px #131a2b, 0 30px 70px rgba(19,26,43,.35)':'none', padX:mob?'16px':'28px',
+      stagePad:mob?'32px 20px':'48px 32px', sheetW:mob?'150px':'clamp(200px, 18vw, 300px)', h1Size:mob?'34px':'clamp(46px, 3.6vw, 60px)',
+      homeMax:mob?'none':'2200px', homeMinH:mob?'0':'calc(100vh - 64px)', homeBottom:mob?'48px':'28px', pastFlex:mob?'1 1 100%':'1.25 1 420px', pastMin:mob?'118px':'150px',
+      status, progPct:(prog*100).toFixed(1)+'%', progOp:scanning?1:0,
+      name:st.name, onName:e=>this.setState({name:e.target.value}), goBack:()=>this.goBack(),
+      presetOpts, isModified, activeName:act?act.name:'', canUpdate:!!act&&isModified, canDelete:!!act&&st.presets.length>1,
+      drafting:st.presetDraft!==null, notDrafting:st.presetDraft===null, presetDraft:st.presetDraft||'', draftOp:(st.presetDraft||'').trim()?1:.45,
+      startDraft:()=>this.setState({presetDraft:'',presetIcon:'star'}),
+      showIconEdit:st.presetDraft===null&&!!act&&act.id.startsWith('u'),
+      iconOpts:PICONS.map(k=>{const cur=st.presetDraft!==null?st.presetIcon:(act?act.icon:''); const on=cur===k; return {k,icon:I['p_'+k],bg:on?'#2b63f0':'#fff',fg:on?'#fff':'#3b4459',sh:on?'0 4px 12px rgba(43,99,240,.35)':'0 1px 2px rgba(19,26,43,.08)',
+        onClick:()=>st.presetDraft!==null?this.setState({presetIcon:k}):this.setState(x=>({presets:x.presets.map(p=>p.id===x.activePreset?{...p,icon:k}:p)}))};}), cancelDraft:()=>this.setState({presetDraft:null}), onDraft:e=>this.setState({presetDraft:e.target.value}),
+      onDraftKey:e=>{if(e.key==='Enter')this.savePresetDraft(); if(e.key==='Escape')this.setState({presetDraft:null});}, saveDraft:()=>this.savePresetDraft(),
+      updatePreset:()=>{this.setState(x=>({presets:x.presets.map(p=>p.id===x.activePreset?{...p,s:pick(x.s)}:p)})); this.showToast(`Preset “${act.name}” updated`);},
+      deletePreset:()=>{const rest=st.presets.filter(p=>p.id!==st.activePreset); const prev=st.presets; this.setState({presets:rest,activePreset:rest[0].id,s:{...s,...rest[0].s}}); this.showToast(`Preset “${act.name}” deleted`,()=>this.setState({presets:prev,activePreset:act.id,toast:null}));},
+      segRows, formatOpts, chips, toggles:[tg('duplex','Duplex','Scan both sides of each sheet'),tg('autocrop','Auto-crop','Trim to the detected page edges')], sliders:[sl('brightness','Brightness'),sl('contrast','Contrast')],
+      resetSettings:()=>{const p=st.presets.find(x=>x.id===st.activePreset); this.setState({s:{...s,...(p?p.s:pick(DEF))}});},
+      tplRef:this.tplRef,
+      sugOpen:!!st.nameSug, sugLoading:!!st.nameSug&&st.nameSug.phase==='loading', sugReady:!!st.nameSug&&st.nameSug.phase==='ready',
+      sugLoadText:st.nameSug&&st.nameSug.step===1?'Finding a good name…':`Reading text on ${n} page${n===1?'':'s'}…`, sugSkel:['0s','.12s','.24s'],
+      sugItems:st.nameSug&&st.nameSug.items?st.nameSug.items.map((g,i)=>({name:g.name,why:g.why,src:g.src,delay:i*50+'ms',bg:g.name===st.name?'#eef3ff':'transparent',
+        srcBg:g.src==='OCR'?'#e3f7ea':g.src==='AI'?'#f1eaff':'#eef1f7',srcFg:g.src==='OCR'?'#157a3c':g.src==='AI'?'#6a3be0':'#4b5468',
+        conf:Math.round(Math.max(.1,Math.min(1,g.conf))*100)+'%',confC:g.conf>.85?'#22c55e':g.conf>.7?'#3b82f6':'#f59e0b',
+        onClick:()=>{this.setState({name:g.name,nameSug:null}); this.showToast('Renamed to “'+g.name+'”');}})):[],
+      toggleSug:()=>st.nameSug?this.setState({nameSug:null}):this.findNames(), closeSug:()=>{clearTimeout(this.sgt);this.setState({nameSug:null});}, refreshSug:()=>this.findNames(),
+      sugBtnBg:st.nameSug?'#7c4dff':'#f1eaff', sugBtnFg:st.nameSug?'#fff':'#6a3be0', sugBtnOp:n&&!scanning?1:.45, sugBtnPe:n&&!scanning?'auto':'none', sugW:mob?'100%':'min(380px, calc(100vw - 48px))', onTpl:e=>{e.target._lastSel=[e.target.selectionStart,e.target.selectionEnd]; this.set('nameTpl',e.target.value);},
+      onTplSel:e=>{e.target._lastSel=[e.target.selectionStart,e.target.selectionEnd];},
+      tokens:TOKENS.map(([t,h])=>({t,hint:h,onMouseDown:null,onClick:()=>this.insertToken(t)})), extLower:s.format.toLowerCase(),
+      tplPreview:tplRes.out+'.'+s.format.toLowerCase(), tplBad:tplRes.bad.length>0, tplBadList:tplRes.bad.join(', '), onPath:e=>this.set('exportPath',e.target.value),
+      openSettings:()=>this.setState({settings:true}), closeSettings:()=>this.setState({settings:false}),
+      setOp:so?1:0, setPe:so?'auto':'none',
+      shT:mob?'auto':'50%', shL:mob?'0':'50%', shR:mob?'0':'auto', shB:mob?'0':'auto', shW:mob?'auto':'min(920px, calc(100% - 64px))', shDisp:mob?'flex':'grid', shCols:mob?'none':'repeat(auto-fit, minmax(320px, 1fr))', shPad:mob?'22px 22px 24px':'30px 34px 30px', shH:mob?'20px':'26px', doneW:mob?'100%':'220px',
+      sheetMaxH:mob?'86%':'calc(100% - 48px)', sheetRad:mob?'28px 28px 0 0':'26px',
+      sheetTf:mob?(so?'translateY(0)':'translateY(100%)'):(so?'translate(-50%,-50%) scale(1)':'translate(-50%,-46%) scale(.96)'),
+      startScan:()=>this.startScan('new'), scanMore:()=>this.startScan('append'), stopScan:()=>this.stopScan(),
+      homeAnim:st.navDir==='back'?'slideFromLeft .5s cubic-bezier(.2,.8,.2,1) both':'fadeIn .4s both', prevAnim:st.leaving?'slideOutRight .23s ease-in both':'slideFromRight .5s cubic-bezier(.2,.8,.2,1) both',
+      pastV, pastShown, statusFilters, mergeList:pastV.filter(it=>it.id!==st.editing&&it.pages.length), pastCount:String(st.past.length),
+      selMode:sm, notSelMode:!sm, q:st.q, hasQ:!!st.q, onQ:e=>this.setState({q:e.target.value}), clearQ:e=>{e.preventDefault();this.setState({q:''});},
+      sortLabel:SORTS[st.sort], sortMenu:st.menu==='sort', sortBtnBg:st.menu==='sort'?'#e6eaf2':'#f1f3f8',
+      toggleSortMenu:()=>this.setState(x=>({menu:x.menu==='sort'?null:'sort'})), closeSortMenu:()=>this.setState({menu:null}),
+      sortOpts:['Newest first','Oldest first','Name A–Z'].map((l,i)=>({label:l,onClick:()=>this.setState({sort:i,menu:null}),bg:st.sort===i?'#eef3ff':'transparent',fg:st.sort===i?'#1c3fae':'#131a2b',fw:st.sort===i?700:500,chk:st.sort===i?I.check:null})),
+      enterSel:()=>this.setState({selMode:true,pastSel:[]}), exitSel:()=>this.setState({selMode:false,pastSel:[]}),
+      hasPastOp:st.past.length?1:.4, hasPastPe:st.past.length?'auto':'none',
+      selCountText:nSel?`${nSel} selected`:'Select scans', toggleAllLabel:allSel?'Select none':'Select all',
+      toggleAll:()=>this.setState({pastSel:allSel?[]:shownIds}),
+      selOp:nSel?1:.45, selPe:nSel?'auto':'none', mergeSelOp:nSel>1?1:.45, mergeSelPe:nSel>1?'auto':'none',
+      bulkDownload:()=>this.downloadPast(st.pastSel),
+      bulkDelete:()=>this.removePast(st.pastSel,`Deleted ${nSel} scan${nSel>1?'s':''}`),
+      bulkMerge:()=>this.mergePast(st.pastSel),
+      pastEmpty:shown.length===0, emptyTitle:st.past.length?'No matches':'No past scans yet', emptyBody:st.past.length?(st.q?`Nothing named “${st.q}”.`:'No scans with this status.'):'Every scan is saved here automatically.',
+      showFooter:st.past.length>0&&!sm, storageText:`${st.past.length} scans · ${mb.toFixed(1)} MB on server`,
+      askClearAll:()=>this.setState({confirm:{title:'Clear all past scans?',body:`This deletes all ${st.past.length} scans, including drafts, from the scanner server. Files already exported to ${s.exportPath} are not touched. You can undo right after.`,label:'Clear all'}}),
+      confirmOpen:!!st.confirm, confirm:st.confirm?{...st.confirm,run:()=>this.removePast(st.past.map(p=>p.id),'All past scans cleared')}:{title:'',body:'',label:''}, closeConfirm:()=>this.setState({confirm:null}), isGrid:grid, isList:!grid,
+      viewGrid:()=>this.setState({view:'grid'}), viewList:()=>this.setState({view:'list'}),
+      gridBg:grid?'#fff':'transparent', gridSh:grid?'0 1px 3px rgba(19,26,43,.12)':'none', gridFg:grid?'#2b63f0':'#667089',
+      listBg:!grid?'#fff':'transparent', listSh:!grid?'0 1px 3px rgba(19,26,43,.12)':'none', listFg:!grid?'#2b63f0':'#667089',
+      pagesV, scanning, scanAppend:scanning&&sc.mode!=='replace', scanCur:sc?sc.cur:null, scanP:sc?sc.p:null, scanNum:String(n+1).padStart(2,'0'),
+      scanText:sc?(sc.mode==='replace'?'Rescanning':`Page ${sc.done+1} of ${sc.total}`)+` · ${Math.round(prog*100)}%`:'',
+      tools, menuFilter:st.menu==='filter', filterOpts,
+      canSaveOp:canSave?1:.4, canSavePe:canSave?'auto':'none',
+      openExport:()=>this.doSave('export'), openDownload:()=>this.doSave('download'),
+      saving:!!sv, notSaving:!sv, saveIcon:sv&&sv.download?I.download:I.folder,
+      savingTitle:!sv?'':sv.phase==='done'?(sv.export?'Exported':sv.saveto?'Saved':'Downloaded'):(sv.export?'Exporting…':sv.saveto?'Saving…':'Preparing download…'),
+      savingPath:!sv?'':(sv.export||sv.saveto)?sv.path.replace(/\/$/,'')+'/'+(st.name||'scan').trim()+'.'+s.format.toLowerCase():(st.name||'scan').trim()+'.'+s.format.toLowerCase(),
+      exportOn:!!s.exportOn, exportToggle:{onClick:()=>this.set('exportOn',!s.exportOn),track:s.exportOn?'#2b63f0':'#d3d9e6',knobX:s.exportOn?'21px':'3px'}, expFolderOp:s.exportOn?1:.45, expFolderPe:s.exportOn?'auto':'none',
+      stBg:s.exportOn?'#eef3ff':'linear-gradient(135deg,#3b82f6,#2b5cf0)', stFg:s.exportOn?'#1c3fae':'#fff', stSh:s.exportOn?'none':'0 8px 22px rgba(43,99,240,.32)', stH:s.exportOn?'48px':'50px',
+      saveToOpen:!!st.saveTo, toggleSaveTo:()=>this.setState(x=>({saveTo:x.saveTo?null:{path:''},nameSug:null})), closeSaveTo:()=>this.setState({saveTo:null}),
+      folderOpts:(()=>{const seen=new Set(), out=[]; const add=(p,h)=>{if(!p||seen.has(p))return; seen.add(p); out.push({path:p,hint:h});};
+        st.recentFolders.forEach(p=>add(p,'Recent')); add(s.exportPath,'Export folder'); add('/data/documents','Documents'); add('/data/scans/archive','Archive');
+        return out.slice(0,6).map((o,i)=>({...o,delay:i*40+'ms',bg:'transparent',iconBg:o.hint==='Recent'?'#dff7f5':'#eef3ff',iconFg:o.hint==='Recent'?'#0f766e':'#2b63f0',onClick:()=>this.doSave('saveto',o.path)}));})(),
+      customPath:st.saveTo?st.saveTo.path:'', onCustomPath:e=>this.setState({saveTo:{path:e.target.value}}), customOp:st.saveTo&&st.saveTo.path.trim()?1:.45,
+      onCustomKey:e=>{if(e.key==='Enter'&&st.saveTo&&st.saveTo.path.trim())this.doSave('saveto',st.saveTo.path.trim()); if(e.key==='Escape')this.setState({saveTo:null});},
+      saveCustom:()=>{const p=st.saveTo&&st.saveTo.path.trim(); if(p)this.doSave('saveto',p);},
+      saveCardBg:sv&&sv.phase==='done'?'#e8f8ee':'#f1f5ff', saveTitleFg:sv&&sv.phase==='done'?'#157a3c':'#131a2b', saveBar:sv&&sv.phase==='done'?'#22c55e':'linear-gradient(90deg,#38bdf8,#2b63f0)',
+      autosaveText:scanning?'Auto-saving to past scans…':'Auto-saved to past scans',
+      discard:()=>this.discard(),
+      openMerge:()=>this.setState({merge:true,menu:null}), closeMerge:()=>this.setState({merge:false}), mergeOpen:st.merge, stop:e=>e.stopPropagation(),
+      ordFilm:mob?2:1, ordMain:mob?1:2, ordSide:3,
+      filmBasis:mob?'100%':'clamp(140px, 11vw, 190px)', filmDir:mob?'row':'column', filmW:mob?'70px':'100%', filmMaxH:mob?'none':'calc(100vh - 100px)', filmPos:mob?'static':'sticky',
+      sideFlex:mob?'1 1 100%':'0 1 clamp(300px, 22vw, 380px)',
+      bigMax:mob?'100%':'max(280px, calc((100vh - 230px) / 1.414))', hasBig:!!bigPage, noBig:!bigPage, bigPage, bigSweep,
+      bPageText:showScanBig?`Scanning page ${n+1}`:n?`Page ${Math.max(1,curIdx+1)} of ${n}`:'No pages',
+      prevPage:go(-1), nextPage:go(1), prevOp:curIdx>0?1:.35, nextOp:curIdx<n-1?1:.35,
+      stats:[{k:'Pages',v:n},{k:'Documents',v:docs.length||0},{k:'Filter',v:bigPage&&!showScanBig?FL[bigPage.filter]:'—'},{k:'Est. size',v:this.estSize()}],
+      closeSave:()=>{clearInterval(this.et);this.setState({save:null});},
+      saveTitle:docs.length>1?`Export ${docs.length} documents`:'Save / Export', docsV,
+      dests:[dest('export',I.folder,'Export to folder',s.exportPath),dest('download',I.download,'Download','Save a copy to this device')],
+      saveForm:!!sv&&sv.phase==='form', saveExport:!!sv&&sv.phase==='export', saveDone:!!sv&&sv.phase==='done',
+      saveLabel:sv?(sv.download&&sv.export?'Export & download':sv.download?'Download':sv.export?'Export':'Choose a destination'):'', saveBtnOp:sv&&(sv.download||sv.export)?1:.4,
+      exportText:s.format==='PDF'?'Assembling PDF…':'Encoding images…', exportPct:sv?Math.round(sv.p*100)+'%':'0%', doneText:sv&&sv.export?'Exported':'Ready',
+      cropOpen:!!st.crop, cropPage:st.crop?{...pages.find(p=>p.id===st.crop.id),crop:null}:null, cropNum:st.crop?pages.findIndex(p=>p.id===st.crop.id)+1:'',
+      cropT:st.crop?st.crop.t+'%':'0', cropR:st.crop?st.crop.r+'%':'0', cropB:st.crop?st.crop.b+'%':'0', cropL:st.crop?st.crop.l+'%':'0',
+      cropSliders:st.crop?[['t','Top'],['r','Right'],['b','Bottom'],['l','Left']].map(([k,l])=>({label:l,value:st.crop[k],valText:st.crop[k]+'%',onChange:e=>this.setState({crop:{...this.state.crop,[k]:+e.target.value}})})):[],
+      cropAuto:()=>this.setState({crop:{...st.crop,t:3,r:4,b:5,l:3}}), cropReset:()=>this.setState({crop:{...st.crop,t:0,r:0,b:0,l:0}}),
+      closeCrop:()=>this.setState({crop:null}),
+      cropApply:()=>{const c=st.crop; const z=!c.t&&!c.r&&!c.b&&!c.l; this.setState(x=>({pages:x.pages.map(p=>p.id===c.id?{...p,crop:z?null:{t:c.t,r:c.r,b:c.b,l:c.l}}:p),crop:null}));},
+      hasToast:!!st.toast, toast:st.toast?{text:st.toast.text,hasUndo:!!st.toast.undo,undo:st.toast.undo}:{text:'',hasUndo:false},
+      devOpts:['Desktop','Mobile'].map(k=>({label:k,bg:this.dev()===k?'#2b63f0':'transparent',onClick:()=>this.setState({dev:k})}))
+    };
+  }
+}
+</script>
+</body>
+</html>
