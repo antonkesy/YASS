@@ -94,6 +94,50 @@ test('scan, review, edit, download and save', async ({ page }) => {
 	await expect(list.getByTestId('session-tile').first()).toContainText('Tax return 2025');
 });
 
+test('the all-pages overview zooms, reorders by drag and hands the order back', async ({
+	page
+}) => {
+	await scanToReview(page);
+
+	await page.getByTestId('overview-open').click();
+	const overview = page.getByTestId('page-overview');
+	await expect(overview).toBeVisible();
+	const thumbs = overview.getByTestId('page-thumb');
+	await expect(thumbs).toHaveCount(3);
+
+	// Zoom is a step at a time, and the tiles actually grow with it.
+	const small = (await thumbs.nth(0).boundingBox())!;
+	await page.getByTestId('overview-zoom-in').click();
+	await expect
+		.poll(async () => (await thumbs.nth(0).boundingBox())!.width)
+		.toBeGreaterThan(small.width);
+
+	// Back down to the smallest step, where the whole scan fits on a phone screen too.
+	const zoomOut = page.getByTestId('overview-zoom-out');
+	while (await zoomOut.isEnabled()) await zoomOut.click();
+
+	// Drag the blank page, which starts deleted, to the front of the scan.
+	await expect(thumbs.nth(0)).toHaveAttribute('data-deleted', 'false');
+	await expect(thumbs.nth(1)).toHaveAttribute('data-deleted', 'true');
+	const blank = (await thumbs.nth(1).boundingBox())!;
+	const first = (await thumbs.nth(0).boundingBox())!;
+	await page.mouse.move(blank.x + blank.width / 2, blank.y + blank.height / 2);
+	await page.mouse.down();
+	// A finger has to hold before it drags, so that a swipe still scrolls; a mouse does
+	// not wait, and the pause costs it nothing.
+	await page.waitForTimeout(350);
+	await page.mouse.move(first.x + first.width / 2, first.y + first.height / 2, { steps: 12 });
+	await page.mouse.up();
+
+	await expect(thumbs.nth(0)).toHaveAttribute('data-deleted', 'true');
+	await expect(thumbs.nth(1)).toHaveAttribute('data-deleted', 'false');
+
+	// Closing leaves the filmstrip showing the order the overview settled on.
+	await page.getByTestId('overview-close').click();
+	await expect(overview).toHaveCount(0);
+	await expect(page.getByTestId('page-thumb').nth(0)).toHaveAttribute('data-deleted', 'true');
+});
+
 test('settings only expose ui_editable keys and are applied to the next scan', async ({ page }) => {
 	await page.goto('/settings');
 	const form = page.getByTestId('settings-form');

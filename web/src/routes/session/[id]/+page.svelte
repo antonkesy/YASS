@@ -24,6 +24,7 @@
 	} from '$lib/review/edits';
 	import { clear, prune, toggle } from '$lib/review/selection';
 	import PageGrid from '$lib/components/PageGrid.svelte';
+	import PageOverview from '$lib/components/PageOverview.svelte';
 	import Toolbar from '$lib/components/Toolbar.svelte';
 	import Preview from '$lib/components/Preview.svelte';
 	import ExportBar from '$lib/components/ExportBar.svelte';
@@ -33,7 +34,7 @@
 	import MergeModal from '$lib/components/MergeModal.svelte';
 	import NameSuggestions from '$lib/components/NameSuggestions.svelte';
 	import { saveToBrowser, savedLabel } from '$lib/review/download';
-	import { exportPrefs, rememberFolder } from '$lib/presets';
+	import { exportPrefs, rememberFolder, reviewPrefs } from '$lib/presets';
 	import { ExportMode, type NameSuggestionsDto } from '$lib/hub/generated/Yass.Core.Hub';
 
 	const client = getHub();
@@ -53,6 +54,8 @@
 	let exportRoots = $state<string[]>([]);
 	/** Position in `pages` shown in the centre column. */
 	let current = $state(0);
+	/** Whether the filmstrip is expanded to the full-screen all-pages overview. */
+	let overview = $state(false);
 
 	$effect(() => {
 		if ($connection === 'connected') {
@@ -216,6 +219,18 @@
 		selection = toggle(selection, index);
 	}
 
+	/**
+	 * A reorder renumbers every page, so the ticks would end up on pages nobody picked.
+	 */
+	function reorder(order: number[]) {
+		selection = clear();
+		send(reorderEdit(order));
+	}
+
+	function selectAll() {
+		selection = new Set((session?.Pages ?? []).map((p) => p.Index));
+	}
+
 	/** Crop and rescan act on the one selected page, or the one on screen. */
 	function targetPage() {
 		if (selection.size === 1) {
@@ -350,10 +365,8 @@
 					{documents}
 					onscanmore={editable ? scanMore : undefined}
 					reorderable={editable}
-					onreorder={(order) => {
-						selection = clear();
-						send(reorderEdit(order));
-					}}
+					onreorder={reorder}
+					onexpand={() => (overview = true)}
 				/>
 			</nav>
 
@@ -612,7 +625,28 @@
 	/>
 {/if}
 
-<!-- Outside the container above: an animated ancestor would trap this overlay under the header. -->
+<!-- Outside the container above: an animated ancestor would trap these overlays under the header. -->
+{#if overview && session}
+	<PageOverview
+		sessionId={id}
+		pages={session.Pages}
+		{selection}
+		current={session.Pages[current]?.Index ?? -1}
+		{scanning}
+		{documents}
+		reorderable={editable}
+		tile={$reviewPrefs.overviewTile}
+		onzoom={(overviewTile) => reviewPrefs.set({ ...$reviewPrefs, overviewTile })}
+		onshow={show}
+		ontoggle={select}
+		onopen={(i) => (previewIndex = i)}
+		onreorder={reorder}
+		onselectall={selectAll}
+		onclear={() => (selection = clear())}
+		onclose={() => (overview = false)}
+	/>
+{/if}
+
 {#if previewIndex !== null && session}
 	<Preview
 		sessionId={id}

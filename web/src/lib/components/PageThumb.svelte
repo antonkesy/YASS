@@ -73,6 +73,7 @@
 				alt=""
 				loading="lazy"
 				decoding="async"
+				draggable="false"
 				class="max-h-full max-w-full object-contain transition-transform duration-500 ease-spring"
 				style:transform={delta ? `rotate(${delta}deg)` : undefined}
 				onload={loaded}

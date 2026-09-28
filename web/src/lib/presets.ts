@@ -2,6 +2,7 @@ import { writable } from 'svelte/store';
 import { ColorMode, PageSize, ScanSource } from './hub/generated/Yass.Core.Domain';
 import { ExportFormat } from './hub/generated/Yass.Core.Hub';
 import type { PresetIconName } from './icons';
+import { DEFAULT_TILE } from './review/overview';
 import type { ScanOverrides } from './settings';
 
 /**
@@ -83,6 +84,16 @@ export function rememberFolder(prefs: ExportPrefs, directory: string): ExportPre
 	return { ...prefs, recentFolders: [clean, ...rest].slice(0, RECENT_FOLDERS) };
 }
 
+/** Review-screen preferences, next to the export ones so they share the same storage helper. */
+export type ReviewPrefs = {
+	/** Tile width the all-pages overview was last zoomed to. */
+	overviewTile: number;
+};
+
+export const REVIEW_KEY = 'yass.review';
+
+export const defaultReviewPrefs: ReviewPrefs = { overviewTile: DEFAULT_TILE };
+
 /** True when `settings` matches every key the preset pins. */
 export function matchesPreset(preset: Preset, overrides: ScanOverrides): boolean {
 	return Object.entries(preset.settings).every(
@@ -135,6 +146,10 @@ export const createPresets = (storage: Storage | undefined) =>
 export const createExportPrefs = (storage: Storage | undefined) =>
 	persisted<ExportPrefs>(storage, EXPORT_KEY, defaultExportPrefs);
 
+export const createReviewPrefs = (storage: Storage | undefined) =>
+	persisted<ReviewPrefs>(storage, REVIEW_KEY, defaultReviewPrefs);
+
 const storage = typeof localStorage === 'undefined' ? undefined : localStorage;
 export const presets = createPresets(storage);
 export const exportPrefs = createExportPrefs(storage);
+export const reviewPrefs = createReviewPrefs(storage);
