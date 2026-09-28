@@ -169,12 +169,14 @@ describe('ExportBar', () => {
 });
 
 describe('PageThumb', () => {
-	it('toggles selection on tap, opens on the expand button, and badges blank/deleted pages', async () => {
+	it('shows on tap, selects on the checkbox, opens on the expand button, and badges blank/deleted pages', async () => {
+		const onshow = vi.fn();
 		const ontoggle = vi.fn();
 		const onopen = vi.fn();
 		const { container } = render(PageThumb, {
 			sessionId: 's1',
 			page: page(2, { Deleted: true, IsBlank: true, Hash: 'abc' }),
+			onshow,
 			ontoggle,
 			onopen
 		});
@@ -184,7 +186,11 @@ describe('PageThumb', () => {
 			'src',
 			expect.stringContaining('/img/s1/2/thumb?h=abc')
 		);
-		await fireEvent.click(screen.getByRole('button', { name: /^Page 3/ }));
+		// Tapping the page only moves the stage: selection is the checkbox's job alone.
+		await fireEvent.click(screen.getByRole('button', { name: /^Show page 3/ }));
+		expect(onshow).toHaveBeenCalledWith(2);
+		expect(ontoggle).not.toHaveBeenCalled();
+		await fireEvent.click(screen.getByRole('button', { name: 'Select page 3' }));
 		expect(ontoggle).toHaveBeenCalledWith(2);
 		await fireEvent.click(screen.getByRole('button', { name: 'Open page 3' }));
 		expect(onopen).toHaveBeenCalledWith(2);
@@ -194,6 +200,7 @@ describe('PageThumb', () => {
 		const { container } = render(PageThumb, {
 			sessionId: 's1',
 			page: page(0, { Hash: 'h', ThumbnailReady: false }),
+			onshow: vi.fn(),
 			ontoggle: vi.fn(),
 			onopen: vi.fn()
 		});

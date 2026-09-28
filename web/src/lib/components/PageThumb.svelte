@@ -2,20 +2,27 @@
 	import type { PageDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { imageUrl } from '$lib/hub/hub';
 	import { Icon } from '$lib/icons';
+	import SelectCheckbox from './SelectCheckbox.svelte';
 
 	let {
 		sessionId,
 		page,
 		selected = false,
+		current = false,
 		document = null,
+		onshow,
 		ontoggle,
 		onopen
 	}: {
 		sessionId: string;
 		page: PageDto;
+		/** In the toolbar's selection, ticked through the checkbox. */
 		selected?: boolean;
+		/** The page the stage is showing, picked by tapping the thumbnail. */
+		current?: boolean;
 		/** Document number to badge this page with, when it opens one past the first. */
 		document?: number | null;
+		onshow: (index: number) => void;
 		ontoggle: (index: number) => void;
 		onopen: (index: number) => void;
 	} = $props();
@@ -34,11 +41,14 @@
 </script>
 
 <div
-	class="group relative flex flex-col gap-1 rounded-[14px] p-1.5 transition-[background-color,box-shadow,opacity] duration-250 {selected
+	class="group relative flex flex-col gap-1 rounded-[14px] p-1.5 transition-[background-color,box-shadow,opacity] duration-250 {current
 		? 'bg-accent-50 shadow-ring-selected'
-		: ''} {page.Deleted ? 'opacity-50' : ''}"
+		: selected
+			? 'bg-accent-hover50'
+			: ''} {page.Deleted ? 'opacity-50' : ''}"
 	data-testid="page-thumb"
 	data-selected={selected}
+	data-current={current}
 	data-deleted={page.Deleted}
 >
 	{#if document !== null}
@@ -53,11 +63,9 @@
 		type="button"
 		class="relative flex w-full items-center justify-center overflow-hidden rounded-[6px] bg-surface shadow-page"
 		style="aspect-ratio: 1 / 1.414"
-		aria-pressed={selected}
-		aria-label="Page {page.Index + 1}{page.Deleted ? ', deleted' : ''}{selected
-			? ', selected'
-			: ''}"
-		onclick={() => ontoggle(page.Index)}
+		aria-current={current ? 'true' : undefined}
+		aria-label="Show page {page.Index + 1}{page.Deleted ? ', deleted' : ''}"
+		onclick={() => onshow(page.Index)}
 	>
 		{#if src}
 			<img
@@ -95,12 +103,25 @@
 	</button>
 
 	<div class="flex items-center justify-between gap-1 px-0.5">
-		<span
-			class="font-mono text-[11px] font-bold {selected ? 'text-accent' : 'text-ink-muted'}"
-			aria-hidden="true"
+		<!-- Ticking pages is what the toolbar acts on; tapping the page above only moves the stage. -->
+		<button
+			type="button"
+			class="-m-1 flex items-center gap-1 rounded-full p-1 transition-colors hover:bg-accent-wash"
+			aria-pressed={selected}
+			aria-label="Select page {page.Index + 1}"
+			data-testid="page-select"
+			onclick={() => ontoggle(page.Index)}
 		>
-			{String(page.Index + 1).padStart(2, '0')}
-		</span>
+			<SelectCheckbox checked={selected} size={15} />
+			<span
+				class="font-mono text-[11px] font-bold {selected || current
+					? 'text-accent'
+					: 'text-ink-muted'}"
+				aria-hidden="true"
+			>
+				{String(page.Index + 1).padStart(2, '0')}
+			</span>
+		</button>
 		<button
 			type="button"
 			class="flex h-6 w-6 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-accent-wash hover:text-accent"
