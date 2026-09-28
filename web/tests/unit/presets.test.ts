@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { ColorMode, PageSize, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
-import { activePreset, defaultPresets, matchesPreset } from '$lib/presets';
+import {
+	activePreset,
+	defaultExportPrefs,
+	defaultPresets,
+	matchesPreset,
+	rememberFolder
+} from '$lib/presets';
 
 describe('presets', () => {
 	const document = defaultPresets[0];
@@ -43,5 +49,23 @@ describe('preset matching against planned options', () => {
 			PageSize: PageSize.A4
 		};
 		expect(activePreset(defaultPresets, planned)).toBeNull();
+	});
+});
+
+describe('recent export folders', () => {
+	const prefs = { ...defaultExportPrefs };
+
+	it('keeps the newest first, without repeats, capped at four', () => {
+		let p = prefs;
+		for (const dir of ['/a', '/b', '/c', '/d', '/e']) p = rememberFolder(p, dir);
+		expect(p.recentFolders).toEqual(['/e', '/d', '/c', '/b']);
+
+		p = rememberFolder(p, '/c');
+		expect(p.recentFolders).toEqual(['/c', '/e', '/d', '/b']);
+	});
+
+	it('normalises the path and ignores an empty one', () => {
+		expect(rememberFolder(prefs, ' /data/consume/ ').recentFolders).toEqual(['/data/consume']);
+		expect(rememberFolder(prefs, '   ')).toBe(prefs);
 	});
 });
