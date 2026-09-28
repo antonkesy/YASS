@@ -154,7 +154,12 @@
 	<title>{session ? formatTime(session.CreatedAt) : 'Session'} · YASS</title>
 </svelte:head>
 
-<div class="mx-auto flex max-w-[2200px] animate-slide-from-right flex-col px-4 pt-2 pb-7 sm:px-7">
+<!--
+	Fades rather than slides in. The mockup slides this screen across, but a half-second
+	transform on the whole surface moves every control while it runs, and Stop has to be
+	hittable immediately — a short feeder run is over before the slide finishes.
+-->
+<div class="mx-auto flex max-w-[2200px] animate-fade-in flex-col px-4 pt-2 pb-7 sm:px-7">
 	{#if missing}
 		<p class="rounded-[14px] bg-danger-bg px-4 py-3 font-semibold text-danger" role="alert">
 			This session no longer exists.
@@ -329,16 +334,17 @@
 				/>
 			</aside>
 		</div>
-
-		{#if previewIndex !== null}
-			<Preview
-				sessionId={id}
-				pages={session.Pages}
-				index={previewIndex}
-				onnavigate={(i) => (previewIndex = i)}
-				onclose={() => (previewIndex = null)}
-				onrotate={(i, deg) => send(rotateEdit(deg, new Set([i])))}
-			/>
-		{/if}
 	{/if}
 </div>
+
+<!-- Outside the container above: an animated ancestor would trap this overlay under the header. -->
+{#if previewIndex !== null && session}
+	<Preview
+		sessionId={id}
+		pages={session.Pages}
+		index={previewIndex}
+		onnavigate={(i) => (previewIndex = i)}
+		onclose={() => (previewIndex = null)}
+		onrotate={(i, deg) => send(rotateEdit(deg, new Set([i])))}
+	/>
+{/if}
