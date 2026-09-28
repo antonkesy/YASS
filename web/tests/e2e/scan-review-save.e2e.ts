@@ -26,10 +26,7 @@ test('scan, review, edit, download and save', async ({ page }) => {
 	const firstImg = thumbs.nth(0).locator('img');
 	await expect(firstImg).toBeVisible();
 	const before = await firstImg.getAttribute('src');
-	await thumbs
-		.nth(0)
-		.getByRole('button', { name: /^Page 1/ })
-		.click();
+	await thumbs.nth(0).getByRole('button', { name: 'Select page 1' }).click();
 	await expect(page.getByTestId('toolbar-scope')).toHaveText(/1 selected/);
 	await page.getByRole('button', { name: 'Rotate right' }).click();
 	await expect(firstImg).not.toHaveAttribute('src', before!);
@@ -37,16 +34,18 @@ test('scan, review, edit, download and save', async ({ page }) => {
 
 	// Restore the blank page, then delete it again through the toolbar.
 	await page.getByRole('button', { name: 'Clear' }).click();
-	await thumbs
-		.nth(1)
-		.getByRole('button', { name: /^Page 2/ })
-		.click();
+	await thumbs.nth(1).getByRole('button', { name: 'Select page 2' }).click();
 	await page.getByTestId('restore-button').click();
 	await expect(thumbs.nth(1)).toHaveAttribute('data-deleted', 'false');
 	await expect(page.getByTestId('page-count')).toHaveText('3 of 3 pages');
 	await page.getByTestId('delete-button').click();
 	await expect(thumbs.nth(1)).toHaveAttribute('data-deleted', 'true');
 	await page.getByRole('button', { name: 'Clear' }).click();
+
+	// Tapping the page itself only moves the stage; nothing joins the selection.
+	await thumbs.nth(2).getByRole('button', { name: 'Show page 3' }).click();
+	await expect(thumbs.nth(2)).toHaveAttribute('data-current', 'true');
+	await expect(page.getByTestId('toolbar-scope')).toHaveText(/all 3/);
 
 	// Full-page preview with next/prev and keyboard.
 	await thumbs.nth(0).getByRole('button', { name: 'Open page 1' }).click();

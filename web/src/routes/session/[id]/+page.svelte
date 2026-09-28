@@ -206,9 +206,13 @@
 		}
 	}
 
-	function select(index: number) {
+	/** Tapping a page in the strip only moves the stage; the checkbox is what selects. */
+	function show(index: number) {
 		const at = session?.Pages.findIndex((p) => p.Index === index) ?? -1;
 		if (at >= 0) current = at;
+	}
+
+	function select(index: number) {
 		selection = toggle(selection, index);
 	}
 
@@ -338,7 +342,9 @@
 					sessionId={id}
 					pages={session.Pages}
 					{selection}
+					current={session.Pages[current]?.Index ?? -1}
 					{scanning}
+					onshow={show}
 					ontoggle={select}
 					onopen={(i) => (previewIndex = i)}
 					{documents}
