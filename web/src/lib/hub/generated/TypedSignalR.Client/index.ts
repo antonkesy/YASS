@@ -101,6 +101,18 @@ class IYassHub_HubProxy implements IYassHub {
         return await this.connection.invoke("DeleteSession", sessionId);
     }
 
+    public readonly renameSession = async (sessionId: string, name: string): Promise<SessionDto> => {
+        return await this.connection.invoke("RenameSession", sessionId, name);
+    }
+
+    public readonly discardSession = async (sessionId: string): Promise<SessionDto> => {
+        return await this.connection.invoke("DiscardSession", sessionId);
+    }
+
+    public readonly clearSessions = async (): Promise<number> => {
+        return await this.connection.invoke("ClearSessions");
+    }
+
     public readonly applyEdits = async (sessionId: string, edits: PageEdit[]): Promise<SessionDto> => {
         return await this.connection.invoke("ApplyEdits", sessionId, edits);
     }

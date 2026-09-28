@@ -31,10 +31,30 @@ export type IYassHub = {
     */
     listSessions(): Promise<SessionDto[]>;
     /**
+    * Removes the session and its directory outright.
     * @param sessionId Transpiled from string
     * @returns Transpiled from System.Threading.Tasks.Task
     */
     deleteSession(sessionId: string): Promise<void>;
+    /**
+    * Renames a session. An empty or whitespace name clears it back to the timestamp.
+    * @param sessionId Transpiled from string
+    * @param name Transpiled from string?
+    * @returns Transpiled from System.Threading.Tasks.Task<Yass.Core.Hub.SessionDto>
+    */
+    renameSession(sessionId: string, name: string): Promise<SessionDto>;
+    /**
+    * Marks a session discarded but keeps it listed, unlike .
+    * Its pages are removed, since the point of discarding is to stop storing them.
+    * @param sessionId Transpiled from string
+    * @returns Transpiled from System.Threading.Tasks.Task<Yass.Core.Hub.SessionDto>
+    */
+    discardSession(sessionId: string): Promise<SessionDto>;
+    /**
+    * Deletes every session that is not currently scanning or exporting. Returns how many went.
+    * @returns Transpiled from System.Threading.Tasks.Task<int>
+    */
+    clearSessions(): Promise<number>;
     /**
     * @param sessionId Transpiled from string
     * @param edits Transpiled from Yass.Core.Domain.PageEdit[]
