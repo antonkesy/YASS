@@ -35,13 +35,26 @@ public static class PageEdits
                 PageEditOp.Rotate => page with { Rotation = page.Rotation.Rotate(edit.Degrees) },
                 PageEditOp.Delete => page with { Deleted = true },
                 PageEditOp.Restore => page with { Deleted = false },
-                PageEditOp.SetColor => page with { ColorOverride = edit.Color },
+                PageEditOp.SetFilter => page with { Filter = edit.Filter },
+                PageEditOp.SetCrop => page with { Crop = Validated(edit.Crop) },
                 _ => throw new ArgumentException($"Unsupported edit op {edit.Op}.", nameof(edit)),
             };
             pages[index] = PageHash.Rehash(updated, sessionColor);
         }
 
         return pages;
+    }
+
+    /// <summary>A crop that would leave nothing is rejected here rather than at render time.</summary>
+    private static CropBox? Validated(CropBox? crop)
+    {
+        if (crop is null || crop.IsEmpty())
+        {
+            return null;
+        }
+
+        crop.Validate();
+        return crop;
     }
 
     private static List<Page> Reorder(List<Page> pages, PageEdit edit)

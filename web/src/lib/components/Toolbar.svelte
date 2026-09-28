@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { ColorMode } from '$lib/hub/generated/Yass.Core.Domain';
-	import { colorModeLabels } from '$lib/review/edits';
+	import { PageFilter } from '$lib/hub/generated/Yass.Core.Domain';
+	import { pageFilters } from '$lib/review/edits';
 	import { Icon } from '$lib/icons';
 
 	let {
@@ -8,33 +8,41 @@
 		total,
 		anyDeleted,
 		disabled = false,
+		scanning = false,
 		onrotate,
 		ondelete,
 		onrestore,
-		oncolor,
+		onfilter,
+		oncrop,
+		onrescan,
 		onclear
 	}: {
 		selectedCount: number;
 		total: number;
 		anyDeleted: boolean;
 		disabled?: boolean;
+		/** Crop and rescan need the scanner idle and a single page picked. */
+		scanning?: boolean;
 		onrotate: (degrees: 90 | -90) => void;
 		ondelete: () => void;
 		onrestore: () => void;
-		oncolor: (mode: ColorMode | undefined) => void;
+		onfilter: (filter: PageFilter) => void;
+		oncrop?: () => void;
+		onrescan?: () => void;
 		onclear: () => void;
 	} = $props();
 
-	const scope = $derived(selectedCount === 0 ? `all ${total}` : `${selectedCount} selected`);
+	let filterOpen = $state(false);
 
-	// Icon over label, the mockup's tool shape. Crop, rescan and split join this row
-	// once the backend can do them.
+	const scope = $derived(selectedCount === 0 ? `all ${total}` : `${selectedCount} selected`);
+	const one = $derived(selectedCount === 1);
+
 	const tool =
 		'flex h-[58px] min-w-[62px] flex-col items-center justify-center gap-1 rounded-[14px] px-2 text-[11px] font-bold transition-colors hover:bg-accent-hover50 disabled:pointer-events-none disabled:opacity-35';
 </script>
 
 <div
-	class="flex flex-wrap items-center gap-0.5 rounded-[20px] bg-surface p-1.5 shadow-toolbar"
+	class="relative flex flex-wrap items-center gap-0.5 rounded-[20px] bg-surface p-1.5 shadow-toolbar"
 	role="toolbar"
 	aria-label="Page edits"
 	data-testid="toolbar"
@@ -76,26 +84,47 @@
 		Right
 	</button>
 
-	<label class="flex h-[58px] min-w-[62px] flex-col items-center justify-center gap-1 px-2">
-		<span class="sr-only">Colour mode</span>
-		<Icon name="wand" />
-		<select
-			class="w-full bg-transparent text-center text-[11px] font-bold text-ink-muted"
-			{disabled}
-			data-testid="color-select"
-			onchange={(e) => {
-				const v = (e.currentTarget as HTMLSelectElement).value;
-				oncolor(v === '' ? undefined : (Number(v) as ColorMode));
-				(e.currentTarget as HTMLSelectElement).value = '';
-			}}
+	{#if oncrop}
+		<button
+			type="button"
+			class="text-ink {tool}"
+			disabled={disabled || scanning || !one}
+			onclick={oncrop}
+			aria-label="Crop page"
+			data-testid="crop-button"
 		>
-			<option value="">Filter</option>
-			<option value="">Scan default</option>
-			{#each Object.values(ColorMode).filter((v) => typeof v === 'number') as mode (mode)}
-				<option value={mode}>{colorModeLabels[mode as ColorMode]}</option>
-			{/each}
-		</select>
-	</label>
+			<Icon name="crop" />
+			Crop
+		</button>
+	{/if}
+
+	<button
+		type="button"
+		class="{filterOpen ? 'bg-accent-50 text-accent' : 'text-ink'} {tool}"
+		{disabled}
+		onclick={() => (filterOpen = !filterOpen)}
+		aria-expanded={filterOpen}
+		aria-haspopup="menu"
+		aria-label="Filter"
+		data-testid="filter-button"
+	>
+		<Icon name="wand" />
+		Filter
+	</button>
+
+	{#if onrescan}
+		<button
+			type="button"
+			class="text-ink {tool}"
+			disabled={disabled || scanning || !one}
+			onclick={onrescan}
+			aria-label="Rescan this page"
+			data-testid="rescan-button"
+		>
+			<Icon name="rescan" />
+			Rescan
+		</button>
+	{/if}
 
 	<button
 		type="button"
@@ -104,7 +133,7 @@
 		onclick={onrestore}
 		data-testid="restore-button"
 	>
-		<Icon name="rescan" />
+		<Icon name="layers" />
 		Restore
 	</button>
 	<button
@@ -117,4 +146,37 @@
 		<Icon name="trash" />
 		Delete
 	</button>
+
+	{#if filterOpen}
+		<button
+			type="button"
+			class="fixed inset-0 z-30 cursor-default"
+			aria-label="Close filter menu"
+			onclick={() => (filterOpen = false)}
+		></button>
+		<div
+			class="absolute bottom-[calc(100%+8px)] left-1/2 z-31 min-w-[200px] -translate-x-1/2 animate-fade-in rounded-[16px] bg-surface p-1.5 shadow-menu"
+			role="menu"
+			data-testid="filter-menu"
+		>
+			{#each pageFilters as option (option.value)}
+				<button
+					type="button"
+					role="menuitem"
+					class="flex h-[42px] w-full items-center gap-2.5 rounded-[10px] px-2.5 text-left text-sm font-semibold transition-colors hover:bg-accent-hover50"
+					onclick={() => {
+						onfilter(option.value);
+						filterOpen = false;
+					}}
+				>
+					<span
+						class="h-7 w-[22px] flex-none rounded-[5px] shadow-[0_0_0_1px_rgb(19_26_43_/_0.1)]"
+						style="background: linear-gradient(135deg, {option.swatch})"
+						aria-hidden="true"
+					></span>
+					{option.label}
+				</button>
+			{/each}
+		</div>
+	{/if}
 </div>

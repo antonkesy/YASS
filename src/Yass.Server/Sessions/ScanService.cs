@@ -43,6 +43,66 @@ public sealed class ScanService(
         return session;
     }
 
+    /// <summary>
+    /// Pulls one more sheet and puts it in place of an existing page, keeping that page's
+    /// position and its edits. The old source file is replaced, so nothing else has to move.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">A scan is running, the session is not editable, or the feeder was empty.</exception>
+    public async Task<Page> RescanPageAsync(string sessionId, int pageIndex, CancellationToken cancellationToken)
+    {
+        if (!_running.IsEmpty)
+        {
+            throw new InvalidOperationException("A scan is already running.");
+        }
+
+        Session session = store.Get(sessionId);
+        if (session.State is not (SessionState.Review or SessionState.Done))
+        {
+            throw new InvalidOperationException($"Session is {session.State}; pages can only be rescanned in Review.");
+        }
+
+        if (pageIndex < 0 || pageIndex >= session.Pages.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(pageIndex), $"Page {pageIndex} is not in this session.");
+        }
+
+        ScannedPage? sheet = null;
+        await foreach (ScannedPage scanned in backend.ScanAsync(session.OptionsUsed, cancellationToken).ConfigureAwait(false))
+        {
+            sheet = scanned;
+            break;
+        }
+
+        if (sheet is null)
+        {
+            throw new InvalidOperationException("Nothing came out of the scanner; is the page loaded?");
+        }
+
+        Page replaced = session.Pages[pageIndex];
+        await File.WriteAllBytesAsync(
+            Path.Combine(SessionPaths.Directory(store.Root, sessionId), replaced.SourceFile),
+            sheet.Png,
+            CancellationToken.None).ConfigureAwait(false);
+
+        Page? updated = null;
+        Session after = store.Update(sessionId, s =>
+        {
+            var pages = s.Pages.ToList();
+            // The new sheet inherits the slot's rotation, filter and crop: the user is
+            // replacing a bad scan of this page, not starting it over.
+            updated = PageHash.Rehash(
+                pages[pageIndex] with { SourceHash = PageHash.OfBytes(sheet.Png), IsBlank = sheet.IsBlank, Deleted = false },
+                s.OptionsUsed.Color);
+            pages[pageIndex] = updated;
+            return s with { Pages = pages };
+        });
+
+        sink.Enqueue(after, updated!);
+        await hub.Clients.All.PageUpdated(sessionId, mapper.ToDto(after, updated!)).ConfigureAwait(false);
+        logger.LogInformation("Rescanned page {Page} of session {Session}", pageIndex, sessionId);
+        return updated!;
+    }
+
     public void Stop(string sessionId)
     {
         if (_running.TryGetValue(sessionId, out CancellationTokenSource? cts))
@@ -80,7 +140,7 @@ public sealed class ScanService(
                 Page? added = null;
                 Session session = store.Update(sessionId, s =>
                 {
-                    var page = new Page(s.Pages.Count, fileName, Rotation.R0, null, scanned.IsBlank, scanned.IsBlank, sourceHash, "");
+                    var page = new Page(s.Pages.Count, fileName, Rotation.R0, PageFilter.Original, null, scanned.IsBlank, scanned.IsBlank, sourceHash, "");
                     added = PageHash.Rehash(page, s.OptionsUsed.Color);
                     return s with { Pages = [.. s.Pages, added] };
                 });

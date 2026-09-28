@@ -15,9 +15,12 @@ public enum PageEditOp
     /// <summary>Clear the deleted flag on the target pages.</summary>
     Restore,
 
-    /// <summary>Set <see cref="PageEdit.Color"/> as the colour override of the target pages.</summary>
-    SetColor,
+    /// <summary>Set <see cref="PageEdit.Filter"/> as the rendering treatment of the target pages.</summary>
+    SetFilter,
 
     /// <summary>Reorder all pages to <see cref="PageEdit.Order"/>. Always targets all pages.</summary>
     Reorder,
+
+    /// <summary>Set <see cref="PageEdit.Crop"/> on the target pages; <c>null</c> clears it.</summary>
+    SetCrop,
 }

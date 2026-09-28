@@ -5,7 +5,7 @@ import Toolbar from '$lib/components/Toolbar.svelte';
 import ExportBar from '$lib/components/ExportBar.svelte';
 import PageThumb from '$lib/components/PageThumb.svelte';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
-import { ColorMode, SessionState } from '$lib/hub/generated/Yass.Core.Domain';
+import { PageFilter, SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 import { page, session as build } from './fixtures';
 
@@ -30,7 +30,7 @@ describe('StatusPill', () => {
 describe('Toolbar', () => {
 	it('acts on all pages when nothing is selected and emits edits', async () => {
 		const onrotate = vi.fn();
-		const oncolor = vi.fn();
+		const onfilter = vi.fn();
 		const onclear = vi.fn();
 		render(Toolbar, {
 			selectedCount: 0,
@@ -39,17 +39,16 @@ describe('Toolbar', () => {
 			onrotate,
 			ondelete: vi.fn(),
 			onrestore: vi.fn(),
-			oncolor,
+			onfilter,
 			onclear
 		});
 		expect(screen.getByTestId('toolbar-scope')).toHaveTextContent('all 4');
 		await fireEvent.click(screen.getByRole('button', { name: 'Rotate right' }));
 		expect(onrotate).toHaveBeenCalledWith(90);
 		expect(screen.getByTestId('restore-button')).toBeDisabled();
-		await fireEvent.change(screen.getByTestId('color-select'), {
-			target: { value: String(ColorMode.Color) }
-		});
-		expect(oncolor).toHaveBeenCalledWith(ColorMode.Color);
+		await fireEvent.click(screen.getByTestId('filter-button'));
+		await fireEvent.click(screen.getByRole('menuitem', { name: 'Black & white' }));
+		expect(onfilter).toHaveBeenCalledWith(PageFilter.Bw);
 	});
 
 	it('shows the selection count and a clear button', async () => {
@@ -61,7 +60,7 @@ describe('Toolbar', () => {
 			onrotate: vi.fn(),
 			ondelete: vi.fn(),
 			onrestore: vi.fn(),
-			oncolor: vi.fn(),
+			onfilter: vi.fn(),
 			onclear
 		});
 		expect(screen.getByTestId('toolbar-scope')).toHaveTextContent('2 selected');
@@ -138,14 +137,7 @@ describe('PageThumb', () => {
 		const onopen = vi.fn();
 		const { container } = render(PageThumb, {
 			sessionId: 's1',
-			page: {
-				Index: 2,
-				Rotation: 0,
-				Deleted: true,
-				IsBlank: true,
-				Hash: 'abc',
-				ThumbnailReady: true
-			},
+			page: page(2, { Deleted: true, IsBlank: true, Hash: 'abc' }),
 			ontoggle,
 			onopen
 		});
@@ -164,14 +156,7 @@ describe('PageThumb', () => {
 	it('shows a spinner until the thumbnail exists', () => {
 		const { container } = render(PageThumb, {
 			sessionId: 's1',
-			page: {
-				Index: 0,
-				Rotation: 0,
-				Deleted: false,
-				IsBlank: false,
-				Hash: 'h',
-				ThumbnailReady: false
-			},
+			page: page(0, { Hash: 'h', ThumbnailReady: false }),
 			ontoggle: vi.fn(),
 			onopen: vi.fn()
 		});

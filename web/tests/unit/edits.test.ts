@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { ColorMode, PageEditOp, Rotation } from '$lib/hub/generated/Yass.Core.Domain';
+import { PageEditOp, PageFilter, Rotation } from '$lib/hub/generated/Yass.Core.Domain';
 import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 import { sessionOf } from './fixtures';
 import {
 	applyOptimistic,
 	deleteEdit,
 	reorderEdit,
+	restoreEdit,
 	rotate,
 	rotateEdit,
-	setColorEdit,
+	setCropEdit,
+	setFilterEdit,
 	targetsOf
 } from '$lib/review/edits';
 
@@ -21,10 +23,17 @@ describe('edit builders', () => {
 		expect(rotateEdit(90, new Set([2]))).toEqual({
 			Op: PageEditOp.Rotate,
 			Degrees: 90,
+			Filter: PageFilter.Original,
 			Targets: [2]
 		});
 		expect(deleteEdit(new Set()).Targets).toBeUndefined();
-		expect(setColorEdit(undefined, new Set([0])).Color).toBeUndefined();
+		expect(setFilterEdit(PageFilter.Bw, new Set([0])).Filter).toBe(PageFilter.Bw);
+		expect(setCropEdit({ Top: 5, Right: 0, Bottom: 5, Left: 0 }, new Set([1]))).toMatchObject({
+			Op: PageEditOp.SetCrop,
+			Crop: { Top: 5, Bottom: 5 },
+			Targets: [1]
+		});
+		expect(setCropEdit(undefined, new Set([1])).Crop).toBeUndefined();
 		expect(reorderEdit([1, 0])).toMatchObject({ Op: PageEditOp.Reorder, Order: [1, 0] });
 	});
 
@@ -36,16 +45,19 @@ describe('edit builders', () => {
 });
 
 describe('applyOptimistic', () => {
-	it('mirrors server semantics for rotate, delete, restore and colour', () => {
+	it('mirrors server semantics for rotate, delete, restore, filter and crop', () => {
 		let s = applyOptimistic(session(3), rotateEdit(90, new Set([1])));
 		expect(s.Pages.map((p) => p.Rotation)).toEqual([0, 90, 0]);
 		s = applyOptimistic(s, deleteEdit(new Set()));
 		expect(s.Pages.every((p) => p.Deleted)).toBe(true);
-		s = applyOptimistic(s, { Op: PageEditOp.Restore, Degrees: 0, Targets: [2] });
+		s = applyOptimistic(s, restoreEdit(new Set([2])));
 		expect(s.Pages.map((p) => p.Deleted)).toEqual([true, true, false]);
-		s = applyOptimistic(s, setColorEdit(ColorMode.Color, new Set([0])));
-		expect(s.Pages[0].ColorOverride).toBe(ColorMode.Color);
-		expect(s.Pages[1].ColorOverride).toBeUndefined();
+		s = applyOptimistic(s, setFilterEdit(PageFilter.Bw, new Set([0])));
+		expect(s.Pages[0].Filter).toBe(PageFilter.Bw);
+		expect(s.Pages[1].Filter).toBe(PageFilter.Original);
+		s = applyOptimistic(s, setCropEdit({ Top: 10, Right: 0, Bottom: 0, Left: 0 }, new Set([0])));
+		expect(s.Pages[0].Crop).toEqual({ Top: 10, Right: 0, Bottom: 0, Left: 0 });
+		expect(s.Pages[1].Crop).toBeUndefined();
 	});
 
 	it('keeps hashes untouched (only the server knows the new ones)', () => {

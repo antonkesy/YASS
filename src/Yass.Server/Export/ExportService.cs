@@ -47,7 +47,7 @@ public sealed class ExportService(
         await hub.Clients.All.SessionChanged(mapper.ToDto(session)).ConfigureAwait(false);
 
         var pages = session.ActivePages
-            .Select(p => new ExportPage(SessionPaths.Source(store.Root, session, p), p.Rotation, p.ColorOverride ?? session.OptionsUsed.Color, session.OptionsUsed.Dpi))
+            .Select(p => new ExportPage(SessionPaths.Source(store.Root, session, p), p.Rotation, p.Filter, session.OptionsUsed.Color, p.Crop, session.OptionsUsed.Dpi))
             .ToArray();
         var progress = new Progress<int>(percent => _ = hub.Clients.All.ExportProgress(sessionId, percent));
         PdfConfig pdf = config.Current.Output.Pdf;
