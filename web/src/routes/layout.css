@@ -368,6 +368,13 @@
 /* The mockup's focus treatment, applied once rather than per component. */
 :root {
 	color-scheme: light;
+
+	/*
+	 * Chrome the home screen has to subtract to fill the viewport exactly. Declared here
+	 * so AppHeader, AppFooter and that calc cannot drift apart.
+	 */
+	--app-header-h: 4rem;
+	--app-footer-h: 2.75rem;
 }
 
 :focus-visible {
