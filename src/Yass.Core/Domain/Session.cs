@@ -15,6 +15,19 @@ public sealed record Session(
     ScanOptions OptionsUsed,
     string? Error = null)
 {
+    /// <summary>What the user called this scan. Null until it is renamed.</summary>
+    public string? Name { get; init; }
+
+    /// <summary>
+    /// Append-only history. The last entry is the session's status; no entries means it is
+    /// still a draft. Kept as events rather than a status field so "exported, then also
+    /// downloaded" stays recoverable.
+    /// </summary>
+    public IReadOnlyList<SessionEvent> Events { get; init; } = [];
+
     /// <summary>Pages that will be exported, in order.</summary>
     public IEnumerable<Page> ActivePages => Pages.Where(p => !p.Deleted);
+
+    /// <summary>Records <paramref name="event"/> as the session's newest history entry.</summary>
+    public Session With(SessionEvent @event) => this with { Events = [.. Events, @event] };
 }

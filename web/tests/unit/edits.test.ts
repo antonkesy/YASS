@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { ColorMode, PageEditOp, Rotation, SessionState } from '$lib/hub/generated/Yass.Core.Domain';
-import type { PageDto, SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
+import { ColorMode, PageEditOp, Rotation } from '$lib/hub/generated/Yass.Core.Domain';
+import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
+import { sessionOf } from './fixtures';
 import {
 	applyOptimistic,
 	deleteEdit,
@@ -11,21 +12,7 @@ import {
 	targetsOf
 } from '$lib/review/edits';
 
-const page = (Index: number): PageDto => ({
-	Index,
-	Rotation: Rotation.R0,
-	Deleted: false,
-	IsBlank: false,
-	Hash: `h${Index}`,
-	ThumbnailReady: true
-});
-const session = (n: number): SessionDto => ({
-	Id: 's',
-	CreatedAt: '',
-	State: SessionState.Review,
-	Pages: Array.from({ length: n }, (_, i) => page(i)),
-	OptionsUsed: {}
-});
+const session = (n: number): SessionDto => sessionOf('s', n);
 
 describe('edit builders', () => {
 	it('empty selection targets all pages (undefined), otherwise sorted indices', () => {

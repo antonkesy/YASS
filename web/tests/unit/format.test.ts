@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
+import { page, session } from './fixtures';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import { activePageCount, formatTime, scannerStateLabel, sessionStateLabel } from '$lib/format';
 
@@ -13,16 +14,11 @@ describe('format', () => {
 
 	it('counts active pages', () => {
 		expect(
-			activePageCount({
-				Id: '',
-				CreatedAt: '',
-				State: SessionState.Review,
-				OptionsUsed: {},
-				Pages: [
-					{ Index: 0, Rotation: 0, Deleted: true, IsBlank: true, Hash: '', ThumbnailReady: false },
-					{ Index: 1, Rotation: 0, Deleted: false, IsBlank: false, Hash: '', ThumbnailReady: false }
-				]
-			})
+			activePageCount(
+				session('s', {
+					Pages: [page(0, { Deleted: true, IsBlank: true }), page(1)]
+				})
+			)
 		).toBe(1);
 	});
 

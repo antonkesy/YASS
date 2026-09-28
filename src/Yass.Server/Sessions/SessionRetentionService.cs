@@ -52,7 +52,7 @@ public sealed class SessionRetentionService(
             if (store.Delete(session.Id))
             {
                 logger.LogInformation("Deleted expired session {Session}", session.Id);
-                await hub.Clients.All.SessionChanged(new SessionDto(session.Id, session.CreatedAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture), SessionState.Done, [], Scanning.EffectiveOptions.ToDto(session.OptionsUsed), "expired")).ConfigureAwait(false);
+                await hub.Clients.All.SessionChanged(new SessionDto(session.Id, session.CreatedAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture), SessionState.Done, [], Scanning.EffectiveOptions.ToDto(session.OptionsUsed), "expired", session.Name, [], 0)).ConfigureAwait(false);
             }
         }
     }

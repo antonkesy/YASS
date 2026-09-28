@@ -5,6 +5,15 @@ using Yass.Core.Scanning;
 namespace Yass.Core.Hub;
 
 /// <summary>Wire shape of a session. Dates are ISO-8601 strings so they survive MessagePack and TypeScript unchanged.</summary>
+/// <param name="Id">Session id, also its directory name.</param>
+/// <param name="CreatedAt">When the scan was started.</param>
+/// <param name="State">Current lifecycle state.</param>
+/// <param name="Pages">Pages in display order, deleted ones included.</param>
+/// <param name="OptionsUsed">Effective options the scan ran with.</param>
+/// <param name="Error">Why the session failed; otherwise <c>null</c>.</param>
+/// <param name="Name">What the user called this scan; null means the UI falls back to the timestamp.</param>
+/// <param name="Events">History, oldest first. The last entry is the status the UI shows.</param>
+/// <param name="SizeBytes">What the session currently occupies on disk, source pages and caches included.</param>
 [TranspilationSource]
 public sealed record SessionDto(
     string Id,
@@ -12,7 +21,13 @@ public sealed record SessionDto(
     SessionState State,
     PageDto[] Pages,
     ScanOptionsDto OptionsUsed,
-    string? Error);
+    string? Error,
+    string? Name,
+    SessionEventDto[] Events,
+    long SizeBytes);
+
+[TranspilationSource]
+public sealed record SessionEventDto(SessionEventKind Kind, string At, string? Path);
 
 [TranspilationSource]
 public sealed record PageDto(

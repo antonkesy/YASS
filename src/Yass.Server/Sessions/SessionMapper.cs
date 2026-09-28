@@ -5,7 +5,7 @@ using Yass.Server.Scanning;
 
 namespace Yass.Server.Sessions;
 
-public sealed class SessionMapper(IThumbnailStatus thumbnails)
+public sealed class SessionMapper(IThumbnailStatus thumbnails, SessionStore store)
 {
     public SessionDto ToDto(Session session)
     {
@@ -16,7 +16,10 @@ public sealed class SessionMapper(IThumbnailStatus thumbnails)
             session.State,
             session.Pages.Select(p => ToDto(session, p)).ToArray(),
             EffectiveOptions.ToDto(session.OptionsUsed),
-            session.Error);
+            session.Error,
+            session.Name,
+            session.Events.Select(ToDto).ToArray(),
+            SessionPaths.SizeOnDisk(store.Root, session.Id));
     }
 
     public PageDto ToDto(Session session, Page page)
@@ -24,4 +27,7 @@ public sealed class SessionMapper(IThumbnailStatus thumbnails)
         ArgumentNullException.ThrowIfNull(page);
         return new PageDto(page.Index, page.Rotation, page.ColorOverride, page.Deleted, page.IsBlank, page.Hash, thumbnails.IsReady(session, page));
     }
+
+    private static SessionEventDto ToDto(SessionEvent @event) =>
+        new(@event.Kind, @event.At.ToString("O", CultureInfo.InvariantCulture), @event.Path);
 }

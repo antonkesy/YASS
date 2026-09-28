@@ -9,29 +9,13 @@ import {
 	replaceAll,
 	sortedSessions
 } from '$lib/hub/state';
+import { page as makePage, session as build } from './fixtures';
 
-const page = (Index: number, extra: Partial<PageDto> = {}): PageDto => ({
-	Index,
-	Rotation: 0,
-	Deleted: false,
-	IsBlank: false,
-	Hash: `h${Index}`,
-	ThumbnailReady: false,
-	...extra
-});
+const page = (Index: number, extra: Partial<PageDto> = {}): PageDto =>
+	makePage(Index, { ThumbnailReady: false, ...extra });
 
-const session = (
-	Id: string,
-	pages: PageDto[] = [],
-	extra: Partial<SessionDto> = {}
-): SessionDto => ({
-	Id,
-	CreatedAt: `2026-09-24T10:00:0${Id.length}Z`,
-	State: SessionState.Review,
-	Pages: pages,
-	OptionsUsed: {},
-	...extra
-});
+const session = (Id: string, pages: PageDto[] = [], extra: Partial<SessionDto> = {}): SessionDto =>
+	build(Id, { CreatedAt: `2026-09-24T10:00:0${Id.length}Z`, Pages: pages, ...extra });
 
 describe('session reducers', () => {
 	it('adds and replaces sessions immutably', () => {

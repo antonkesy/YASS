@@ -55,6 +55,14 @@ export enum ScanSource {
     Duplex = 2,
 }
 
+/** Transpiled from Yass.Core.Domain.SessionEventKind */
+export enum SessionEventKind {
+    Exported = 0,
+    Saved = 1,
+    Downloaded = 2,
+    Discarded = 3,
+}
+
 /** Transpiled from Yass.Core.Domain.SessionState */
 export enum SessionState {
     Idle = 0,
