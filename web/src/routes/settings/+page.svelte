@@ -481,6 +481,15 @@
 						</span>
 					{/if}
 
+					<!--
+						Says what the field is for, not just what it will accept: pointing it at a consume
+						folder is the whole reason Export exists, and nothing else in the UI says so.
+					-->
+					<span class="text-[11px] text-ink-faint">
+						Point this at a document manager's consume folder — paperless-ngx and the like watch
+						theirs and file whatever lands in it, so an exported scan needs no upload.
+					</span>
+
 					<span class="text-[11px] text-ink-faint">
 						An absolute path on the scanner server, inside one of the folders above. Widen them with <code
 							class="font-mono">output.allowed_roots</code
