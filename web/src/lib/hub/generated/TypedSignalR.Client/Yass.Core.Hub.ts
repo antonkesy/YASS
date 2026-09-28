@@ -69,6 +69,12 @@ export type IYassHub = {
     */
     rescanPage(sessionId: string, pageIndex: number): Promise<SessionDto>;
     /**
+    * Runs the feeder again and appends the pages to an existing session.
+    * @param sessionId Transpiled from string
+    * @returns Transpiled from System.Threading.Tasks.Task<Yass.Core.Hub.SessionDto>
+    */
+    scanMore(sessionId: string): Promise<SessionDto>;
+    /**
     * Copies the active pages of  onto the end of
     * , starting a new document at the join. The source is left alone.
     * @param targetId Transpiled from string
