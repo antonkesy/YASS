@@ -28,6 +28,30 @@ public sealed record Session(
     /// <summary>Pages that will be exported, in order.</summary>
     public IEnumerable<Page> ActivePages => Pages.Where(p => !p.Deleted);
 
+    /// <summary>
+    /// Active pages grouped into documents: one group per split point, each exported as its
+    /// own file. The first active page always opens a document, whatever its flag says, so a
+    /// session can never produce a leading empty one.
+    /// </summary>
+    public IReadOnlyList<IReadOnlyList<Page>> Documents
+    {
+        get
+        {
+            var documents = new List<List<Page>>();
+            foreach (Page page in ActivePages)
+            {
+                if (documents.Count == 0 || page.StartsDocument)
+                {
+                    documents.Add([]);
+                }
+
+                documents[^1].Add(page);
+            }
+
+            return documents;
+        }
+    }
+
     /// <summary>Records <paramref name="event"/> as the session's newest history entry.</summary>
     public Session With(SessionEvent @event) => this with { Events = [.. Events, @event] };
 }

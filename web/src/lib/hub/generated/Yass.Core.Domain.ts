@@ -33,6 +33,8 @@ export type PageEdit = {
     Filter: PageFilter;
     /** Transpiled from Yass.Core.Domain.CropBox? */
     Crop?: CropBox;
+    /** Transpiled from bool */
+    Split: boolean;
     /** Transpiled from System.Collections.Generic.IReadOnlyList<int>? */
     Order?: number[];
 }
@@ -45,6 +47,7 @@ export enum PageEditOp {
     SetFilter = 3,
     Reorder = 4,
     SetCrop = 5,
+    SetSplit = 6,
 }
 
 /** Transpiled from Yass.Core.Domain.PageFilter */

@@ -24,6 +24,9 @@ public sealed record PageEdit
     /// <summary>Payload for <see cref="PageEditOp.SetCrop"/>; <c>null</c> clears the crop.</summary>
     public CropBox? Crop { get; init; }
 
+    /// <summary>Payload for <see cref="PageEditOp.SetSplit"/>: whether the page begins a document.</summary>
+    public bool Split { get; init; }
+
     /// <summary>Payload for <see cref="PageEditOp.Reorder"/>: a permutation of every page index.</summary>
     public IReadOnlyList<int>? Order { get; init; }
 
@@ -41,6 +44,9 @@ public sealed record PageEdit
 
     public static PageEdit SetCrop(CropBox? crop, params int[] targets) =>
         new() { Op = PageEditOp.SetCrop, Crop = crop, Targets = ToTargets(targets) };
+
+    public static PageEdit SetSplit(bool split, params int[] targets) =>
+        new() { Op = PageEditOp.SetSplit, Split = split, Targets = ToTargets(targets) };
 
     public static PageEdit Reorder(params int[] order) =>
         new() { Op = PageEditOp.Reorder, Order = order };

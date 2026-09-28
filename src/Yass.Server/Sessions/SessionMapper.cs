@@ -26,7 +26,7 @@ public sealed class SessionMapper(IThumbnailStatus thumbnails, SessionStore stor
     {
         ArgumentNullException.ThrowIfNull(page);
         CropBox? crop = page.Crop is { } c && !c.IsEmpty() ? c : null;
-        return new PageDto(page.Index, page.Rotation, page.Filter, crop, page.Deleted, page.IsBlank, page.Hash, thumbnails.IsReady(session, page));
+        return new PageDto(page.Index, page.Rotation, page.Filter, crop, page.StartsDocument, page.Deleted, page.IsBlank, page.Hash, thumbnails.IsReady(session, page));
     }
 
     private static SessionEventDto ToDto(SessionEvent @event) =>

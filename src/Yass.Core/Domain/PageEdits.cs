@@ -37,6 +37,7 @@ public static class PageEdits
                 PageEditOp.Restore => page with { Deleted = false },
                 PageEditOp.SetFilter => page with { Filter = edit.Filter },
                 PageEditOp.SetCrop => page with { Crop = Validated(edit.Crop) },
+                PageEditOp.SetSplit => page with { StartsDocument = edit.Split },
                 _ => throw new ArgumentException($"Unsupported edit op {edit.Op}.", nameof(edit)),
             };
             pages[index] = PageHash.Rehash(updated, sessionColor);

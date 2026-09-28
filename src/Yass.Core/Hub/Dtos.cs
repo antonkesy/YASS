@@ -35,6 +35,7 @@ public sealed record PageDto(
     Rotation Rotation,
     PageFilter Filter,
     CropBox? Crop,
+    bool StartsDocument,
     bool Deleted,
     bool IsBlank,
     string Hash,
@@ -77,8 +78,13 @@ public enum ExportMode
 public sealed record ExportRequest(ExportMode Mode);
 
 /// <param name="Mode">Echo of the request.</param>
-/// <param name="PageCount">Pages in the produced PDF.</param>
-/// <param name="SavedPath">Final path when <see cref="ExportMode.Save"/>.</param>
-/// <param name="DownloadPath">Relative URL path when <see cref="ExportMode.Download"/>; valid for one GET.</param>
+/// <param name="PageCount">Pages across every produced document.</param>
+/// <param name="Documents">One entry per document in the session, in order.</param>
 [TranspilationSource]
-public sealed record ExportResult(ExportMode Mode, int PageCount, string? SavedPath, string? DownloadPath);
+public sealed record ExportResult(ExportMode Mode, int PageCount, ExportedDocumentDto[] Documents);
+
+/// <param name="PageCount">Pages in this document.</param>
+/// <param name="SavedPath">Where it was written, for <see cref="ExportMode.Save"/>.</param>
+/// <param name="DownloadPath">One-shot relative URL, for <see cref="ExportMode.Download"/>.</param>
+[TranspilationSource]
+public sealed record ExportedDocumentDto(int PageCount, string? SavedPath, string? DownloadPath);

@@ -46,10 +46,20 @@ public sealed class ExportService(
         });
         await hub.Clients.All.SessionChanged(mapper.ToDto(session)).ConfigureAwait(false);
 
-        var pages = session.ActivePages
-            .Select(p => new ExportPage(SessionPaths.Source(store.Root, session, p), p.Rotation, p.Filter, session.OptionsUsed.Color, p.Crop, session.OptionsUsed.Dpi))
+        ExportPage[][] documentPages = session.Documents
+            .Select(doc => doc
+                .Select(p => new ExportPage(SessionPaths.Source(store.Root, session, p), p.Rotation, p.Filter, session.OptionsUsed.Color, p.Crop, session.OptionsUsed.Dpi))
+                .ToArray())
             .ToArray();
-        var progress = new Progress<int>(percent => _ = hub.Clients.All.ExportProgress(sessionId, percent));
+        int totalPages = documentPages.Sum(d => d.Length);
+
+        // Progress is reported across the whole export, so several documents still fill one bar.
+        int finished = 0;
+        var progress = new Progress<int>(percent =>
+        {
+            int overall = (int)((finished + percent / 100.0) / documentPages.Length * 100);
+            _ = hub.Clients.All.ExportProgress(sessionId, Math.Clamp(overall, 0, 100));
+        });
         PdfConfig pdf = config.Current.Output.Pdf;
 
         try
@@ -65,25 +75,43 @@ public sealed class ExportService(
 
                 string dir = SessionPaths.Export(store.Root, sessionId);
                 Directory.CreateDirectory(dir);
-                string token = tokens.Issue(sessionId, Path.Combine(dir, $"{Guid.NewGuid():N}.pdf"));
-                tokens.TryPeekPath(token, out string path);
-                await using (FileStream output = File.Create(path))
+                var produced = new List<ExportedDocumentDto>();
+                foreach (ExportPage[] document in documentPages)
                 {
-                    await writer.WritePdfAsync(pages, pdf, output, progress, cancellationToken).ConfigureAwait(false);
+                    string token = tokens.Issue(sessionId, Path.Combine(dir, $"{Guid.NewGuid():N}.pdf"));
+                    tokens.TryPeekPath(token, out string path);
+                    await using (FileStream output = File.Create(path))
+                    {
+                        await writer.WritePdfAsync(document, pdf, output, progress, cancellationToken).ConfigureAwait(false);
+                    }
+
+                    produced.Add(new ExportedDocumentDto(document.Length, null, $"/export/{sessionId}/{token}.pdf"));
+                    finished++;
                 }
 
-                result = new ExportResult(ExportMode.Download, pages.Length, null, $"/export/{sessionId}/{token}.pdf");
+                result = new ExportResult(ExportMode.Download, totalPages, [.. produced]);
                 recorded = new SessionEvent(SessionEventKind.Downloaded, time.GetUtcNow());
             }
             else
             {
-                string saved = await documents.SaveAsync(
-                    (stream, ct) => writer.WritePdfAsync(pages, pdf, stream, progress, ct),
-                    session.CreatedAt,
-                    cancellationToken).ConfigureAwait(false);
-                result = new ExportResult(ExportMode.Save, pages.Length, saved, null);
-                recorded = new SessionEvent(SessionEventKind.Exported, time.GetUtcNow(), saved);
-                logger.LogInformation("Session {Session} saved to {Path} ({Pages} pages)", sessionId, saved, pages.Length);
+                var written = new List<ExportedDocumentDto>();
+                foreach (ExportPage[] document in documentPages)
+                {
+                    string saved = await documents.SaveAsync(
+                        (stream, ct) => writer.WritePdfAsync(document, pdf, stream, progress, ct),
+                        session.CreatedAt,
+                        cancellationToken).ConfigureAwait(false);
+                    written.Add(new ExportedDocumentDto(document.Length, saved, null));
+                    finished++;
+                }
+
+                result = new ExportResult(ExportMode.Save, totalPages, [.. written]);
+                recorded = new SessionEvent(SessionEventKind.Exported, time.GetUtcNow(), written[0].SavedPath);
+                logger.LogInformation(
+                    "Session {Session} saved as {Documents} document(s), {Pages} page(s) total",
+                    sessionId,
+                    written.Count,
+                    totalPages);
             }
 
             await hub.Clients.All.ExportProgress(sessionId, 100).ConfigureAwait(false);

@@ -3,7 +3,7 @@
 	import { page as route } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { getHub, imageUrl } from '$lib/hub/hub';
+	import { getHub, imageUrl, sortedSessions } from '$lib/hub/hub';
 	import { PageFilter, SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 	import type { CropBox, PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
 	import { activePageCount, formatTime, sessionStateLabel } from '$lib/format';
@@ -15,6 +15,8 @@
 		rotateEdit,
 		setCropEdit,
 		setFilterEdit,
+		setSplitEdit,
+		documentNumbers,
 		pageFilterLabels
 	} from '$lib/review/edits';
 	import { clear, prune, toggle } from '$lib/review/selection';
@@ -25,6 +27,8 @@
 	import { Icon } from '$lib/icons';
 	import NameField from '$lib/components/NameField.svelte';
 	import CropModal from '$lib/components/CropModal.svelte';
+	import MergeModal from '$lib/components/MergeModal.svelte';
+	import { saveToBrowser, savedLabel } from '$lib/review/download';
 	import { ExportMode } from '$lib/hub/generated/Yass.Core.Hub';
 
 	const client = getHub();
@@ -54,6 +58,8 @@
 	let previewIndex = $state<number | null>(null);
 	/** Position of the page the crop dialog is open on, or null. */
 	let cropping = $state<number | null>(null);
+	let merging = $state(false);
+	let merged = $state(false);
 
 	$effect(() => {
 		if ($connection === 'connected' && !$sessions.has(id)) {
@@ -89,6 +95,13 @@
 		filters.size > 1 ? 'Mixed' : pageFilterLabels[[...filters][0] ?? PageFilter.Original]
 	);
 	const cropped = $derived((session?.Pages ?? []).filter((p) => !p.Deleted && p.Crop).length);
+	const documents = $derived(documentNumbers(session?.Pages ?? []));
+	const documentCount = $derived(Math.max(1, ...[...documents.values()], 1));
+
+	/** Other scans that still have pages, newest first, for the merge dialog. */
+	const mergeable = $derived(
+		sortedSessions($sessions).filter((s) => s.Id !== id && s.Pages.some((p) => !p.Deleted))
+	);
 
 	async function send(edit: PageEdit) {
 		if (!session) return;
@@ -133,15 +146,9 @@
 		try {
 			const result = await client.hub.export(id, { Mode: mode });
 			if (mode === ExportMode.Save) {
-				savedPath = result.SavedPath ?? '';
-			} else if (result.DownloadPath) {
-				const a = document.createElement('a');
-				a.href = result.DownloadPath;
-				a.download = '';
-				a.rel = 'noopener';
-				document.body.append(a);
-				a.click();
-				a.remove();
+				savedPath = savedLabel(result);
+			} else {
+				saveToBrowser(result);
 			}
 		} catch (e) {
 			error = e instanceof Error ? e.message : String(e);
@@ -174,6 +181,19 @@
 			await client.hub.rescanPage(id, page.Index);
 		} catch (e) {
 			error = e instanceof Error ? e.message : String(e);
+		}
+	}
+
+	async function merge(sourceId: string) {
+		merging = false;
+		merged = true;
+		error = null;
+		try {
+			await client.hub.mergeSession(id, sourceId);
+		} catch (e) {
+			error = e instanceof Error ? e.message : String(e);
+		} finally {
+			merged = false;
 		}
 	}
 
@@ -235,6 +255,7 @@
 					{scanning}
 					ontoggle={select}
 					onopen={(i) => (previewIndex = i)}
+					{documents}
 					reorderable={editable}
 					onreorder={(order) => {
 						selection = clear();
@@ -339,6 +360,12 @@
 					onfilter={(filter) => send(setFilterEdit(filter, selection))}
 					oncrop={() => (cropping = targetPage())}
 					onrescan={rescan}
+					onsplit={(split) => {
+						const page = session?.Pages[targetPage()];
+						if (page) send(setSplitEdit(split, new Set([page.Index])));
+					}}
+					splits={session.Pages[targetPage()]?.StartsDocument ?? false}
+					firstPage={targetPage() === 0}
 					{scanning}
 					onclear={() => (selection = clear())}
 				/>
@@ -364,7 +391,9 @@
 					</div>
 					<div class="rounded-[14px] bg-app p-3">
 						<p class="text-xs text-ink-muted">Documents</p>
-						<p class="text-[18px] font-extrabold tracking-[-0.01em] tabular-nums">1</p>
+						<p class="text-[18px] font-extrabold tracking-[-0.01em] tabular-nums">
+							{documentCount}
+						</p>
 					</div>
 					<div class="rounded-[14px] bg-app p-3">
 						<p class="text-xs text-ink-muted">Filter</p>
@@ -386,10 +415,32 @@
 					ondownload={() => exportAs(ExportMode.Download)}
 					ondiscard={discard}
 				/>
+
+				<div class="flex flex-col gap-0.5 border-t border-line pt-2">
+					<button
+						type="button"
+						class="flex h-[42px] items-center gap-2.5 rounded-[12px] px-3 text-sm font-semibold transition-colors hover:bg-accent-hover50 disabled:pointer-events-none disabled:opacity-40"
+						onclick={() => (merging = true)}
+						disabled={!editable || mergeable.length === 0}
+						data-testid="merge-button"
+					>
+						<Icon name="layers" />
+						Add pages from past scan
+					</button>
+				</div>
 			</aside>
 		</div>
 	{/if}
 </div>
+
+{#if merging}
+	<MergeModal
+		sessions={mergeable}
+		busy={merged}
+		onpick={merge}
+		oncancel={() => (merging = false)}
+	/>
+{/if}
 
 {#if cropping !== null && session?.Pages[cropping]}
 	<CropModal

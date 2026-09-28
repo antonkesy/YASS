@@ -140,7 +140,7 @@ public sealed class ScanService(
                 Page? added = null;
                 Session session = store.Update(sessionId, s =>
                 {
-                    var page = new Page(s.Pages.Count, fileName, Rotation.R0, PageFilter.Original, null, scanned.IsBlank, scanned.IsBlank, sourceHash, "");
+                    var page = new Page(s.Pages.Count, fileName, Rotation.R0, PageFilter.Original, null, false, scanned.IsBlank, scanned.IsBlank, sourceHash, "");
                     added = PageHash.Rehash(page, s.OptionsUsed.Color);
                     return s with { Pages = [.. s.Pages, added] };
                 });

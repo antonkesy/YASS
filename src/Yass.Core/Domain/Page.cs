@@ -9,6 +9,7 @@ namespace Yass.Core.Domain;
 /// <param name="Rotation">Rotation to apply when rendering or exporting.</param>
 /// <param name="Filter">Per-page rendering treatment; <see cref="PageFilter.Original"/> keeps the scan's colour mode.</param>
 /// <param name="Crop">Per-page trim, or <c>null</c> for the whole page.</param>
+/// <param name="StartsDocument">This page begins a new document within the session; the first active page always does.</param>
 /// <param name="Deleted">Excluded from export. Reversible.</param>
 /// <param name="IsBlank">Flagged by blank-page detection at scan time; such pages start out deleted.</param>
 /// <param name="SourceHash">Hash of the source file bytes, fixed at scan time.</param>
@@ -19,6 +20,7 @@ public sealed record Page(
     Rotation Rotation,
     PageFilter Filter,
     CropBox? Crop,
+    bool StartsDocument,
     bool Deleted,
     bool IsBlank,
     string SourceHash,

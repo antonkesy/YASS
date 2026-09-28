@@ -47,6 +47,8 @@ public sealed class HubClient : IAsyncDisposable
 
     public Task DeleteSession(string id) => _connection.InvokeAsync(nameof(IYassHub.DeleteSession), id);
 
+    public Task<SessionDto> MergeSession(string targetId, string sourceId) => _connection.InvokeAsync<SessionDto>(nameof(IYassHub.MergeSession), targetId, sourceId);
+
     public Task<SessionDto> RescanPage(string id, int pageIndex) => _connection.InvokeAsync<SessionDto>(nameof(IYassHub.RescanPage), id, pageIndex);
 
     public Task<SessionDto> RenameSession(string id, string? name) => _connection.InvokeAsync<SessionDto>(nameof(IYassHub.RenameSession), id, name);

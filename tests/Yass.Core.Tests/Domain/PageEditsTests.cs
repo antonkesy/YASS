@@ -8,7 +8,7 @@ public class PageEditsTests
         "s1",
         DateTimeOffset.UnixEpoch,
         SessionState.Review,
-        Enumerable.Range(0, pages).Select(i => PageHash.Rehash(new Page(i, $"page-{i}.png", Rotation.R0, PageFilter.Original, null, false, false, $"src{i}", ""), ColorMode.Grayscale)).ToArray(),
+        Enumerable.Range(0, pages).Select(i => PageHash.Rehash(new Page(i, $"page-{i}.png", Rotation.R0, PageFilter.Original, null, false, false, false, $"src{i}", ""), ColorMode.Grayscale)).ToArray(),
         new ScanOptions());
 
     [Fact]

@@ -62,6 +62,37 @@ public sealed class SessionHistoryTests
     }
 
     [Fact]
+    public async Task Merge_appends_the_source_pages_as_a_second_document()
+    {
+        await using var factory = new YassFactory(FakeScenario.Pages(2));
+        await using HubClient hub = await HubClient.ConnectAsync(factory);
+        SessionDto target = await hub.ScanToEnd();
+        SessionDto source = await hub.ScanToEnd();
+
+        SessionDto merged = await hub.MergeSession(target.Id, source.Id);
+
+        Assert.Equal(4, merged.Pages.Length);
+        Assert.False(merged.Pages[0].StartsDocument);
+        Assert.True(merged.Pages[2].StartsDocument, "the merged run opens its own document");
+
+        // The source is copied, not consumed.
+        Assert.Equal(2, (await hub.GetSession(source.Id)).Pages.Length);
+
+        ExportResult result = await hub.Export(target.Id, ExportMode.Save);
+        Assert.Equal(2, result.Documents.Length);
+    }
+
+    [Fact]
+    public async Task Merge_refuses_a_session_into_itself()
+    {
+        await using var factory = new YassFactory(FakeScenario.Pages(1));
+        await using HubClient hub = await HubClient.ConnectAsync(factory);
+        SessionDto only = await hub.ScanToEnd();
+
+        await Assert.ThrowsAsync<HubException>(() => hub.MergeSession(only.Id, only.Id));
+    }
+
+    [Fact]
     public async Task Clear_removes_every_idle_session()
     {
         await using var factory = new YassFactory(FakeScenario.Pages(1));

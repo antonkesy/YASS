@@ -121,6 +121,10 @@ class IYassHub_HubProxy implements IYassHub {
         return await this.connection.invoke("RescanPage", sessionId, pageIndex);
     }
 
+    public readonly mergeSession = async (targetId: string, sourceId: string): Promise<SessionDto> => {
+        return await this.connection.invoke("MergeSession", targetId, sourceId);
+    }
+
     public readonly export = async (sessionId: string, request: ExportRequest): Promise<ExportResult> => {
         return await this.connection.invoke("Export", sessionId, request);
     }

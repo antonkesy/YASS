@@ -23,4 +23,7 @@ public enum PageEditOp
 
     /// <summary>Set <see cref="PageEdit.Crop"/> on the target pages; <c>null</c> clears it.</summary>
     SetCrop,
+
+    /// <summary>Start (or stop starting) a document at the target pages, per <see cref="PageEdit.Split"/>.</summary>
+    SetSplit,
 }
