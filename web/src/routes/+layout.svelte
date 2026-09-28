@@ -2,6 +2,7 @@
 	import './layout.css';
 	import { onMount } from 'svelte';
 	import { getHub } from '$lib/hub/hub';
+	import AppHeader from '$lib/components/AppHeader.svelte';
 
 	let { children } = $props();
 
@@ -19,5 +20,6 @@
 </svelte:head>
 
 <div class="min-h-dvh bg-app text-ink">
+	<AppHeader />
 	{@render children()}
 </div>
