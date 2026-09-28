@@ -21,6 +21,7 @@
 	import Preview from '$lib/components/Preview.svelte';
 	import ExportBar from '$lib/components/ExportBar.svelte';
 	import { Icon } from '$lib/icons';
+	import NameField from '$lib/components/NameField.svelte';
 	import { ExportMode } from '$lib/hub/generated/Yass.Core.Hub';
 
 	const client = getHub();
@@ -101,10 +102,22 @@
 		await client.hub.stopScan(id);
 	}
 
+	/**
+	 * Discard marks the scan discarded and drops its pages, but leaves the row in
+	 * past scans. Deleting a session outright is the trash button over there.
+	 */
 	async function discard() {
 		try {
-			await client.hub.deleteSession(id);
+			await client.hub.discardSession(id);
 			await goto(resolve('/'));
+		} catch (e) {
+			error = e instanceof Error ? e.message : String(e);
+		}
+	}
+
+	async function rename(name: string) {
+		try {
+			await client.hub.renameSession(id, name);
 		} catch (e) {
 			error = e instanceof Error ? e.message : String(e);
 		}
@@ -300,9 +313,12 @@
 			<aside
 				class="order-3 flex w-full basis-full flex-col gap-3.5 rounded-[24px] bg-surface p-[22px] shadow-panel lg:sticky lg:top-[72px] lg:w-auto lg:basis-[clamp(300px,22vw,380px)]"
 			>
-				<h1 class="text-[19px] font-extrabold tracking-[-0.01em]">
-					{formatTime(session.CreatedAt)}
-				</h1>
+				<p class="text-xs font-bold tracking-[0.06em] text-ink-muted uppercase">Document name</p>
+				<NameField
+					value={session.Name ?? null}
+					placeholder={formatTime(session.CreatedAt)}
+					onrename={rename}
+				/>
 
 				<p class="text-xs font-bold tracking-[0.06em] text-ink-muted uppercase">Document</p>
 				<div class="grid grid-cols-2 gap-2">
