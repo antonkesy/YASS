@@ -153,6 +153,21 @@ public sealed class YassHub(
         }
     }
 
+    public async Task<SessionDto> ScanMore(string sessionId)
+    {
+        Find(sessionId);
+        try
+        {
+            SessionDto dto = mapper.ToDto(scans.StartMore(sessionId));
+            await Clients.All.SessionChanged(dto).ConfigureAwait(false);
+            return dto;
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new HubException(ex.Message);
+        }
+    }
+
     public async Task<SessionDto> MergeSession(string targetId, string sourceId)
     {
         Session target = Find(targetId);

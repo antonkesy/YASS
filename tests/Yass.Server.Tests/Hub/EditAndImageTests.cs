@@ -83,6 +83,26 @@ public sealed class EditAndImageTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Scan_more_appends_pages_without_overwriting_the_first_run()
+    {
+        SessionDto first = await _hub.ScanToEnd();
+        string[] before = [.. first.Pages.Select(p => p.Hash)];
+
+        await _hub.ScanMore(first.Id);
+        SessionDto after = await _hub.WaitFor(first.Id, s => s.State != SessionState.Scanning);
+
+        Assert.Equal(first.Pages.Length * 2, after.Pages.Length);
+        Assert.Equal(SessionState.Review, after.State);
+
+        // The pages that were already there are untouched: a second run writes its own files
+        // rather than starting the page numbering over and clobbering them.
+        Assert.Equal(before, after.Pages.Take(first.Pages.Length).Select(p => p.Hash));
+        string dir = Path.Combine(_factory.Config.Sessions.Directory, first.Id);
+        Assert.Equal(after.Pages.Length, Directory.GetFiles(dir, "page-*.png").Length);
+        Assert.Equal([.. Enumerable.Range(0, after.Pages.Length)], after.Pages.Select(p => p.Index));
+    }
+
+    [Fact]
     public async Task Rescan_is_refused_for_a_page_that_does_not_exist()
     {
         SessionDto done = await _hub.ScanToEnd();

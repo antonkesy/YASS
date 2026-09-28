@@ -36,6 +36,9 @@ public interface IYassHub
     /// <summary>Scans one sheet and puts it in place of <paramref name="pageIndex"/>, keeping that page's edits.</summary>
     Task<SessionDto> RescanPage(string sessionId, int pageIndex);
 
+    /// <summary>Runs the feeder again and appends the pages to an existing session.</summary>
+    Task<SessionDto> ScanMore(string sessionId);
+
     /// <summary>
     /// Copies the active pages of <paramref name="sourceId"/> onto the end of
     /// <paramref name="targetId"/>, starting a new document at the join. The source is left alone.

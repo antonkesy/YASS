@@ -93,6 +93,21 @@ public sealed class SessionHistoryTests
     }
 
     [Fact]
+    public async Task Scan_more_is_refused_while_a_scan_is_running()
+    {
+        // Its own slow scanner: the shared instant one finishes before a second call lands.
+        await using var factory = new YassFactory(FakeScenario.Pages(20) with { PageDelay = TimeSpan.FromMilliseconds(80) });
+        await using HubClient hub = await HubClient.ConnectAsync(factory);
+        SessionDto done = await hub.ScanToEnd(timeout: TimeSpan.FromSeconds(30));
+
+        await hub.ScanMore(done.Id);
+        await Assert.ThrowsAsync<HubException>(() => hub.ScanMore(done.Id));
+
+        await hub.StopScan(done.Id);
+        await hub.WaitFor(done.Id, s => s.State != SessionState.Scanning, TimeSpan.FromSeconds(30));
+    }
+
+    [Fact]
     public async Task Clear_removes_every_idle_session()
     {
         await using var factory = new YassFactory(FakeScenario.Pages(1));

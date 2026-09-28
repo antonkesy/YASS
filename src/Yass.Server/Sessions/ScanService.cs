@@ -39,8 +39,37 @@ public sealed class ScanService(
         }
 
         store.Create(session);
-        _ = Task.Run(() => RunAsync(session.Id, options, cts.Token), CancellationToken.None);
+        _ = Task.Run(() => RunAsync(session.Id, options, 0, cts.Token), CancellationToken.None);
         return session;
+    }
+
+    /// <summary>
+    /// Runs the feeder again and appends what comes out to an existing session, with the
+    /// options that session was scanned with, so added pages match the ones already there.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">A scan is running or the session is not editable.</exception>
+    public Session StartMore(string sessionId)
+    {
+        Session session = store.Get(sessionId);
+        if (session.State is not (SessionState.Review or SessionState.Done))
+        {
+            throw new InvalidOperationException($"Session is {session.State}; pages can only be added in Review.");
+        }
+
+        var cts = new CancellationTokenSource();
+        if (!_running.IsEmpty || !_running.TryAdd(sessionId, cts))
+        {
+            cts.Dispose();
+            throw new InvalidOperationException("A scan is already running.");
+        }
+
+        Session scanning = store.Update(sessionId, s => s with { State = SessionState.Scanning, Error = null });
+
+        // The new run numbers its pages from 1 again, so page files are offset past the ones
+        // already on disk; without it the second run would overwrite the first run's pages.
+        int offset = scanning.Pages.Count;
+        _ = Task.Run(() => RunAsync(sessionId, scanning.OptionsUsed, offset, cts.Token), CancellationToken.None);
+        return scanning;
     }
 
     /// <summary>
@@ -125,7 +154,7 @@ public sealed class ScanService(
         await tcs.Task.ConfigureAwait(false);
     }
 
-    private async Task RunAsync(string sessionId, ScanOptions options, CancellationToken cancellationToken)
+    private async Task RunAsync(string sessionId, ScanOptions options, int fileNumberOffset, CancellationToken cancellationToken)
     {
         string dir = SessionPaths.Directory(store.Root, sessionId);
         string? error = null;
@@ -133,7 +162,7 @@ public sealed class ScanService(
         {
             await foreach (ScannedPage scanned in backend.ScanAsync(options, cancellationToken).ConfigureAwait(false))
             {
-                string fileName = SessionPaths.PageFileName(scanned.Number);
+                string fileName = SessionPaths.PageFileName(fileNumberOffset + scanned.Number);
                 await File.WriteAllBytesAsync(Path.Combine(dir, fileName), scanned.Png, CancellationToken.None).ConfigureAwait(false);
 
                 string sourceHash = PageHash.OfBytes(scanned.Png);
