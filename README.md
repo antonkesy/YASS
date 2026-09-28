@@ -22,8 +22,9 @@ review the pages, and save a PDF straight into your
   desktop), multi-select, rotate, delete/restore, colour mode per page or for
   all, drag to reorder, full-page preview with swipe. Blank pages are detected
   and pre-marked deleted.
-- **Save to paperless** writes the PDF atomically into the consume directory
-  under a templated name; **Download** hands the PDF to the browser instead.
+- **Save** writes the PDF atomically into `output.directory` under a templated
+  name — point that at your paperless-ngx consume folder, or anywhere else;
+  **Download** hands the PDF to the browser instead.
 - **Installable PWA**, works without a service worker, everything reachable by
   keyboard, touch targets ≥ 44 px.
 - **Single config file** (`yawss.yaml`), every key overridable through the

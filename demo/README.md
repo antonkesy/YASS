@@ -18,7 +18,8 @@ it starts in seconds).
 2. **Review** — rotate, reorder by dragging, delete the blank page.
    Open a page and click it (or the zoom button, or `z`) to switch between
    fit-to-screen and full width; `Esc` backs out of zoom, then closes.
-3. **Save to paperless** — the PDF lands in [`output/`](output) on your host.
+3. **Save** — the PDF lands in [`output/`](output) on your host, the demo's
+   stand-in for a paperless-ngx consume folder.
    **Download** hands it to the browser instead.
 4. **Settings** — source, dpi, colour, page size and blank-page detection are
    editable from the UI and stored in the browser.

@@ -77,7 +77,7 @@ test('scan, review, edit, download and save', async ({ page }) => {
 	const file = await download;
 	expect(file.suggestedFilename()).toMatch(/\.pdf$/);
 
-	// Save to paperless finishes the session.
+	// Save finishes the session.
 	await page.getByTestId('save-button').click();
 	await expect(page.getByTestId('saved-message')).toBeVisible({ timeout: 20_000 });
 	await expect(page.getByTestId('session-state')).toHaveText('Saved');
