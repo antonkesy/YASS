@@ -79,7 +79,7 @@ export const RECENT_FOLDERS = 4;
 export function rememberFolder(prefs: ExportPrefs, directory: string): ExportPrefs {
 	const clean = directory.trim().replace(/\/+$/, '');
 	if (clean === '') return prefs;
-	const rest = (prefs.recentFolders ?? []).filter((p) => p !== clean);
+	const rest = prefs.recentFolders.filter((p) => p !== clean);
 	return { ...prefs, recentFolders: [clean, ...rest].slice(0, RECENT_FOLDERS) };
 }
 
@@ -99,7 +99,13 @@ function load<T>(storage: Storage | undefined, key: string, fallback: T): T {
 		const raw = storage?.getItem(key);
 		if (!raw) return fallback;
 		const parsed: unknown = JSON.parse(raw);
-		return parsed && typeof parsed === 'object' ? (parsed as T) : fallback;
+		if (!parsed || typeof parsed !== 'object') return fallback;
+		// Merged over the defaults, not used as-is: a browser that stored these before a
+		// preference existed would otherwise read it as undefined, and the screens that
+		// consume it disagree about what undefined means. Arrays (the presets) are
+		// replaced wholesale — merging one key-by-key would splice the defaults back in.
+		if (Array.isArray(fallback) || Array.isArray(parsed)) return parsed as T;
+		return { ...fallback, ...parsed };
 	} catch {
 		return fallback;
 	}

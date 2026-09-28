@@ -546,7 +546,7 @@
 					exportDirectory={$exportPrefs.directory.trim() || exportRoots[0] || ''}
 					exportEnabled={$exportPrefs.exportButton}
 					roots={exportRoots}
-					recent={$exportPrefs.recentFolders ?? []}
+					recent={$exportPrefs.recentFolders}
 					onsave={(directory) => exportAs(ExportMode.Save, directory)}
 					ondownload={() => exportAs(ExportMode.Download)}
 				/>
