@@ -7,21 +7,13 @@ import PageThumb from '$lib/components/PageThumb.svelte';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import { ColorMode, SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
+import { page, session as build } from './fixtures';
 
-const session = (state = SessionState.Review, deleted = 0): SessionDto => ({
-	Id: 's1',
-	CreatedAt: '2026-09-24T10:00:00Z',
-	State: state,
-	OptionsUsed: {},
-	Pages: [0, 1, 2].map((Index) => ({
-		Index,
-		Rotation: 0,
-		Deleted: Index < deleted,
-		IsBlank: false,
-		Hash: `h${Index}`,
-		ThumbnailReady: true
-	}))
-});
+const session = (state = SessionState.Review, deleted = 0): SessionDto =>
+	build('s1', {
+		State: state,
+		Pages: [0, 1, 2].map((Index) => page(Index, { Deleted: Index < deleted }))
+	});
 
 describe('StatusPill', () => {
 	it('shows scanner readiness when connected and offline otherwise', () => {

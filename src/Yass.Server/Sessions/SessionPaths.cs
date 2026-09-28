@@ -25,6 +25,29 @@ public static class SessionPaths
 
     public static string Export(string root, string sessionId) => Path.Combine(Directory(root, sessionId), "export");
 
+    /// <summary>
+    /// Bytes the session occupies: source pages, derived caches and any pending export.
+    /// Read from disk rather than tracked, so it cannot drift from what is actually there.
+    /// </summary>
+    public static long SizeOnDisk(string root, string sessionId)
+    {
+        var dir = new DirectoryInfo(Directory(root, sessionId));
+        if (!dir.Exists)
+        {
+            return 0;
+        }
+
+        try
+        {
+            return dir.EnumerateFiles("*", SearchOption.AllDirectories).Sum(f => f.Length);
+        }
+        catch (IOException)
+        {
+            // A scan writing pages underneath us is not a reason to fail a listing.
+            return 0;
+        }
+    }
+
     /// <summary>Sortable, URL-safe id: timestamp plus a short random suffix.</summary>
     public static string NewId(DateTimeOffset now) =>
         now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture) + "-" + Guid.NewGuid().ToString("N")[..6];

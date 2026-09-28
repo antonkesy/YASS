@@ -5,6 +5,7 @@ import { createHubClient, type ConnectionLike } from '$lib/hub/client';
 import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
+import { sessionOf } from './fixtures';
 
 type Handler = (...args: unknown[]) => void;
 
@@ -60,20 +61,7 @@ function fakeConnection(sessions: SessionDto[] = []) {
 	return fake;
 }
 
-const session = (Id: string, pages = 0): SessionDto => ({
-	Id,
-	CreatedAt: '2026-09-24T10:00:00Z',
-	State: SessionState.Review,
-	Pages: Array.from({ length: pages }, (_, Index) => ({
-		Index,
-		Rotation: 0,
-		Deleted: false,
-		IsBlank: false,
-		Hash: `h${Index}`,
-		ThumbnailReady: true
-	})),
-	OptionsUsed: {}
-});
+const session = (Id: string, pages = 0): SessionDto => sessionOf(Id, pages);
 
 describe('hub client', () => {
 	it('loads status and sessions on start', async () => {
