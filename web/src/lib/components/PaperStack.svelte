@@ -11,11 +11,15 @@
 </script>
 
 <!--
-	Three sheets, fanned. Sizes and offsets are the mockup's; the whole stack drifts
-	up and down so the hero has a pulse even when nothing is happening.
+	Three sheets, fanned. Offsets are the mockup's; the whole stack drifts up and down so
+	the hero has a pulse even when nothing is happening.
+
+	The mockup sized this against width alone (18vw). A sheet is 1.414x taller than it is
+	wide, so on a short-but-wide window that made the stack the reason the home screen
+	scrolled -- hence the 20vh cap, which binds first on laptop screens.
 -->
 <div
-	class="relative mt-1.5 mb-3.5 w-[150px] animate-float sm:w-[clamp(200px,18vw,300px)]"
+	class="relative mt-1.5 mb-3.5 w-[150px] flex-none animate-float sm:w-[clamp(118px,min(18vw,17vh),300px)]"
 	style="aspect-ratio: 1 / 1.414"
 	aria-hidden="true"
 >

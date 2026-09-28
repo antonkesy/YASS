@@ -6,6 +6,7 @@ import ExportBar from '$lib/components/ExportBar.svelte';
 import PageThumb from '$lib/components/PageThumb.svelte';
 import SettingsChips from '$lib/components/SettingsChips.svelte';
 import SortMenu from '$lib/components/SortMenu.svelte';
+import AppFooter from '$lib/components/AppFooter.svelte';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import {
 	ColorMode,
@@ -29,9 +30,9 @@ describe('StatusPill', () => {
 			status: { State: ScannerState.Ready, DeviceName: 'ADF', CheckedAt: '' },
 			connection: 'connected'
 		});
-		expect(screen.getByRole('status')).toHaveTextContent('Ready');
+		expect(screen.getByRole('status')).toHaveTextContent(/Ready/);
 		rerender({ status: null, connection: 'reconnecting' });
-		expect(screen.getByRole('status')).toHaveTextContent('Offline');
+		expect(screen.getByRole('status')).toHaveTextContent(/Offline/);
 	});
 });
 
@@ -50,7 +51,7 @@ describe('Toolbar', () => {
 			onfilter,
 			onclear
 		});
-		expect(screen.getByTestId('toolbar-scope')).toHaveTextContent('all 4');
+		expect(screen.getByTestId('toolbar-scope')).toHaveTextContent(/all 4/);
 		await fireEvent.click(screen.getByRole('button', { name: 'Rotate right' }));
 		expect(onrotate).toHaveBeenCalledWith(90);
 		expect(screen.getByTestId('restore-button')).toBeDisabled();
@@ -71,7 +72,7 @@ describe('Toolbar', () => {
 			onfilter: vi.fn(),
 			onclear
 		});
-		expect(screen.getByTestId('toolbar-scope')).toHaveTextContent('2 selected');
+		expect(screen.getByTestId('toolbar-scope')).toHaveTextContent(/2 selected/);
 		await fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
 		expect(onclear).toHaveBeenCalled();
 	});
@@ -87,9 +88,9 @@ describe('ExportBar', () => {
 			onsave,
 			ondownload: vi.fn()
 		});
-		expect(screen.getByTestId('page-count')).toHaveTextContent('3 of 3 pages');
-		expect(screen.getByTestId('export-path')).toHaveTextContent('/data/consume');
-		expect(screen.getByTestId('autosave-strip')).toHaveTextContent('Auto-saved to past scans');
+		expect(screen.getByTestId('page-count')).toHaveTextContent(/3 of 3 pages/);
+		expect(screen.getByTestId('export-path')).toHaveTextContent(/\/data\/consume/);
+		expect(screen.getByTestId('autosave-strip')).toHaveTextContent(/Auto-saved to past scans/);
 		// null, not the path on screen: Export means "wherever the preference points".
 		await fireEvent.click(screen.getByTestId('save-button'));
 		expect(onsave).toHaveBeenCalledWith(null);
@@ -237,8 +238,29 @@ describe('SortMenu', () => {
 	it('names the order it is sorting by, not just "Sort"', async () => {
 		const onchange = vi.fn();
 		const { rerender } = render(SortMenu, { order: 'newest', onchange });
-		expect(screen.getByTestId('sort-button')).toHaveTextContent('Newest');
+		expect(screen.getByTestId('sort-button')).toHaveTextContent(/Newest/);
 		await rerender({ order: 'name', onchange });
-		expect(screen.getByTestId('sort-button')).toHaveTextContent('Name');
+		expect(screen.getByTestId('sort-button')).toHaveTextContent(/Name/);
+	});
+});
+
+describe('AppFooter', () => {
+	it('links out to the repository, and marks the links external', () => {
+		render(AppFooter);
+
+		const github = screen.getByRole('link', { name: /GitHub/ });
+		expect(github).toHaveAttribute('href', 'https://github.com/antonkesy/YAWSS');
+
+		expect(screen.getByRole('link', { name: /Report an issue/ })).toHaveAttribute(
+			'href',
+			'https://github.com/antonkesy/YAWSS/issues/new'
+		);
+
+		// rel=external keeps SvelteKit's router out of the way, and is what lets these
+		// pass svelte/no-navigation-without-resolve without loosening the rule.
+		for (const link of screen.getAllByRole('link')) {
+			expect(link.getAttribute('rel')).toContain('external');
+			expect(link).toHaveAttribute('target', '_blank');
+		}
 	});
 });

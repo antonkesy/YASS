@@ -128,8 +128,15 @@
 		</p>
 	{/if}
 
-	<!-- Header 4rem plus this main's padding, so the two panes fill the window. -->
-	<div class="flex min-h-[calc(100dvh-6.5rem)] flex-wrap items-stretch gap-6">
+	<!--
+		Side by side, the panes get exactly the height left over after the header, the footer
+		and this main's own pt-3 + pb-7 (2.5rem) -- so the home screen fits without scrolling
+		and each pane scrolls its own overflow instead. Stacked (below lg) they keep their
+		natural height and the page scrolls, which is the right behaviour on a phone.
+	-->
+	<div
+		class="flex flex-wrap items-stretch gap-6 lg:h-[calc(100dvh-var(--app-header-h)-var(--app-footer-h)-2.5rem)] lg:min-h-0 lg:flex-nowrap"
+	>
 		<ScanStage
 			status={$scanner}
 			connection={$connection}

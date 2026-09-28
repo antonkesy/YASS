@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import { getHub } from '$lib/hub/hub';
 	import AppHeader from '$lib/components/AppHeader.svelte';
+	import AppFooter from '$lib/components/AppFooter.svelte';
 	import Toast from '$lib/components/Toast.svelte';
 
 	let { children } = $props();
@@ -23,6 +24,7 @@
 <div class="min-h-dvh bg-app text-ink">
 	<AppHeader />
 	{@render children()}
+	<AppFooter />
 </div>
 
 <Toast />
