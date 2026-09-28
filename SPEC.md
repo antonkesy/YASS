@@ -27,7 +27,7 @@ YAWSS is a headless scanning service for a home server on Linux (bare metal, Nix
 | Frontend tests | **Vitest** + `@testing-library/svelte`; **Playwright** E2E (desktop Chromium + Pixel 7 profile) against server in `--fake` mode | |
 | Lint/format | `dotnet format` + analyzers (`TreatWarningsAsErrors`), `eslint`, `prettier`, `svelte-check`; **`pre-commit`** framework | |
 | Commits/releases | **Conventional Commits** enforced by `conventional-pre-commit`; **`release-please`** for changelog + tags | |
-| CI | **GitHub Actions** — `ci.yml`, `release.yml` (multi-arch image to `ghcr.io`, `nix build`) | |
+| CI | **GitHub Actions** — `ci.yml`, `release.yml` (`nix build`) | |
 | Packaging | **Nix flake** (dev shell, package, docker image via `dockerTools`, NixOS module `services.yawss`) + plain multi-stage `Dockerfile` | |
 | Storage | Filesystem only; session = directory with `session.json` + `page-NNN.png` | |
 
