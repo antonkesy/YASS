@@ -2,11 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { ColorMode, PageSize, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
 import {
 	activePreset,
+	createExportPrefs,
+	createPresets,
 	defaultExportPrefs,
 	defaultPresets,
+	EXPORT_KEY,
 	matchesPreset,
+	PRESETS_KEY,
 	rememberFolder
 } from '$lib/presets';
+import { get } from 'svelte/store';
 
 describe('presets', () => {
 	const document = defaultPresets[0];
@@ -67,5 +72,43 @@ describe('recent export folders', () => {
 	it('normalises the path and ignores an empty one', () => {
 		expect(rememberFolder(prefs, ' /data/consume/ ').recentFolders).toEqual(['/data/consume']);
 		expect(rememberFolder(prefs, '   ')).toBe(prefs);
+	});
+});
+
+describe('loading stored preferences', () => {
+	const fake = (entries: Record<string, string>): Storage =>
+		({
+			getItem: (k: string) => entries[k] ?? null,
+			setItem: (k: string, v: string) => void (entries[k] = v)
+		}) as unknown as Storage;
+
+	it('fills in a preference stored before it existed', () => {
+		// A browser that saved its prefs before exportButton was added.
+		const store = createExportPrefs(
+			fake({ [EXPORT_KEY]: JSON.stringify({ format: 0, directory: '/data/consume' }) })
+		);
+		const prefs = get(store);
+		expect(prefs.directory).toBe('/data/consume');
+		expect(prefs.exportButton).toBe(defaultExportPrefs.exportButton);
+		expect(prefs.recentFolders).toEqual([]);
+	});
+
+	it('keeps a stored value that happens to match a falsy default', () => {
+		const store = createExportPrefs(
+			fake({ [EXPORT_KEY]: JSON.stringify({ exportButton: false }) })
+		);
+		expect(get(store).exportButton).toBe(false);
+	});
+
+	it('replaces the preset list wholesale rather than merging the defaults back in', () => {
+		const mine = [{ id: 'x', name: 'Mine', icon: 'star', settings: {} }];
+		const store = createPresets(fake({ [PRESETS_KEY]: JSON.stringify(mine) }));
+		expect(get(store)).toEqual(mine);
+	});
+
+	it('falls back when nothing is stored or the value is unusable', () => {
+		expect(get(createExportPrefs(fake({})))).toEqual(defaultExportPrefs);
+		expect(get(createExportPrefs(fake({ [EXPORT_KEY]: 'not json' })))).toEqual(defaultExportPrefs);
+		expect(get(createPresets(fake({ [PRESETS_KEY]: '7' })))).toEqual(defaultPresets);
 	});
 });
