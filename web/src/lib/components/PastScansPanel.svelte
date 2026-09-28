@@ -7,15 +7,31 @@
 	import SortMenu from './SortMenu.svelte';
 	import StatusFilterChips from './StatusFilter.svelte';
 	import EmptyState from './EmptyState.svelte';
+	import SelectBar from './SelectBar.svelte';
 	import { Icon } from '$lib/icons';
+	import { clear, retain, toggle } from '$lib/review/selection';
 
-	let { sessions, onclear }: { sessions: SessionDto[]; onclear?: () => void } = $props();
+	let {
+		sessions,
+		busy = false,
+		onclear,
+		ondownload,
+		ondelete
+	}: {
+		sessions: SessionDto[];
+		busy?: boolean;
+		onclear?: () => void;
+		ondownload?: (ids: string[]) => void;
+		ondelete?: (ids: string[]) => void;
+	} = $props();
 
 	let view = $state<'grid' | 'list'>('grid');
 	let query = $state('');
 	let order = $state<SortOrder>('newest');
 	let status = $state<StatusFilter>('all');
 	let confirmClear = $state(false);
+	let selecting = $state(false);
+	let picked = $state<Set<string>>(clear());
 
 	const counts = $derived(statusCounts(sessions));
 	const shown = $derived(browse(sessions, { query, status, order }));
@@ -27,7 +43,20 @@
 		if (status !== 'all' && (counts[status] ?? 0) === 0) status = 'all';
 	});
 
-	function clear() {
+	// Selections follow what is on screen: a scan filtered out of view is no longer
+	// something the bulk buttons should silently act on.
+	$effect(() => {
+		const visible = new Set(shown.map((s) => s.Id));
+		const kept = retain(picked, visible);
+		if (kept.size !== picked.size) picked = kept;
+	});
+
+	function endSelecting() {
+		selecting = false;
+		picked = clear();
+	}
+
+	function clearEverything() {
 		if (!confirmClear) {
 			confirmClear = true;
 			return;
@@ -67,7 +96,21 @@
 		</div>
 	</div>
 
-	{#if sessions.length > 0}
+	{#if selecting}
+		<SelectBar
+			count={picked.size}
+			total={shown.length}
+			{busy}
+			onselectall={() => (picked = new Set(shown.map((s) => s.Id)))}
+			onselectnone={() => (picked = clear())}
+			ondownload={() => ondownload?.([...picked])}
+			ondelete={() => {
+				ondelete?.([...picked]);
+				endSelecting();
+			}}
+			ondone={endSelecting}
+		/>
+	{:else if sessions.length > 0}
 		<div class="flex gap-2">
 			<label class="flex h-[38px] flex-1 items-center gap-2 rounded-[12px] bg-ctl px-3">
 				<span class="text-ink-faint"><Icon name="search" /></span>
@@ -81,8 +124,18 @@
 				/>
 			</label>
 			<SortMenu {order} onchange={(o) => (order = o)} />
+			<button
+				type="button"
+				class="h-[38px] rounded-[12px] bg-accent-50 px-3 text-[13px] font-bold text-accent-deep transition-colors hover:bg-accent-100"
+				onclick={() => (selecting = true)}
+				data-testid="select-button"
+			>
+				Select
+			</button>
 		</div>
+	{/if}
 
+	{#if !selecting && sessions.length > 0}
 		<StatusFilterChips
 			value={status}
 			{counts}
@@ -112,7 +165,12 @@
 		>
 			{#each shown as session, i (session.Id)}
 				<div class="animate-page-in" style="animation-delay: {Math.min(i, 10) * 45}ms">
-					<SessionTile {session} />
+					<SessionTile
+						{session}
+						selectable={selecting}
+						selected={picked.has(session.Id)}
+						ontoggle={(id) => (picked = toggle(picked, id))}
+					/>
 				</div>
 			{/each}
 		</div>
@@ -120,7 +178,14 @@
 		<div class="flex flex-col gap-1" data-testid="session-list">
 			{#each shown as session, i (session.Id)}
 				<div class="animate-page-in" style="animation-delay: {Math.min(i, 10) * 45}ms">
-					<SessionRow {session} />
+					<SessionRow
+						{session}
+						selectable={selecting}
+						selected={picked.has(session.Id)}
+						ontoggle={(id) => (picked = toggle(picked, id))}
+						ondownload={ondownload ? (id) => ondownload([id]) : undefined}
+						ondelete={ondelete ? (id) => ondelete([id]) : undefined}
+					/>
 				</div>
 			{/each}
 		</div>
@@ -139,7 +204,7 @@
 					class="h-8 rounded-full px-3 text-xs font-bold transition-colors {confirmClear
 						? 'bg-danger text-white'
 						: 'text-danger hover:bg-danger-bg'}"
-					onclick={clear}
+					onclick={clearEverything}
 					onblur={() => (confirmClear = false)}
 					data-testid="clear-all"
 				>

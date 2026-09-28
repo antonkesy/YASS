@@ -6,6 +6,7 @@
 	import ScanStage from '$lib/components/ScanStage.svelte';
 	import PastScansPanel from '$lib/components/PastScansPanel.svelte';
 	import { pickEditable, settings } from '$lib/settings';
+	import { ExportMode } from '$lib/hub/generated/Yass.Core.Hub';
 
 	const client = getHub();
 	const scanner = client.scanner;
@@ -13,6 +14,7 @@
 	const sessions = client.sessions;
 
 	let starting = $state(false);
+	let working = $state(false);
 	let error = $state<string | null>(null);
 	let effective = $state<ScanOptionsDto | null>(null);
 
@@ -41,6 +43,44 @@
 			error = e instanceof Error ? e.message : String(e);
 		} finally {
 			starting = false;
+		}
+	}
+
+	/**
+	 * One download per scan. The browser asks before saving several files at once,
+	 * which is the right prompt to get: this really is several separate saves.
+	 */
+	async function downloadAll(ids: string[]) {
+		error = null;
+		working = true;
+		try {
+			for (const id of ids) {
+				const result = await client.hub.export(id, { Mode: ExportMode.Download });
+				if (!result.DownloadPath) continue;
+				const a = document.createElement('a');
+				a.href = result.DownloadPath;
+				a.download = '';
+				a.rel = 'noopener';
+				document.body.append(a);
+				a.click();
+				a.remove();
+			}
+		} catch (e) {
+			error = e instanceof Error ? e.message : String(e);
+		} finally {
+			working = false;
+		}
+	}
+
+	async function deleteAll(ids: string[]) {
+		error = null;
+		working = true;
+		try {
+			for (const id of ids) await client.hub.deleteSession(id);
+		} catch (e) {
+			error = e instanceof Error ? e.message : String(e);
+		} finally {
+			working = false;
 		}
 	}
 
@@ -77,6 +117,12 @@
 			onscan={scan}
 			onsettings={openSettings}
 		/>
-		<PastScansPanel sessions={recent} onclear={clearAll} />
+		<PastScansPanel
+			sessions={recent}
+			busy={working}
+			onclear={clearAll}
+			ondownload={downloadAll}
+			ondelete={deleteAll}
+		/>
 	</div>
 </main>
