@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { hubError } from '$lib/hub/errors';
 	import { getHub } from '$lib/hub/hub';
 	import { PageSize, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
 	import type { ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
@@ -25,7 +26,7 @@
 			client.hub
 				.getEffectiveOptions()
 				.then((o) => (effective = o))
-				.catch((e) => (error = e instanceof Error ? e.message : String(e)));
+				.catch((e) => (error = hubError(e)));
 		}
 	});
 
@@ -76,6 +77,20 @@
 			: ''
 	);
 	const templateUnknown = $derived(unknownTokens($exportPrefs.nameTemplate));
+
+	const exportRoots = $derived(effective?.ExportRoots ?? []);
+	/**
+	 * Mirrors the server's containment rule closely enough to warn early. The server is
+	 * still the authority — it resolves symlinks, which the browser cannot see.
+	 */
+	const outsideRoots = $derived.by(() => {
+		const typed = $exportPrefs.directory.trim().replace(/\/+$/, '');
+		if (typed === '' || exportRoots.length === 0) return false;
+		return !exportRoots.some((root) => {
+			const r = root.replace(/\/+$/, '');
+			return typed === r || typed.startsWith(r + '/');
+		});
+	});
 
 	function savePreset() {
 		const name = draftName.trim();
@@ -415,16 +430,49 @@
 						<input
 							class="min-w-0 flex-1 bg-transparent font-mono text-sm font-medium outline-none"
 							type="text"
-							placeholder="Leave empty for the configured folder"
+							placeholder={exportRoots[0] ?? 'Leave empty for the configured folder'}
 							value={$exportPrefs.directory}
 							oninput={(e) =>
 								exportPrefs.set({ ...$exportPrefs, directory: e.currentTarget.value })}
 							data-testid="export-folder"
 						/>
 					</span>
+
+					{#if outsideRoots}
+						<span
+							class="text-xs font-bold text-danger"
+							role="alert"
+							data-testid="export-folder-error"
+						>
+							Outside the allowed folders. The server will refuse this.
+						</span>
+					{/if}
+
+					<!--
+						The roots are shown, not just enforced: a path that is going to be rejected should
+						be visibly wrong here rather than at the moment someone presses Save.
+					-->
+					{#if exportRoots.length > 0}
+						<span class="flex flex-wrap items-center gap-1.5">
+							<span class="text-[11px] text-ink-faint">Allowed:</span>
+							{#each exportRoots as root (root)}
+								<button
+									type="button"
+									class="flex h-7 items-center rounded-[8px] bg-accent-50 px-2 font-mono text-[11px] font-semibold text-accent-deep transition-colors hover:bg-accent-100"
+									onclick={() => exportPrefs.set({ ...$exportPrefs, directory: root })}
+								>
+									{root}
+								</button>
+							{/each}
+						</span>
+					{/if}
+
 					<span class="text-[11px] text-ink-faint">
-						An absolute path on the scanner server, e.g. the paperless consume folder. The server
-						refuses anything that is not an existing, writable directory.
+						An absolute path on the scanner server, inside one of the folders above. Widen them with <code
+							class="font-mono">output.allowed_roots</code
+						>
+						in
+						<code class="font-mono">yass.yaml</code>.
 					</span>
 				</label>
 

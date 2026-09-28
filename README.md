@@ -16,10 +16,11 @@ review the pages, and save a PDF straight into your
 >
 > Two consequences worth knowing:
 >
-> - The **export folder is set in the browser**, so anyone who can reach the port
->   can make YASS write a PDF to any directory its user can write to. The server
->   checks the path is absolute, existing, a directory and writable, and nothing
->   more. Run it as a user with no more filesystem reach than it needs.
+> - The **export folder is set in the browser**. By default it is confined to
+>   `output.directory` and its subfolders; `output.allowed_roots` widens that, and
+>   `["/"]` removes the limit entirely. Whatever you allow, anyone who can reach
+>   the port can write there, so run YASS as a user with no more filesystem reach
+>   than it needs.
 > - `naming.provider: anthropic` **sends the text of your documents to a third
 >   party**. It is off by default; `ollama` keeps the text on your own machine.
 
@@ -149,6 +150,7 @@ values stop startup and name the offending key.
 | `output.filename_template` | `{date:yyyy-MM-dd}_{time:HHmm}_scan.pdf` | `{date:FMT}`, `{time:FMT}` (.NET formats), `{session}`. Existing names get `-2`, `-3`, … |
 | `output.pdf.compression` | `jpeg` | `jpeg` or `lossless`. |
 | `output.pdf.jpeg_quality` | `75` | 1–100. |
+| `output.allowed_roots` | `[]` | Folders the UI may export into, each including everything beneath it. Empty = `output.directory` only. `["/"]` = anywhere. |
 | `output.allow_download` | `true` | Show the Download button. |
 | `output.on_success` | `keep_session` | `keep_session` or `delete_session` after a successful save. |
 | `processing.max_concurrent_renders` | `2` | Upper bound on decoded bitmaps in memory. |

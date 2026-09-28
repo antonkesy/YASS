@@ -58,6 +58,9 @@ builder.Services.AddSingleton<SessionRetentionService>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<SessionRetentionService>());
 
 builder.Services
+    // On: SignalR prefixes every hub error with "An unexpected error occurred invoking
+    // 'X' on the server. <Type>: " regardless, so turning this off would lose the detail
+    // without cleaning up the message. The client strips the prefix (see hubError).
     .AddSignalR(o => o.EnableDetailedErrors = true)
     .AddMessagePackProtocol(o => o.SerializerOptions = MessagePackSerializerOptions.Standard
         .WithResolver(ContractlessStandardResolver.Instance)
