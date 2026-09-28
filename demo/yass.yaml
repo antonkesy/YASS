@@ -42,3 +42,15 @@ sessions:
 logging:
   level: info
   format: text
+
+naming:
+  # Suggest a file name from what is printed on the page. Everything here is off by
+  # default: this is the only part of YASS that reads your documents or talks to a model.
+  ocr: false # read page text; needs the `tesseract` binary on PATH
+  ocr_language: eng # tesseract language code, e.g. eng, deu, fra
+  ocr_pages: 2 # how many pages to read; the title is almost always on the first
+  provider: off # off | ollama | anthropic
+  endpoint: "" # base URL; defaults to http://127.0.0.1:11434 for ollama
+  model: llama3.2
+  api_key_file: "" # path to a file holding the key, never the key itself
+  timeout_seconds: 20

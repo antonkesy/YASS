@@ -28,9 +28,10 @@
 	import NameField from '$lib/components/NameField.svelte';
 	import CropModal from '$lib/components/CropModal.svelte';
 	import MergeModal from '$lib/components/MergeModal.svelte';
+	import NameSuggestions from '$lib/components/NameSuggestions.svelte';
 	import { saveToBrowser, savedLabel } from '$lib/review/download';
 	import { exportPrefs } from '$lib/presets';
-	import { ExportMode } from '$lib/hub/generated/Yass.Core.Hub';
+	import { ExportMode, type NameSuggestionsDto } from '$lib/hub/generated/Yass.Core.Hub';
 
 	const client = getHub();
 	const sessions = client.sessions;
@@ -61,6 +62,10 @@
 	let cropping = $state<number | null>(null);
 	let merging = $state(false);
 	let merged = $state(false);
+	let suggesting = $state<'reading' | 'thinking' | 'ready' | null>(null);
+	let suggestions = $state<NameSuggestionsDto | null>(null);
+	/** Whether the server can read page text at all, which hides Find name when it cannot. */
+	let canSuggest = $state(false);
 
 	$effect(() => {
 		if ($connection === 'connected' && !$sessions.has(id)) {
@@ -188,6 +193,34 @@
 			await client.hub.rescanPage(id, page.Index);
 		} catch (e) {
 			error = e instanceof Error ? e.message : String(e);
+		}
+	}
+
+	// One probe on connect tells us whether the Find name button is worth showing.
+	$effect(() => {
+		if ($connection === 'connected' && !canSuggest && session && session.Pages.length > 0) {
+			client.hub
+				.suggestNames(id)
+				.then((r) => (canSuggest = r.CanRead))
+				.catch(() => undefined);
+		}
+	});
+
+	async function findName() {
+		suggesting = 'reading';
+		suggestions = null;
+		error = null;
+		try {
+			// The two phases are the server's own: read the page, then ask the model.
+			const pending = client.hub.suggestNames(id);
+			setTimeout(() => {
+				if (suggesting === 'reading') suggesting = 'thinking';
+			}, 650);
+			suggestions = await pending;
+			suggesting = 'ready';
+		} catch (e) {
+			error = e instanceof Error ? e.message : String(e);
+			suggesting = null;
 		}
 	}
 
@@ -381,12 +414,46 @@
 			<aside
 				class="order-3 flex w-full basis-full flex-col gap-3.5 rounded-[24px] bg-surface p-[22px] shadow-panel lg:sticky lg:top-[72px] lg:w-auto lg:basis-[clamp(300px,22vw,380px)]"
 			>
-				<p class="text-xs font-bold tracking-[0.06em] text-ink-muted uppercase">Document name</p>
-				<NameField
-					value={session.Name ?? null}
-					placeholder={formatTime(session.CreatedAt)}
-					onrename={rename}
-				/>
+				<div class="flex items-center gap-2">
+					<p class="flex-1 text-xs font-bold tracking-[0.06em] text-ink-muted uppercase">
+						Document name
+					</p>
+					{#if canSuggest}
+						<button
+							type="button"
+							class="flex h-[30px] items-center gap-1.5 rounded-full px-2.5 text-xs font-bold transition-transform duration-150 hover:-translate-y-px disabled:pointer-events-none disabled:opacity-45 {suggesting
+								? 'bg-ai text-white'
+								: 'bg-ai-bg text-ai-ink'}"
+							onclick={findName}
+							disabled={suggesting !== null && suggesting !== 'ready'}
+							data-testid="suggest-button"
+						>
+							<Icon name="sparkle" />
+							Find name
+						</button>
+					{/if}
+				</div>
+
+				<div class="relative">
+					<NameField
+						value={session.Name ?? null}
+						placeholder={formatTime(session.CreatedAt)}
+						onrename={rename}
+					/>
+
+					{#if suggesting}
+						<NameSuggestions
+							state={suggesting === 'ready' ? 'ready' : suggesting}
+							result={suggestions}
+							onpick={(name) => {
+								suggesting = null;
+								rename(name);
+							}}
+							onretry={findName}
+							onclose={() => (suggesting = null)}
+						/>
+					{/if}
+				</div>
 
 				<p class="text-xs font-bold tracking-[0.06em] text-ink-muted uppercase">Document</p>
 				<div class="grid grid-cols-2 gap-2">

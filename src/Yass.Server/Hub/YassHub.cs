@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.SignalR;
+using Yass.Core.Config;
 using Yass.Core.Domain;
 using Yass.Core.Hub;
+using Yass.Core.Naming;
+using Yass.Export;
 using Yass.Server.Config;
 using Yass.Server.Export;
 using Yass.Server.Scanning;
@@ -19,6 +22,7 @@ public sealed class YassHub(
     EditService editor,
     ExportService exporter,
     IPageSink sinkFor,
+    INameSuggester namer,
     TimeProvider time,
     ILogger<YassHub> logger)
     : Hub<IYassClient>, IYassHub
@@ -220,6 +224,31 @@ public sealed class YassHub(
         {
             throw new HubException("Export failed: " + ex.Message);
         }
+    }
+
+    public async Task<NameSuggestionsDto> SuggestNames(string sessionId)
+    {
+        Session session = Find(sessionId);
+        NamingConfig naming = config.Current.Naming;
+
+        string[] pages = [.. session.ActivePages
+            .Take(naming.OcrPages)
+            .Select(p => SessionPaths.Source(sessions.Root, session, p))];
+
+        string fallback = FilenameTemplate.Expand(
+            config.Current.Output.FilenameTemplate,
+            session.CreatedAt,
+            session.Id,
+            new TemplateFacts(Dpi: session.OptionsUsed.Dpi, Color: session.OptionsUsed.Color.ToString()),
+            extension: "");
+
+        IReadOnlyList<NameSuggestion> suggestions =
+            await namer.SuggestAsync(pages, fallback, Context.ConnectionAborted).ConfigureAwait(false);
+
+        return new NameSuggestionsDto(
+            [.. suggestions],
+            namer.CanRead,
+            naming.Provider != NamingProvider.Anthropic);
     }
 
     public Task<ScannerStatusDto> GetScannerStatus() => Task.FromResult(scanner.Current);

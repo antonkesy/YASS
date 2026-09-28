@@ -44,6 +44,9 @@ public interface IYassHub
 
     Task<ExportResult> Export(string sessionId, ExportRequest request);
 
+    /// <summary>Name suggestions for a session, best first. Empty when nothing can be read.</summary>
+    Task<NameSuggestionsDto> SuggestNames(string sessionId);
+
     Task<ScannerStatusDto> GetScannerStatus();
 
     Task<ScanOptionsDto> GetEffectiveOptions();

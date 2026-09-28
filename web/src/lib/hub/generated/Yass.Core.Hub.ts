@@ -2,6 +2,7 @@
 /* eslint-disable */
 /* tslint:disable */
 import type { SessionState, SessionEventKind, Rotation, PageFilter, CropBox, ScanSource, ColorMode, PageSize } from './Yass.Core.Domain';
+import type { NameSuggestion } from './Yass.Core.Naming';
 import type { ScannerState } from './Yass.Core.Scanning';
 
 /** Transpiled from Yass.Core.Hub.SessionDto */
@@ -82,6 +83,16 @@ export type ScanOptionsDto = {
     Editable?: string[];
     /** Transpiled from bool */
     AllowDownload?: boolean;
+}
+
+/** Transpiled from Yass.Core.Hub.NameSuggestionsDto */
+export type NameSuggestionsDto = {
+    /** Transpiled from Yass.Core.Naming.NameSuggestion[] */
+    Suggestions: NameSuggestion[];
+    /** Transpiled from bool */
+    CanRead: boolean;
+    /** Transpiled from bool */
+    Local: boolean;
 }
 
 /** Transpiled from Yass.Core.Hub.ScannerStatusDto */
