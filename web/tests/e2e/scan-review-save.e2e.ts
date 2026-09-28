@@ -92,15 +92,17 @@ test('scan, review, edit, download and save', async ({ page }) => {
 test('settings only expose ui_editable keys and are applied to the next scan', async ({ page }) => {
 	await page.goto('/settings');
 	const form = page.getByTestId('settings-form');
-	await expect(form.locator('[name=dpi]')).toBeVisible();
-	await expect(form.locator('[name=brightness]')).toHaveCount(0);
-	await form.locator('[name=dpi]').selectOption('150');
+	const dpi = form.getByTestId('seg-dpi');
+	await expect(dpi).toBeVisible();
+	await expect(form.getByTestId('seg-brightness')).toHaveCount(0);
+	await dpi.getByRole('radio', { name: '150', exact: true }).check();
 	await expect(page.getByTestId('overrides-active')).toBeVisible();
 
 	await page.goto('/settings');
-	await expect(form.locator('[name=dpi]')).toHaveValue('150');
+	await expect(dpi.getByRole('radio', { name: '150', exact: true })).toBeChecked();
 	await page.getByTestId('reset-settings').click();
 	await expect(page.getByTestId('overrides-active')).toBeHidden();
+	await expect(dpi.getByRole('radio', { name: 'Default', exact: true })).toBeChecked();
 });
 
 test('discard removes the session', async ({ page }) => {
