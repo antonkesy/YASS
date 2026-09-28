@@ -35,3 +35,20 @@ applied, (b) flag blank pages, and (c) deskew. Inspecting NAPS2.Sdk 1.2.1:
 The domain model is unchanged. Blank-page threshold semantics follow NAPS2:
 `blank_page_threshold` (0..1) is scaled to NAPS2's 0..100 coverage threshold.
 If a later SDK exposes `CreateProcessedImage`, step 2 can drop the temp file.
+
+## Amended 2026-09-28: staying on 1.2.1 under .NET 10
+
+NAPS2.Sdk **1.3.0** is available and adds a net10.0 target, but that target's
+assembly is annotated `[RequiresPreviewFeatures]` — its net8.0 and net462
+assemblies are not. Using it raises 163 CA2252 warnings which, because the
+attribute is transitive, spread to six projects including `Yass.Core` and
+`Yass.Server`; clearing them means `EnablePreviewFeatures=true` (and
+`LangVersion=preview`) across all of them.
+
+**Decision: stay on 1.2.1.** It builds clean and passes the full suite on
+net10.0, and upstream marking only its .NET 10 build as preview is a statement
+about that build's stability, not a formality worth suppressing in the scan
+path. The public-surface findings above were re-checked and are unchanged.
+SPEC.md §3 therefore still reads "NAPS2.Sdk (NuGet, 1.2.x)".
+
+Revisit when 1.3.x drops the preview annotation.

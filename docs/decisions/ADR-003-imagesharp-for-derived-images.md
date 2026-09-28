@@ -25,3 +25,12 @@ nothing over the ImageSharp calls.
 Thumbnail format is WebP (SPEC §14 open item resolved: encode cost is
 negligible at 320 px). ImageSharp's pixel-format defaults apply; no GTK or
 native dependencies.
+
+## Amended 2026-09-28: the version constraint, stated explicitly
+
+"Same major as NAPS2's dependency" is the rule; here is the check. ImageSharp
+**4.1.2** exists but `NAPS2.Images.ImageSharp` still resolves ImageSharp
+**3.1.x**, so this project stays on **3.1.12**, the newest 3.1. Because
+`CentralPackageTransitivePinningEnabled` is `false`, pinning 4.x would not fail
+the build — it would produce a mixed graph that breaks at runtime. Revisit when
+NAPS2 moves to ImageSharp 4.
