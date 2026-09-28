@@ -1,6 +1,6 @@
-import { SessionState } from './hub/generated/Yawss.Core.Domain';
-import { ScannerState } from './hub/generated/Yawss.Core.Scanning';
-import type { SessionDto } from './hub/generated/Yawss.Core.Hub';
+import { SessionState } from './hub/generated/Yass.Core.Domain';
+import { ScannerState } from './hub/generated/Yass.Core.Scanning';
+import type { SessionDto } from './hub/generated/Yass.Core.Hub';
 
 export function sessionStateLabel(state: SessionState): string {
 	switch (state) {

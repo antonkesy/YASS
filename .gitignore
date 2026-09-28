@@ -24,8 +24,8 @@ result-*
 
 # Runtime data
 /data/
-# per-host config only; demo/yawss.yaml is committed
-/yawss.yaml
+# per-host config only; demo/yass.yaml is committed
+/yass.yaml
 *.log
 
 # Demo output (PDFs the demo container writes)

@@ -2,8 +2,8 @@ import type { HubConnection } from '@microsoft/signalr';
 import { HubConnectionState } from '@microsoft/signalr';
 import { get, writable, type Readable } from 'svelte/store';
 import { getHubProxyFactory, getReceiverRegister } from './generated/TypedSignalR.Client';
-import type { IYawssHub } from './generated/TypedSignalR.Client/Yawss.Core.Hub';
-import type { ScannerStatusDto, SessionDto } from './generated/Yawss.Core.Hub';
+import type { IYassHub } from './generated/TypedSignalR.Client/Yass.Core.Hub';
+import type { ScannerStatusDto, SessionDto } from './generated/Yass.Core.Hub';
 import {
 	applyPageAdded,
 	applyPageUpdated,
@@ -14,9 +14,9 @@ import {
 
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
 
-export type YawssHubClient = {
+export type YassHubClient = {
 	/** Typed hub proxy (client → server). */
-	readonly hub: IYawssHub;
+	readonly hub: IYassHub;
 	readonly connection: Readable<ConnectionState>;
 	readonly scanner: Readable<ScannerStatusDto | null>;
 	readonly sessions: Readable<SessionMap>;
@@ -47,15 +47,15 @@ export type ConnectionLike = Pick<
 
 const RETRY_MS = [500, 1000, 2000, 5000, 10_000];
 
-export function createHubClient(connection: ConnectionLike): YawssHubClient {
+export function createHubClient(connection: ConnectionLike): YassHubClient {
 	const connectionState = writable<ConnectionState>('disconnected');
 	const scanner = writable<ScannerStatusDto | null>(null);
 	const sessions = writable<SessionMap>(new Map());
 	const exportProgress = writable<Record<string, number>>({});
 
-	const hub = getHubProxyFactory('IYawssHub').createHubProxy(connection as HubConnection);
+	const hub = getHubProxyFactory('IYassHub').createHubProxy(connection as HubConnection);
 
-	getReceiverRegister('IYawssClient').register(connection as HubConnection, {
+	getReceiverRegister('IYassClient').register(connection as HubConnection, {
 		scannerStatusChanged: async (status) => scanner.set(status),
 		sessionChanged: async (session) => sessions.update((m) => applySessionChanged(m, session)),
 		pageAdded: async (id, page) => {

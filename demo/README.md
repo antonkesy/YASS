@@ -1,6 +1,6 @@
-# YAWSS demo
+# YASS demo
 
-A complete, throwaway YAWSS in one command — no scanner, no paperless-ngx, no
+A complete, throwaway YASS in one command — no scanner, no paperless-ngx, no
 config to fill in.
 
 ```sh
@@ -31,7 +31,7 @@ live in the container's `/tmp`, so nothing survives except the PDFs you saved.
 
 `--fake` replaces both the scanner and the PDF writer, so:
 
-- The pages are **PNG fixtures embedded in `Yawss.Fake`** (three text pages, one
+- The pages are **PNG fixtures embedded in `Yass.Fake`** (three text pages, one
   colour page, one near-blank), not files you can swap out. They cycle, so
   `pages=9` shows each fixture more than once.
 - The saved PDF is a **text-only placeholder** — one line per page recording the
@@ -63,7 +63,7 @@ scanner. Keys, comma-separated:
 So `command: ["--fake", "pages=20,blank=2;5;9,error=12,delay=1s"]` gives a long,
 slow scan that jams part-way — useful for exercising the error and progress UI.
 
-Everything else lives in [`yawss.yaml`](yawss.yaml); non-`server` keys reload at
+Everything else lives in [`yass.yaml`](yass.yaml); non-`server` keys reload at
 runtime, so you can edit it and hit reload without restarting the container.
 
 ## If the PDFs are not writable

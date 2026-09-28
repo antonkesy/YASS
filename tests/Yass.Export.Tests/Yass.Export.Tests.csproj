@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Yass.Export/Yass.Export.csproj" />
+    <ProjectReference Include="../../src/Yass.Fake/Yass.Fake.csproj" />
+  </ItemGroup>
+
+</Project>

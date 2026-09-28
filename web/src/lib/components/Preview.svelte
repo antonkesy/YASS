@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PageDto } from '$lib/hub/generated/Yawss.Core.Hub';
+	import type { PageDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { imageUrl } from '$lib/hub/hub';
 	import { detectSwipe, step } from '$lib/review/swipe';
 

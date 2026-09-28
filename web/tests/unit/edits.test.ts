@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-	ColorMode,
-	PageEditOp,
-	Rotation,
-	SessionState
-} from '$lib/hub/generated/Yawss.Core.Domain';
-import type { PageDto, SessionDto } from '$lib/hub/generated/Yawss.Core.Hub';
+import { ColorMode, PageEditOp, Rotation, SessionState } from '$lib/hub/generated/Yass.Core.Domain';
+import type { PageDto, SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 import {
 	applyOptimistic,
 	deleteEdit,

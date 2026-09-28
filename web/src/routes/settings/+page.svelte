@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { getHub } from '$lib/hub/hub';
-	import { ColorMode, PageSize, ScanSource } from '$lib/hub/generated/Yawss.Core.Domain';
-	import type { ScanOptionsDto } from '$lib/hub/generated/Yawss.Core.Hub';
+	import { ColorMode, PageSize, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
+	import type { ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { colorModeLabels } from '$lib/review/edits';
 	import { editableKeys, settings } from '$lib/settings';
 
@@ -46,7 +46,7 @@
 	const input = 'min-h-11 rounded-lg border border-stone-300 bg-white px-3';
 </script>
 
-<svelte:head><title>Settings · YAWSS</title></svelte:head>
+<svelte:head><title>Settings · YASS</title></svelte:head>
 
 <main class="mx-auto flex max-w-lg flex-col gap-4 px-4 pt-3 pb-12">
 	<header class="flex items-center gap-2">
@@ -68,7 +68,7 @@
 	</header>
 
 	<p class="text-sm text-stone-600">
-		Stored in this browser only. Keys not listed here are fixed in <code>yawss.yaml</code>.
+		Stored in this browser only. Keys not listed here are fixed in <code>yass.yaml</code>.
 	</p>
 
 	{#if error}

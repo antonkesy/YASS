@@ -4,9 +4,9 @@ import StatusPill from '$lib/components/StatusPill.svelte';
 import Toolbar from '$lib/components/Toolbar.svelte';
 import ExportBar from '$lib/components/ExportBar.svelte';
 import PageThumb from '$lib/components/PageThumb.svelte';
-import { ScannerState } from '$lib/hub/generated/Yawss.Core.Scanning';
-import { ColorMode, SessionState } from '$lib/hub/generated/Yawss.Core.Domain';
-import type { SessionDto } from '$lib/hub/generated/Yawss.Core.Hub';
+import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
+import { ColorMode, SessionState } from '$lib/hub/generated/Yass.Core.Domain';
+import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 
 const session = (state = SessionState.Review, deleted = 0): SessionDto => ({
 	Id: 's1',

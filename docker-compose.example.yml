@@ -1,15 +1,15 @@
 # Example deployment next to paperless-ngx. Copy to docker-compose.yml and adjust paths.
-# YAWSS has NO authentication: bind to a LAN address and never publish it to the internet.
+# YASS has NO authentication: bind to a LAN address and never publish it to the internet.
 services:
-  yawss:
+  yass:
     build: . # built from a checkout of this repo; no prebuilt image is published
-    container_name: yawss
+    container_name: yass
     restart: unless-stopped
     ports:
       - "192.168.1.10:8080:8080" # LAN address of the host; not 0.0.0.0 on an internet-facing box
     volumes:
-      - ./yawss.yaml:/etc/yawss/yawss.yaml:ro
-      - yawss-sessions:/data/sessions
+      - ./yass.yaml:/etc/yass/yass.yaml:ro
+      - yass-sessions:/data/sessions
       - /srv/paperless/consume:/data/consume # paperless-ngx PAPERLESS_CONSUMPTION_DIR
     devices:
       - /dev/bus/usb:/dev/bus/usb # USB/SANE scanners; not needed for network (eSCL) scanners
@@ -21,4 +21,4 @@ services:
       timeout: 3s
 
 volumes:
-  yawss-sessions:
+  yass-sessions:

@@ -2,15 +2,15 @@ import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 import { MessagePackHubProtocol } from '@microsoft/signalr-protocol-msgpack';
 import { browser } from '$app/environment';
 import { base } from '$app/paths';
-import { createHubClient, type YawssHubClient } from './client';
+import { createHubClient, type YassHubClient } from './client';
 
 export * from './client';
 export * from './state';
 
-let instance: YawssHubClient | null = null;
+let instance: YassHubClient | null = null;
 
 /** The app-wide hub client. Created on first use in the browser; `start()` is safe to call repeatedly. */
-export function getHub(): YawssHubClient {
+export function getHub(): YassHubClient {
 	if (!instance) {
 		if (!browser) throw new Error('The hub is only available in the browser.');
 		const connection = new HubConnectionBuilder()

@@ -3,9 +3,9 @@
 /* tslint:disable */
 // @ts-nocheck
 import type { HubConnection, IStreamResult, Subject } from '@microsoft/signalr';
-import type { IYawssHub, IYawssClient } from './Yawss.Core.Hub';
-import type { ScanOptionsDto, SessionDto, ExportRequest, ExportResult, ScannerStatusDto, PageDto } from '../Yawss.Core.Hub';
-import type { PageEdit } from '../Yawss.Core.Domain';
+import type { IYassHub, IYassClient } from './Yass.Core.Hub';
+import type { ScanOptionsDto, SessionDto, ExportRequest, ExportResult, ScannerStatusDto, PageDto } from '../Yass.Core.Hub';
+import type { PageEdit } from '../Yass.Core.Domain';
 
 
 // components
@@ -44,39 +44,39 @@ class ReceiverMethodSubscription implements Disposable {
 // API
 
 export type HubProxyFactoryProvider = {
-    (hubType: "IYawssHub"): HubProxyFactory<IYawssHub>;
+    (hubType: "IYassHub"): HubProxyFactory<IYassHub>;
 }
 
 export const getHubProxyFactory = ((hubType: string) => {
-    if(hubType === "IYawssHub") {
-        return IYawssHub_HubProxyFactory.Instance;
+    if(hubType === "IYassHub") {
+        return IYassHub_HubProxyFactory.Instance;
     }
 }) as HubProxyFactoryProvider;
 
 export type ReceiverRegisterProvider = {
-    (receiverType: "IYawssClient"): ReceiverRegister<IYawssClient>;
+    (receiverType: "IYassClient"): ReceiverRegister<IYassClient>;
 }
 
 export const getReceiverRegister = ((receiverType: string) => {
-    if(receiverType === "IYawssClient") {
-        return IYawssClient_Binder.Instance;
+    if(receiverType === "IYassClient") {
+        return IYassClient_Binder.Instance;
     }
 }) as ReceiverRegisterProvider;
 
 // HubProxy
 
-class IYawssHub_HubProxyFactory implements HubProxyFactory<IYawssHub> {
-    public static Instance = new IYawssHub_HubProxyFactory();
+class IYassHub_HubProxyFactory implements HubProxyFactory<IYassHub> {
+    public static Instance = new IYassHub_HubProxyFactory();
 
     private constructor() {
     }
 
-    public readonly createHubProxy = (connection: HubConnection): IYawssHub => {
-        return new IYawssHub_HubProxy(connection);
+    public readonly createHubProxy = (connection: HubConnection): IYassHub => {
+        return new IYassHub_HubProxy(connection);
     }
 }
 
-class IYawssHub_HubProxy implements IYawssHub {
+class IYassHub_HubProxy implements IYassHub {
 
     public constructor(private connection: HubConnection) {
     }
@@ -125,14 +125,14 @@ class IYawssHub_HubProxy implements IYawssHub {
 
 // Receiver
 
-class IYawssClient_Binder implements ReceiverRegister<IYawssClient> {
+class IYassClient_Binder implements ReceiverRegister<IYassClient> {
 
-    public static Instance = new IYawssClient_Binder();
+    public static Instance = new IYassClient_Binder();
 
     private constructor() {
     }
 
-    public readonly register = (connection: HubConnection, receiver: IYawssClient): Disposable => {
+    public readonly register = (connection: HubConnection, receiver: IYassClient): Disposable => {
 
         const __ScannerStatusChanged = (...args: [ScannerStatusDto]) => receiver.scannerStatusChanged(...args);
         const __SessionChanged = (...args: [SessionDto]) => receiver.sessionChanged(...args);

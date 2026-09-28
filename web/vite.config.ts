@@ -20,9 +20,9 @@ export default defineConfig({
 			registerType: 'autoUpdate',
 			strategies: 'generateSW',
 			manifest: {
-				name: 'YAWSS',
-				short_name: 'YAWSS',
-				description: 'Yet Another Web Scanner Service',
+				name: 'YASS',
+				short_name: 'YASS',
+				description: 'Yet Another Scanner Service',
 				theme_color: '#0f766e',
 				background_color: '#0f766e',
 				display: 'standalone',

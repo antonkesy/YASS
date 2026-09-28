@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { ScannerStatusDto } from '$lib/hub/generated/Yawss.Core.Hub';
-	import { ScannerState } from '$lib/hub/generated/Yawss.Core.Scanning';
+	import type { ScannerStatusDto } from '$lib/hub/generated/Yass.Core.Hub';
+	import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 	import type { ConnectionState } from '$lib/hub/client';
 	import { scannerStateLabel } from '$lib/format';
 

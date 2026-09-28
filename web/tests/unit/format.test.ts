@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { SessionState } from '$lib/hub/generated/Yawss.Core.Domain';
-import { ScannerState } from '$lib/hub/generated/Yawss.Core.Scanning';
+import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
+import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import { activePageCount, formatTime, scannerStateLabel, sessionStateLabel } from '$lib/format';
 
 describe('format', () => {

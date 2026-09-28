@@ -1,6 +1,6 @@
-import { ColorMode, PageEditOp, Rotation } from '$lib/hub/generated/Yawss.Core.Domain';
-import type { PageEdit } from '$lib/hub/generated/Yawss.Core.Domain';
-import type { PageDto, SessionDto } from '$lib/hub/generated/Yawss.Core.Hub';
+import { ColorMode, PageEditOp, Rotation } from '$lib/hub/generated/Yass.Core.Domain';
+import type { PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
+import type { PageDto, SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 
 /** Empty selection means "all pages", mirroring PageEdit.Targets = null on the server. */
 export function targetsOf(selection: ReadonlySet<number>): number[] | undefined {

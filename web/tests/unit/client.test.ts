@@ -2,9 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
 import { HubConnectionState } from '@microsoft/signalr';
 import { createHubClient, type ConnectionLike } from '$lib/hub/client';
-import { SessionState } from '$lib/hub/generated/Yawss.Core.Domain';
-import { ScannerState } from '$lib/hub/generated/Yawss.Core.Scanning';
-import type { SessionDto } from '$lib/hub/generated/Yawss.Core.Hub';
+import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
+import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
+import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 
 type Handler = (...args: unknown[]) => void;
 
