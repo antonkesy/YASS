@@ -70,24 +70,56 @@ describe('Toolbar', () => {
 });
 
 describe('ExportBar', () => {
-	it('enables save only in review with active pages and needs a second tap to discard', async () => {
+	it('exports to the configured folder and names it under the button', async () => {
 		const onsave = vi.fn();
-		const ondiscard = vi.fn();
 		render(ExportBar, {
 			session: session(),
 			allowDownload: true,
+			exportDirectory: '/data/consume',
 			onsave,
-			ondownload: vi.fn(),
-			ondiscard
+			ondownload: vi.fn()
 		});
 		expect(screen.getByTestId('page-count')).toHaveTextContent('3 of 3 pages');
+		expect(screen.getByTestId('export-path')).toHaveTextContent('/data/consume');
+		expect(screen.getByTestId('autosave-strip')).toHaveTextContent('Auto-saved to past scans');
+		// null, not the path on screen: Export means "wherever the preference points".
 		await fireEvent.click(screen.getByTestId('save-button'));
-		expect(onsave).toHaveBeenCalled();
-		await fireEvent.click(screen.getByTestId('discard-button'));
-		expect(ondiscard).not.toHaveBeenCalled();
-		expect(screen.getByTestId('discard-button')).toHaveTextContent('Really discard?');
-		await fireEvent.click(screen.getByTestId('discard-button'));
-		expect(ondiscard).toHaveBeenCalled();
+		expect(onsave).toHaveBeenCalledWith(null);
+	});
+
+	it('picks a folder from the save-to menu and passes a typed one through', async () => {
+		const onsave = vi.fn();
+		render(ExportBar, {
+			session: session(),
+			roots: ['/data/consume'],
+			recent: ['/mnt/nas/scans'],
+			onsave,
+			ondownload: vi.fn()
+		});
+		expect(screen.queryByTestId('save-to-menu')).toBeNull();
+		await fireEvent.click(screen.getByTestId('save-to-button'));
+		await fireEvent.click(screen.getByRole('button', { name: /mnt\/nas\/scans/ }));
+		expect(onsave).toHaveBeenCalledWith('/mnt/nas/scans');
+		expect(screen.queryByTestId('save-to-menu')).toBeNull();
+
+		await fireEvent.click(screen.getByTestId('save-to-button'));
+		const custom = screen.getByTestId('save-to-custom');
+		await fireEvent.input(custom, { target: { value: ' /tmp/out/ ' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Save here' }));
+		expect(onsave).toHaveBeenLastCalledWith('/tmp/out/');
+	});
+
+	it('promotes save to… to the primary action when the export button is off', () => {
+		render(ExportBar, {
+			session: session(),
+			exportEnabled: false,
+			exportDirectory: '/data/consume',
+			onsave: vi.fn(),
+			ondownload: vi.fn()
+		});
+		expect(screen.queryByTestId('save-button')).toBeNull();
+		expect(screen.queryByTestId('export-path')).toBeNull();
+		expect(screen.getByTestId('save-to-button')).toBeInTheDocument();
 	});
 
 	it('disables export while scanning, with everything deleted, or when downloads are off', () => {
@@ -95,8 +127,7 @@ describe('ExportBar', () => {
 			session: session(SessionState.Scanning),
 			allowDownload: false,
 			onsave: vi.fn(),
-			ondownload: vi.fn(),
-			ondiscard: vi.fn()
+			ondownload: vi.fn()
 		});
 		expect(screen.getByTestId('save-button')).toBeDisabled();
 		expect(screen.queryByTestId('download-button')).toBeNull();
@@ -104,8 +135,7 @@ describe('ExportBar', () => {
 			session: session(SessionState.Review, 3),
 			allowDownload: true,
 			onsave: vi.fn(),
-			ondownload: vi.fn(),
-			ondiscard: vi.fn()
+			ondownload: vi.fn()
 		});
 		expect(screen.getByTestId('save-button')).toBeDisabled();
 		expect(screen.getByTestId('download-button')).toBeDisabled();
@@ -116,16 +146,14 @@ describe('ExportBar', () => {
 			session: session(SessionState.Exporting),
 			progress: 40,
 			onsave: vi.fn(),
-			ondownload: vi.fn(),
-			ondiscard: vi.fn()
+			ondownload: vi.fn()
 		});
 		expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '40');
 		rerender({
 			session: session(SessionState.Done),
 			savedPath: '/data/consume/x.pdf',
 			onsave: vi.fn(),
-			ondownload: vi.fn(),
-			ondiscard: vi.fn()
+			ondownload: vi.fn()
 		});
 		expect(screen.getByTestId('saved-message')).toBeInTheDocument();
 	});

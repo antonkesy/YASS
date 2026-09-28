@@ -132,3 +132,24 @@ test('stop ends a scan early', async ({ page }) => {
 	});
 	await expect(page.getByTestId('stop-button')).toBeHidden();
 });
+
+test('scan more appends pages and save to… writes to a listed folder', async ({ page }) => {
+	await scanToReview(page);
+
+	// The dashed tile at the end of the filmstrip runs the feeder again.
+	await page.getByTestId('scan-more-tile').click();
+	await expect(page.getByTestId('page-thumb')).toHaveCount(6, { timeout: 30_000 });
+	await expect(page.getByTestId('session-state')).toHaveText('Ready to review', {
+		timeout: 30_000
+	});
+	// 4 of 6: page 2 of each run comes out blank and starts deleted.
+	await expect(page.getByTestId('page-count')).toHaveText('4 of 6 pages');
+
+	// Save to… offers output.directory, the only root when allowed_roots is empty.
+	await page.getByTestId('save-to-button').click();
+	const menu = page.getByTestId('save-to-menu');
+	await expect(menu).toBeVisible();
+	await menu.getByRole('button').filter({ hasText: 'Allowed folder' }).first().click();
+	await expect(page.getByTestId('saved-message')).toBeVisible({ timeout: 20_000 });
+	await expect(page.getByTestId('session-state')).toHaveText('Saved');
+});

@@ -9,7 +9,7 @@
 	import { getHub, imageUrl, sortedSessions } from '$lib/hub/hub';
 	import { PageFilter, SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 	import type { CropBox, PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
-	import { activePageCount, formatTime, sessionStateLabel } from '$lib/format';
+	import { activePageCount, formatBytes, formatTime, sessionStateLabel } from '$lib/format';
 	import {
 		applyOptimistic,
 		deleteEdit,
@@ -33,7 +33,7 @@
 	import MergeModal from '$lib/components/MergeModal.svelte';
 	import NameSuggestions from '$lib/components/NameSuggestions.svelte';
 	import { saveToBrowser, savedLabel } from '$lib/review/download';
-	import { exportPrefs } from '$lib/presets';
+	import { exportPrefs, rememberFolder } from '$lib/presets';
 	import { ExportMode, type NameSuggestionsDto } from '$lib/hub/generated/Yass.Core.Hub';
 
 	const client = getHub();
@@ -49,6 +49,8 @@
 	let exporting = $state(false);
 	let savedPath = $state<string | null>(null);
 	let allowDownload = $state(false);
+	/** Folders the server will accept, from output.allowed_roots. */
+	let exportRoots = $state<string[]>([]);
 	/** Position in `pages` shown in the centre column. */
 	let current = $state(0);
 
@@ -56,7 +58,10 @@
 		if ($connection === 'connected') {
 			client.hub
 				.getEffectiveOptions()
-				.then((o) => (allowDownload = o.AllowDownload ?? false))
+				.then((o) => {
+					allowDownload = o.AllowDownload ?? false;
+					exportRoots = o.ExportRoots ?? [];
+				})
 				.catch(() => undefined);
 		}
 	});
@@ -84,6 +89,7 @@
 	/** Position of the page the crop dialog is open on, or null. */
 	let cropping = $state<number | null>(null);
 	let merging = $state(false);
+	let confirmDiscard = $state(false);
 	let merged = $state(false);
 	let suggesting = $state<'reading' | 'thinking' | 'ready' | null>(null);
 	let suggestions = $state<NameSuggestionsDto | null>(null);
@@ -123,7 +129,6 @@
 	const filterLabel = $derived(
 		filters.size > 1 ? 'Mixed' : pageFilterLabels[[...filters][0] ?? PageFilter.Original]
 	);
-	const cropped = $derived((session?.Pages ?? []).filter((p) => !p.Deleted && p.Crop).length);
 	const documents = $derived(documentNumbers(session?.Pages ?? []));
 	const documentCount = $derived(Math.max(1, ...[...documents.values()], 1));
 
@@ -171,17 +176,21 @@
 		}
 	}
 
-	async function exportAs(mode: ExportMode) {
+	async function exportAs(mode: ExportMode, directory: string | null = null) {
 		error = null;
 		exporting = true;
+		const target = (directory ?? $exportPrefs.directory).trim();
 		try {
 			const result = await client.hub.export(id, {
 				Mode: mode,
 				Format: $exportPrefs.format,
 				// The name field wins; the template is what an unnamed scan falls back to.
 				Name: session?.Name?.trim() || $exportPrefs.nameTemplate.trim() || undefined,
-				Directory: mode === ExportMode.Save ? $exportPrefs.directory.trim() || undefined : undefined
+				Directory: mode === ExportMode.Save ? target || undefined : undefined
 			});
+			// Only once the server has accepted it: an offer to save somewhere it refuses
+			// is worse than no offer at all.
+			if (directory) exportPrefs.set(rememberFolder($exportPrefs, directory));
 			if (mode === ExportMode.Save) {
 				savedPath = savedLabel(result);
 				const count = result.Documents.length;
@@ -211,6 +220,15 @@
 			if (at >= 0) return at;
 		}
 		return current;
+	}
+
+	async function scanMore() {
+		error = null;
+		try {
+			await client.hub.scanMore(id);
+		} catch (e) {
+			error = hubError(e);
+		}
 	}
 
 	async function rescan() {
@@ -273,6 +291,9 @@
 		if (page) send(setCropEdit(crop, new Set([page.Index])));
 	}
 
+	const ghost =
+		'flex h-[42px] items-center gap-2.5 rounded-[12px] px-2.5 text-left text-sm font-semibold transition-colors hover:bg-accent-hover50 disabled:pointer-events-none disabled:opacity-40';
+
 	function step(delta: number) {
 		const count = session?.Pages.length ?? 0;
 		current = Math.min(count - 1, Math.max(0, current + delta));
@@ -321,6 +342,7 @@
 					ontoggle={select}
 					onopen={(i) => (previewIndex = i)}
 					{documents}
+					onscanmore={editable ? scanMore : undefined}
 					reorderable={editable}
 					onreorder={(order) => {
 						selection = clear();
@@ -507,8 +529,11 @@
 						<p class="truncate text-[18px] font-extrabold tracking-[-0.01em]">{filterLabel}</p>
 					</div>
 					<div class="rounded-[14px] bg-app p-3">
-						<p class="text-xs text-ink-muted">Cropped</p>
-						<p class="text-[18px] font-extrabold tracking-[-0.01em] tabular-nums">{cropped}</p>
+						<!-- The scanned pages on disk, not an estimate of the PDF the mockup guesses at. -->
+						<p class="text-xs text-ink-muted">Size</p>
+						<p class="text-[18px] font-extrabold tracking-[-0.01em] tabular-nums">
+							{formatBytes(session.SizeBytes)}
+						</p>
 					</div>
 				</div>
 
@@ -518,21 +543,43 @@
 					{allowDownload}
 					busy={exporting}
 					{savedPath}
-					onsave={() => exportAs(ExportMode.Save)}
+					exportDirectory={$exportPrefs.directory.trim() || exportRoots[0] || ''}
+					exportEnabled={$exportPrefs.exportButton}
+					roots={exportRoots}
+					recent={$exportPrefs.recentFolders ?? []}
+					onsave={(directory) => exportAs(ExportMode.Save, directory)}
 					ondownload={() => exportAs(ExportMode.Download)}
-					ondiscard={discard}
 				/>
 
 				<div class="flex flex-col gap-0.5 border-t border-line pt-2">
 					<button
 						type="button"
-						class="flex h-[42px] items-center gap-2.5 rounded-[12px] px-3 text-sm font-semibold transition-colors hover:bg-accent-hover50 disabled:pointer-events-none disabled:opacity-40"
+						class={ghost}
+						onclick={scanMore}
+						disabled={!editable}
+						data-testid="scan-more-button"
+					>
+						<Icon name="plus" />
+						Scan more pages
+					</button>
+					<button
+						type="button"
+						class={ghost}
 						onclick={() => (merging = true)}
 						disabled={!editable || mergeable.length === 0}
 						data-testid="merge-button"
 					>
 						<Icon name="layers" />
 						Add pages from past scan
+					</button>
+					<button
+						type="button"
+						class="{ghost} text-danger hover:bg-danger-bg"
+						onclick={() => (confirmDiscard ? discard() : (confirmDiscard = true))}
+						data-testid="discard-button"
+					>
+						<Icon name="trash" />
+						{confirmDiscard ? 'Really discard?' : 'Discard scan'}
 					</button>
 				</div>
 			</aside>

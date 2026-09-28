@@ -186,6 +186,7 @@
 		<button
 			type="button"
 			onclick={onscanmore}
+			data-testid="scan-more-tile"
 			class="flex w-[70px] flex-none flex-col items-center justify-center gap-1 rounded-[14px] border-[1.5px] border-dashed border-accent-dash text-xs font-bold text-accent transition-colors hover:border-accent hover:bg-accent-hover50 lg:w-full"
 			style="aspect-ratio: 1 / 1.2"
 		>

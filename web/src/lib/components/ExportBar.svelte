@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 	import { activePageCount } from '$lib/format';
 	import { Icon } from '$lib/icons';
+	import SaveToMenu from './SaveToMenu.svelte';
 
 	let {
 		session,
@@ -10,18 +12,27 @@
 		allowDownload = false,
 		busy = false,
 		savedPath = null,
+		exportDirectory = '',
+		exportEnabled = true,
+		roots = [],
+		recent = [],
 		onsave,
-		ondownload,
-		ondiscard
+		ondownload
 	}: {
 		session: SessionDto;
 		progress?: number | null;
 		allowDownload?: boolean;
 		busy?: boolean;
 		savedPath?: string | null;
-		onsave: () => void;
+		/** Where the one-click Export writes, shown under the button. */
+		exportDirectory?: string;
+		/** `output.allow_export_button` equivalent: the user's own preference. */
+		exportEnabled?: boolean;
+		roots?: string[];
+		recent?: string[];
+		/** A directory of null means "wherever Export goes". */
+		onsave: (directory: string | null) => void;
 		ondownload: () => void;
-		ondiscard: () => void;
 	} = $props();
 
 	const active = $derived(activePageCount(session));
@@ -33,16 +44,13 @@
 			active > 0 &&
 			(session.State === SessionState.Review || session.State === SessionState.Done)
 	);
-	let confirmDiscard = $state(false);
 
-	function discard() {
-		if (!confirmDiscard) {
-			confirmDiscard = true;
-			return;
-		}
-		confirmDiscard = false;
-		ondiscard();
-	}
+	let saveTo = $state(false);
+
+	const primary =
+		'flex h-[50px] items-center justify-center gap-2 rounded-[14px] bg-linear-135 from-accent-light to-accent-grad2 text-[15px] font-extrabold text-white shadow-export transition-[transform,box-shadow] duration-200 hover:-translate-y-px hover:shadow-export-hover disabled:pointer-events-none disabled:opacity-40';
+	const secondary =
+		'flex h-12 items-center justify-center gap-2 rounded-[14px] bg-accent-50 text-[15px] font-bold text-accent-deep transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-40';
 </script>
 
 <div class="flex flex-col gap-3.5" data-testid="bottom-bar">
@@ -95,21 +103,61 @@
 			{/if}
 		</div>
 	{:else}
-		<button
-			type="button"
-			class="flex h-[50px] items-center justify-center gap-2 rounded-[14px] bg-linear-135 from-accent-light to-accent-grad2 text-[15px] font-extrabold text-white shadow-export transition-[transform,box-shadow] duration-200 hover:-translate-y-px hover:shadow-export-hover disabled:pointer-events-none disabled:opacity-40"
-			onclick={onsave}
-			disabled={!canExport}
-			data-testid="save-button"
-		>
-			<Icon name="exportTo" />
-			Save
-		</button>
+		{#if exportEnabled}
+			<button
+				type="button"
+				class={primary}
+				onclick={() => onsave(null)}
+				disabled={!canExport}
+				data-testid="save-button"
+			>
+				<Icon name="exportTo" />
+				Export
+			</button>
+			{#if exportDirectory}
+				<!-- Says where Export goes, and is the way to change it: the settings sheet. -->
+				<a
+					class="-mt-1.5 flex min-w-0 items-center gap-2 rounded-[10px] px-2 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-accent-hover50 hover:text-accent"
+					href={resolve('/settings')}
+					title="Change export folder in settings"
+					data-testid="export-path"
+				>
+					<Icon name="folder" size={14} />
+					<span class="truncate font-mono">{exportDirectory}</span>
+				</a>
+			{/if}
+		{/if}
+
+		<div class="relative">
+			<button
+				type="button"
+				class="w-full {exportEnabled ? secondary : primary}"
+				onclick={() => (saveTo = !saveTo)}
+				disabled={!canExport}
+				aria-expanded={saveTo}
+				data-testid="save-to-button"
+			>
+				<Icon name="folderOpen" />
+				Save to…
+			</button>
+
+			{#if saveTo}
+				<SaveToMenu
+					{roots}
+					{recent}
+					onpick={(directory) => {
+						saveTo = false;
+						onsave(directory);
+					}}
+					onclose={() => (saveTo = false)}
+				/>
+			{/if}
+		</div>
 
 		{#if allowDownload}
 			<button
 				type="button"
-				class="flex h-12 items-center justify-center gap-2 rounded-[14px] bg-accent-50 text-[15px] font-bold text-accent-deep transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-40"
+				class={secondary}
 				onclick={ondownload}
 				disabled={!canExport}
 				data-testid="download-button"
@@ -120,21 +168,16 @@
 		{/if}
 	{/if}
 
+	<!-- True as written: the session is on disk and listed the moment it is scanned. -->
+	<p
+		class="flex items-center gap-2 rounded-[12px] bg-success-bg px-3 py-2.5 text-xs font-bold text-success-ink"
+		data-testid="autosave-strip"
+	>
+		<Icon name="checkSmall" />
+		{scanning ? 'Auto-saving to past scans…' : 'Auto-saved to past scans'}
+	</p>
+
 	<p class="text-center text-[13px] font-semibold text-ink-muted" data-testid="page-count">
 		{active} of {session.Pages.length} page{session.Pages.length === 1 ? '' : 's'}
 	</p>
-
-	<button
-		type="button"
-		class="flex h-[42px] items-center gap-2.5 rounded-[12px] px-3 text-sm font-semibold transition-colors {confirmDiscard
-			? 'bg-danger text-white'
-			: 'text-danger hover:bg-danger-bg'} disabled:pointer-events-none disabled:opacity-40"
-		onclick={discard}
-		onblur={() => (confirmDiscard = false)}
-		disabled={scanning || exporting}
-		data-testid="discard-button"
-	>
-		<Icon name="trash" />
-		{confirmDiscard ? 'Really discard?' : 'Discard scan'}
-	</button>
 </div>
