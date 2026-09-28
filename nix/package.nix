@@ -63,6 +63,9 @@ buildDotnetModule {
   runtimeDeps = [ sane-backends ];
 
   postInstall = ''
+    # The publish already creates wwwroot, because src/Yass.Server/wwwroot/.gitkeep is tracked.
+    # Copying onto an existing directory would nest the site inside it, so replace it outright.
+    rm -rf $out/lib/yass/wwwroot
     cp -r ${web} $out/lib/yass/wwwroot
     install -Dm644 yass.example.yaml $out/share/yass/yass.example.yaml
   '';
