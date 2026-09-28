@@ -34,6 +34,15 @@
 
 	const recent = $derived(sortedSessions($sessions));
 
+	/**
+	 * What the next scan will actually use: the server's defaults with this browser's
+	 * overrides applied. The stage shows this rather than the bare defaults, which would
+	 * advertise settings the scan is not going to run with.
+	 */
+	const planned = $derived(
+		effective ? { ...effective, ...pickEditable($settings, effective.Editable) } : null
+	);
+
 	async function scan() {
 		starting = true;
 		error = null;
@@ -109,7 +118,7 @@
 		<ScanStage
 			status={$scanner}
 			connection={$connection}
-			options={effective}
+			options={planned}
 			busy={starting}
 			onscan={scan}
 			onsettings={openSettings}

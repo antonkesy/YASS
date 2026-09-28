@@ -27,7 +27,9 @@
 		onsettings: () => void;
 	} = $props();
 
-	const chosen = $derived(activePreset($presets, $settings));
+	// Matched against what the scan will do, not against the stored overrides alone:
+	// a browser with no overrides still matches whichever preset the server defaults to.
+	const chosen = $derived(options ? activePreset($presets, options) : null);
 
 	const offline = $derived(connection !== 'connected');
 	const ready = $derived(!offline && status?.State === ScannerState.Ready);
