@@ -71,6 +71,10 @@ test('scan, review, edit, download and save', async ({ page }) => {
 	await page.keyboard.press('Escape');
 	await expect(preview).toBeHidden();
 
+	// Naming the scan is what the past scans list shows instead of the timestamp.
+	await page.getByTestId('name-input').fill('Tax return 2025');
+	await page.getByTestId('name-input').press('Enter');
+
 	// Download is a real one-shot PDF.
 	const download = page.waitForEvent('download');
 	await page.getByTestId('download-button').click();
@@ -88,6 +92,7 @@ test('scan, review, edit, download and save', async ({ page }) => {
 	const list = page.getByTestId('session-list');
 	await expect(list.getByTestId('session-status').first()).toHaveText('Exported');
 	await expect(list.getByTestId('session-tile').first()).toContainText('2 p');
+	await expect(list.getByTestId('session-tile').first()).toContainText('Tax return 2025');
 });
 
 test('settings only expose ui_editable keys and are applied to the next scan', async ({ page }) => {
@@ -106,12 +111,16 @@ test('settings only expose ui_editable keys and are applied to the next scan', a
 	await expect(dpi.getByRole('radio', { name: 'Default', exact: true })).toBeChecked();
 });
 
-test('discard removes the session', async ({ page }) => {
+test('discard keeps the scan listed as discarded', async ({ page }) => {
 	await scanToReview(page);
 	await page.getByTestId('discard-button').click();
 	await expect(page.getByTestId('discard-button')).toHaveText('Really discard?');
 	await page.getByTestId('discard-button').click();
 	await expect(page).toHaveURL(/\/$/);
+
+	// Discarding throws the pages away but leaves the row, unlike deleting.
+	const list = page.getByTestId('session-list');
+	await expect(list.getByTestId('session-status').first()).toHaveText('Discarded');
 });
 
 test('stop ends a scan early', async ({ page }) => {

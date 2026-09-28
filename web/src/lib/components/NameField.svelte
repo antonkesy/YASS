@@ -1,0 +1,56 @@
+<script lang="ts">
+	import { Icon } from '$lib/icons';
+
+	let {
+		value,
+		placeholder,
+		onrename
+	}: {
+		/** The stored name, or null when the scan has never been named. */
+		value: string | null;
+		/** Shown when unnamed — the timestamp the list falls back to. */
+		placeholder: string;
+		onrename: (name: string) => void;
+	} = $props();
+
+	// Seeded by the effect below rather than from `value` directly, which would only
+	// ever capture what it was on the first render.
+	let draft = $state('');
+	let editing = $state(false);
+
+	// While the field is not being edited it mirrors the server, so a rename from
+	// another tab shows up here too.
+	$effect(() => {
+		if (!editing) draft = value ?? '';
+	});
+
+	function commit() {
+		editing = false;
+		if (draft.trim() !== (value ?? '')) onrename(draft.trim());
+	}
+</script>
+
+<label
+	class="flex min-h-12 items-center gap-2 rounded-[14px] border-[1.5px] border-transparent bg-app px-3 transition-colors focus-within:border-accent hover:bg-accent-hover50"
+>
+	<span class="text-ink-faint"><Icon name="pencil" /></span>
+	<span class="sr-only">Document name</span>
+	<input
+		class="min-w-0 flex-1 bg-transparent text-base font-extrabold tracking-[-0.01em] outline-none"
+		type="text"
+		{placeholder}
+		bind:value={draft}
+		onfocus={() => (editing = true)}
+		onblur={commit}
+		onkeydown={(e) => {
+			if (e.key === 'Enter') e.currentTarget.blur();
+			if (e.key === 'Escape') {
+				draft = value ?? '';
+				editing = false;
+				e.currentTarget.blur();
+			}
+		}}
+		data-testid="name-input"
+	/>
+	<span class="font-mono text-[13px] font-semibold text-ink-faint">.pdf</span>
+</label>
