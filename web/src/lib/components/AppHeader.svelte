@@ -33,14 +33,18 @@
 		<img src="{base}/icons/icon.svg" alt="" class="h-8 w-8 rounded-[9px]" />
 		<span class="text-[19px] font-extrabold tracking-[-0.01em]">YASS</span>
 	{:else}
+		<!-- Label and arrow are one link: the words are the obvious thing to click. -->
 		<a
 			href={resolve('/')}
-			class="flex h-10 w-10 items-center justify-center rounded-[12px] bg-surface text-ink shadow-chip transition-colors hover:bg-accent-wash"
+			class="group flex items-center gap-2.5 rounded-[12px] text-[15px] font-bold text-ink-3 transition-colors hover:text-ink"
 		>
-			<Icon name="back" />
-			<span class="sr-only">Back to home</span>
+			<span
+				class="flex h-10 w-10 items-center justify-center rounded-[12px] bg-surface text-ink shadow-chip transition-colors group-hover:bg-accent-wash"
+			>
+				<Icon name="back" />
+			</span>
+			Back to home
 		</a>
-		<span class="text-[15px] font-bold text-ink-3">Back to home</span>
 	{/if}
 
 	<div class="flex-1"></div>
