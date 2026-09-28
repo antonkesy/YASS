@@ -4,6 +4,8 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { hubError } from '$lib/hub/errors';
+	import { toast } from '$lib/toast';
+	import { cameFrom } from '$lib/navigation';
 	import { getHub, imageUrl, sortedSessions } from '$lib/hub/hub';
 	import { PageFilter, SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 	import type { CropBox, PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
@@ -59,6 +61,26 @@
 		}
 	});
 	let previewIndex = $state<number | null>(null);
+	/** The big preview slides in from whichever side the new page came from. */
+	let stage = $state<HTMLElement | null>(null);
+	// Deliberately the initial value: it tracks which page the stage is showing, and is
+	// updated by the effect below rather than following `current` on its own.
+	let shownAt = untrack(() => current);
+
+	$effect(() => {
+		const to = current;
+		if (to === shownAt) return;
+		const direction = to > shownAt ? 1 : -1;
+		shownAt = to;
+		stage?.animate(
+			[
+				{ opacity: 0, transform: `translateX(${direction * 36}px) scale(0.97)` },
+				{ opacity: 1, transform: 'none' }
+			],
+			{ duration: 340, easing: 'cubic-bezier(.2,.8,.2,1)' }
+		);
+	});
+
 	/** Position of the page the crop dialog is open on, or null. */
 	let cropping = $state<number | null>(null);
 	let merging = $state(false);
@@ -133,7 +155,9 @@
 	async function discard() {
 		try {
 			await client.hub.discardSession(id);
+			cameFrom.leaving(id);
 			await goto(resolve('/'));
+			toast.show('Scan discarded');
 		} catch (e) {
 			error = hubError(e);
 		}
@@ -160,8 +184,11 @@
 			});
 			if (mode === ExportMode.Save) {
 				savedPath = savedLabel(result);
+				const count = result.Documents.length;
+				toast.show(count === 1 ? 'Saved' : `Saved ${count} documents`);
 			} else {
-				saveToBrowser(result);
+				const started = saveToBrowser(result);
+				toast.show(started === 1 ? 'Downloaded' : `Downloaded ${started} files`);
 			}
 		} catch (e) {
 			error = hubError(e);
@@ -230,7 +257,9 @@
 		merged = true;
 		error = null;
 		try {
-			await client.hub.mergeSession(id, sourceId);
+			const before = session?.Pages.length ?? 0;
+			const after = await client.hub.mergeSession(id, sourceId);
+			toast.show(`${after.Pages.length - before} pages added`);
 		} catch (e) {
 			error = hubError(e);
 		} finally {
@@ -259,12 +288,7 @@
 	<title>{session ? formatTime(session.CreatedAt) : 'Session'} · YASS</title>
 </svelte:head>
 
-<!--
-	Fades rather than slides in. The mockup slides this screen across, but a half-second
-	transform on the whole surface moves every control while it runs, and Stop has to be
-	hittable immediately — a short feeder run is over before the slide finishes.
--->
-<div class="mx-auto flex max-w-[2200px] animate-fade-in flex-col px-4 pt-2 pb-7 sm:px-7">
+<div class="mx-auto flex max-w-[2200px] animate-slide-from-right flex-col px-4 pt-2 pb-7 sm:px-7">
 	{#if missing}
 		<p class="rounded-[14px] bg-danger-bg px-4 py-3 font-semibold text-danger" role="alert">
 			This session no longer exists.
@@ -361,6 +385,7 @@
 							the image arrives; a rotated page letterboxes inside it.
 						-->
 						<div
+							bind:this={stage}
 							class="w-full max-w-[max(280px,calc((100dvh-230px)/1.414))] flex-1"
 							style="aspect-ratio: 1 / 1.414"
 						>
@@ -396,7 +421,14 @@
 					{anyDeleted}
 					disabled={!editable}
 					onrotate={(deg) => send(rotateEdit(deg, selection))}
-					ondelete={() => send(deleteEdit(selection))}
+					ondelete={() => {
+						const targets = new Set(selection);
+						const count = targets.size === 0 ? session.Pages.length : targets.size;
+						send(deleteEdit(targets));
+						toast.show(`${count} page${count === 1 ? '' : 's'} deleted`, () =>
+							send(restoreEdit(targets))
+						);
+					}}
 					onrestore={() => send(restoreEdit(selection))}
 					onfilter={(filter) => send(setFilterEdit(filter, selection))}
 					oncrop={() => (cropping = targetPage())}

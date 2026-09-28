@@ -94,6 +94,8 @@
 	--color-ai: #7c4dff;
 	--color-ai-ink: #6a3be0;
 	--color-ai-bg: #f1eaff;
+	/* The one accent that only appears on the dark toast. */
+	--color-toast-undo: #7fb0ff;
 
 	/* Incidental */
 	--color-skeleton: #e6ebf5;

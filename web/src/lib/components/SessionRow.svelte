@@ -18,6 +18,7 @@
 		session,
 		selectable = false,
 		selected = false,
+		landed = false,
 		ontoggle,
 		ondownload,
 		ondelete
@@ -25,6 +26,8 @@
 		session: SessionDto;
 		selectable?: boolean;
 		selected?: boolean;
+		/** Plays the arrival animation once, for the scan just returned from. */
+		landed?: boolean;
 		ontoggle?: (id: string) => void;
 		ondownload?: (id: string) => void;
 		ondelete?: (id: string) => void;
@@ -62,6 +65,7 @@
 	class="group relative {selected ? 'rounded-[14px] bg-accent-50 shadow-ring-selected' : ''}"
 	data-testid="session-row"
 	data-selected={selected}
+	class:animate-land-in={landed}
 >
 	<svelte:element
 		this={selectable ? 'button' : 'a'}

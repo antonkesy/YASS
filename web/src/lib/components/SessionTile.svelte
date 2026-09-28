@@ -10,11 +10,14 @@
 		session,
 		selectable = false,
 		selected = false,
+		landed = false,
 		ontoggle
 	}: {
 		session: SessionDto;
 		selectable?: boolean;
 		selected?: boolean;
+		/** Plays the arrival animation once, for the scan just returned from. */
+		landed?: boolean;
 		ontoggle?: (id: string) => void;
 	} = $props();
 
@@ -37,6 +40,7 @@
 		: 'hover:bg-accent-hover50'}"
 	data-testid="session-tile"
 	data-selected={selected}
+	class:animate-land-in={landed}
 >
 	{#if selectable}
 		<span class="absolute top-4 left-4 z-1">
