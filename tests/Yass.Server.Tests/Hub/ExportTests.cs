@@ -31,6 +31,32 @@ public sealed class ExportTests
     }
 
     [Fact]
+    public async Task Export_and_download_each_record_an_event_with_the_saved_path()
+    {
+        await using var factory = new YassFactory(FakeScenario.Pages(2));
+        await using HubClient hub = await HubClient.ConnectAsync(factory);
+        SessionDto scanned = await hub.ScanToEnd();
+
+        Assert.Empty(scanned.Events);
+
+        ExportResult saved = await hub.Export(scanned.Id, ExportMode.Save);
+        SessionDto exported = await hub.GetSession(scanned.Id);
+        SessionEventDto only = Assert.Single(exported.Events);
+        Assert.Equal(SessionEventKind.Exported, only.Kind);
+        Assert.Equal(saved.SavedPath, only.Path);
+
+        await hub.Export(scanned.Id, ExportMode.Download);
+        SessionDto downloaded = await hub.GetSession(scanned.Id);
+
+        // History is append-only: the newest entry is the status, the earlier one survives.
+        Assert.Equal(
+            [SessionEventKind.Exported, SessionEventKind.Downloaded],
+            downloaded.Events.Select(e => e.Kind));
+        Assert.Null(downloaded.Events[1].Path);
+        Assert.True(downloaded.SizeBytes > 0);
+    }
+
+    [Fact]
     public async Task Download_is_one_shot()
     {
         await using var factory = new YassFactory(FakeScenario.Pages(2));

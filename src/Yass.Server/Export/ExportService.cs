@@ -21,6 +21,7 @@ public sealed class ExportService(
     IDocumentStore documents,
     DownloadTokens tokens,
     ConfigStore config,
+    TimeProvider time,
     IHubContext<YassHub, IYassClient> hub,
     ILogger<ExportService> logger)
 {
@@ -54,6 +55,7 @@ public sealed class ExportService(
         try
         {
             ExportResult result;
+            SessionEvent recorded;
             if (request.Mode == ExportMode.Download)
             {
                 if (!config.Current.Output.AllowDownload)
@@ -71,6 +73,7 @@ public sealed class ExportService(
                 }
 
                 result = new ExportResult(ExportMode.Download, pages.Length, null, $"/export/{sessionId}/{token}.pdf");
+                recorded = new SessionEvent(SessionEventKind.Downloaded, time.GetUtcNow());
             }
             else
             {
@@ -79,6 +82,7 @@ public sealed class ExportService(
                     session.CreatedAt,
                     cancellationToken).ConfigureAwait(false);
                 result = new ExportResult(ExportMode.Save, pages.Length, saved, null);
+                recorded = new SessionEvent(SessionEventKind.Exported, time.GetUtcNow(), saved);
                 logger.LogInformation("Session {Session} saved to {Path} ({Pages} pages)", sessionId, saved, pages.Length);
             }
 
@@ -87,11 +91,11 @@ public sealed class ExportService(
             if (result.Mode == ExportMode.Save && config.Current.Output.OnSuccess == OnSuccessAction.DeleteSession)
             {
                 store.Delete(sessionId);
-                await hub.Clients.All.SessionChanged(mapper.ToDto(session with { State = SessionState.Done, Pages = [], Error = "deleted" })).ConfigureAwait(false);
+                await hub.Clients.All.SessionChanged(mapper.ToDto((session with { State = SessionState.Done, Pages = [], Error = "deleted" }).With(recorded))).ConfigureAwait(false);
             }
             else
             {
-                Session done = store.Update(sessionId, s => s with { State = SessionState.Done });
+                Session done = store.Update(sessionId, s => (s with { State = SessionState.Done }).With(recorded));
                 await hub.Clients.All.SessionChanged(mapper.ToDto(done)).ConfigureAwait(false);
             }
 
