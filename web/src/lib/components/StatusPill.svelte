@@ -4,52 +4,56 @@
 	import type { ConnectionState } from '$lib/hub/client';
 	import { scannerStateLabel } from '$lib/format';
 
-	let { status, connection }: { status: ScannerStatusDto | null; connection: ConnectionState } =
-		$props();
+	let {
+		status,
+		connection,
+		pages = null
+	}: {
+		status: ScannerStatusDto | null;
+		connection: ConnectionState;
+		/** Pages scanned so far, when a scan is running. Shown as "Scanning · page N". */
+		pages?: number | null;
+	} = $props();
 
 	const offline = $derived(connection !== 'connected');
+	const scanning = $derived(!offline && status?.State === ScannerState.Busy);
+
 	const label = $derived(
 		offline
 			? connection === 'connecting'
 				? 'Connecting…'
 				: 'Offline'
-			: scannerStateLabel(status?.State)
+			: scanning && pages !== null
+				? `Scanning · page ${pages + 1}`
+				: scannerStateLabel(status?.State)
 	);
-	const tone = $derived(
-		offline
-			? 'bg-stone-200 text-stone-700'
+
+	// The mockup pills are always white; only the dot carries the state.
+	const dot = $derived(
+		offline || status?.State === ScannerState.Unknown
+			? 'bg-ink-faint'
 			: status?.State === ScannerState.Ready
-				? 'bg-emerald-100 text-emerald-800'
-				: status?.State === ScannerState.Busy
-					? 'bg-amber-100 text-amber-800'
-					: status?.State === ScannerState.Unknown
-						? 'bg-stone-200 text-stone-700'
-						: 'bg-rose-100 text-rose-800'
+				? 'bg-success animate-pulse-ready'
+				: scanning
+					? 'bg-accent animate-pulse-busy'
+					: 'bg-danger'
 	);
+
 	const title = $derived(
 		offline ? 'Not connected to the server' : (status?.Message ?? status?.DeviceName ?? '')
 	);
 </script>
 
 <span
-	class="inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-medium {tone}"
+	class="inline-flex h-[34px] items-center gap-2 rounded-full bg-surface py-0 pr-[14px] pl-3 text-[13px] font-semibold text-ink shadow-chip"
 	role="status"
 	aria-live="polite"
 	{title}
 	data-testid="status-pill"
 >
-	<span
-		class="h-2.5 w-2.5 rounded-full {offline || status?.State === ScannerState.Unknown
-			? 'bg-stone-400'
-			: status?.State === ScannerState.Ready
-				? 'bg-emerald-500'
-				: status?.State === ScannerState.Busy
-					? 'animate-pulse bg-amber-500'
-					: 'bg-rose-500'}"
-		aria-hidden="true"
-	></span>
+	<span class="h-2 w-2 flex-none rounded-full {dot}" aria-hidden="true"></span>
 	{label}
-	{#if !offline && status?.DeviceName}
-		<span class="hidden font-normal opacity-70 sm:inline">· {status.DeviceName}</span>
+	{#if !offline && !scanning && status?.DeviceName}
+		<span class="hidden font-medium text-ink-muted sm:inline">· {status.DeviceName}</span>
 	{/if}
 </span>

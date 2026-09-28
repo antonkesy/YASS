@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	import { getHub } from '$lib/hub/hub';
 	import { ColorMode, PageSize, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
 	import type { ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
@@ -49,23 +48,7 @@
 <svelte:head><title>Settings · YASS</title></svelte:head>
 
 <main class="mx-auto flex max-w-lg flex-col gap-4 px-4 pt-3 pb-12">
-	<header class="flex items-center gap-2">
-		<a
-			href={resolve('/')}
-			class="flex min-h-11 min-w-11 items-center justify-center rounded-full text-stone-700 hover:bg-stone-200"
-			aria-label="Back to home"
-		>
-			<svg
-				class="h-6 w-6"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg
-			>
-		</a>
-		<h1 class="text-xl font-bold">Scan settings</h1>
-	</header>
+	<h1 class="text-[26px] font-extrabold tracking-[-0.01em]">Scan settings</h1>
 
 	<p class="text-sm text-stone-600">
 		Stored in this browser only. Keys not listed here are fixed in <code>yass.yaml</code>.

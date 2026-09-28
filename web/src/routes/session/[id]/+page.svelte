@@ -131,22 +131,8 @@
 	><title>{session ? formatTime(session.CreatedAt) : 'Session'} · YASS</title></svelte:head
 >
 
-<div class="mx-auto flex min-h-dvh max-w-6xl flex-col px-3 pt-3 pb-28">
+<div class="mx-auto flex max-w-6xl flex-col px-3 pt-3 pb-28">
 	<header class="mb-3 flex items-center gap-2">
-		<a
-			href={resolve('/')}
-			class="flex min-h-11 min-w-11 items-center justify-center rounded-full text-stone-700 hover:bg-stone-200"
-			aria-label="Back to home"
-		>
-			<svg
-				class="h-6 w-6"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg
-			>
-		</a>
 		{#if session}
 			<div class="flex flex-col">
 				<h1 class="font-semibold">{formatTime(session.CreatedAt)}</h1>
