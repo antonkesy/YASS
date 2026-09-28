@@ -11,11 +11,47 @@ export function isIdentity(order: number[]): boolean {
 	return order.every((v, i) => v === i);
 }
 
-/** Which grid slot a point is over; `rects` are the thumbs' bounding boxes in DOM order. */
+/**
+ * Which grid slot a point is over; `rects` are the thumbs' bounding boxes in DOM order.
+ * A point in a gap, or past the last thumb, snaps to the nearest one: a drop that lands
+ * a few pixels outside a tile should still move the page, not silently do nothing.
+ */
 export function slotAt(rects: DOMRectReadOnly[], x: number, y: number): number | null {
+	let nearest: number | null = null;
+	let best = Infinity;
 	for (let i = 0; i < rects.length; i++) {
 		const r = rects[i];
 		if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return i;
+		const dx = x - (r.left + r.right) / 2;
+		const dy = y - (r.top + r.bottom) / 2;
+		const distance = dx * dx + dy * dy;
+		if (distance < best) {
+			best = distance;
+			nearest = i;
+		}
 	}
-	return null;
+	return nearest;
+}
+
+/** How far outside the drop zone the pointer starts pulling the scroller, and how fast. */
+export const EDGE_ZONE = 72;
+export const EDGE_SPEED = 18;
+
+/**
+ * How much to nudge a scroller whose edge a drag is hovering near, so pages can be
+ * dragged past what is on screen. Zero for a box with no size: nothing is laid out yet.
+ */
+export function edgeScroll(
+	rect: { left: number; right: number; top: number; bottom: number },
+	x: number,
+	y: number
+): { dx: number; dy: number } {
+	const pull = (near: number, far: number, at: number) => {
+		if (far - near <= 0) return 0;
+		if (at < near + EDGE_ZONE)
+			return -Math.min(1, (near + EDGE_ZONE - at) / EDGE_ZONE) * EDGE_SPEED;
+		if (at > far - EDGE_ZONE) return Math.min(1, (at - (far - EDGE_ZONE)) / EDGE_ZONE) * EDGE_SPEED;
+		return 0;
+	};
+	return { dx: pull(rect.left, rect.right, x), dy: pull(rect.top, rect.bottom, y) };
 }
