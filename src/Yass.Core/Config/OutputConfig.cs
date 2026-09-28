@@ -28,6 +28,14 @@ public sealed record OutputConfig
     [Required]
     public PdfConfig Pdf { get; init; } = new();
 
+    /// <summary>
+    /// Directories the UI may export into, each including everything beneath it. Empty means
+    /// only <see cref="Directory"/> and its subfolders, which is the locked-down default: the
+    /// export folder is typed into a browser by anyone who can reach this unauthenticated
+    /// service, so widening it is a deliberate act. Use <c>["/"]</c> to allow anywhere.
+    /// </summary>
+    public string[] AllowedRoots { get; init; } = [];
+
     /// <summary>Offer a browser download instead of only the server-side save.</summary>
     public bool AllowDownload { get; init; } = true;
 

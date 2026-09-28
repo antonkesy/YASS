@@ -29,11 +29,12 @@ public sealed class ExportService(
 {
     /// <summary>
     /// Checks a user-supplied target directory. The service has no authentication, so this is
-    /// the only gate between a LAN client and an arbitrary write path; it refuses anything that
-    /// is not an existing, writable, absolute directory and names what was wrong.
+    /// the only gate between a LAN client and an arbitrary write path: the directory must be
+    /// absolute, inside <c>output.allowed_roots</c>, existing and writable, and the error says
+    /// which of those failed.
     /// </summary>
-    /// <exception cref="InvalidOperationException">The directory is unusable.</exception>
-    private static string? ResolveDirectory(string? requested)
+    /// <exception cref="InvalidOperationException">The directory is unusable or out of bounds.</exception>
+    private string? ResolveDirectory(string? requested)
     {
         if (string.IsNullOrWhiteSpace(requested))
         {
@@ -44,6 +45,15 @@ public sealed class ExportService(
         if (!Path.IsPathFullyQualified(path))
         {
             throw new InvalidOperationException($"Export folder must be an absolute path; got \"{path}\".");
+        }
+
+        OutputConfig output = config.Current.Output;
+        IReadOnlyList<string> roots = ExportRoots.Effective(output.AllowedRoots, output.Directory);
+        if (!ExportRoots.Allows(roots, path))
+        {
+            throw new InvalidOperationException(
+                $"Export folder \"{path}\" is outside the allowed roots ({string.Join(", ", roots)}). " +
+                "Add it to output.allowed_roots to permit it.");
         }
 
         if (!Directory.Exists(path))
@@ -86,6 +96,10 @@ public sealed class ExportService(
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        // Checked before the session moves to Exporting: a refused folder must leave the
+        // session exactly as it was, not stuck mid-export with no way back.
+        string? directory = ResolveDirectory(request.Directory);
+
         Session session = store.Update(sessionId, s =>
         {
             if (s.State is not (SessionState.Review or SessionState.Done))
@@ -102,7 +116,6 @@ public sealed class ExportService(
         });
         await hub.Clients.All.SessionChanged(mapper.ToDto(session)).ConfigureAwait(false);
 
-        string? directory = ResolveDirectory(request.Directory);
         string extension = request.Format switch
         {
             ExportFormat.Jpg => ".jpg",

@@ -46,7 +46,9 @@ public sealed record PageDto(
 /// <summary>
 /// Scan options on the wire. Every field is optional: as a <c>StartScan</c> argument only the keys in
 /// <c>scanner.ui_editable</c> are honoured; as a <c>GetEffectiveOptions</c> result every field is filled in and
-/// <see cref="Editable"/> lists the keys the UI may change and <see cref="AllowDownload"/> mirrors <c>output.allow_download</c>.
+/// <see cref="Editable"/> lists the keys the UI may change, <see cref="AllowDownload"/> mirrors
+/// <c>output.allow_download</c>, and <see cref="ExportRoots"/> mirrors the directories the export
+/// folder may sit under so the settings sheet can offer them instead of only rejecting a typed path.
 /// </summary>
 [TranspilationSource]
 public sealed record ScanOptionsDto(
@@ -60,7 +62,8 @@ public sealed record ScanOptionsDto(
     double? BlankPageThreshold = null,
     bool? AutoDeskew = null,
     string[]? Editable = null,
-    bool? AllowDownload = null);
+    bool? AllowDownload = null,
+    string[]? ExportRoots = null);
 
 /// <param name="Suggestions">Best first.</param>
 /// <param name="CanRead">Whether page text could be read at all; the UI hides Find name when not.</param>

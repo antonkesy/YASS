@@ -3,6 +3,7 @@
 	import { page as route } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { hubError } from '$lib/hub/errors';
 	import { getHub, imageUrl, sortedSessions } from '$lib/hub/hub';
 	import { PageFilter, SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 	import type { CropBox, PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
@@ -116,7 +117,7 @@
 		try {
 			await client.hub.applyEdits(id, [edit]);
 		} catch (e) {
-			error = e instanceof Error ? e.message : String(e);
+			error = hubError(e);
 			await client.refresh(id);
 		}
 	}
@@ -134,7 +135,7 @@
 			await client.hub.discardSession(id);
 			await goto(resolve('/'));
 		} catch (e) {
-			error = e instanceof Error ? e.message : String(e);
+			error = hubError(e);
 		}
 	}
 
@@ -142,7 +143,7 @@
 		try {
 			await client.hub.renameSession(id, name);
 		} catch (e) {
-			error = e instanceof Error ? e.message : String(e);
+			error = hubError(e);
 		}
 	}
 
@@ -163,7 +164,7 @@
 				saveToBrowser(result);
 			}
 		} catch (e) {
-			error = e instanceof Error ? e.message : String(e);
+			error = hubError(e);
 		} finally {
 			exporting = false;
 		}
@@ -192,7 +193,7 @@
 		try {
 			await client.hub.rescanPage(id, page.Index);
 		} catch (e) {
-			error = e instanceof Error ? e.message : String(e);
+			error = hubError(e);
 		}
 	}
 
@@ -219,7 +220,7 @@
 			suggestions = await pending;
 			suggesting = 'ready';
 		} catch (e) {
-			error = e instanceof Error ? e.message : String(e);
+			error = hubError(e);
 			suggesting = null;
 		}
 	}
@@ -231,7 +232,7 @@
 		try {
 			await client.hub.mergeSession(id, sourceId);
 		} catch (e) {
-			error = e instanceof Error ? e.message : String(e);
+			error = hubError(e);
 		} finally {
 			merged = false;
 		}

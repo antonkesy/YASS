@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { hubError } from '$lib/hub/errors';
 	import { getHub, sortedSessions } from '$lib/hub/hub';
 	import type { ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import ScanStage from '$lib/components/ScanStage.svelte';
@@ -42,7 +43,7 @@
 			const session = await client.hub.startScan(pickEditable($settings, options.Editable));
 			await goto(resolve('/session/[id]', { id: session.Id }));
 		} catch (e) {
-			error = e instanceof Error ? e.message : String(e);
+			error = hubError(e);
 		} finally {
 			starting = false;
 		}
@@ -62,7 +63,7 @@
 				);
 			}
 		} catch (e) {
-			error = e instanceof Error ? e.message : String(e);
+			error = hubError(e);
 		} finally {
 			working = false;
 		}
@@ -74,7 +75,7 @@
 		try {
 			for (const id of ids) await client.hub.deleteSession(id);
 		} catch (e) {
-			error = e instanceof Error ? e.message : String(e);
+			error = hubError(e);
 		} finally {
 			working = false;
 		}
@@ -85,7 +86,7 @@
 		try {
 			await client.hub.clearSessions();
 		} catch (e) {
-			error = e instanceof Error ? e.message : String(e);
+			error = hubError(e);
 		}
 	}
 

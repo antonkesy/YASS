@@ -83,6 +83,8 @@ export type ScanOptionsDto = {
     Editable?: string[];
     /** Transpiled from bool */
     AllowDownload?: boolean;
+    /** Transpiled from string[]? */
+    ExportRoots?: string[];
 }
 
 /** Transpiled from Yass.Core.Hub.NameSuggestionsDto */

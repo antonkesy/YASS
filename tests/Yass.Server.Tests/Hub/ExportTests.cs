@@ -128,6 +128,91 @@ public sealed class ExportTests
     }
 
     [Fact]
+    public async Task An_export_folder_outside_the_allowed_roots_is_refused()
+    {
+        await using var factory = new YassFactory(FakeScenario.Pages(1));
+        await using HubClient hub = await HubClient.ConnectAsync(factory);
+        SessionDto scanned = await hub.ScanToEnd();
+
+        // Exists and is writable, but sits beside the consume directory rather than inside it.
+        string sibling = factory.ConsumeDirectory + "-elsewhere";
+        Directory.CreateDirectory(sibling);
+
+        var ex = await Assert.ThrowsAsync<HubException>(
+            () => hub.Export(scanned.Id, new ExportRequest(ExportMode.Save, ExportFormat.Pdf, null, sibling)));
+
+        Assert.Contains("allowed roots", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("output.allowed_roots", ex.Message, StringComparison.Ordinal);
+        Assert.Empty(Directory.GetFiles(sibling));
+
+        // A refused folder must leave the session exactly as it was, not stuck in Exporting.
+        SessionDto after = await hub.GetSession(scanned.Id);
+        Assert.Equal(SessionState.Review, after.State);
+        Assert.Empty(after.Events);
+
+        // And the session is still exportable to somewhere that is allowed.
+        Assert.Single((await hub.Export(scanned.Id, ExportMode.Save)).Documents);
+    }
+
+    [Fact]
+    public async Task A_symlink_out_of_the_allowed_roots_is_refused()
+    {
+        await using var factory = new YassFactory(FakeScenario.Pages(1));
+        await using HubClient hub = await HubClient.ConnectAsync(factory);
+        SessionDto scanned = await hub.ScanToEnd();
+
+        // Looks contained — it sits inside the consume directory — but points outside it.
+        string outside = Directory.CreateTempSubdirectory("yass-outside").FullName;
+        Directory.CreateDirectory(factory.ConsumeDirectory);
+        string link = Path.Combine(factory.ConsumeDirectory, "sneaky");
+        Directory.CreateSymbolicLink(link, outside);
+
+        var ex = await Assert.ThrowsAsync<HubException>(
+            () => hub.Export(scanned.Id, new ExportRequest(ExportMode.Save, ExportFormat.Pdf, null, link)));
+
+        Assert.Contains("allowed roots", ex.Message, StringComparison.Ordinal);
+        Assert.Empty(Directory.GetFiles(outside));
+
+        Directory.Delete(outside, recursive: true);
+    }
+
+    [Fact]
+    public async Task Configured_roots_widen_where_the_ui_may_export()
+    {
+        string shared = Directory.CreateTempSubdirectory("yass-allowed").FullName;
+        await using var factory = new YassFactory(
+            FakeScenario.Pages(1),
+            c => c with { Output = c.Output with { AllowedRoots = [shared] } });
+        await using HubClient hub = await HubClient.ConnectAsync(factory);
+        SessionDto scanned = await hub.ScanToEnd();
+        string inside = Path.Combine(shared, "invoices");
+        Directory.CreateDirectory(inside);
+
+        ExportResult result = await hub.Export(
+            scanned.Id,
+            new ExportRequest(ExportMode.Save, ExportFormat.Pdf, null, inside));
+
+        Assert.Equal(inside, Path.GetDirectoryName(Assert.Single(result.Documents).SavedPath));
+
+        // Naming a root does not keep the default consume directory allowed.
+        await Assert.ThrowsAsync<HubException>(
+            () => hub.Export(scanned.Id, new ExportRequest(ExportMode.Save, ExportFormat.Pdf, null, factory.ConsumeDirectory)));
+
+        Directory.Delete(shared, recursive: true);
+    }
+
+    [Fact]
+    public async Task The_ui_is_told_which_roots_are_in_force()
+    {
+        await using var factory = new YassFactory(FakeScenario.Pages(1));
+        await using HubClient hub = await HubClient.ConnectAsync(factory);
+
+        ScanOptionsDto options = await hub.GetEffectiveOptions();
+
+        Assert.Equal([factory.ConsumeDirectory], Assert.IsType<string[]>(options.ExportRoots));
+    }
+
+    [Fact]
     public async Task Image_formats_write_one_file_per_page()
     {
         await using var factory = new YassFactory(FakeScenario.Pages(3));
