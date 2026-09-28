@@ -2,7 +2,7 @@
 #
 #   cd demo && docker compose up --build   ->   http://localhost:8080
 #
-# Scan, reorder/rotate/delete pages, then "Save to paperless": the PDF appears
+# Scan, reorder/rotate/delete pages, then "Save": the PDF appears
 # in ./output on the host. Sessions live in the container's /tmp and are gone
 # when it stops, so the demo leaves nothing behind but the PDFs.
 name: yawss-demo

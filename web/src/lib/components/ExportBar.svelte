@@ -100,7 +100,7 @@
 			disabled={!canExport}
 			data-testid="save-button"
 		>
-			{exporting ? 'Saving…' : 'Save to paperless'}
+			{exporting ? 'Saving…' : 'Save'}
 		</button>
 	</div>
 </div>
