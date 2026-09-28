@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { ColorMode } from '$lib/hub/generated/Yass.Core.Domain';
 	import { colorModeLabels } from '$lib/review/edits';
+	import { Icon } from '$lib/icons';
 
 	let {
 		selectedCount,
@@ -25,69 +26,61 @@
 	} = $props();
 
 	const scope = $derived(selectedCount === 0 ? `all ${total}` : `${selectedCount} selected`);
-	const btn =
-		'flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-lg px-3 text-sm font-medium text-stone-800 hover:bg-stone-200 focus-visible:ring-4 focus-visible:ring-teal-300 focus-visible:outline-none disabled:opacity-40';
+
+	// Icon over label, the mockup's tool shape. Crop, rescan and split join this row
+	// once the backend can do them.
+	const tool =
+		'flex h-[58px] min-w-[62px] flex-col items-center justify-center gap-1 rounded-[14px] px-2 text-[11px] font-bold transition-colors hover:bg-accent-hover50 disabled:pointer-events-none disabled:opacity-35';
 </script>
 
 <div
-	class="flex flex-wrap items-center gap-1 rounded-xl border border-stone-200 bg-white p-1 shadow-sm"
+	class="flex flex-wrap items-center gap-0.5 rounded-[20px] bg-surface p-1.5 shadow-toolbar"
 	role="toolbar"
 	aria-label="Page edits"
 	data-testid="toolbar"
 >
-	<span class="px-2 text-sm text-stone-600" data-testid="toolbar-scope">Acting on {scope}</span>
+	<span class="px-3 text-[13px] font-semibold text-ink-muted" data-testid="toolbar-scope">
+		Acting on {scope}
+	</span>
+
 	{#if selectedCount > 0}
-		<button type="button" class={btn} onclick={onclear}>Clear</button>
+		<button
+			type="button"
+			class="h-9 rounded-full px-3 text-[13px] font-bold text-accent transition-colors hover:bg-accent-wash"
+			onclick={onclear}
+		>
+			Clear
+		</button>
 	{/if}
-	<span class="mx-1 h-6 w-px bg-stone-200" aria-hidden="true"></span>
+
+	<span class="mx-1 h-8 w-px bg-line" aria-hidden="true"></span>
+
 	<button
 		type="button"
-		class={btn}
+		class="text-ink {tool}"
 		{disabled}
 		onclick={() => onrotate(-90)}
 		aria-label="Rotate left"
-		title="Rotate left"
 	>
-		<svg
-			class="h-5 w-5"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" /></svg
-		>
+		<Icon name="rotateLeft" />
+		Left
 	</button>
 	<button
 		type="button"
-		class={btn}
+		class="text-ink {tool}"
 		{disabled}
 		onclick={() => onrotate(90)}
 		aria-label="Rotate right"
-		title="Rotate right"
 	>
-		<svg
-			class="h-5 w-5"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5" /></svg
-		>
+		<Icon name="rotateRight" />
+		Right
 	</button>
-	<button type="button" class={btn} {disabled} onclick={ondelete} data-testid="delete-button"
-		>Delete</button
-	>
-	<button
-		type="button"
-		class={btn}
-		disabled={disabled || !anyDeleted}
-		onclick={onrestore}
-		data-testid="restore-button">Restore</button
-	>
-	<label class="flex min-h-11 items-center gap-1 px-2 text-sm">
+
+	<label class="flex h-[58px] min-w-[62px] flex-col items-center justify-center gap-1 px-2">
 		<span class="sr-only">Colour mode</span>
+		<Icon name="wand" />
 		<select
-			class="min-h-9 rounded-md border border-stone-300 bg-white px-2"
+			class="w-full bg-transparent text-center text-[11px] font-bold text-ink-muted"
 			{disabled}
 			data-testid="color-select"
 			onchange={(e) => {
@@ -96,11 +89,32 @@
 				(e.currentTarget as HTMLSelectElement).value = '';
 			}}
 		>
-			<option value="">Colour…</option>
+			<option value="">Filter</option>
 			<option value="">Scan default</option>
 			{#each Object.values(ColorMode).filter((v) => typeof v === 'number') as mode (mode)}
 				<option value={mode}>{colorModeLabels[mode as ColorMode]}</option>
 			{/each}
 		</select>
 	</label>
+
+	<button
+		type="button"
+		class="text-ink {tool}"
+		disabled={disabled || !anyDeleted}
+		onclick={onrestore}
+		data-testid="restore-button"
+	>
+		<Icon name="rescan" />
+		Restore
+	</button>
+	<button
+		type="button"
+		class="text-danger hover:bg-danger-bg! {tool}"
+		{disabled}
+		onclick={ondelete}
+		data-testid="delete-button"
+	>
+		<Icon name="trash" />
+		Delete
+	</button>
 </div>

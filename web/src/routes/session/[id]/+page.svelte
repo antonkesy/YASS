@@ -3,10 +3,10 @@
 	import { page as route } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { getHub } from '$lib/hub/hub';
+	import { getHub, imageUrl } from '$lib/hub/hub';
 	import { SessionState, type ColorMode } from '$lib/hub/generated/Yass.Core.Domain';
 	import type { PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
-	import { formatTime, sessionStateLabel } from '$lib/format';
+	import { activePageCount, colorLabel, formatTime, sessionStateLabel } from '$lib/format';
 	import {
 		applyOptimistic,
 		deleteEdit,
@@ -20,6 +20,7 @@
 	import Toolbar from '$lib/components/Toolbar.svelte';
 	import Preview from '$lib/components/Preview.svelte';
 	import ExportBar from '$lib/components/ExportBar.svelte';
+	import { Icon } from '$lib/icons';
 	import { ExportMode } from '$lib/hub/generated/Yass.Core.Hub';
 
 	const client = getHub();
@@ -35,6 +36,8 @@
 	let exporting = $state(false);
 	let savedPath = $state<string | null>(null);
 	let allowDownload = $state(false);
+	/** Position in `pages` shown in the centre column. */
+	let current = $state(0);
 
 	$effect(() => {
 		if ($connection === 'connected') {
@@ -53,9 +56,12 @@
 	});
 	$effect(() => {
 		const count = session?.Pages.length ?? 0;
-		const current = untrack(() => selection);
-		const pruned = prune(current, count);
-		if (pruned.size !== current.size) selection = pruned;
+		const pruned = prune(
+			untrack(() => selection),
+			count
+		);
+		if (pruned.size !== untrack(() => selection).size) selection = pruned;
+		if (current >= count) current = Math.max(0, count - 1);
 	});
 
 	const scanning = $derived(session?.State === SessionState.Scanning);
@@ -67,6 +73,16 @@
 			? session?.Pages
 			: session?.Pages.filter((p) => selection.has(p.Index))
 		)?.some((p) => p.Deleted) ?? false
+	);
+
+	const shown = $derived(session?.Pages[current] ?? null);
+	const filters = $derived(
+		new Set((session?.Pages ?? []).filter((p) => !p.Deleted).map((p) => p.ColorOverride))
+	);
+	const filterLabel = $derived(
+		filters.size > 1
+			? 'Mixed'
+			: colorLabel([...filters][0] ?? session?.OptionsUsed.Color) || 'Scan default'
 	);
 
 	async function send(edit: PageEdit) {
@@ -117,8 +133,15 @@
 		}
 	}
 
-	function open(index: number) {
-		previewIndex = index;
+	function select(index: number) {
+		const at = session?.Pages.findIndex((p) => p.Index === index) ?? -1;
+		if (at >= 0) current = at;
+		selection = toggle(selection, index);
+	}
+
+	function step(delta: number) {
+		const count = session?.Pages.length ?? 0;
+		current = Math.min(count - 1, Math.max(0, current + delta));
 	}
 
 	$effect(() => {
@@ -127,84 +150,185 @@
 	});
 </script>
 
-<svelte:head
-	><title>{session ? formatTime(session.CreatedAt) : 'Session'} · YASS</title></svelte:head
->
+<svelte:head>
+	<title>{session ? formatTime(session.CreatedAt) : 'Session'} · YASS</title>
+</svelte:head>
 
-<div class="mx-auto flex max-w-6xl flex-col px-3 pt-3 pb-28">
-	<header class="mb-3 flex items-center gap-2">
-		{#if session}
-			<div class="flex flex-col">
-				<h1 class="font-semibold">{formatTime(session.CreatedAt)}</h1>
-				<span class="text-sm text-stone-600" data-testid="session-state"
-					>{sessionStateLabel(session.State)}</span
-				>
-			</div>
-			{#if scanning}
-				<button
-					type="button"
-					class="ml-auto min-h-11 rounded-lg bg-rose-600 px-4 font-medium text-white hover:bg-rose-500"
-					onclick={stop}
-					data-testid="stop-button"
-				>
-					Stop
-				</button>
-			{/if}
-		{/if}
-	</header>
-
+<div class="mx-auto flex max-w-[2200px] animate-slide-from-right flex-col px-4 pt-2 pb-7 sm:px-7">
 	{#if missing}
-		<p class="rounded-lg bg-rose-100 px-4 py-3 text-rose-800" role="alert">
+		<p class="rounded-[14px] bg-danger-bg px-4 py-3 font-semibold text-danger" role="alert">
 			This session no longer exists.
 		</p>
 	{:else if !session}
-		<p class="text-stone-500">Loading…</p>
+		<p class="text-ink-muted">Loading…</p>
 	{:else}
 		{#if session.Error}
-			<p class="mb-3 rounded-lg bg-amber-100 px-4 py-2 text-amber-900" role="alert">
+			<p
+				class="mb-3 rounded-[14px] bg-warning-bg px-4 py-2 font-semibold text-warning-ink"
+				role="alert"
+			>
 				{session.Error}
 			</p>
 		{/if}
 		{#if error}
-			<p class="mb-3 rounded-lg bg-rose-100 px-4 py-2 text-rose-800" role="alert">{error}</p>
+			<p class="mb-3 rounded-[14px] bg-danger-bg px-4 py-2 font-semibold text-danger" role="alert">
+				{error}
+			</p>
 		{/if}
 
-		<div class="sticky top-0 z-10 mb-3 bg-stone-50/95 py-1 backdrop-blur">
-			<Toolbar
-				selectedCount={selection.size}
-				total={session.Pages.length}
-				{anyDeleted}
-				disabled={!editable}
-				onrotate={(deg) => send(rotateEdit(deg, selection))}
-				ondelete={() => send(deleteEdit(selection))}
-				onrestore={() => send(restoreEdit(selection))}
-				oncolor={(mode: ColorMode | undefined) => send(setColorEdit(mode, selection))}
-				onclear={() => (selection = clear())}
-			/>
+		<div class="flex flex-wrap items-start gap-5">
+			<!-- Filmstrip: down the left on desktop, above the page on a phone. -->
+			<nav class="order-2 w-full flex-none lg:order-1 lg:w-auto" aria-label="Pages">
+				<PageGrid
+					sessionId={id}
+					pages={session.Pages}
+					{selection}
+					{scanning}
+					ontoggle={select}
+					onopen={(i) => (previewIndex = i)}
+					reorderable={editable}
+					onreorder={(order) => {
+						selection = clear();
+						send(reorderEdit(order));
+					}}
+				/>
+			</nav>
+
+			<main
+				class="order-1 flex w-full flex-1 basis-full flex-col items-center gap-[18px] lg:order-2 lg:basis-[380px]"
+			>
+				<!--
+					Stop sits in a slot of its own rather than after the pills: the pills change
+					width as pages arrive, and a Stop button that slides around mid-scan is both
+					hard to hit and hard to test.
+				-->
+				<div
+					class="relative flex w-full flex-wrap items-center justify-center gap-2 {scanning
+						? 'pr-24'
+						: ''}"
+				>
+					<span
+						class="rounded-full bg-surface px-3 py-1.5 text-[13px] font-bold shadow-chip"
+						data-testid="session-state"
+					>
+						{sessionStateLabel(session.State)}
+					</span>
+					{#if session.Pages.length > 0}
+						<span
+							class="rounded-full bg-surface px-3 py-1.5 text-[13px] font-bold tabular-nums shadow-chip"
+						>
+							Page {current + 1} of {session.Pages.length}
+						</span>
+					{/if}
+					{#if scanning}
+						<button
+							type="button"
+							class="absolute top-1/2 right-0 flex h-[30px] -translate-y-1/2 items-center gap-1.5 rounded-full bg-surface px-3 text-[13px] font-bold text-ink shadow-chip transition-colors hover:bg-danger-bg hover:text-danger"
+							onclick={stop}
+							data-testid="stop-button"
+						>
+							<Icon name="stop" size={14} />
+							Stop
+						</button>
+					{/if}
+				</div>
+
+				{#if shown}
+					<div class="flex w-full items-center justify-center gap-2">
+						<button
+							type="button"
+							class="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-surface shadow-nav transition-[background-color,transform] duration-150 hover:scale-105 hover:bg-accent-wash disabled:pointer-events-none disabled:opacity-35"
+							onclick={() => step(-1)}
+							disabled={current === 0}
+							aria-label="Previous page"
+						>
+							<Icon name="chevronLeft" />
+						</button>
+
+						<!--
+							The box is reserved at page proportions so the column does not reflow when
+							the image arrives; a rotated page letterboxes inside it.
+						-->
+						<div
+							class="w-full max-w-[max(280px,calc((100dvh-230px)/1.414))] flex-1"
+							style="aspect-ratio: 1 / 1.414"
+						>
+							<img
+								src={imageUrl(id, shown.Index, shown.Hash, 'preview')}
+								alt="Page {shown.Index + 1}"
+								class="h-full w-full rounded-[6px] object-contain drop-shadow-[0_18px_36px_rgb(19_26_43_/_0.14)]"
+							/>
+						</div>
+
+						<button
+							type="button"
+							class="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-surface shadow-nav transition-[background-color,transform] duration-150 hover:scale-105 hover:bg-accent-wash disabled:pointer-events-none disabled:opacity-35"
+							onclick={() => step(1)}
+							disabled={current >= session.Pages.length - 1}
+							aria-label="Next page"
+						>
+							<Icon name="chevronRight" />
+						</button>
+					</div>
+				{:else}
+					<div
+						class="flex w-full max-w-[280px] items-center justify-center rounded-[10px] border-[1.5px] border-dashed border-accent-dash text-sm text-ink-muted"
+						style="aspect-ratio: 1 / 1.414"
+					>
+						{scanning ? 'Waiting for the first page…' : 'No pages'}
+					</div>
+				{/if}
+
+				<Toolbar
+					selectedCount={selection.size}
+					total={session.Pages.length}
+					{anyDeleted}
+					disabled={!editable}
+					onrotate={(deg) => send(rotateEdit(deg, selection))}
+					ondelete={() => send(deleteEdit(selection))}
+					onrestore={() => send(restoreEdit(selection))}
+					oncolor={(mode: ColorMode | undefined) => send(setColorEdit(mode, selection))}
+					onclear={() => (selection = clear())}
+				/>
+			</main>
+
+			<aside
+				class="order-3 flex w-full basis-full flex-col gap-3.5 rounded-[24px] bg-surface p-[22px] shadow-panel lg:sticky lg:top-[72px] lg:w-auto lg:basis-[clamp(300px,22vw,380px)]"
+			>
+				<h1 class="text-[19px] font-extrabold tracking-[-0.01em]">
+					{formatTime(session.CreatedAt)}
+				</h1>
+
+				<p class="text-xs font-bold tracking-[0.06em] text-ink-muted uppercase">Document</p>
+				<div class="grid grid-cols-2 gap-2">
+					<div class="rounded-[14px] bg-app p-3">
+						<p class="text-xs text-ink-muted">Pages</p>
+						<p class="text-[18px] font-extrabold tracking-[-0.01em] tabular-nums">
+							{activePageCount(session)}
+						</p>
+					</div>
+					<div class="rounded-[14px] bg-app p-3">
+						<p class="text-xs text-ink-muted">Documents</p>
+						<p class="text-[18px] font-extrabold tracking-[-0.01em] tabular-nums">1</p>
+					</div>
+					<div class="col-span-2 rounded-[14px] bg-app p-3">
+						<p class="text-xs text-ink-muted">Filter</p>
+						<p class="text-[18px] font-extrabold tracking-[-0.01em]">{filterLabel}</p>
+					</div>
+				</div>
+
+				<ExportBar
+					{session}
+					progress={$exportProgress[id] ?? null}
+					{allowDownload}
+					busy={exporting}
+					{savedPath}
+					onsave={() => exportAs(ExportMode.Save)}
+					ondownload={() => exportAs(ExportMode.Download)}
+					ondiscard={discard}
+				/>
+			</aside>
 		</div>
-
-		{#if session.Pages.length === 0}
-			<p class="py-12 text-center text-stone-500">
-				{scanning ? 'Waiting for the first page…' : 'No pages.'}
-			</p>
-		{/if}
-		<PageGrid
-			sessionId={id}
-			pages={session.Pages}
-			{selection}
-			ontoggle={(i) => (selection = toggle(selection, i))}
-			onopen={open}
-			reorderable={editable}
-			onreorder={(order) => {
-				selection = clear();
-				send(reorderEdit(order));
-			}}
-		/>
-		{#if scanning}
-			<p class="mt-4 text-center text-stone-600" aria-live="polite">
-				Scanning… {session.Pages.length} page{session.Pages.length === 1 ? '' : 's'} so far
-			</p>
-		{/if}
 
 		{#if previewIndex !== null}
 			<Preview
@@ -216,16 +340,5 @@
 				onrotate={(i, deg) => send(rotateEdit(deg, new Set([i])))}
 			/>
 		{/if}
-
-		<ExportBar
-			{session}
-			progress={$exportProgress[id] ?? null}
-			{allowDownload}
-			busy={exporting}
-			{savedPath}
-			onsave={() => exportAs(ExportMode.Save)}
-			ondownload={() => exportAs(ExportMode.Download)}
-			ondiscard={discard}
-		/>
 	{/if}
 </div>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { imageUrl } from '$lib/hub/hub';
+	import { Icon } from '$lib/icons';
 
 	let {
 		sessionId,
@@ -30,16 +31,17 @@
 </script>
 
 <div
-	class="group relative aspect-[3/4] overflow-hidden rounded-lg border-2 bg-white shadow-sm transition
-		{selected ? 'border-teal-600 ring-2 ring-teal-300' : 'border-stone-200'}
-		{page.Deleted ? 'opacity-50' : ''}"
+	class="group relative flex flex-col gap-1 rounded-[14px] p-1.5 transition-colors {selected
+		? 'bg-accent-50 shadow-ring-selected'
+		: ''} {page.Deleted ? 'opacity-50' : ''}"
 	data-testid="page-thumb"
 	data-selected={selected}
 	data-deleted={page.Deleted}
 >
 	<button
 		type="button"
-		class="absolute inset-0 flex h-full w-full items-center justify-center focus-visible:ring-4 focus-visible:ring-teal-300 focus-visible:outline-none"
+		class="relative flex w-full items-center justify-center overflow-hidden rounded-[6px] bg-surface shadow-page"
+		style="aspect-ratio: 1 / 1.414"
 		aria-pressed={selected}
 		aria-label="Page {page.Index + 1}{page.Deleted ? ', deleted' : ''}{selected
 			? ', selected'
@@ -52,60 +54,52 @@
 				alt=""
 				loading="lazy"
 				decoding="async"
-				class="max-h-full max-w-full object-contain transition-transform duration-200"
+				class="max-h-full max-w-full object-contain transition-transform duration-500 ease-spring"
 				style:transform={delta ? `rotate(${delta}deg)` : undefined}
 				onload={loaded}
 			/>
 		{:else}
 			<span
-				class="h-8 w-8 animate-spin rounded-full border-4 border-stone-200 border-t-teal-600"
+				class="h-7 w-7 animate-spin rounded-full border-[3px] border-accent-100 border-t-accent"
 				aria-hidden="true"
 			></span>
 		{/if}
+
+		{#if page.IsBlank}
+			<span
+				class="pointer-events-none absolute top-1 right-1 rounded-full bg-warning-bg px-1.5 py-0.5 text-[10px] font-extrabold tracking-[0.02em] text-warning-ink"
+				data-testid="blank-badge"
+			>
+				blank
+			</span>
+		{/if}
+
+		{#if page.Deleted}
+			<span
+				class="pointer-events-none absolute inset-x-0 bottom-0 bg-danger/90 py-0.5 text-center text-[10px] font-extrabold tracking-[0.02em] text-white"
+			>
+				deleted
+			</span>
+		{/if}
 	</button>
 
-	<span
-		class="pointer-events-none absolute top-1 left-1 rounded-md bg-black/60 px-1.5 py-0.5 text-xs font-medium text-white"
-	>
-		{page.Index + 1}
-	</span>
-
-	{#if page.IsBlank}
+	<div class="flex items-center justify-between gap-1 px-0.5">
 		<span
-			class="pointer-events-none absolute top-1 right-1 rounded-md bg-amber-400 px-1.5 py-0.5 text-xs font-semibold text-amber-950"
-			data-testid="blank-badge"
-		>
-			blank
-		</span>
-	{/if}
-
-	{#if page.Deleted}
-		<span
-			class="pointer-events-none absolute inset-x-0 bottom-0 bg-rose-600/90 py-0.5 text-center text-xs font-semibold text-white"
-		>
-			deleted
-		</span>
-	{/if}
-
-	<button
-		type="button"
-		class="absolute right-1 bottom-1 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-stone-700 shadow
-			hover:bg-white focus-visible:ring-4 focus-visible:ring-teal-300 focus-visible:outline-none"
-		aria-label="Open page {page.Index + 1}"
-		onclick={(e) => {
-			e.stopPropagation();
-			onopen(page.Index);
-		}}
-	>
-		<svg
-			class="h-5 w-5"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
+			class="font-mono text-[11px] font-bold {selected ? 'text-accent' : 'text-ink-muted'}"
 			aria-hidden="true"
 		>
-			<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-		</svg>
-	</button>
+			{String(page.Index + 1).padStart(2, '0')}
+		</span>
+		<button
+			type="button"
+			class="flex h-6 w-6 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-accent-wash hover:text-accent"
+			aria-label="Open page {page.Index + 1}"
+			onclick={(e) => {
+				e.stopPropagation();
+				onopen(page.Index);
+			}}
+		>
+			<Icon name="expand" size={13} />
+		</button>
+	</div>
 </div>
