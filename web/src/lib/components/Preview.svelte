@@ -23,6 +23,13 @@
 	let shown = $state<{ hash: string; rotation: number } | null>(null);
 	const delta = $derived(shown && page ? page.Rotation - shown.rotation : 0);
 
+	// Fit-to-screen wastes most of a wide window on a portrait page; zoomed fills the
+	// width and scrolls instead, up to the server's processing.preview_max_width.
+	// Keyed by page index so moving to another page drops back to fit.
+	let zoomedIndex = $state(-1);
+	const zoomed = $derived(zoomedIndex === index);
+	let viewport = $state<HTMLDivElement | null>(null);
+
 	let start: { x: number; y: number } | null = null;
 	let dialog = $state<HTMLDivElement | null>(null);
 
@@ -43,11 +50,18 @@
 
 	function keydown(e: KeyboardEvent) {
 		if (!page) return;
-		if (e.key === 'Escape') onclose();
+		if (e.key === 'Escape' && zoomed) zoomedIndex = -1;
+		else if (e.key === 'Escape') onclose();
 		else if (e.key === 'ArrowRight') onnavigate(step(index, pages.length, 'left'));
 		else if (e.key === 'ArrowLeft') onnavigate(step(index, pages.length, 'right'));
+		else if (e.key === 'z' || e.key === 'Z') toggleZoom();
 		else return;
 		e.preventDefault();
+	}
+
+	function toggleZoom() {
+		zoomedIndex = zoomed ? -1 : index;
+		if (viewport) viewport.scrollTop = 0;
 	}
 
 	const navBtn =
@@ -90,6 +104,26 @@
 				<button
 					type="button"
 					class={navBtn}
+					aria-label={zoomed ? 'Fit page to screen' : 'Zoom to full width'}
+					aria-pressed={zoomed}
+					onclick={toggleZoom}
+					data-testid="preview-zoom"
+				>
+					<svg
+						class="h-5 w-5"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						aria-hidden="true"
+						><circle cx="11" cy="11" r="7" /><path d="M20 20l-4.5-4.5" /><path
+							d="M8 11h6{zoomed ? '' : 'M11 8v6'}"
+						/></svg
+					>
+				</button>
+				<button
+					type="button"
+					class={navBtn}
 					aria-label="Rotate left"
 					onclick={() => onrotate(index, -90)}
 				>
@@ -121,27 +155,40 @@
 		</div>
 
 		<div
-			class="relative flex min-h-0 flex-1 touch-pan-y items-center justify-center"
+			class="relative flex min-h-0 flex-1 touch-pan-y justify-center {zoomed
+				? 'items-start overflow-y-auto overscroll-contain'
+				: 'items-center px-2 sm:px-16'}"
 			role="presentation"
+			bind:this={viewport}
 			onpointerdown={pointerdown}
 			onpointerup={pointerup}
 			onpointercancel={() => (start = null)}
 		>
 			{#key page.Hash}
-				<img
-					src={imageUrl(sessionId, page.Index, page.Hash, 'preview')}
-					alt="Page {index + 1}"
-					class="max-h-full max-w-full object-contain transition-transform duration-200 {page.Deleted
-						? 'opacity-50'
-						: ''}"
-					style:transform={delta ? `rotate(${delta}deg)` : undefined}
-					draggable="false"
-					onload={() => (shown = { hash: page.Hash, rotation: page.Rotation })}
-				/>
+				<!-- Tapping the page zooms; the labelled control is the header button, so this is
+				     hidden from assistive tech rather than announced twice. -->
+				<button
+					type="button"
+					class="contents"
+					tabindex="-1"
+					aria-hidden="true"
+					onclick={toggleZoom}
+				>
+					<img
+						src={imageUrl(sessionId, page.Index, page.Hash, 'preview')}
+						alt="Page {index + 1}"
+						class="transition-transform duration-200 {zoomed
+							? 'h-auto w-full max-w-none cursor-zoom-out'
+							: 'h-full w-full cursor-zoom-in object-contain'} {page.Deleted ? 'opacity-50' : ''}"
+						style:transform={delta ? `rotate(${delta}deg)` : undefined}
+						draggable="false"
+						onload={() => (shown = { hash: page.Hash, rotation: page.Rotation })}
+					/>
+				</button>
 			{/key}
 			<button
 				type="button"
-				class="{navBtn} absolute left-2"
+				class="{navBtn} fixed top-1/2 left-2 -translate-y-1/2"
 				aria-label="Previous page"
 				disabled={index === 0}
 				onclick={() => onnavigate(index - 1)}
@@ -158,7 +205,7 @@
 			</button>
 			<button
 				type="button"
-				class="{navBtn} absolute right-2"
+				class="{navBtn} fixed top-1/2 right-2 -translate-y-1/2"
 				aria-label="Next page"
 				disabled={index >= pages.length - 1}
 				onclick={() => onnavigate(index + 1)}
