@@ -204,6 +204,8 @@ export const icons = {
 		size: 16
 	},
 	search: { shapes: [circle(11, 11, 8), p('m21 21-4.3-4.3')], size: 16 },
+	/** Not in the mockup, which has no full-screen page view; this app does. */
+	expand: { shapes: [p('M15 3h6v6'), p('M9 21H3v-6'), p('M21 3l-7 7'), p('M3 21l7-7')] },
 	sort: {
 		shapes: [p('m3 16 4 4 4-4'), p('M7 20V4'), p('m21 8-4-4-4 4'), p('M17 4v16')],
 		size: 15

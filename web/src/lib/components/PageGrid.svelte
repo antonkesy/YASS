@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageDto } from '$lib/hub/generated/Yass.Core.Hub';
+	import { Icon } from '$lib/icons';
 	import { isIdentity, moveIndex, slotAt } from '$lib/review/reorder';
 	import PageThumb from './PageThumb.svelte';
 
@@ -8,17 +9,22 @@
 		pages,
 		selection,
 		reorderable = true,
+		scanning = false,
 		ontoggle,
 		onopen,
-		onreorder
+		onreorder,
+		onscanmore
 	}: {
 		sessionId: string;
 		pages: PageDto[];
 		selection: ReadonlySet<number>;
 		reorderable?: boolean;
+		/** Shows a placeholder tile for the page currently coming off the feeder. */
+		scanning?: boolean;
 		ontoggle: (index: number) => void;
 		onopen: (index: number) => void;
 		onreorder: (order: number[]) => void;
+		onscanmore?: () => void;
 	} = $props();
 
 	// Drag = press, hold ~250 ms without moving, then move. A quick tap stays a tap (selection).
@@ -87,13 +93,15 @@
 		if (!suppressClick) ontoggle(index);
 	}
 
-	/** Keyboard reorder: Alt+ArrowLeft/Right moves the focused page. */
+	/** Keyboard reorder: Alt+Arrow moves the focused page, either axis. */
 	function keydown(e: KeyboardEvent) {
-		if (!reorderable || !e.altKey || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+		const back = e.key === 'ArrowLeft' || e.key === 'ArrowUp';
+		const forward = e.key === 'ArrowRight' || e.key === 'ArrowDown';
+		if (!reorderable || !e.altKey || (!back && !forward)) return;
 		const target = (e.target as HTMLElement).closest<HTMLElement>('[data-index]');
 		if (!target) return;
 		const from = Number(target.dataset.index);
-		const to = e.key === 'ArrowLeft' ? from - 1 : from + 1;
+		const to = back ? from - 1 : from + 1;
 		if (to < 0 || to >= pages.length) return;
 		e.preventDefault();
 		onreorder(moveIndex(pages.length, from, to));
@@ -102,7 +110,7 @@
 </script>
 
 <div
-	class="grid touch-pan-y grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 {drag
+	class="flex max-h-none w-full flex-row gap-3 overflow-x-auto rounded-[22px] bg-surface p-3 shadow-panel lg:sticky lg:top-[72px] lg:max-h-[calc(100dvh-100px)] lg:w-[clamp(140px,11vw,190px)] lg:flex-col lg:overflow-x-visible lg:overflow-y-auto {drag
 		? 'cursor-grabbing select-none'
 		: ''}"
 	role="listbox"
@@ -120,10 +128,11 @@
 >
 	{#each pages as page (page.Index)}
 		<div
-			class="transition-transform {drag?.from === page.Index ? 'scale-95 opacity-60' : ''} {drag &&
-			drag.over === page.Index &&
-			drag.from !== page.Index
-				? 'rounded-lg ring-4 ring-teal-400'
+			class="w-[70px] flex-none transition-transform duration-500 ease-spring lg:w-full {drag?.from ===
+			page.Index
+				? 'opacity-35'
+				: ''} {drag && drag.over === page.Index && drag.from !== page.Index
+				? 'rounded-[14px] shadow-ring-outline'
 				: ''}"
 			role="option"
 			aria-selected={selection.has(page.Index)}
@@ -138,4 +147,24 @@
 			/>
 		</div>
 	{/each}
+
+	{#if scanning}
+		<div
+			class="w-[70px] flex-none rounded-[14px] bg-accent-50 shadow-ring-pending lg:w-full"
+			style="aspect-ratio: 1 / 1.2"
+			aria-label="Scanning the next page"
+		></div>
+	{/if}
+
+	{#if onscanmore && !scanning}
+		<button
+			type="button"
+			onclick={onscanmore}
+			class="flex w-[70px] flex-none flex-col items-center justify-center gap-1 rounded-[14px] border-[1.5px] border-dashed border-accent-dash text-xs font-bold text-accent transition-colors hover:border-accent hover:bg-accent-hover50 lg:w-full"
+			style="aspect-ratio: 1 / 1.2"
+		>
+			<Icon name="plus" size={16} />
+			Scan more
+		</button>
+	{/if}
 </div>

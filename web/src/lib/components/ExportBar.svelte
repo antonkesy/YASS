@@ -2,6 +2,7 @@
 	import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 	import { activePageCount } from '$lib/format';
+	import { Icon } from '$lib/icons';
 
 	let {
 		session,
@@ -44,63 +45,96 @@
 	}
 </script>
 
-<div
-	class="fixed inset-x-0 bottom-0 z-10 border-t border-stone-200 bg-white/95 backdrop-blur"
-	data-testid="bottom-bar"
->
-	{#if exporting}
+<div class="flex flex-col gap-3.5" data-testid="bottom-bar">
+	{#if exporting || savedPath}
+		<!-- The mockup swaps the buttons for a progress card while a save is running. -->
 		<div
-			class="h-1 w-full bg-stone-200"
-			role="progressbar"
-			aria-valuemin="0"
-			aria-valuemax="100"
-			aria-valuenow={progress ?? 0}
-			aria-label="Export progress"
+			class="flex animate-pop-in flex-col gap-2 rounded-[16px] p-3.5 transition-colors duration-300 {savedPath
+				? 'bg-success-bg'
+				: 'bg-accent-hover50'}"
 		>
-			<div class="h-1 bg-teal-600 transition-all" style:width="{progress ?? 5}%"></div>
-		</div>
-	{/if}
-	<div
-		class="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
-	>
-		<span class="mr-auto text-sm text-stone-700" data-testid="page-count">
-			{#if savedPath}
-				<span class="text-emerald-700" data-testid="saved-message">Saved ✓</span>
-			{:else}
-				{active} of {session.Pages.length} page{session.Pages.length === 1 ? '' : 's'}
+			<div class="flex items-center gap-2.5">
+				<span
+					class="flex h-9 w-9 flex-none items-center justify-center rounded-full {savedPath
+						? 'animate-check-in bg-success text-white shadow-check-bubble'
+						: 'bg-surface text-accent'}"
+				>
+					<Icon name={savedPath ? 'check' : 'exportTo'} />
+				</span>
+				<span class="flex min-w-0 flex-col">
+					<span
+						class="text-sm font-extrabold {savedPath ? 'text-success-ink' : 'text-ink'}"
+						data-testid={savedPath ? 'saved-message' : undefined}
+					>
+						{savedPath ? 'Saved' : 'Saving…'}
+					</span>
+					{#if savedPath}
+						<span class="truncate font-mono text-[11px] text-success-ink">{savedPath}</span>
+					{/if}
+				</span>
+				{#if exporting}
+					<span class="ml-auto text-[13px] font-bold text-ink-muted tabular-nums">
+						{progress ?? 0}%
+					</span>
+				{/if}
+			</div>
+			{#if exporting}
+				<div
+					class="h-1.5 overflow-hidden rounded-full bg-accent-100"
+					role="progressbar"
+					aria-valuemin="0"
+					aria-valuemax="100"
+					aria-valuenow={progress ?? 0}
+					aria-label="Export progress"
+				>
+					<div
+						class="h-full bg-linear-to-r from-accent-sky to-accent transition-[width] duration-100 ease-linear"
+						style:width="{progress ?? 5}%"
+					></div>
+				</div>
 			{/if}
-		</span>
+		</div>
+	{:else}
 		<button
 			type="button"
-			class="min-h-11 rounded-lg px-3 text-sm font-medium {confirmDiscard
-				? 'bg-rose-600 text-white'
-				: 'text-rose-700 hover:bg-rose-50'} disabled:opacity-40"
-			onclick={discard}
-			onblur={() => (confirmDiscard = false)}
-			disabled={scanning || exporting}
-			data-testid="discard-button"
-		>
-			{confirmDiscard ? 'Really discard?' : 'Discard'}
-		</button>
-		{#if allowDownload}
-			<button
-				type="button"
-				class="min-h-11 rounded-lg border border-teal-700 px-3 text-sm font-medium text-teal-800 hover:bg-teal-50 disabled:opacity-40"
-				onclick={ondownload}
-				disabled={!canExport}
-				data-testid="download-button"
-			>
-				Download
-			</button>
-		{/if}
-		<button
-			type="button"
-			class="min-h-11 rounded-lg bg-teal-700 px-4 text-sm font-semibold text-white hover:bg-teal-600 disabled:opacity-40"
+			class="flex h-[50px] items-center justify-center gap-2 rounded-[14px] bg-linear-135 from-accent-light to-accent-grad2 text-[15px] font-extrabold text-white shadow-export transition-[transform,box-shadow] duration-200 hover:-translate-y-px hover:shadow-export-hover disabled:pointer-events-none disabled:opacity-40"
 			onclick={onsave}
 			disabled={!canExport}
 			data-testid="save-button"
 		>
-			{exporting ? 'Saving…' : 'Save'}
+			<Icon name="exportTo" />
+			Save
 		</button>
-	</div>
+
+		{#if allowDownload}
+			<button
+				type="button"
+				class="flex h-12 items-center justify-center gap-2 rounded-[14px] bg-accent-50 text-[15px] font-bold text-accent-deep transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-40"
+				onclick={ondownload}
+				disabled={!canExport}
+				data-testid="download-button"
+			>
+				<Icon name="download" />
+				Download
+			</button>
+		{/if}
+	{/if}
+
+	<p class="text-center text-[13px] font-semibold text-ink-muted" data-testid="page-count">
+		{active} of {session.Pages.length} page{session.Pages.length === 1 ? '' : 's'}
+	</p>
+
+	<button
+		type="button"
+		class="flex h-[42px] items-center gap-2.5 rounded-[12px] px-3 text-sm font-semibold transition-colors {confirmDiscard
+			? 'bg-danger text-white'
+			: 'text-danger hover:bg-danger-bg'} disabled:pointer-events-none disabled:opacity-40"
+		onclick={discard}
+		onblur={() => (confirmDiscard = false)}
+		disabled={scanning || exporting}
+		data-testid="discard-button"
+	>
+		<Icon name="trash" />
+		{confirmDiscard ? 'Really discard?' : 'Discard scan'}
+	</button>
 </div>
