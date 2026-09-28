@@ -72,7 +72,7 @@ buildDotnetModule {
   };
 
   meta = {
-    description = "Yet Another Web Scanner Service: headless scan-to-paperless with a mobile-first web UI";
+    description = "Yet Another Web Scanner Service: headless scan-to-PDF with a mobile-first web UI";
     homepage = "https://github.com/antonkesy/yawss";
     license = lib.licenses.mit;
     mainProgram = "Yawss.Server";
