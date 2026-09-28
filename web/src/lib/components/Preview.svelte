@@ -42,6 +42,7 @@
 	}
 
 	function keydown(e: KeyboardEvent) {
+		if (!page) return;
 		if (e.key === 'Escape') onclose();
 		else if (e.key === 'ArrowRight') onnavigate(step(index, pages.length, 'left'));
 		else if (e.key === 'ArrowLeft') onnavigate(step(index, pages.length, 'right'));
@@ -53,6 +54,8 @@
 		'flex h-11 w-11 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70 focus-visible:ring-4 focus-visible:ring-teal-300 focus-visible:outline-none disabled:opacity-30';
 </script>
 
+<svelte:window onkeydown={keydown} />
+
 {#if page}
 	<div
 		class="fixed inset-0 z-30 flex flex-col bg-black text-white select-none"
@@ -61,7 +64,6 @@
 		aria-label="Page {index + 1} of {pages.length}"
 		tabindex="-1"
 		bind:this={dialog}
-		onkeydown={keydown}
 		data-testid="preview"
 	>
 		<div class="flex items-center gap-2 p-2">
