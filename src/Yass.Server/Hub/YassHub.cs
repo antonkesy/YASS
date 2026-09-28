@@ -18,6 +18,7 @@ public sealed class YassHub(
     ScanService scans,
     EditService editor,
     ExportService exporter,
+    TimeProvider time,
     ILogger<YassHub> logger)
     : Hub<IYassClient>, IYassHub
 {
@@ -58,6 +59,66 @@ public sealed class YassHub(
 
         sessions.Delete(sessionId);
         await Clients.All.SessionChanged(mapper.ToDto(session with { State = SessionState.Done, Pages = [], Error = "deleted" })).ConfigureAwait(false);
+    }
+
+    public async Task<SessionDto> RenameSession(string sessionId, string? name)
+    {
+        Find(sessionId);
+        string? trimmed = string.IsNullOrWhiteSpace(name) ? null : name.Trim();
+        if (trimmed is { Length: > 200 })
+        {
+            throw new HubException("Name is too long (200 characters maximum).");
+        }
+
+        SessionDto dto = mapper.ToDto(sessions.Update(sessionId, s => s with { Name = trimmed }));
+        await Clients.All.SessionChanged(dto).ConfigureAwait(false);
+        return dto;
+    }
+
+    public async Task<SessionDto> DiscardSession(string sessionId)
+    {
+        Session session = Find(sessionId);
+        if (session.State is SessionState.Scanning or SessionState.Exporting)
+        {
+            throw new HubException($"Session is {session.State}; wait for it to finish before discarding.");
+        }
+
+        foreach (Page page in session.Pages)
+        {
+            string file = SessionPaths.Source(sessions.Root, session, page);
+            if (File.Exists(file))
+            {
+                File.Delete(file);
+            }
+        }
+
+        string cache = SessionPaths.Cache(sessions.Root, sessionId);
+        if (Directory.Exists(cache))
+        {
+            Directory.Delete(cache, recursive: true);
+        }
+
+        SessionDto dto = mapper.ToDto(sessions.Update(
+            sessionId,
+            s => (s with { State = SessionState.Done, Pages = [] }).With(new SessionEvent(SessionEventKind.Discarded, time.GetUtcNow()))));
+        await Clients.All.SessionChanged(dto).ConfigureAwait(false);
+        return dto;
+    }
+
+    public async Task<int> ClearSessions()
+    {
+        var removable = sessions.List()
+            .Where(s => s.State is not (SessionState.Scanning or SessionState.Exporting))
+            .ToArray();
+
+        foreach (Session session in removable)
+        {
+            sessions.Delete(session.Id);
+            await Clients.All.SessionChanged(mapper.ToDto(session with { State = SessionState.Done, Pages = [], Error = "deleted" })).ConfigureAwait(false);
+        }
+
+        logger.LogInformation("Cleared {Count} session(s)", removable.Length);
+        return removable.Length;
     }
 
     public async Task<SessionDto> ApplyEdits(string sessionId, PageEdit[] edits)

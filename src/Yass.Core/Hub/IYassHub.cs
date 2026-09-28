@@ -16,7 +16,20 @@ public interface IYassHub
 
     Task<SessionDto[]> ListSessions();
 
+    /// <summary>Removes the session and its directory outright.</summary>
     Task DeleteSession(string sessionId);
+
+    /// <summary>Renames a session. An empty or whitespace name clears it back to the timestamp.</summary>
+    Task<SessionDto> RenameSession(string sessionId, string? name);
+
+    /// <summary>
+    /// Marks a session discarded but keeps it listed, unlike <see cref="DeleteSession"/>.
+    /// Its pages are removed, since the point of discarding is to stop storing them.
+    /// </summary>
+    Task<SessionDto> DiscardSession(string sessionId);
+
+    /// <summary>Deletes every session that is not currently scanning or exporting. Returns how many went.</summary>
+    Task<int> ClearSessions();
 
     Task<SessionDto> ApplyEdits(string sessionId, PageEdit[] edits);
 
