@@ -17,13 +17,13 @@ YASS is a headless scanning service for a home server on Linux (bare metal, NixO
 | Layer | Choice | Why / existing tool used |
 |---|---|---|
 | Scanner backend | **NAPS2.Sdk** (NuGet, 1.2.x) + **NAPS2.Images.ImageSharp** | ImageSharp context = headless, no GTK. SANE from host `sane-backends`; eSCL built in. Use NAPS2's own `PdfExporter`, `ImageExporter`, blank-page detection and deskew — do not reimplement. |
-| Runtime | **.NET 8 LTS**, ASP.NET Core Minimal API, `PublishTrimmed`, `InvariantGlobalization=true` | |
+| Runtime | **.NET 10 LTS**, ASP.NET Core Minimal API, `PublishTrimmed`, `InvariantGlobalization=true` | |
 | Transport — state, commands, events | **SignalR** hub over WebSocket with **MessagePack** protocol (`Microsoft.AspNetCore.SignalR.Protocols.MessagePack`, `@microsoft/signalr` + `@microsoft/signalr-protocol-msgpack` on the client) | One persistent bidirectional connection: server pushes scanner status, page-added, progress; client invokes `StartScan`, `ApplyEdits`, `Export`. Auto-reconnect, typed hub, .NET-native, no polling, no per-request overhead. Better fit than REST for a local single-user app. |
 | Transport — binary | **Plain HTTP GET** for thumbnails/previews/PDF download | Browser cache + `ETag` + `Cache-Control: immutable` + `<img loading="lazy">` beats any custom channel for images. These are the only HTTP endpoints besides `/healthz`. |
 | Config | **YAML** via `YamlDotNet`, file `yass.yaml`, env overrides via ASP.NET's built-in configuration (`YASS__section__key`) | Bound to C# records with `IOptions<T>` + `ValidateDataAnnotations().ValidateOnStart()`. Fail fast, name the bad key. |
 | Frontend | **SvelteKit** (`@sveltejs/adapter-static`, SPA fallback), TypeScript, **Tailwind**, **`@vite-pwa/sveltekit`** | Installable PWA = "export as app". No component library. |
 | Shared types | Hub contract defined once in C# (`IYassHub`, `IYassClient`); TS types generated with **`TypedSignalR.Client.TypeScript`** in CI; drift fails the build | |
-| Backend tests | **xUnit** + `WebApplicationFactory` + `NSubstitute` | Scanner behind `IScannerBackend`; `FakeScannerBackend` yields PNG fixtures. |
+| Backend tests | **xUnit** + `WebApplicationFactory` | Scanner behind `IScannerBackend`; `FakeScannerBackend` yields PNG fixtures. |
 | Frontend tests | **Vitest** + `@testing-library/svelte`; **Playwright** E2E (desktop Chromium + Pixel 7 profile) against server in `--fake` mode | |
 | Lint/format | `dotnet format` + analyzers (`TreatWarningsAsErrors`), `eslint`, `prettier`, `svelte-check`; **`pre-commit`** framework | |
 | Commits/releases | **Conventional Commits** enforced by `conventional-pre-commit`; **`release-please`** for changelog + tags | |
@@ -175,7 +175,7 @@ No monolithic commits. Each item below is one commit (or a small series) with a 
 
 ```
 chore: init repo, editorconfig, gitignore, license, readme skeleton
-chore(nix): add flake with dev shell (dotnet 8, node 22, pnpm, sane-backends)
+chore(nix): add flake with dev shell (dotnet 10, node 24, pnpm, sane-backends)
 chore: add pre-commit config with dotnet, node, nix, yaml hooks
 chore(dotnet): create solution and empty projects with analyzers and warnaserror
 feat(core): add domain records for session, page and page edits

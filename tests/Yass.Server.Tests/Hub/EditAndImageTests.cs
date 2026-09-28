@@ -15,14 +15,15 @@ public sealed class EditAndImageTests : IAsyncLifetime
     private HubClient _hub = null!;
     private HttpClient _http = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _hub = await HubClient.ConnectAsync(_factory);
         _http = _factory.CreateClient();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
+        _http.Dispose();
         await _hub.DisposeAsync();
         await _factory.DisposeAsync();
     }

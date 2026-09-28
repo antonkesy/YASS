@@ -7,7 +7,7 @@
   fetchPnpmDeps,
   pnpmConfigHook,
   pnpm,
-  nodejs_22,
+  nodejs_24,
   sane-backends,
   version,
   src,
@@ -19,7 +19,7 @@ let
     src = src + "/web";
 
     nativeBuildInputs = [
-      nodejs_22
+      nodejs_24
       pnpm
       pnpmConfigHook
     ];
@@ -28,7 +28,7 @@ let
       inherit (finalAttrs) pname version src;
       inherit pnpm;
       fetcherVersion = 4;
-      hash = "sha256-g6JByWmsLMNJtzVExlbddbIZPv2HcuiJAYlkuo05Biw=";
+      hash = "sha256-CLuVn/HU+BfQ+jUzWQxui9GJgiz64vOMKdQJbiOoCic=";
     };
 
     buildPhase = ''
@@ -51,8 +51,8 @@ buildDotnetModule {
   projectFile = "src/Yass.Server/Yass.Server.csproj";
   nugetDeps = ./deps.json;
 
-  dotnet-sdk = dotnetCorePackages.sdk_8_0;
-  dotnet-runtime = dotnetCorePackages.aspnetcore_8_0;
+  dotnet-sdk = dotnetCorePackages.sdk_10_0;
+  dotnet-runtime = dotnetCorePackages.aspnetcore_10_0;
 
   # The csproj enables PublishTrimmed for the container build; Nix ships the shared runtime instead.
   selfContainedBuild = false;
@@ -63,6 +63,9 @@ buildDotnetModule {
   runtimeDeps = [ sane-backends ];
 
   postInstall = ''
+    # The publish already creates wwwroot, because src/Yass.Server/wwwroot/.gitkeep is tracked.
+    # Copying onto an existing directory would nest the site inside it, so replace it outright.
+    rm -rf $out/lib/yass/wwwroot
     cp -r ${web} $out/lib/yass/wwwroot
     install -Dm644 yass.example.yaml $out/share/yass/yass.example.yaml
   '';

@@ -42,7 +42,7 @@ review the pages, and save a PDF straight into your
 - **Fake mode** (`--fake`) simulates a scanner so you can try the UI, run the
   test-suite, or develop without hardware.
 
-Backend: .NET 8 with [NAPS2.Sdk](https://www.naps2.com/sdk) (SANE + eSCL),
+Backend: .NET 10 with [NAPS2.Sdk](https://www.naps2.com/sdk) (SANE + eSCL),
 SignalR over MessagePack. Frontend: SvelteKit + Tailwind. Storage: plain
 directories, no database.
 
@@ -118,7 +118,7 @@ docker run --rm -p 8080:8080 yass --fake
 ### From source
 
 ```sh
-nix develop                      # dotnet 8, node 22, pnpm, sane-backends, pre-commit
+nix develop                      # dotnet 10, node 24, pnpm, sane-backends, pre-commit
 pnpm --dir web install && pnpm --dir web build
 YASS_WEBROOT=$PWD/web/build dotnet run --project src/Yass.Server -- --fake
 ```

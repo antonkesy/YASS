@@ -28,7 +28,10 @@ def main() -> int:
         for package in ET.parse(report).getroot().iter("package"):
             name = package.get("name", "?")
             for cls in package.iter("class"):
-                filename = cls.get("filename", "?")
+                # Reports disagree on the source root: most spell a file "Yass.Core/Hub/Dtos.cs",
+                # the one from the assembly's own test project spells it "Hub/Dtos.cs". Left alone,
+                # the same line lands in two buckets and inflates the denominator.
+                filename = cls.get("filename", "?").removeprefix(f"{name}/")
                 for line in cls.iter("line"):
                     key = (name, filename, int(line.get("number", "0")))
                     hits[key] = max(hits.get(key, 0), int(line.get("hits", "0")))

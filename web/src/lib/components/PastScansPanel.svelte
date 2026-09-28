@@ -70,7 +70,7 @@
 </script>
 
 <section
-	class="flex animate-fade-in flex-col gap-4 rounded-[28px] bg-surface p-[22px] shadow-card"
+	class="flex min-h-0 animate-fade-in flex-col gap-4 rounded-[28px] bg-surface p-[22px] shadow-card"
 	style:flex="1.25 1 420px"
 	data-testid="past-scans"
 >
@@ -147,54 +147,57 @@
 		/>
 	{/if}
 
-	{#if shown.length === 0}
-		<EmptyState
-			title={sessions.length === 0
-				? 'No past scans yet'
-				: query.trim()
-					? 'No matches'
-					: 'Nothing with this status'}
-			body={sessions.length === 0
-				? 'Every scan is saved here automatically.'
-				: query.trim()
-					? `Nothing named “${query.trim()}”.`
-					: 'Try another status filter.'}
-		/>
-	{:else if view === 'grid'}
-		<div
-			class="grid gap-3"
-			style="grid-template-columns: repeat(auto-fill, minmax(118px, 1fr))"
-			data-testid="session-list"
-		>
-			{#each shown as session, i (session.Id)}
-				<div class="animate-page-in" style="animation-delay: {Math.min(i, 10) * 45}ms">
-					<SessionTile
-						{session}
-						landed={session.Id === landed}
-						selectable={selecting}
-						selected={picked.has(session.Id)}
-						ontoggle={(id) => (picked = toggle(picked, id))}
-					/>
-				</div>
-			{/each}
-		</div>
-	{:else}
-		<div class="flex flex-col gap-1" data-testid="session-list">
-			{#each shown as session, i (session.Id)}
-				<div class="animate-page-in" style="animation-delay: {Math.min(i, 10) * 45}ms">
-					<SessionRow
-						{session}
-						landed={session.Id === landed}
-						selectable={selecting}
-						selected={picked.has(session.Id)}
-						ontoggle={(id) => (picked = toggle(picked, id))}
-						ondownload={ondownload ? (id) => ondownload([id]) : undefined}
-						ondelete={ondelete ? (id) => ondelete([id]) : undefined}
-					/>
-				</div>
-			{/each}
-		</div>
-	{/if}
+	<!-- The list is the only part that scrolls, so the search row and totals stay put. -->
+	<div class="-mx-1 flex min-h-0 flex-1 flex-col overflow-y-auto px-1">
+		{#if shown.length === 0}
+			<EmptyState
+				title={sessions.length === 0
+					? 'No past scans yet'
+					: query.trim()
+						? 'No matches'
+						: 'Nothing with this status'}
+				body={sessions.length === 0
+					? 'Every scan is saved here automatically.'
+					: query.trim()
+						? `Nothing named “${query.trim()}”.`
+						: 'Try another status filter.'}
+			/>
+		{:else if view === 'grid'}
+			<div
+				class="grid gap-3"
+				style="grid-template-columns: repeat(auto-fill, minmax(118px, 1fr))"
+				data-testid="session-list"
+			>
+				{#each shown as session, i (session.Id)}
+					<div class="animate-page-in" style="animation-delay: {Math.min(i, 10) * 45}ms">
+						<SessionTile
+							{session}
+							landed={session.Id === landed}
+							selectable={selecting}
+							selected={picked.has(session.Id)}
+							ontoggle={(id) => (picked = toggle(picked, id))}
+						/>
+					</div>
+				{/each}
+			</div>
+		{:else}
+			<div class="flex flex-col gap-1" data-testid="session-list">
+				{#each shown as session, i (session.Id)}
+					<div class="animate-page-in" style="animation-delay: {Math.min(i, 10) * 45}ms">
+						<SessionRow
+							{session}
+							landed={session.Id === landed}
+							selectable={selecting}
+							selected={picked.has(session.Id)}
+							ontoggle={(id) => (picked = toggle(picked, id))}
+							ondownload={ondownload ? (id) => ondownload([id]) : undefined}
+							ondelete={ondelete ? (id) => ondelete([id]) : undefined}
+						/>
+					</div>
+				{/each}
+			</div>
+		{/if}
+	</div>
 
 	{#if sessions.length > 0}
 		<div class="mt-auto flex items-center gap-2 border-t border-line pt-3">
