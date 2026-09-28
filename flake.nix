@@ -20,7 +20,7 @@
       system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        dotnet = pkgs.dotnet-sdk_8;
+        dotnet = pkgs.dotnet-sdk_10;
         version = pkgs.lib.trim (builtins.readFile ./version.txt);
         yass = pkgs.callPackage ./nix/package.nix {
           inherit version;

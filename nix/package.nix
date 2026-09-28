@@ -51,8 +51,8 @@ buildDotnetModule {
   projectFile = "src/Yass.Server/Yass.Server.csproj";
   nugetDeps = ./deps.json;
 
-  dotnet-sdk = dotnetCorePackages.sdk_8_0;
-  dotnet-runtime = dotnetCorePackages.aspnetcore_8_0;
+  dotnet-sdk = dotnetCorePackages.sdk_10_0;
+  dotnet-runtime = dotnetCorePackages.aspnetcore_10_0;
 
   # The csproj enables PublishTrimmed for the container build; Nix ships the shared runtime instead.
   selfContainedBuild = false;
