@@ -15,6 +15,9 @@
 		onfilter,
 		oncrop,
 		onrescan,
+		onsplit,
+		splits = false,
+		firstPage = false,
 		onclear
 	}: {
 		selectedCount: number;
@@ -29,6 +32,12 @@
 		onfilter: (filter: PageFilter) => void;
 		oncrop?: () => void;
 		onrescan?: () => void;
+		/** Toggles whether the target page opens a document. */
+		onsplit?: (split: boolean) => void;
+		/** Whether the target page currently opens a document. */
+		splits?: boolean;
+		/** The target page is the first one, which always opens a document. */
+		firstPage?: boolean;
 		onclear: () => void;
 	} = $props();
 
@@ -123,6 +132,21 @@
 		>
 			<Icon name="rescan" />
 			Rescan
+		</button>
+	{/if}
+
+	{#if onsplit}
+		<button
+			type="button"
+			class="{splits ? 'bg-accent-50 text-accent' : 'text-ink'} {tool}"
+			disabled={disabled || firstPage}
+			onclick={() => onsplit(!splits)}
+			aria-pressed={splits}
+			aria-label={splits ? 'Join with previous page' : 'Split before this page'}
+			data-testid="split-button"
+		>
+			<Icon name="scissors" />
+			{splits ? 'Join' : 'Split'}
 		</button>
 	{/if}
 

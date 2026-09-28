@@ -18,6 +18,7 @@ public sealed class YassHub(
     ScanService scans,
     EditService editor,
     ExportService exporter,
+    IPageSink sinkFor,
     TimeProvider time,
     ILogger<YassHub> logger)
     : Hub<IYassClient>, IYassHub
@@ -146,6 +147,62 @@ public sealed class YassHub(
         {
             throw new HubException(ex.Message);
         }
+    }
+
+    public async Task<SessionDto> MergeSession(string targetId, string sourceId)
+    {
+        Session target = Find(targetId);
+        Session source = Find(sourceId);
+
+        if (target.State is not (SessionState.Review or SessionState.Done))
+        {
+            throw new HubException($"Session is {target.State}; pages can only be added in Review.");
+        }
+
+        if (string.Equals(targetId, sourceId, StringComparison.Ordinal))
+        {
+            throw new HubException("A scan cannot be merged into itself.");
+        }
+
+        Page[] incoming = [.. source.ActivePages];
+        if (incoming.Length == 0)
+        {
+            throw new HubException("That scan has no pages left to add.");
+        }
+
+        // Page files are copied, not moved: the source scan stays intact and usable.
+        string targetDir = SessionPaths.Directory(sessions.Root, targetId);
+        var copied = new List<Page>();
+        int next = target.Pages.Count;
+        foreach (Page page in incoming)
+        {
+            string fileName = $"merged-{Guid.NewGuid():N}{Path.GetExtension(page.SourceFile)}";
+            File.Copy(SessionPaths.Source(sessions.Root, source, page), Path.Combine(targetDir, fileName), overwrite: false);
+            copied.Add(page with
+            {
+                Index = next++,
+                SourceFile = fileName,
+                // The merged run becomes its own document, which is the point of merging
+                // rather than rescanning into this session.
+                StartsDocument = copied.Count == 0,
+                Deleted = false,
+            });
+        }
+
+        Session merged = sessions.Update(targetId, s => s with
+        {
+            Pages = [.. s.Pages, .. copied.Select(p => PageHash.Rehash(p, s.OptionsUsed.Color))],
+        });
+
+        foreach (Page page in merged.Pages.Skip(target.Pages.Count))
+        {
+            sinkFor.Enqueue(merged, page);
+        }
+
+        SessionDto dto = mapper.ToDto(merged);
+        await Clients.All.SessionChanged(dto).ConfigureAwait(false);
+        logger.LogInformation("Merged {Count} page(s) from {Source} into {Target}", copied.Count, sourceId, targetId);
+        return dto;
     }
 
     public async Task<ExportResult> Export(string sessionId, ExportRequest request)

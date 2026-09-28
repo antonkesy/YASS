@@ -47,6 +47,8 @@ export type PageDto = {
     /** Transpiled from Yass.Core.Domain.CropBox? */
     Crop?: CropBox;
     /** Transpiled from bool */
+    StartsDocument: boolean;
+    /** Transpiled from bool */
     Deleted: boolean;
     /** Transpiled from bool */
     IsBlank: boolean;
@@ -110,6 +112,14 @@ export type ExportRequest = {
 export type ExportResult = {
     /** Transpiled from Yass.Core.Hub.ExportMode */
     Mode: ExportMode;
+    /** Transpiled from int */
+    PageCount: number;
+    /** Transpiled from Yass.Core.Hub.ExportedDocumentDto[] */
+    Documents: ExportedDocumentDto[];
+}
+
+/** Transpiled from Yass.Core.Hub.ExportedDocumentDto */
+export type ExportedDocumentDto = {
     /** Transpiled from int */
     PageCount: number;
     /** Transpiled from string? */

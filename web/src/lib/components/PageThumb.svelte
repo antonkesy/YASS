@@ -7,12 +7,15 @@
 		sessionId,
 		page,
 		selected = false,
+		document = null,
 		ontoggle,
 		onopen
 	}: {
 		sessionId: string;
 		page: PageDto;
 		selected?: boolean;
+		/** Document number to badge this page with, when it opens one past the first. */
+		document?: number | null;
 		ontoggle: (index: number) => void;
 		onopen: (index: number) => void;
 	} = $props();
@@ -38,6 +41,14 @@
 	data-selected={selected}
 	data-deleted={page.Deleted}
 >
+	{#if document !== null}
+		<span
+			class="absolute -top-1.5 left-1 z-1 animate-pop-in rounded-full bg-accent px-[7px] py-[3px] text-[10px] font-bold text-white"
+			data-testid="doc-badge"
+		>
+			Doc {document}
+		</span>
+	{/if}
 	<button
 		type="button"
 		class="relative flex w-full items-center justify-center overflow-hidden rounded-[6px] bg-surface shadow-page"

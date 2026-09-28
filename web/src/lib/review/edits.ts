@@ -12,7 +12,7 @@ export function targetsOf(selection: ReadonlySet<number>): number[] | undefined 
  * does not use rather than each of them repeating the defaults.
  */
 function edit(Op: PageEditOp, extra: Partial<PageEdit> = {}): PageEdit {
-	return { Op, Degrees: 0, Filter: PageFilter.Original, ...extra };
+	return { Op, Degrees: 0, Filter: PageFilter.Original, Split: false, ...extra };
 }
 
 export function rotateEdit(degrees: 90 | -90 | 180, selection: ReadonlySet<number>): PageEdit {
@@ -33,6 +33,10 @@ export function setFilterEdit(filter: PageFilter, selection: ReadonlySet<number>
 
 export function setCropEdit(crop: CropBox | undefined, selection: ReadonlySet<number>): PageEdit {
 	return edit(PageEditOp.SetCrop, { Crop: crop, Targets: targetsOf(selection) });
+}
+
+export function setSplitEdit(split: boolean, selection: ReadonlySet<number>): PageEdit {
+	return edit(PageEditOp.SetSplit, { Split: split, Targets: targetsOf(selection) });
 }
 
 export function reorderEdit(order: number[]): PageEdit {
@@ -68,6 +72,8 @@ export function applyOptimistic(session: SessionDto, edit: PageEdit): SessionDto
 				return { ...page, Filter: edit.Filter };
 			case PageEditOp.SetCrop:
 				return { ...page, Crop: edit.Crop };
+			case PageEditOp.SetSplit:
+				return { ...page, StartsDocument: edit.Split };
 			default:
 				return page;
 		}
@@ -98,3 +104,18 @@ export const pageFilterLabels: Record<PageFilter, string> = {
 	[PageFilter.Grayscale]: 'Grayscale',
 	[PageFilter.Bw]: 'Black & white'
 };
+
+/**
+ * Which document each page belongs to, one-based, mirroring Session.Documents on the
+ * server: deleted pages belong to none, and the first active page always opens one.
+ */
+export function documentNumbers(pages: readonly PageDto[]): Map<number, number> {
+	const numbers = new Map<number, number>();
+	let current = 0;
+	for (const page of pages) {
+		if (page.Deleted) continue;
+		if (current === 0 || page.StartsDocument) current += 1;
+		numbers.set(page.Index, current);
+	}
+	return numbers;
+}

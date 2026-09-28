@@ -10,6 +10,7 @@
 		selection,
 		reorderable = true,
 		scanning = false,
+		documents,
 		ontoggle,
 		onopen,
 		onreorder,
@@ -21,6 +22,8 @@
 		reorderable?: boolean;
 		/** Shows a placeholder tile for the page currently coming off the feeder. */
 		scanning?: boolean;
+		/** Page index to document number, so a split shows where it falls. */
+		documents?: Map<number, number>;
 		ontoggle: (index: number) => void;
 		onopen: (index: number) => void;
 		onreorder: (order: number[]) => void;
@@ -142,6 +145,9 @@
 				{sessionId}
 				{page}
 				selected={selection.has(page.Index)}
+				document={page.StartsDocument && (documents?.get(page.Index) ?? 0) > 1
+					? documents!.get(page.Index)!
+					: null}
 				ontoggle={toggle}
 				{onopen}
 			/>

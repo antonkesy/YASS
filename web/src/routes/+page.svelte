@@ -7,6 +7,7 @@
 	import PastScansPanel from '$lib/components/PastScansPanel.svelte';
 	import { pickEditable, settings } from '$lib/settings';
 	import { ExportMode } from '$lib/hub/generated/Yass.Core.Hub';
+	import { saveToBrowser } from '$lib/review/download';
 
 	const client = getHub();
 	const scanner = client.scanner;
@@ -55,15 +56,7 @@
 		working = true;
 		try {
 			for (const id of ids) {
-				const result = await client.hub.export(id, { Mode: ExportMode.Download });
-				if (!result.DownloadPath) continue;
-				const a = document.createElement('a');
-				a.href = result.DownloadPath;
-				a.download = '';
-				a.rel = 'noopener';
-				document.body.append(a);
-				a.click();
-				a.remove();
+				saveToBrowser(await client.hub.export(id, { Mode: ExportMode.Download }));
 			}
 		} catch (e) {
 			error = e instanceof Error ? e.message : String(e);

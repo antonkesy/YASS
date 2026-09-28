@@ -13,6 +13,7 @@ export function page(Index: number, over: Partial<PageDto> = {}): PageDto {
 		Deleted: false,
 		IsBlank: false,
 		Filter: PageFilter.Original,
+		StartsDocument: false,
 		Hash: `h${Index}`,
 		ThumbnailReady: true,
 		...over

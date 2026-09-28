@@ -69,6 +69,14 @@ export type IYassHub = {
     */
     rescanPage(sessionId: string, pageIndex: number): Promise<SessionDto>;
     /**
+    * Copies the active pages of  onto the end of
+    * , starting a new document at the join. The source is left alone.
+    * @param targetId Transpiled from string
+    * @param sourceId Transpiled from string
+    * @returns Transpiled from System.Threading.Tasks.Task<Yass.Core.Hub.SessionDto>
+    */
+    mergeSession(targetId: string, sourceId: string): Promise<SessionDto>;
+    /**
     * @param sessionId Transpiled from string
     * @param request Transpiled from Yass.Core.Hub.ExportRequest
     * @returns Transpiled from System.Threading.Tasks.Task<Yass.Core.Hub.ExportResult>
