@@ -37,6 +37,15 @@ directories, no database.
 
 ## Quickstart
 
+### Just want to see it?
+
+```sh
+cd demo && docker compose up --build   # then open http://localhost:8080
+```
+
+[`demo/`](demo) is a self-contained, throwaway setup: fake scanner, no hardware,
+saved PDFs land in `demo/output/`. See [`demo/README.md`](demo/README.md).
+
 ### Docker Compose (recommended)
 
 ```yaml

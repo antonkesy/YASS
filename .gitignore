@@ -24,8 +24,13 @@ result-*
 
 # Runtime data
 /data/
-yawss.yaml
+# per-host config only; demo/yawss.yaml is committed
+/yawss.yaml
 *.log
+
+# Demo output (PDFs the demo container writes)
+/demo/output/*
+!/demo/output/.gitkeep
 
 # Editors / OS
 .idea/
