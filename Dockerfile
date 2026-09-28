@@ -9,7 +9,7 @@ RUN pnpm install --frozen-lockfile
 COPY web/ ./
 RUN pnpm build
 
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS server
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS server
 ARG TARGETARCH
 WORKDIR /src
 COPY global.json Directory.Build.props Directory.Packages.props Yass.sln .editorconfig ./
@@ -21,7 +21,7 @@ RUN --mount=type=cache,target=/root/.nuget/packages \
     dotnet publish src/Yass.Server/Yass.Server.csproj -c Release -r linux-musl-${TARGETARCH} \
       --self-contained true --no-restore -o /app
 
-FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-alpine AS runtime
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-alpine AS runtime
 # sane-backends provides libsane for USB scanners; sane-utils is handy for `scanimage -L` diagnostics.
 # tesseract-ocr backs naming.ocr, which is off unless configured.
 RUN apk add --no-cache sane-backends sane-utils libusb tini tesseract-ocr tesseract-ocr-data-eng \

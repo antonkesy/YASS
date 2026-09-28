@@ -22,7 +22,7 @@ public sealed class PdfAssemblyTests : IDisposable
         Directory.Delete(_dir, recursive: true);
     }
 
-    private static int PageCount(string pdf) => Regex.Matches(pdf, @"/Type\s*/Page\b").Count;
+    private static int PageCount(string pdf) => Regex.Count(pdf, @"/Type\s*/Page\b");
 
     private static (double W, double H)[] MediaBoxes(string pdf) =>
         Regex.Matches(pdf, @"/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]")

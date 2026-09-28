@@ -24,6 +24,12 @@ dotnet_diagnostic.CA1812.severity = none
 dotnet_diagnostic.CA1819.severity = none
 dotnet_diagnostic.CA2007.severity = none
 dotnet_diagnostic.CA1848.severity = none
+# CA1515: Yass.Server is an exe, but Yass.Server.Tests references its types and
+# WebApplicationFactory<Program> requires Program to stay public.
+dotnet_diagnostic.CA1515.severity = none
+# CA1873: the flagged log arguments are property reads and counts, not work worth guarding.
+# Same reasoning as CA1848 above: this is a single-user home server, not a hot path.
+dotnet_diagnostic.CA1873.severity = none
 
 [*.{csproj,props,targets,sln}]
 indent_size = 2
