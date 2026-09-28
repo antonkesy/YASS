@@ -6,6 +6,7 @@ import ExportBar from '$lib/components/ExportBar.svelte';
 import PageThumb from '$lib/components/PageThumb.svelte';
 import SettingsChips from '$lib/components/SettingsChips.svelte';
 import SortMenu from '$lib/components/SortMenu.svelte';
+import AppFooter from '$lib/components/AppFooter.svelte';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import {
 	ColorMode,
@@ -240,5 +241,26 @@ describe('SortMenu', () => {
 		expect(screen.getByTestId('sort-button')).toHaveTextContent(/Newest/);
 		await rerender({ order: 'name', onchange });
 		expect(screen.getByTestId('sort-button')).toHaveTextContent(/Name/);
+	});
+});
+
+describe('AppFooter', () => {
+	it('links out to the repository, and marks the links external', () => {
+		render(AppFooter);
+
+		const github = screen.getByRole('link', { name: /GitHub/ });
+		expect(github).toHaveAttribute('href', 'https://github.com/antonkesy/YAWSS');
+
+		expect(screen.getByRole('link', { name: /Report an issue/ })).toHaveAttribute(
+			'href',
+			'https://github.com/antonkesy/YAWSS/issues/new'
+		);
+
+		// rel=external keeps SvelteKit's router out of the way, and is what lets these
+		// pass svelte/no-navigation-without-resolve without loosening the rule.
+		for (const link of screen.getAllByRole('link')) {
+			expect(link.getAttribute('rel')).toContain('external');
+			expect(link).toHaveAttribute('target', '_blank');
+		}
 	});
 });

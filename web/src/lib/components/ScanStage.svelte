@@ -71,7 +71,7 @@
 </script>
 
 <section
-	class="flex animate-fade-in flex-col items-center justify-center gap-[18px] rounded-[28px] px-5 py-8 shadow-stage sm:px-8 sm:py-12"
+	class="flex min-h-0 animate-fade-in flex-col items-center justify-center gap-[clamp(8px,1.4vh,18px)] overflow-y-auto rounded-[28px] px-5 py-8 shadow-stage sm:px-8 sm:py-[clamp(1rem,2.6vh,3rem)]"
 	style="background: radial-gradient(120% 80% at 50% 0%, var(--color-accent-wash2) 0%, var(--color-surface) 60%)"
 	style:flex="2 1 520px"
 	data-testid="scan-stage"
@@ -92,7 +92,7 @@
 	{/if}
 
 	<h1
-		class="text-center text-[34px] font-extrabold tracking-[-0.03em] text-balance sm:text-[clamp(46px,3.6vw,60px)]"
+		class="text-center text-[34px] font-extrabold tracking-[-0.03em] text-balance sm:text-[clamp(28px,min(3.6vw,4vh),60px)]"
 	>
 		{headline}
 	</h1>
