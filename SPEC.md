@@ -157,7 +157,7 @@ Scan loop: iterate `ScanController.Scan(options)` until the enumerable ends (fee
 
 Routes: `/` (scanner status pill, big Scan button, recent sessions), `/session/[id]` (review), `/settings` (only `ui_editable` keys, stored in `localStorage`).
 
-Review: responsive thumbnail grid (2 cols phone → 6 desktop); tap = multi-select; drag = reorder; toolbar acts on selection or "all" when nothing selected: rotate ⟲ ⟳, delete/restore, color mode. Tap → full preview with swipe. Blank pages pre-marked deleted with badge. Sticky bottom bar: page count, **Save** (to `output.directory`), Download (if `allow_download`), Discard. Edits apply optimistically (CSS rotate) and reconcile on `PageUpdated`.
+Review: page strip (a row above the page on a phone, a column beside it on desktop); tap a thumbnail = show that page on the stage, its checkbox = multi-select; drag = reorder; toolbar acts on selection or "all" when nothing selected: rotate ⟲ ⟳, delete/restore, color mode. Tap → full preview with swipe. Blank pages pre-marked deleted with badge. Sticky bottom bar: page count, **Save** (to `output.directory`), Download (if `allow_download`), Discard. Edits apply optimistically (CSS rotate) and reconcile on `PageUpdated`.
 
 Targets: first paint < 1 s over LAN; JS ≤ 150 kB gzipped; no image bytes held in JS beyond the current preview; all actions keyboard-reachable; touch targets ≥ 44 px; works without service worker.
 
