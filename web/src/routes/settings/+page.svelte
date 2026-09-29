@@ -849,14 +849,6 @@
 						/>
 					</label>
 
-					<Toggle
-						name="ai-images"
-						label="Send the page when text cannot be read"
-						hint="Needs a model that can see. Off means Find name falls back to your template on a server with OCR switched off."
-						checked={$aiPrefs.useImages}
-						onchange={(v) => aiPrefs.set({ ...$aiPrefs, useImages: v })}
-					/>
-
 					<div class="flex flex-col gap-1.5">
 						<span class="flex items-center gap-2">
 							<button

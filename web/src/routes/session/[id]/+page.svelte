@@ -46,12 +46,9 @@
 	import { aiKeys, aiPrefs, exportPrefs, reviewPrefs } from '$lib/presets';
 	import {
 		aiSuggestion,
-		fetchPageImage,
-		isInBrowser,
 		merge as mergeSuggestions,
 		suggestName,
 		NamingError,
-		NEEDS_PAGE_TEXT,
 		type NamingInput,
 		type Phase
 	} from '$lib/naming';
@@ -330,22 +327,12 @@
 	}
 
 	/**
-	 * What the browser's own model should read: what the server read, or the page itself when
-	 * it read nothing. A model running in this browser cannot see, so it only gets text — and
-	 * when there is none it says so rather than leaving the popover thin with no reason given.
+	 * What to hand a model: the text the server read. Nothing when it read none — which the
+	 * button being offered at all already rules out, bar a race with a config reload.
 	 */
-	async function modelInput(read: NameSuggestionsDto): Promise<NamingInput | null> {
+	function modelInput(read: NameSuggestionsDto): NamingInput | null {
 		const text = read.Text?.trim();
-		if (text) return { kind: 'text', text, pages: Math.min(activePages, pageTextPages) };
-		if (isInBrowser($aiPrefs.provider)) throw new NamingError(NEEDS_PAGE_TEXT);
-		if (!$aiPrefs.useImages) return null;
-
-		const page = session?.Pages.find((p) => !p.Deleted);
-		if (!page) return null;
-		const { mediaType, base64 } = await fetchPageImage(
-			imageUrl(id, page.Index, page.Hash, 'preview')
-		);
-		return { kind: 'image', mediaType, base64 };
+		return text ? { kind: 'text', text, pages: Math.min(activePages, pageTextPages) } : null;
 	}
 
 	/**
@@ -371,15 +358,12 @@
 
 	// The retry button can re-enter this while a call is in flight; only the latest one writes.
 	let run = 0;
-	/** What the model was given, which the popover repeats back rather than guessing. */
-	let sentToModel = $state<'text' | 'image' | null>(null);
 
 	async function findName() {
 		const mine = ++run;
 		suggesting = 'reading';
 		suggestions = null;
 		suggestError = null;
-		sentToModel = null;
 
 		try {
 			// Whatever the server can offer goes up first: a slow or broken model must never
@@ -389,10 +373,18 @@
 			suggestions = read;
 			suggesting = 'ready';
 
-			const input = await modelInput(read);
-			if (run !== mine || !input) return;
+			const input = modelInput(read);
+			if (run !== mine) return;
+			if (!input) {
+				// The server could read, and read nothing: a photo, a blank page, handwriting.
+				// Without this the popover comes back holding only the template, and the reason
+				// it is thin is left to be guessed at. Not covered by the e2e suite — the fake
+				// scanner's fixtures do carry readable text — so this is checked by hand.
+				suggestError =
+					'No words were found on the pages that were read, so there was nothing to name this from.';
+				return;
+			}
 
-			sentToModel = input.kind;
 			suggesting = 'thinking';
 			const named = await suggestName(input, $aiPrefs, $aiKeys, {
 				onphase: (phase: Phase) => {
@@ -669,7 +661,6 @@
 							error={suggestError ?? suggestions?.Error ?? null}
 							current={session.Name?.trim() ?? null}
 							pages={Math.min(activePages, pageTextPages)}
-							sent={sentToModel}
 							onpick={(name) => {
 								closeSuggestions();
 								rename(name);

@@ -22,7 +22,6 @@ import { NameSource } from '$lib/hub/generated/Yass.Core.Naming';
 import type { NameSuggestionsDto } from '$lib/hub/generated/Yass.Core.Hub';
 
 const text: NamingInput = { kind: 'text', text: 'Northwind Traders\nQuarterly Report', pages: 1 };
-const image: NamingInput = { kind: 'image', mediaType: 'image/webp', base64: 'AAAA' };
 
 const ask = { key: 'sk-test', model: 'a-model', baseUrl: 'https://api.example.com/v1' };
 
@@ -80,13 +79,13 @@ describe('the Anthropic shape', () => {
 		expect(sent(calls[0].init).system).toBe(INSTRUCTION);
 	});
 
-	it('sends the page itself when there is no text to send', async () => {
+	it('sends text and only text, because that is all there is to send', async () => {
 		const { get, calls } = answering({ content: [{ text: 'A Scanned Page' }] });
 
-		await askAnthropic(image, ask, get);
+		await askAnthropic(text, ask, get);
 
 		const content = sent(calls[0].init).messages as { content: { type: string }[] }[];
-		expect(content[0].content[0].type).toBe('image');
+		expect(content[0].content.map((c) => c.type)).toEqual(['text']);
 	});
 });
 
@@ -99,13 +98,13 @@ describe('the OpenAI-compatible shape', () => {
 		expect(headers(calls[0].init).authorization).toBe('Bearer sk-test');
 	});
 
-	it('sends the page as a data url when there is no text', async () => {
+	it('hands the user turn a plain string, not a list of parts', async () => {
 		const { get, calls } = answering({ choices: [{ message: { content: 'A Page' } }] });
 
-		await askOpenAiCompatible(image, ask, get);
+		await askOpenAiCompatible(text, ask, get);
 
-		const messages = sent(calls[0].init).messages as { content: { type: string }[] }[];
-		expect(messages[1].content[1].type).toBe('image_url');
+		const messages = sent(calls[0].init).messages as { content: unknown }[];
+		expect(typeof messages[1].content).toBe('string');
 	});
 });
 
@@ -189,15 +188,6 @@ describe('choosing who to ask', () => {
 	] as const)('knows whether %s runs here', (provider, here) => {
 		expect(isInBrowser(provider)).toBe(here);
 	});
-
-	it.each(['webllm', 'wllama'] as const)(
-		'tells %s the page image is not something it can read',
-		async (provider) => {
-			await expect(suggestName(image, prefs({ provider }), defaultAiKeys)).rejects.toThrow(
-				/can only read text/
-			);
-		}
-	);
 
 	it('asks the model on the processor, and credits it by name rather than by URL', async () => {
 		const chosen = CPU_MODELS[0];

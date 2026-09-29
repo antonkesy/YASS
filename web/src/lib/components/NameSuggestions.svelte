@@ -9,7 +9,6 @@
 		error = null,
 		current = null,
 		pages = 1,
-		sent = null,
 		onpick,
 		onretry,
 		onclose
@@ -22,8 +21,6 @@
 		current?: string | null;
 		/** How many pages are being read, which the server decides and the copy repeats. */
 		pages?: number;
-		/** What was actually handed to a model, so the footer can say it exactly. */
-		sent?: 'text' | 'image' | null;
 		onpick: (name: string) => void;
 		onretry: () => void;
 		onclose: () => void;
@@ -140,8 +137,6 @@
 		<p class="px-1.5 pb-1 text-[11px] text-ink-faint" data-testid="suggest-privacy">
 			{#if result.Local}
 				Read on this server. Nothing left it.
-			{:else if sent === 'image'}
-				The page image was sent to an external model to read and summarise.
 			{:else}
 				The text read from the page was sent to an external model to summarise.
 			{/if}

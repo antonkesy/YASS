@@ -66,17 +66,6 @@ export async function askAnthropic(
 	ask: Ask,
 	get: typeof fetch = fetch
 ): Promise<string | null> {
-	const content =
-		input.kind === 'text'
-			? [{ type: 'text', text: question(input) }]
-			: [
-					{
-						type: 'image',
-						source: { type: 'base64', media_type: input.mediaType, data: input.base64 }
-					},
-					{ type: 'text', text: question(input) }
-				];
-
 	const response = await send(
 		`${ask.baseUrl.replace(/\/+$/, '')}/v1/messages`,
 		{
@@ -93,7 +82,7 @@ export async function askAnthropic(
 				model: ask.model,
 				max_tokens: MAX_TOKENS,
 				system: INSTRUCTION,
-				messages: [{ role: 'user', content }]
+				messages: [{ role: 'user', content: [{ type: 'text', text: question(input) }] }]
 			}),
 			signal: ask.signal
 		},
@@ -110,17 +99,6 @@ export async function askOpenAiCompatible(
 	ask: Ask,
 	get: typeof fetch = fetch
 ): Promise<string | null> {
-	const content =
-		input.kind === 'text'
-			? question(input)
-			: [
-					{ type: 'text', text: question(input) },
-					{
-						type: 'image_url',
-						image_url: { url: `data:${input.mediaType};base64,${input.base64}` }
-					}
-				];
-
 	// The base URL carries its own /v1, which is how every one of these hosts documents itself.
 	const response = await send(
 		`${ask.baseUrl.replace(/\/+$/, '')}/chat/completions`,
@@ -135,7 +113,7 @@ export async function askOpenAiCompatible(
 				max_tokens: MAX_TOKENS,
 				messages: [
 					{ role: 'system', content: INSTRUCTION },
-					{ role: 'user', content }
+					{ role: 'user', content: question(input) }
 				]
 			}),
 			signal: ask.signal
