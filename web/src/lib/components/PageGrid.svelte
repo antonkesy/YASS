@@ -16,6 +16,7 @@
 		documents,
 		layout = 'strip',
 		tile = DEFAULT_TILE,
+		grid = $bindable(null),
 		onshow,
 		ontoggle,
 		onopen,
@@ -40,6 +41,8 @@
 		layout?: 'strip' | 'overview';
 		/** Minimum width of one tile in the overview, i.e. the zoom level. */
 		tile?: number;
+		/** The scrolling element, out here so the overview can ask whether everything fits. */
+		grid?: HTMLDivElement | null;
 		onshow: (index: number) => void;
 		ontoggle: (index: number) => void;
 		/** Opens a page full screen, offered per tile in the overview and by the toolbar in the strip. */
@@ -57,7 +60,6 @@
 	const HOLD_MS = 250;
 	const MOVE_PX = 6;
 
-	let grid = $state<HTMLDivElement | null>(null);
 	let drag = $state<{ from: number; over: number | null } | null>(null);
 	let pressTimer: ReturnType<typeof setTimeout> | null = null;
 	let pressStart: { x: number; y: number; index: number; hold: boolean } | null = null;
@@ -219,7 +221,7 @@
 	);
 	const scroller = $derived(
 		overview
-			? 'grid min-h-0 flex-1 gap-3 overflow-y-auto overscroll-contain p-1 pb-6'
+			? 'grid min-h-0 flex-1 content-start gap-3 overflow-y-auto overscroll-contain p-1 pb-6'
 			: 'flex min-h-0 flex-1 flex-row gap-3 overflow-x-auto lg:flex-col lg:overflow-x-visible lg:overflow-y-auto'
 	);
 	/** One tile: a fixed sliver in the strip, a zoomable cell of the overview's grid. */

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import { tick, untrack, type Snippet } from 'svelte';
 	import type { PageDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { Icon } from '$lib/icons';
-	import { TILE_SIZES, zoomTile } from '$lib/review/overview';
+	import { DEFAULT_TILE, fitTile, TILE_SIZES, zoomTile } from '$lib/review/overview';
 	import PageGrid from './PageGrid.svelte';
 
 	let {
@@ -30,8 +30,11 @@
 		reorderable?: boolean;
 		scanning?: boolean;
 		documents?: Map<number, number>;
-		/** Tile width in pixels; the overlay owns the control, the caller owns the value. */
-		tile: number;
+		/**
+		 * Tile width in pixels, or `'fit'` for whatever puts every page on one screen. The
+		 * overlay owns the control, the caller owns the value.
+		 */
+		tile: number | 'fit';
 		onzoom: (tile: number) => void;
 		onshow: (index: number) => void;
 		ontoggle: (index: number) => void;
@@ -46,14 +49,80 @@
 	let dialog = $state<HTMLDivElement | null>(null);
 	const all = $derived(pages.length > 0 && selection.size === pages.length);
 
+	/**
+	 * Fitting everything on one screen is measured, not worked out: a tile's height is the
+	 * thumbnail's aspect plus whatever the markup puts under it, and a formula for that here
+	 * would go quietly wrong the next time the markup changes. So the grid is drawn at two
+	 * known sizes first, hidden, and the line through those two points says how tall a tile
+	 * of any width would be.
+	 */
+	const PROBES = [TILE_SIZES[2], TILE_SIZES[TILE_SIZES.length - 1]] as const;
+
+	let gridEl = $state<HTMLDivElement | null>(null);
+	let fitted = $state<number>(DEFAULT_TILE);
+	/**
+	 * Which probe is on screen, or -1 once there is a size to show. The initial read of
+	 * `tile` is deliberate: this view is built fresh each time it opens, and fitting is what
+	 * an open does — a later switch to 'fit' in settings is for the next one.
+	 */
+	let probe = $state(untrack(() => tile) === 'fit' ? 0 : -1);
+
+	/** What the grid is actually drawn at, which the zoom buttons step from. */
+	const shown = $derived(tile !== 'fit' ? tile : probe >= 0 ? PROBES[probe] : fitted);
+
+	// Plain, not state: it guards the run below without becoming a reason to run it again.
+	let measured = false;
+
+	$effect(() => {
+		const grid = gridEl;
+		if (measured || !grid || probe < 0) return;
+		measured = true;
+		void measure(grid);
+	});
+
+	async function measure(grid: HTMLDivElement) {
+		const samples: { w: number; h: number }[] = [];
+
+		for (let i = 0; i < PROBES.length; i++) {
+			probe = i;
+			// The size has to be on the page before it can be measured, and `tick` is what
+			// says it is. Reading offsetWidth then forces the layout that answers.
+			await tick();
+			const cell = grid.querySelector<HTMLElement>('[data-index]');
+			if (!cell) {
+				probe = -1;
+				return;
+			}
+			samples.push({ w: cell.offsetWidth, h: cell.offsetHeight });
+		}
+
+		const [small, large] = samples;
+		const style = getComputedStyle(grid);
+		const slope = large.w === small.w ? 0 : (large.h - small.h) / (large.w - small.w);
+
+		fitted = fitTile({
+			count: pages.length,
+			width: grid.clientWidth - px(style.paddingLeft) - px(style.paddingRight),
+			height: grid.clientHeight - px(style.paddingTop) - px(style.paddingBottom),
+			gap: px(style.rowGap),
+			slope,
+			intercept: small.h - slope * small.w
+		});
+		probe = -1;
+	}
+
+	function px(value: string): number {
+		return Number.parseFloat(value) || 0;
+	}
+
 	$effect(() => {
 		dialog?.focus();
 	});
 
 	function keydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') onclose();
-		else if (e.key === '+' || e.key === '=') onzoom(zoomTile(tile, 1));
-		else if (e.key === '-' || e.key === '_') onzoom(zoomTile(tile, -1));
+		else if (e.key === '+' || e.key === '=') onzoom(zoomTile(shown, 1));
+		else if (e.key === '-' || e.key === '_') onzoom(zoomTile(shown, -1));
 		else return;
 		e.preventDefault();
 	}
@@ -112,8 +181,8 @@
 					type="button"
 					class="{round} h-8 w-8 bg-transparent"
 					aria-label="Zoom out"
-					disabled={tile <= TILE_SIZES[0]}
-					onclick={() => onzoom(zoomTile(tile, -1))}
+					disabled={shown <= TILE_SIZES[0]}
+					onclick={() => onzoom(zoomTile(shown, -1))}
 					data-testid="overview-zoom-out"
 				>
 					<Icon name="zoomOut" />
@@ -122,8 +191,8 @@
 					type="button"
 					class="{round} h-8 w-8 bg-transparent"
 					aria-label="Zoom in"
-					disabled={tile >= TILE_SIZES[TILE_SIZES.length - 1]}
-					onclick={() => onzoom(zoomTile(tile, 1))}
+					disabled={shown >= TILE_SIZES[TILE_SIZES.length - 1]}
+					onclick={() => onzoom(zoomTile(shown, 1))}
 					data-testid="overview-zoom-in"
 				>
 					<Icon name="zoomIn" />
@@ -136,10 +205,12 @@
 		</p>
 	</header>
 
-	<div class="flex min-h-0 flex-1 flex-col px-3 pt-3 sm:px-6">
+	<!-- Hidden, not gone, while the two probe sizes are measured: they have to be laid out. -->
+	<div class="flex min-h-0 flex-1 flex-col px-3 pt-3 sm:px-6 {probe >= 0 ? 'invisible' : ''}">
 		<PageGrid
 			layout="overview"
-			{tile}
+			tile={shown}
+			bind:grid={gridEl}
 			{sessionId}
 			{pages}
 			{selection}

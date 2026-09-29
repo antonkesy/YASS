@@ -72,8 +72,10 @@ test('scan, review, edit, download and save', async ({ page }) => {
 	// Tapping the page itself only moves the stage; nothing joins the selection.
 	await thumbs.nth(0).getByRole('button', { name: 'Show page 1' }).click();
 	await expect(thumbs.nth(0)).toHaveAttribute('data-current', 'true');
-	// And the toolbar under it acts on that page, not on the whole scan.
-	await expect(page.getByTestId('toolbar-scope')).toHaveText(/this page/);
+	// The toolbar under it edits that page and says nothing about a selection: picking
+	// several at once is the all-pages view's job, and it keeps its scope line over there.
+	await expect(page.getByTestId('toolbar-scope')).toHaveCount(0);
+	await expect(page.getByTestId('toolbar-select-all')).toHaveCount(0);
 	// The strip shows pages; opening one full screen is the toolbar's Expand.
 	await expect(thumbs.nth(0).getByRole('button', { name: 'Open page 1' })).toHaveCount(0);
 
@@ -147,12 +149,24 @@ test('the toolbar rotates the page on the stage, and the whole scan only when as
 	await page.getByRole('button', { name: 'Rotate right' }).click();
 	await expect(third).not.toHaveAttribute('src', thirdBefore!);
 
-	// All is the way back to editing the lot.
-	await page.getByTestId('toolbar-select-all').click();
-	await expect(page.getByTestId('toolbar-scope')).toHaveText(/3 selected/);
+	// Editing more than one at a time means the all-pages view, and the ticks stay there:
+	// back on the review screen the toolbar is acting on the stage again.
+	await page.getByTestId('overview-open').click();
+	const overview = page.getByTestId('page-overview');
+	await overview.getByTestId('toolbar-select-all').click();
+	await expect(overview.getByTestId('toolbar-scope')).toHaveText(/3 selected/);
 	const firstNow = await first.getAttribute('src');
-	await page.getByRole('button', { name: 'Rotate left' }).click();
+	await overview.getByRole('button', { name: 'Rotate left' }).click();
 	await expect(first).not.toHaveAttribute('src', firstNow!);
+
+	await page.getByTestId('overview-close').click();
+	const firstAfterAll = await first.getAttribute('src');
+	const thirdNow = await third.getAttribute('src');
+	await page.getByRole('button', { name: 'Rotate left' }).click();
+	await expect(third).not.toHaveAttribute('src', thirdNow!);
+	// Page 3 is still the one on the stage, and page 1 is untouched: the ticks went with
+	// the view that made them.
+	await expect(first).toHaveAttribute('src', firstAfterAll!);
 });
 
 test('the all-pages overview zooms, reorders by drag and hands the order back', async ({
@@ -166,12 +180,28 @@ test('the all-pages overview zooms, reorders by drag and hands the order back', 
 	const thumbs = overview.getByTestId('page-thumb');
 	await expect(thumbs).toHaveCount(3);
 
-	// Zoom is a step at a time, and the tiles actually grow with it.
-	const small = (await thumbs.nth(0).boundingBox())!;
-	await page.getByTestId('overview-zoom-in').click();
+	// A first open puts the whole scan on one screen: there is nothing to scroll to.
+	const grid = overview.getByTestId('page-grid');
 	await expect
-		.poll(async () => (await thumbs.nth(0).boundingBox())!.width)
-		.toBeGreaterThan(small.width);
+		.poll(() => grid.evaluate((el) => el.scrollHeight - el.clientHeight))
+		.toBeLessThanOrEqual(1);
+
+	// Zoom is a step at a time, and the tiles actually change size with it.
+	const fitted = (await thumbs.nth(0).boundingBox())!.width;
+	await page.getByTestId('overview-zoom-out').click();
+	await expect.poll(async () => (await thumbs.nth(0).boundingBox())!.width).toBeLessThan(fitted);
+	const chosen = (await thumbs.nth(0).boundingBox())!.width;
+
+	// And that is remembered: fitting is where it starts, not what it always does.
+	await page.getByTestId('overview-close').click();
+	await page.getByTestId('overview-open').click();
+	// The same step, not the same pixel: a tile is a `1fr` of whatever the grid is wide,
+	// which a scrollbar coming or going moves by a hair.
+	await expect
+		.poll(async () =>
+			Math.abs((await overview.getByTestId('page-thumb').nth(0).boundingBox())!.width - chosen)
+		)
+		.toBeLessThan(4);
 
 	// Back down to the smallest step, where the whole scan fits on a phone screen too.
 	const zoomOut = page.getByTestId('overview-zoom-out');

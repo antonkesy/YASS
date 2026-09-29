@@ -123,10 +123,13 @@
 	 * The overview's zoom steps as a row of choices. Named rather than shown in pixels: the
 	 * number means nothing to anyone, and there are only ever a handful of steps.
 	 */
-	const tileSizes = TILE_SIZES.map((size, i) => ({
-		value: String(size),
-		label: ['Tiny', 'Small', 'Medium', 'Large', 'Huge'][i] ?? String(size)
-	}));
+	const tileSizes = [
+		{ value: 'fit', label: 'Fit' },
+		...TILE_SIZES.map((size, i) => ({
+			value: String(size),
+			label: ['Tiny', 'Small', 'Medium', 'Large', 'Huge'][i] ?? String(size)
+		}))
+	];
 
 	/** What to call it while it downloads: the CPU setting is a URL, which reads as nothing. */
 	const localLabel = $derived(provider === 'wllama' ? cpuModelLabel(localModel) : localModel);
@@ -993,10 +996,11 @@
 			<Segmented
 				name="overview-tile"
 				label="Page size in the all-pages view"
-				hint="the zoom buttons in that view move this too"
+				hint="Fit puts the whole scan on one screen; the zoom buttons in that view set the rest"
 				options={tileSizes}
 				value={String($reviewPrefs.overviewTile)}
-				onchange={(v) => reviewPrefs.set({ ...$reviewPrefs, overviewTile: Number(v) })}
+				onchange={(v) =>
+					reviewPrefs.set({ ...$reviewPrefs, overviewTile: v === 'fit' ? 'fit' : Number(v) })}
 			/>
 		</SettingsSection>
 

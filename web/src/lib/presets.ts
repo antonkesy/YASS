@@ -4,7 +4,6 @@ import { ExportFormat } from './hub/generated/Yass.Core.Hub';
 import type { PresetIconName } from './icons';
 import type { NameStyle } from './naming/style';
 import type { AiProvider } from './naming/types';
-import { DEFAULT_TILE } from './review/overview';
 import type { ScanOverrides } from './settings';
 
 /**
@@ -116,13 +115,18 @@ export const defaultAiKeys: AiKeys = { anthropic: '', openai: '' };
 
 /** Review-screen preferences, next to the export ones so they share the same storage helper. */
 export type ReviewPrefs = {
-	/** Tile width the all-pages overview was last zoomed to. */
-	overviewTile: number;
+	/**
+	 * Tile width the all-pages overview was last zoomed to, or `'fit'` for whatever puts the
+	 * whole scan on one screen. It stays `'fit'` until someone zooms: the first useful thing
+	 * that view can do is show you everything at once, and a remembered size cannot know how
+	 * many pages the next scan will have.
+	 */
+	overviewTile: number | 'fit';
 };
 
 export const REVIEW_KEY = 'yass.review';
 
-export const defaultReviewPrefs: ReviewPrefs = { overviewTile: DEFAULT_TILE };
+export const defaultReviewPrefs: ReviewPrefs = { overviewTile: 'fit' };
 
 /** True when `settings` matches every key the preset pins. */
 export function matchesPreset(preset: Preset, overrides: ScanOverrides): boolean {
