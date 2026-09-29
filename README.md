@@ -29,10 +29,10 @@ review the pages, and save a PDF straight into your
 - **One tap to scan.** Big Scan button, live scanner status, pages appear as
   they come out of the feeder.
 - **Review before saving.** Page strip beside the page on screen — tap a
-  thumbnail to put it on the stage, tick its checkbox to include it in the
-  selection the toolbar acts on — rotate, delete/restore, colour mode per page
-  or for all, drag to reorder, full-page preview with swipe. Blank pages are
-  detected and pre-marked deleted.
+  thumbnail to put it on the stage and the toolbar under it edits that page:
+  rotate, delete/restore, colour mode, crop, full-page preview with swipe, drag
+  to reorder. Tick pages in the all-pages view, or press **All**, to act on more
+  than one at a time. Blank pages are detected and pre-marked deleted.
 - **Export** writes the PDF atomically into `output.directory` under a templated
   name — point that at your paperless-ngx consume folder, or anywhere else.
   **Save as…** puts a copy on the machine you are browsing from: it opens the

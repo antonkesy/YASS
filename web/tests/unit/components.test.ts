@@ -97,7 +97,7 @@ describe('Toolbar', () => {
 			onfilter,
 			onclear
 		});
-		expect(screen.getByTestId('toolbar-scope')).toHaveTextContent(/all 4/);
+		expect(screen.getByTestId('toolbar-scope')).toHaveTextContent(/this page/);
 		await fireEvent.click(screen.getByRole('button', { name: 'Rotate right' }));
 		expect(onrotate).toHaveBeenCalledWith(90);
 		expect(screen.getByTestId('restore-button')).toBeDisabled();
@@ -129,6 +129,35 @@ describe('Toolbar', () => {
 
 		await rerender({ ...props, onexpand, total: 0 });
 		expect(screen.getByTestId('expand-button')).toBeDisabled();
+	});
+
+	it('acts on the page on screen until asked for the whole scan', async () => {
+		const onselectall = vi.fn();
+		const props = {
+			selectedCount: 0,
+			total: 4,
+			anyDeleted: false,
+			onrotate: vi.fn(),
+			ondelete: vi.fn(),
+			onrestore: vi.fn(),
+			onfilter: vi.fn(),
+			onclear: vi.fn(),
+			onselectall
+		};
+		const { rerender } = render(Toolbar, props);
+
+		expect(screen.getByTestId('toolbar-scope')).toHaveTextContent(/this page/);
+		await fireEvent.click(screen.getByTestId('toolbar-select-all'));
+		expect(onselectall).toHaveBeenCalled();
+
+		// Ticked pages are their own answer to "which ones", so Clear takes its place.
+		await rerender({ ...props, selectedCount: 2 });
+		expect(screen.queryByTestId('toolbar-select-all')).toBeNull();
+		expect(screen.getByRole('button', { name: 'Clear' })).toBeVisible();
+
+		// One page is the whole scan already; there is nothing for All to add.
+		await rerender({ ...props, selectedCount: 0, total: 1 });
+		expect(screen.queryByTestId('toolbar-select-all')).toBeNull();
 	});
 
 	it('shows the selection count and a clear button', async () => {

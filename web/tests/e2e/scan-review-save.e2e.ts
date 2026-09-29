@@ -72,7 +72,8 @@ test('scan, review, edit, download and save', async ({ page }) => {
 	// Tapping the page itself only moves the stage; nothing joins the selection.
 	await thumbs.nth(0).getByRole('button', { name: 'Show page 1' }).click();
 	await expect(thumbs.nth(0)).toHaveAttribute('data-current', 'true');
-	await expect(page.getByTestId('toolbar-scope')).toHaveText(/all 3/);
+	// And the toolbar under it acts on that page, not on the whole scan.
+	await expect(page.getByTestId('toolbar-scope')).toHaveText(/this page/);
 	// The strip shows pages; opening one full screen is the toolbar's Expand.
 	await expect(thumbs.nth(0).getByRole('button', { name: 'Open page 1' })).toHaveCount(0);
 
@@ -122,6 +123,36 @@ test('scan, review, edit, download and save', async ({ page }) => {
 	await expect(list.getByTestId('session-status').first()).toHaveText('Exported');
 	await expect(list.getByTestId('session-tile').first()).toContainText('2 p');
 	await expect(list.getByTestId('session-tile').first()).toContainText('Tax return 2025');
+});
+
+test('the toolbar rotates the page on the stage, and the whole scan only when asked', async ({
+	page
+}) => {
+	await scanToReview(page);
+	const thumbs = page.getByTestId('page-thumb');
+	const first = thumbs.nth(0).locator('img');
+	const third = thumbs.nth(2).locator('img');
+	await expect(first).toBeVisible();
+	await expect(third).toBeVisible();
+
+	// Page 1 is on the stage, so Rotate right turns page 1 and leaves page 3 alone.
+	const firstBefore = await first.getAttribute('src');
+	const thirdBefore = await third.getAttribute('src');
+	await page.getByRole('button', { name: 'Rotate right' }).click();
+	await expect(first).not.toHaveAttribute('src', firstBefore!);
+	await expect(third).toHaveAttribute('src', thirdBefore!);
+
+	// Move the stage and the target moves with it.
+	await thumbs.nth(2).getByRole('button', { name: 'Show page 3' }).click();
+	await page.getByRole('button', { name: 'Rotate right' }).click();
+	await expect(third).not.toHaveAttribute('src', thirdBefore!);
+
+	// All is the way back to editing the lot.
+	await page.getByTestId('toolbar-select-all').click();
+	await expect(page.getByTestId('toolbar-scope')).toHaveText(/3 selected/);
+	const firstNow = await first.getAttribute('src');
+	await page.getByRole('button', { name: 'Rotate left' }).click();
+	await expect(first).not.toHaveAttribute('src', firstNow!);
 });
 
 test('the all-pages overview zooms, reorders by drag and hands the order back', async ({
