@@ -116,8 +116,8 @@ test('a model set up in settings names the scan, and says so', async ({ page }) 
 	const suggestion = popover.getByRole('button', { name: /Quarterly Report Northwind/ });
 	await expect(suggestion).toBeVisible({ timeout: 20_000 });
 
-	// The page image went to someone else, so the popover stops saying it did not.
-	await expect(popover).toContainText('sent to an external model');
+	// This server reads no text, so it was the page image that went — and it says which.
+	await expect(popover.getByTestId('suggest-privacy')).toContainText('page image was sent');
 
 	await suggestion.click();
 	await expect(page.getByTestId('name-input')).toHaveValue('Quarterly Report Northwind');
