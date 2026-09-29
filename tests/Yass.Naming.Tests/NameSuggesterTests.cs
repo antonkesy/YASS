@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging.Abstractions;
+using Yass.Core.Config;
 using Yass.Core.Naming;
 
 namespace Yass.Naming.Tests;
@@ -84,4 +86,44 @@ public class AiNameCleaningTests
     {
         Assert.Null(AiNamer.Clean(raw));
     }
+}
+
+/// <summary>
+/// A misconfigured model used to look exactly like a blank page from the UI. These pin the
+/// failures that need no network to provoke.
+/// </summary>
+public sealed class AiNamerFailureTests : IDisposable
+{
+    private readonly HttpClient _http = new();
+
+    [Fact]
+    public async Task Off_is_not_a_failure()
+    {
+        (string? name, string? error) = await new AiNamer(_http, NullLogger<AiNamer>.Instance)
+            .SuggestAsync("some page text", new NamingConfig(), CancellationToken.None);
+
+        Assert.Null(name);
+        Assert.Null(error);
+    }
+
+    [Theory]
+    [InlineData("", "not set")]
+    [InlineData("/nonexistent/key", "does not exist")]
+    public async Task A_key_file_that_cannot_be_read_says_so(string path, string expected)
+    {
+        var naming = new NamingConfig
+        {
+            Provider = NamingProvider.Anthropic,
+            ApiKeyFile = path,
+        };
+
+        (string? name, string? error) = await new AiNamer(_http, NullLogger<AiNamer>.Instance)
+            .SuggestAsync("some page text", naming, CancellationToken.None);
+
+        Assert.Null(name);
+        Assert.Contains(expected, error, StringComparison.Ordinal);
+        Assert.Contains("api_key_file", error, StringComparison.Ordinal);
+    }
+
+    public void Dispose() => _http.Dispose();
 }

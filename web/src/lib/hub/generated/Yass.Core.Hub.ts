@@ -99,6 +99,10 @@ export type NameSuggestionsDto = {
     CanRead: boolean;
     /** Transpiled from bool */
     Local: boolean;
+    /** Transpiled from string? */
+    Text?: string;
+    /** Transpiled from string? */
+    Error?: string;
 }
 
 /** Transpiled from Yass.Core.Hub.ScannerStatusDto */

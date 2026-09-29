@@ -23,16 +23,30 @@ public enum NameSource
 [TranspilationSource]
 public sealed record NameSuggestion(string Name, NameSource Source, string Reason, double Confidence);
 
+/// <param name="Suggestions">Best first.</param>
+/// <param name="Text">
+/// What was read off the pages, for a client that wants to ask a model of its own. Null when
+/// nothing was read.
+/// </param>
+/// <param name="Error">
+/// Why the configured provider produced nothing, in words fit to show someone. Null when it
+/// worked, or when there was no provider to fail.
+/// </param>
+public sealed record NameSuggestionSet(
+    IReadOnlyList<NameSuggestion> Suggestions,
+    string? Text,
+    string? Error);
+
 /// <summary>Suggests file names for a scanned session.</summary>
 public interface INameSuggester
 {
-    /// <summary>Whether anything beyond the template is available; the UI hides Find name when not.</summary>
+    /// <summary>Whether page text can be read at all, which decides what Find name can offer.</summary>
     bool CanRead { get; }
 
     /// <param name="pageImagePaths">Source images to read, in page order.</param>
     /// <param name="fallback">Name to offer when nothing better is found, e.g. the expanded template.</param>
     /// <param name="cancellationToken">Cancels reading.</param>
-    Task<IReadOnlyList<NameSuggestion>> SuggestAsync(
+    Task<NameSuggestionSet> SuggestAsync(
         IReadOnlyList<string> pageImagePaths,
         string fallback,
         CancellationToken cancellationToken);

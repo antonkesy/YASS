@@ -44,13 +44,17 @@ public sealed class OcrPipelineTests : IDisposable
             () => Config,
             NullLogger<NameSuggester>.Instance);
 
-        IReadOnlyList<NameSuggestion> suggestions =
+        NameSuggestionSet found =
             await suggester.SuggestAsync([Page], "2026-09-24_scan", CancellationToken.None);
+
+        IReadOnlyList<NameSuggestion> suggestions = found.Suggestions;
+        Assert.Null(found.Error);
 
         if (!_reader.Available)
         {
             // No reader: the template is all there is, and it is still offered.
             Assert.Equal(NameSource.Template, Assert.Single(suggestions).Source);
+            Assert.Null(found.Text);
             return;
         }
 
@@ -61,6 +65,9 @@ public sealed class OcrPipelineTests : IDisposable
         Assert.True(best.Confidence > 0.6, $"a heading twice the body size should be confident, got {best.Confidence}");
         Assert.Contains(suggestions, s => s.Source == NameSource.Template);
         Assert.DoesNotContain(suggestions, s => s.Source == NameSource.Ai);
+
+        // The text comes back whole, so a browser can ask its own model the same question.
+        Assert.Contains("Quarterly", found.Text ?? "", StringComparison.OrdinalIgnoreCase);
     }
 
     public void Dispose()
