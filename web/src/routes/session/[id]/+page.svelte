@@ -153,15 +153,19 @@
 	const editable = $derived(
 		session?.State === SessionState.Review || session?.State === SessionState.Done
 	);
-	const anyDeleted = $derived(
-		(selection.size === 0
-			? session?.Pages
-			: session?.Pages.filter((p) => selection.has(p.Index))
-		)?.some((p) => p.Deleted) ?? false
-	);
-
 	const activePages = $derived(session ? activePageCount(session) : 0);
 	const shown = $derived(session?.Pages[current] ?? null);
+
+	/**
+	 * What the toolbar acts on. Nothing ticked means the page on the stage rather than every
+	 * page: the buttons sit under that page, Crop and Rescan have always read it that way,
+	 * and a rotation of the whole scan is worth asking for — the toolbar's All does that.
+	 */
+	const targets = $derived(selection.size > 0 ? selection : new Set(shown ? [shown.Index] : []));
+
+	const anyDeleted = $derived(
+		session?.Pages.filter((p) => targets.has(p.Index)).some((p) => p.Deleted) ?? false
+	);
 	const filters = $derived(
 		new Set((session?.Pages ?? []).filter((p) => !p.Deleted).map((p) => p.Filter))
 	);
@@ -634,17 +638,18 @@
 			total={session.Pages.length}
 			{anyDeleted}
 			disabled={!editable}
-			onrotate={(deg) => send(rotateEdit(deg, selection))}
+			onrotate={(deg) => send(rotateEdit(deg, targets))}
 			ondelete={() => {
-				const targets = new Set(selection);
-				const count = targets.size === 0 ? session.Pages.length : targets.size;
-				send(deleteEdit(targets));
-				toast.show(`${count} page${count === 1 ? '' : 's'} deleted`, () =>
-					send(restoreEdit(targets))
+				// A snapshot, because undo has to put back the pages this click took and not
+				// whatever happens to be on the stage by the time the toast is pressed.
+				const deleting = new Set(targets);
+				send(deleteEdit(deleting));
+				toast.show(`${deleting.size} page${deleting.size === 1 ? '' : 's'} deleted`, () =>
+					send(restoreEdit(deleting))
 				);
 			}}
-			onrestore={() => send(restoreEdit(selection))}
-			onfilter={(filter) => send(setFilterEdit(filter, selection))}
+			onrestore={() => send(restoreEdit(targets))}
+			onfilter={(filter) => send(setFilterEdit(filter, targets))}
 			onexpand={() => (previewIndex = targetPage())}
 			oncrop={() => (cropping = targetPage())}
 			onrescan={rescan}
@@ -656,6 +661,7 @@
 			firstPage={targetPage() === 0}
 			{scanning}
 			onclear={() => (selection = clear())}
+			onselectall={selectAll}
 		/>
 	{/if}
 {/snippet}

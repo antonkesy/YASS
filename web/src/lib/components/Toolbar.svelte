@@ -19,7 +19,8 @@
 		onsplit,
 		splits = false,
 		firstPage = false,
-		onclear
+		onclear,
+		onselectall
 	}: {
 		selectedCount: number;
 		total: number;
@@ -42,11 +43,18 @@
 		/** The target page is the first one, which always opens a document. */
 		firstPage?: boolean;
 		onclear: () => void;
+		/** Takes the whole scan, which is the way out of acting on one page at a time. */
+		onselectall?: () => void;
 	} = $props();
 
 	let filterOpen = $state(false);
 
-	const scope = $derived(selectedCount === 0 ? `all ${total}` : `${selectedCount} selected`);
+	/**
+	 * Nothing ticked means the page on the stage, the one these buttons sit under. Acting on
+	 * the whole scan by default was a rotation of everything one button away from a rotation
+	 * of the page someone was looking at, with nothing on screen to tell them apart.
+	 */
+	const scope = $derived(selectedCount === 0 ? 'this page' : `${selectedCount} selected`);
 	const one = $derived(selectedCount === 1);
 
 	const tool =
@@ -70,6 +78,16 @@
 			onclick={onclear}
 		>
 			Clear
+		</button>
+	{:else if onselectall && total > 1}
+		<button
+			type="button"
+			class="h-9 rounded-full px-3 text-[13px] font-bold text-accent transition-colors hover:bg-accent-wash"
+			{disabled}
+			onclick={onselectall}
+			data-testid="toolbar-select-all"
+		>
+			All {total}
 		</button>
 	{/if}
 
