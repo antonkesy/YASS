@@ -171,14 +171,14 @@ renamed into place once complete, so the consumer never sees a partial document.
 
 ### Naming (optional)
 
-YASS names a file from what is printed on the page, as each scan finishes. Reading
-is on by default and stays on this machine; `provider` is what decides whether a
-model is asked as well, and it is off until you set one. Turning **Find name** off
-in the browser's settings stops all of it, and then nothing is read at all.
+YASS can name a file from what is printed on the page. Nothing is read until you
+ask for it, and what is read stays on this machine; `provider` decides whether a
+model is asked as well, and it is off until you set one. Turning **Find name**
+off in the browser's settings stops all of it.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `naming.ocr` | `true` | Read page text, when a scan finishes or a name is asked for. Needs the `tesseract` binary on PATH (in the Docker image and the Nix package already); without it, nothing is read and the UI says so. |
+| `naming.ocr` | `true` | Read page text, when a name is asked for. Needs the `tesseract` binary on PATH (in the Docker image and the Nix package already); without it, nothing is read and the UI says so. |
 | `naming.ocr_language` | `eng` | Tesseract language code. |
 | `naming.ocr_pages` | `2` | How many pages to read; a title is almost always on the first. |
 | `naming.provider` | `off` | `off`, `ollama` or `anthropic`. |
@@ -221,22 +221,21 @@ Every option here needs `naming.ocr: true` on the server, because a name comes
 from the words on the page. Where the server reads nothing — `ocr: false`, or no
 `tesseract` — nothing is named from the page, and the settings sheet says why.
 
-### Naming a scan as it finishes
+### Naming a scan
 
-A scan that nobody has named names itself as soon as it is done, from your file
-name template. Where the template has a `{NAME}` in it, that part is filled by
-whatever **Settings → Find name** points at — the heading read off the page when
-no model is set up, and the model itself when one is. Which means a scan costs
-whatever your provider costs, every time, so an API key is worth thinking about
-before you leave it running; **In-browser (CPU)** costs only seconds and no money.
+A finished scan is already called what your file name template says — no reading,
+no waiting, no cost. Where the template has a `{NAME}` in it, that part sits in
+the name as an empty slot marked **name it**.
 
-A name you typed is never written over, and **Settings → Name a scan as it
-finishes** turns the whole thing off.
+Click the slot, or the sparkle beside the field, and the page is read and the slot
+filled by whatever **Settings → Find name** points at: the heading off the page
+when no model is set up, the model itself when one is. The same click afterwards
+offers another go, the other suggestions, or handing the whole name over to type
+yourself — and a name that no longer fits the template has no slot in it, because
+at that point it is yours.
 
-In the review screen the filled-in part is shown as a chip inside the document
-name. Click it to generate another, pick a different suggestion, or take the name
-over and type it yourself. The sparkle beside the field does the same for a
-template with no `{NAME}` in it.
+Saving without filling the slot drops it, and its separator with it: a template of
+`{YEAR}-{MONTH}-{DAY}_{NAME}` saves as `2026-09-29.pdf`.
 
 ### Where the found name goes
 
