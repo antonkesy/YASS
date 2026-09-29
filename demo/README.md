@@ -17,15 +17,18 @@ YASS_PORT=9000 docker compose up --build
 
 ## What to try
 
-1. **Scan** — the scripted fake scanner feeds five pages, ~400 ms each. Page 3
+1. **Scan** — the scripted fake scanner feeds five pages, ~400 ms each. Page 2
    comes out blank and starts out deleted.
 2. **Review** — rotate, crop, filter, reorder by dragging, delete and restore.
    Open a page and click it (or the zoom button, or `z`) to switch between
    fit-to-screen and full width; `Esc` backs out of zoom, then closes.
 3. **Split** — select a page and press **Split**: it opens a second document,
    badged `Doc 2` in the filmstrip, and **Save** then writes one PDF per document.
-4. **Name it** — type in the document name field, or press **Find name** if you
-   turn on `naming.ocr` (the image ships with `tesseract`; it is off by default).
+4. **Name it** — type in the document name field, or press **Find name**, which
+   reads the page with `tesseract` (in the image, and on by default) and offers
+   what it found. For a name written rather than copied, point **Settings → Find
+   name** at a model: **In-browser (CPU)** needs no key and no account, and
+   downloads its weights once.
 5. **Save** — the PDFs land in [`output/`](output) on your host, the demo's
    stand-in for a paperless-ngx consume folder.
    **Download** hands them to the browser instead.
