@@ -197,7 +197,9 @@ test('discard keeps the scan listed as discarded', async ({ page }) => {
 test('stop ends a scan early', async ({ page }) => {
 	await page.goto('/');
 	await page.getByTestId('scan-button').click();
-	await page.getByTestId('stop-button').click({ timeout: 5_000 });
+	// Forced: the review screen is still sliding in while the fake feeder is already
+	// half done, and waiting for the button to stop moving can outlast the scan itself.
+	await page.getByTestId('stop-button').click({ timeout: 5_000, force: true });
 	await expect(page.getByTestId('session-state')).toHaveText('Ready to review', {
 		timeout: 20_000
 	});
