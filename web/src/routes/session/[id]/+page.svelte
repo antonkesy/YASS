@@ -396,6 +396,7 @@
 			}}
 			onrestore={() => send(restoreEdit(selection))}
 			onfilter={(filter) => send(setFilterEdit(filter, selection))}
+			onexpand={() => (previewIndex = targetPage())}
 			oncrop={() => (cropping = targetPage())}
 			onrescan={rescan}
 			onsplit={(split) => {

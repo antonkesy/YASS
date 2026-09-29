@@ -13,6 +13,7 @@
 		ondelete,
 		onrestore,
 		onfilter,
+		onexpand,
 		oncrop,
 		onrescan,
 		onsplit,
@@ -30,6 +31,8 @@
 		ondelete: () => void;
 		onrestore: () => void;
 		onfilter: (filter: PageFilter) => void;
+		/** Opens the page the edits point at, full screen. Not an edit, but this is where it lives. */
+		onexpand?: () => void;
 		oncrop?: () => void;
 		onrescan?: () => void;
 		/** Toggles whether the target page opens a document. */
@@ -71,6 +74,21 @@
 	{/if}
 
 	<span class="mx-1 h-8 w-px bg-line" aria-hidden="true"></span>
+
+	{#if onexpand}
+		<!-- Looking at a page is not editing it, so this one stays on while a scan runs. -->
+		<button
+			type="button"
+			class="text-ink {tool}"
+			disabled={total === 0}
+			onclick={onexpand}
+			aria-label="Open this page full screen"
+			data-testid="expand-button"
+		>
+			<Icon name="expand" />
+			Expand
+		</button>
+	{/if}
 
 	<button
 		type="button"

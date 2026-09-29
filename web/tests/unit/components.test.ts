@@ -106,6 +106,31 @@ describe('Toolbar', () => {
 		expect(onfilter).toHaveBeenCalledWith(PageFilter.Bw);
 	});
 
+	it('offers expand only when asked to, and keeps it on while edits are off', async () => {
+		const onexpand = vi.fn();
+		const props = {
+			selectedCount: 0,
+			total: 3,
+			anyDeleted: false,
+			onrotate: vi.fn(),
+			ondelete: vi.fn(),
+			onrestore: vi.fn(),
+			onfilter: vi.fn(),
+			onclear: vi.fn()
+		};
+		const { rerender } = render(Toolbar, props);
+		expect(screen.queryByTestId('expand-button')).toBeNull();
+
+		// Disabled here means "not editable", e.g. mid-scan; looking at a page still works.
+		await rerender({ ...props, onexpand, disabled: true });
+		expect(screen.getByTestId('expand-button')).toBeEnabled();
+		await fireEvent.click(screen.getByTestId('expand-button'));
+		expect(onexpand).toHaveBeenCalled();
+
+		await rerender({ ...props, onexpand, total: 0 });
+		expect(screen.getByTestId('expand-button')).toBeDisabled();
+	});
+
 	it('shows the selection count and a clear button', async () => {
 		const onclear = vi.fn();
 		render(Toolbar, {
@@ -251,6 +276,16 @@ describe('PageThumb', () => {
 		expect(ontoggle).toHaveBeenCalledWith(2);
 		await fireEvent.click(screen.getByRole('button', { name: 'Open page 3' }));
 		expect(onopen).toHaveBeenCalledWith(2);
+	});
+
+	it('leaves out the expand button where the toolbar offers that instead', () => {
+		render(PageThumb, {
+			sessionId: 's1',
+			page: page(0),
+			onshow: vi.fn(),
+			ontoggle: vi.fn()
+		});
+		expect(screen.queryByRole('button', { name: 'Open page 1' })).toBeNull();
 	});
 
 	it('shows a spinner until the thumbnail exists', () => {

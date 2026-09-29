@@ -70,12 +70,14 @@ test('scan, review, edit, download and save', async ({ page }) => {
 	await expect(overview).toHaveCount(0);
 
 	// Tapping the page itself only moves the stage; nothing joins the selection.
-	await thumbs.nth(2).getByRole('button', { name: 'Show page 3' }).click();
-	await expect(thumbs.nth(2)).toHaveAttribute('data-current', 'true');
+	await thumbs.nth(0).getByRole('button', { name: 'Show page 1' }).click();
+	await expect(thumbs.nth(0)).toHaveAttribute('data-current', 'true');
 	await expect(page.getByTestId('toolbar-scope')).toHaveText(/all 3/);
+	// The strip shows pages; opening one full screen is the toolbar's Expand.
+	await expect(thumbs.nth(0).getByRole('button', { name: 'Open page 1' })).toHaveCount(0);
 
-	// Full-page preview with next/prev and keyboard.
-	await thumbs.nth(0).getByRole('button', { name: 'Open page 1' }).click();
+	// Full-page preview of whatever the stage is showing, with next/prev and keyboard.
+	await page.getByTestId('expand-button').click();
 	const preview = page.getByTestId('preview');
 	await expect(preview).toBeVisible();
 	await expect(page.getByTestId('preview-counter')).toHaveText('1 / 3');
