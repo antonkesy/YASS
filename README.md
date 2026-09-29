@@ -191,6 +191,29 @@ Adding `provider: ollama` asks a local model to summarise the page instead;
 `anthropic` sends the page text to Anthropic's API. The suggestions popover says
 which of those is happening.
 
+### Setting up a model from the browser
+
+Everything above configures the **server**. **Settings → Find name** configures
+**this browser**, which needs no access to `yass.yaml` and no key file:
+
+- **Anthropic** or **OpenAI-style** — paste an API key and the page calls the
+  provider directly. The key is kept in this browser's `localStorage` and never
+  reaches the scanner server. Verified to answer a web page:
+  `api.anthropic.com`, `api.openai.com`, `openrouter.ai`, `api.groq.com`.
+  Anything else that speaks the OpenAI chat shape works too — point the base URL
+  at LM Studio, llama.cpp or Ollama. Ollama refuses requests from a page until
+  `OLLAMA_ORIGINS` names your YASS origin.
+- **In-browser** — a model runs on your own machine through WebGPU, with no key
+  and no third party. It downloads a few hundred megabytes the first time, then
+  works offline. Needs WebGPU, and needs `naming.ocr: true` on the server,
+  because a model in the browser reads text and cannot see the page.
+
+Two things worth knowing. A key in `localStorage` can be read by anything running
+on that page and stays until you clear it, so think twice on a browser other
+people use. And where the server does not read page text, the **page image** is
+sent to the model instead of a few lines of text — the settings sheet says so,
+and the toggle beside it turns that off.
+
 ## Scanner setup
 
 - **USB (SANE):** the host needs `sane-backends` and the device must be
