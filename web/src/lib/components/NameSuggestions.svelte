@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { NameSuggestionsDto } from '$lib/hub/generated/Yass.Core.Hub';
-	import { NameSource } from '$lib/hub/generated/Yass.Core.Naming';
+	import { NameSource, type NameSuggestion } from '$lib/hub/generated/Yass.Core.Naming';
 	import { Icon } from '$lib/icons';
 
 	let {
@@ -9,6 +9,7 @@
 		error = null,
 		current = null,
 		pages = 1,
+		resolved = (suggestion) => suggestion.Name,
 		onpick,
 		onretry,
 		onclose
@@ -17,11 +18,18 @@
 		result: NameSuggestionsDto | null;
 		/** Why there is less here than there should be. Shown with whatever did arrive. */
 		error?: string | null;
-		/** The name on the document now, so the row that matches it is marked. */
+		/**
+		 * The name on the document now, so the row that matches it is marked. A picked row is
+		 * styled and dropped into the template before it is saved, so this is compared against
+		 * what each row would become rather than against the text it shows.
+		 */
 		current?: string | null;
+		/** What a row would be saved as, for that comparison. Identity by default. */
+		resolved?: (suggestion: NameSuggestion) => string;
 		/** How many pages are being read, which the server decides and the copy repeats. */
 		pages?: number;
-		onpick: (name: string) => void;
+		/** The whole row, because what a picked name becomes depends on where it came from. */
+		onpick: (suggestion: NameSuggestion) => void;
 		onretry: () => void;
 		onclose: () => void;
 	} = $props();
@@ -104,12 +112,13 @@
 		{#each result.Suggestions as suggestion, i (suggestion.Name + i)}
 			<button
 				type="button"
-				class="flex animate-page-in flex-col gap-1 rounded-[14px] px-3 py-2.5 text-left transition-colors hover:bg-accent-hover50 {suggestion.Name ===
-				current
+				class="flex animate-page-in flex-col gap-1 rounded-[14px] px-3 py-2.5 text-left transition-colors hover:bg-accent-hover50 {resolved(
+					suggestion
+				) === current
 					? 'bg-accent-50'
 					: ''}"
 				style="animation-delay: {i * 50}ms"
-				onclick={() => onpick(suggestion.Name)}
+				onclick={() => onpick(suggestion)}
 			>
 				<span class="flex items-center gap-2">
 					<span class="flex-1 truncate text-sm font-bold">{suggestion.Name}</span>

@@ -1,5 +1,9 @@
+import { readdirSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { CPU_MODELS } from '../../src/lib/naming/cpu-models';
+
+/** Where the e2e server writes saved documents; must match playwright.config.ts. */
+const CONSUME_DIR = `${process.env.TMPDIR ?? '/tmp'}/yass-e2e/consume`;
 
 // The server reads page text and has no provider of its own (see playwright.config.ts), which
 // is the default everywhere: reading is local and on demand, asking a model is opt-in.
@@ -178,6 +182,86 @@ test('a browser with no WebGPU is sent to the processor, not to an API key', asy
 	await expect(page.getByTestId('no-webgpu')).toContainText('In-browser (CPU)');
 	// And it does not go looking for six megabytes of runtime it cannot use.
 	await expect(page.getByTestId('ai-local-model')).toHaveCount(0);
+});
+
+// The stubbed model answers the same thing every time, so each style has one right answer.
+for (const [style, expected] of [
+	['As written', 'Quarterly Report Northwind'],
+	['lower_snake', 'quarterly_report_northwind'],
+	['lower-kebab', 'quarterly-report-northwind']
+]) {
+	test(`a found name lands inside the template, written ${style}`, async ({ page }) => {
+		await stubModel(page, { choices: [{ message: { content: 'Quarterly Report Northwind' } }] });
+
+		const section = await openNaming(page);
+		await section.getByRole('radio', { name: 'OpenAI-style' }).check();
+		await page.getByTestId('ai-key').fill('sk-not-a-real-key');
+		await page.getByTestId('template-input').fill('{YEAR}-{MONTH}-{DAY}_{NAME}');
+		await page.getByRole('radio', { name: style }).check();
+
+		await scanToReview(page);
+		await page.getByTestId('suggest-button').click();
+
+		// The row stays readable whatever the style: the convention is for the file name.
+		const row = page
+			.getByTestId('name-suggestions')
+			.getByRole('button', { name: /Quarterly Report Northwind/ });
+		await expect(row).toBeVisible({ timeout: 20_000 });
+		await row.click();
+
+		// The date came from the template, the words from the model, joined as asked.
+		const today = new Date();
+		const date = [
+			today.getFullYear(),
+			String(today.getMonth() + 1).padStart(2, '0'),
+			String(today.getDate()).padStart(2, '0')
+		].join('-');
+		await expect(page.getByTestId('name-input')).toHaveValue(`${date}_${expected}`);
+	});
+}
+
+test('the styled name in the template is what lands on disk', async ({ page }) => {
+	await stubModel(page, { choices: [{ message: { content: 'Quarterly Report Northwind' } }] });
+
+	const section = await openNaming(page);
+	await section.getByRole('radio', { name: 'OpenAI-style' }).check();
+	await page.getByTestId('ai-key').fill('sk-not-a-real-key');
+	await page.getByTestId('template-input').fill('{YEAR}-{MONTH}-{DAY}_{NAME}');
+	await page.getByRole('radio', { name: 'lower-kebab' }).check();
+
+	await scanToReview(page);
+	await page.getByTestId('suggest-button').click();
+	await page
+		.getByTestId('name-suggestions')
+		.getByRole('button', { name: /Quarterly Report Northwind/ })
+		.click();
+
+	// The name field is one thing; the file the server writes is the one that counts, and it
+	// is the server that expands whatever the browser hands it.
+	await page.getByTestId('save-button').click();
+	await expect(page.getByTestId('saved-message')).toBeVisible({ timeout: 20_000 });
+
+	expect(
+		readdirSync(CONSUME_DIR).some((f) =>
+			/^\d{4}-\d{2}-\d{2}_quarterly-report-northwind(-\d+)?\.pdf$/.test(f)
+		)
+	).toBe(true);
+});
+
+test('a template with nothing found in it never writes {NAME} into a file', async ({ page }) => {
+	await openNaming(page);
+	await page.getByTestId('template-input').fill('{YEAR}-{MONTH}-{DAY}_{NAME}');
+
+	// No suggestion picked, so the template itself is what the server is asked to expand —
+	// and the server writes an unknown placeholder out as it found it. This is the one way
+	// a browser-only token reaches a real file name, so the file on disk is what is checked.
+	await scanToReview(page);
+	await page.getByTestId('save-button').click();
+	await expect(page.getByTestId('saved-message')).toBeVisible({ timeout: 20_000 });
+
+	const written = readdirSync(CONSUME_DIR);
+	expect(written.some((f) => f.includes('{NAME}'))).toBe(false);
+	expect(written.some((f) => /^\d{4}-\d{2}-\d{2}\.pdf$/.test(f))).toBe(true);
 });
 
 test('turning Find name off hides it, and then nothing reads the page', async ({ page }) => {

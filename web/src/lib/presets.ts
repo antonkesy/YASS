@@ -2,6 +2,7 @@ import { writable } from 'svelte/store';
 import { ColorMode, PageSize, ScanSource } from './hub/generated/Yass.Core.Domain';
 import { ExportFormat } from './hub/generated/Yass.Core.Hub';
 import type { PresetIconName } from './icons';
+import type { NameStyle } from './naming/style';
 import type { AiProvider } from './naming/types';
 import { DEFAULT_TILE } from './review/overview';
 import type { ScanOverrides } from './settings';
@@ -59,6 +60,12 @@ export type ExportPrefs = {
 	format: ExportFormat;
 	directory: string;
 	nameTemplate: string;
+	/**
+	 * How a found name joins its words once it becomes a file name. Here rather than in
+	 * `AiPrefs` because it shapes a file name, and applies to the heading read off the page
+	 * as much as to anything a model wrote.
+	 */
+	nameStyle: NameStyle;
 	exportButton: boolean;
 };
 
@@ -68,6 +75,7 @@ export const defaultExportPrefs: ExportPrefs = {
 	format: ExportFormat.Pdf,
 	directory: '',
 	nameTemplate: '',
+	nameStyle: 'words',
 	exportButton: true
 };
 

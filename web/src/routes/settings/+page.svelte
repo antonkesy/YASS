@@ -26,6 +26,7 @@
 	import { ExportFormat } from '$lib/hub/generated/Yass.Core.Hub';
 	import { exportFormatLabels } from '$lib/format';
 	import { expandTemplate, templateTokens, unknownTokens } from '$lib/template';
+	import { SAMPLE_NAME, styleName, type NameStyle } from '$lib/naming/style';
 	import { colorModeLabels } from '$lib/review/edits';
 
 	const client = getHub();
@@ -185,11 +186,21 @@
 	let draftName = $state('');
 	let draftIcon = $state<PresetIconName>('star');
 
+	/** The shapes a found name can take, worded as the file name each one produces. */
+	const nameStyles: { value: NameStyle; label: string }[] = [
+		{ value: 'words', label: 'As written' },
+		{ value: 'snake', label: 'lower_snake' },
+		{ value: 'kebab', label: 'lower-kebab' }
+	];
+
 	const previewFacts = $derived({
 		preset: chosen?.name.replace(/\s+/g, '-') ?? 'Custom',
 		counter: 42,
 		dpi: $settings.Dpi ?? effective?.Dpi ?? 300,
-		color: colorModeLabels[$settings.Color ?? effective?.Color ?? 2] ?? 'Color'
+		color: colorModeLabels[$settings.Color ?? effective?.Color ?? 2] ?? 'Color',
+		// A sample rather than a blank, so the chip shows what it is for and the style shows
+		// what it does before anyone has scanned anything.
+		name: styleName(SAMPLE_NAME, $exportPrefs.nameStyle)
 	});
 	const templatePreview = $derived(
 		$exportPrefs.nameTemplate.trim()
@@ -627,7 +638,21 @@
 						unknown={templateUnknown}
 						onchange={(v) => exportPrefs.set({ ...$exportPrefs, nameTemplate: v })}
 					/>
+					<span class="text-[11px] text-ink-faint">
+						<code class="font-mono">{'{NAME}'}</code> is what
+						<strong class="font-bold">Find name</strong> came back with, dropped in wherever you put it.
+						Without it, picking a suggestion replaces the whole name.
+					</span>
 				</div>
+
+				<Segmented
+					name="name-style"
+					label="Found names"
+					hint="how the words of a found name are joined"
+					options={nameStyles.map((n) => ({ value: n.value, label: n.label }))}
+					value={$exportPrefs.nameStyle}
+					onchange={(v) => exportPrefs.set({ ...$exportPrefs, nameStyle: v as NameStyle })}
+				/>
 			</div>
 
 			<p class="col-span-full text-[11px] text-ink-faint">

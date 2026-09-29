@@ -114,6 +114,16 @@ describe('loading stored preferences', () => {
 		expect(get(store).exportButton).toBe(false);
 	});
 
+	it('fills in a name style stored before the setting existed', () => {
+		// A browser that has been here since before this change must keep naming as it did.
+		const store = createExportPrefs(
+			fake({ [EXPORT_KEY]: JSON.stringify({ nameTemplate: '{YEAR}_scan' }) })
+		);
+		const prefs = get(store);
+		expect(prefs.nameTemplate).toBe('{YEAR}_scan');
+		expect(prefs.nameStyle).toBe('words');
+	});
+
 	it('replaces the preset list wholesale rather than merging the defaults back in', () => {
 		const mine = [{ id: 'x', name: 'Mine', icon: 'star', settings: {} }];
 		const store = createPresets(fake({ [PRESETS_KEY]: JSON.stringify(mine) }));

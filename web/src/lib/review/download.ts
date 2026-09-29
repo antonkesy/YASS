@@ -68,7 +68,9 @@ export function exportBaseName(session: SessionDto, template: string, now = new 
 			preset: 'Scan',
 			counter: 1,
 			dpi: session.OptionsUsed.Dpi ?? 300,
-			color: String(session.OptionsUsed.Color ?? '')
+			color: String(session.OptionsUsed.Color ?? ''),
+			// A named session never reaches here, so there is no found name to put in.
+			name: ''
 		});
 		if (expanded.trim()) return safeFileName(expanded);
 	}
