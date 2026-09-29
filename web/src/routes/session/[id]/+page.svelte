@@ -363,6 +363,16 @@
 		selection = new Set((session?.Pages ?? []).map((p) => p.Index));
 	}
 
+	/**
+	 * Ticking pages is the all-pages view's business, so the ticks leave with it. The review
+	 * screen shows one page and its toolbar edits that page; a selection surviving the close
+	 * would leave those buttons acting on pages that are no longer on screen.
+	 */
+	function closeOverview() {
+		overview = false;
+		selection = clear();
+	}
+
 	/** Crop and rescan act on the one selected page, or the one on screen. */
 	function targetPage() {
 		if (selection.size === 1) {
@@ -631,9 +641,10 @@
 	<title>{session ? formatTime(session.CreatedAt) : 'Session'} · YASS</title>
 </svelte:head>
 
-{#snippet pageTools()}
+{#snippet pageTools(scoped: boolean)}
 	{#if session}
 		<Toolbar
+			{scoped}
 			selectedCount={selection.size}
 			total={session.Pages.length}
 			{anyDeleted}
@@ -804,7 +815,7 @@
 					</div>
 				{/if}
 
-				{@render pageTools()}
+				{@render pageTools(false)}
 			</main>
 
 			<aside
@@ -968,9 +979,9 @@
 		onopen={(i) => (previewIndex = i)}
 		onreorder={reorder}
 		onselectall={selectAll}
-		onclose={() => (overview = false)}
+		onclose={closeOverview}
 	>
-		{@render pageTools()}
+		{@render pageTools(true)}
 	</PageOverview>
 {/if}
 
