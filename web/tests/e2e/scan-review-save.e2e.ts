@@ -22,25 +22,40 @@ test('scan, review, edit, download and save', async ({ page }) => {
 	await expect(thumbs.nth(1).getByTestId('blank-badge')).toBeVisible();
 	await expect(page.getByTestId('page-count')).toHaveText('2 of 3 pages');
 
-	// Select page 1 and rotate: acts on the selection only, hash changes after the round trip.
+	// The strip only shows pages; ticking them is the all-pages overview's job.
+	await expect(thumbs.nth(0).getByTestId('page-select')).toHaveCount(0);
 	const firstImg = thumbs.nth(0).locator('img');
 	await expect(firstImg).toBeVisible();
 	const before = await firstImg.getAttribute('src');
-	await thumbs.nth(0).getByRole('button', { name: 'Select page 1' }).click();
-	await expect(page.getByTestId('toolbar-scope')).toHaveText(/1 selected/);
-	await page.getByRole('button', { name: 'Rotate right' }).click();
-	await expect(firstImg).not.toHaveAttribute('src', before!);
-	await expect(thumbs.nth(2).locator('img')).toHaveAttribute('src', /h=[0-9a-f]{16}/);
 
-	// Restore the blank page, then delete it again through the toolbar.
-	await page.getByRole('button', { name: 'Clear' }).click();
-	await thumbs.nth(1).getByRole('button', { name: 'Select page 2' }).click();
-	await page.getByTestId('restore-button').click();
-	await expect(thumbs.nth(1)).toHaveAttribute('data-deleted', 'false');
+	// Tick page 1 over there and rotate from the toolbar that comes with it: the edit
+	// acts on the selection only, and the hash changes after the round trip.
+	await page.getByTestId('overview-open').click();
+	const overview = page.getByTestId('page-overview');
+	const all = overview.getByTestId('page-thumb');
+	await all.nth(0).getByTestId('page-select').click();
+	await expect(overview.getByTestId('toolbar-scope')).toHaveText(/1 selected/);
+	await overview.getByRole('button', { name: 'Rotate right' }).click();
+	await expect(firstImg).not.toHaveAttribute('src', before!);
+	await expect(all.nth(2).locator('img')).toHaveAttribute('src', /h=[0-9a-f]{16}/);
+
+	// Restore the blank page, then delete it again, without leaving the overview.
+	await overview.getByRole('button', { name: 'Clear' }).click();
+	await all.nth(1).getByTestId('page-select').click();
+	await overview.getByTestId('restore-button').click();
+	await expect(all.nth(1)).toHaveAttribute('data-deleted', 'false');
 	await expect(page.getByTestId('page-count')).toHaveText('3 of 3 pages');
-	await page.getByTestId('delete-button').click();
-	await expect(thumbs.nth(1)).toHaveAttribute('data-deleted', 'true');
-	await page.getByRole('button', { name: 'Clear' }).click();
+	await overview.getByTestId('delete-button').click();
+	await expect(all.nth(1)).toHaveAttribute('data-deleted', 'true');
+
+	// Select all takes the lot, and the toolbar's Clear is the only way back.
+	await overview.getByRole('button', { name: 'Clear' }).click();
+	await overview.getByTestId('overview-select-all').click();
+	await expect(overview.getByTestId('toolbar-scope')).toHaveText(/3 selected/);
+	await expect(overview.getByTestId('overview-select-all')).toBeDisabled();
+	await overview.getByRole('button', { name: 'Clear' }).click();
+	await page.getByTestId('overview-close').click();
+	await expect(overview).toHaveCount(0);
 
 	// Tapping the page itself only moves the stage; nothing joins the selection.
 	await thumbs.nth(2).getByRole('button', { name: 'Show page 3' }).click();

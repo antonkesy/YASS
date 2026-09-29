@@ -328,6 +328,38 @@
 	<title>{session ? formatTime(session.CreatedAt) : 'Session'} · YASS</title>
 </svelte:head>
 
+{#snippet pageTools()}
+	{#if session}
+		<Toolbar
+			selectedCount={selection.size}
+			total={session.Pages.length}
+			{anyDeleted}
+			disabled={!editable}
+			onrotate={(deg) => send(rotateEdit(deg, selection))}
+			ondelete={() => {
+				const targets = new Set(selection);
+				const count = targets.size === 0 ? session.Pages.length : targets.size;
+				send(deleteEdit(targets));
+				toast.show(`${count} page${count === 1 ? '' : 's'} deleted`, () =>
+					send(restoreEdit(targets))
+				);
+			}}
+			onrestore={() => send(restoreEdit(selection))}
+			onfilter={(filter) => send(setFilterEdit(filter, selection))}
+			oncrop={() => (cropping = targetPage())}
+			onrescan={rescan}
+			onsplit={(split) => {
+				const page = session?.Pages[targetPage()];
+				if (page) send(setSplitEdit(split, new Set([page.Index])));
+			}}
+			splits={session.Pages[targetPage()]?.StartsDocument ?? false}
+			firstPage={targetPage() === 0}
+			{scanning}
+			onclear={() => (selection = clear())}
+		/>
+	{/if}
+{/snippet}
+
 <div class="mx-auto flex max-w-[2200px] animate-slide-from-right flex-col px-4 pt-2 pb-7 sm:px-7">
 	{#if missing}
 		<p class="rounded-[14px] bg-danger-bg px-4 py-3 font-semibold text-danger" role="alert">
@@ -456,33 +488,7 @@
 					</div>
 				{/if}
 
-				<Toolbar
-					selectedCount={selection.size}
-					total={session.Pages.length}
-					{anyDeleted}
-					disabled={!editable}
-					onrotate={(deg) => send(rotateEdit(deg, selection))}
-					ondelete={() => {
-						const targets = new Set(selection);
-						const count = targets.size === 0 ? session.Pages.length : targets.size;
-						send(deleteEdit(targets));
-						toast.show(`${count} page${count === 1 ? '' : 's'} deleted`, () =>
-							send(restoreEdit(targets))
-						);
-					}}
-					onrestore={() => send(restoreEdit(selection))}
-					onfilter={(filter) => send(setFilterEdit(filter, selection))}
-					oncrop={() => (cropping = targetPage())}
-					onrescan={rescan}
-					onsplit={(split) => {
-						const page = session?.Pages[targetPage()];
-						if (page) send(setSplitEdit(split, new Set([page.Index])));
-					}}
-					splits={session.Pages[targetPage()]?.StartsDocument ?? false}
-					firstPage={targetPage() === 0}
-					{scanning}
-					onclear={() => (selection = clear())}
-				/>
+				{@render pageTools()}
 			</main>
 
 			<aside
@@ -642,9 +648,10 @@
 		onopen={(i) => (previewIndex = i)}
 		onreorder={reorder}
 		onselectall={selectAll}
-		onclear={() => (selection = clear())}
 		onclose={() => (overview = false)}
-	/>
+	>
+		{@render pageTools()}
+	</PageOverview>
 {/if}
 
 {#if previewIndex !== null && session}

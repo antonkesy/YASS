@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import type { PageDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { Icon } from '$lib/icons';
 	import { TILE_SIZES, zoomTile } from '$lib/review/overview';
@@ -19,8 +20,8 @@
 		onopen,
 		onreorder,
 		onselectall,
-		onclear,
-		onclose
+		onclose,
+		children
 	}: {
 		sessionId: string;
 		pages: PageDto[];
@@ -37,8 +38,9 @@
 		onopen: (index: number) => void;
 		onreorder: (order: number[]) => void;
 		onselectall: () => void;
-		onclear: () => void;
 		onclose: () => void;
+		/** The page-edit toolbar, so edits act on what was just ticked without leaving. */
+		children?: Snippet;
 	} = $props();
 
 	let dialog = $state<HTMLDivElement | null>(null);
@@ -94,14 +96,16 @@
 		</span>
 
 		<span class="ml-auto flex items-center gap-2">
+			<!-- Clearing is the toolbar's Clear, which is only there once something is ticked. -->
 			<button
 				type="button"
-				class={pill}
-				onclick={all ? onclear : onselectall}
+				class="{pill} disabled:pointer-events-none disabled:opacity-35"
+				disabled={all}
+				onclick={onselectall}
 				data-testid="overview-select-all"
 			>
 				<Icon name="check" size={14} />
-				{all ? 'Clear' : 'Select all'}
+				Select all
 			</button>
 			<span class="flex items-center gap-1 rounded-full bg-app p-0.5">
 				<button
@@ -149,4 +153,10 @@
 			{onreorder}
 		/>
 	</div>
+
+	{#if children}
+		<div class="flex flex-none justify-center px-2 pt-1 pb-3 sm:px-3">
+			{@render children()}
+		</div>
+	{/if}
 </div>
