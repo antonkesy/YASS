@@ -2,6 +2,7 @@ import { writable } from 'svelte/store';
 import { ColorMode, PageSize, ScanSource } from './hub/generated/Yass.Core.Domain';
 import { ExportFormat } from './hub/generated/Yass.Core.Hub';
 import type { PresetIconName } from './icons';
+import type { AiProvider } from './naming/types';
 import { DEFAULT_TILE } from './review/overview';
 import type { ScanOverrides } from './settings';
 
@@ -70,6 +71,38 @@ export const defaultExportPrefs: ExportPrefs = {
 	exportButton: true
 };
 
+/**
+ * How this browser asks a model for a document name (ADR-008). Settings only — the key is
+ * kept apart in `AiKeys`, so spreading this object can never leak it into a prop or a log.
+ */
+export type AiPrefs = {
+	provider: AiProvider;
+	/** Base URL for the OpenAI-compatible shape. Empty falls back per provider. */
+	baseUrl: string;
+	/** Model per provider, so switching away and back does not lose the one you had. */
+	models: Partial<Record<AiProvider, string>>;
+	/** Send the page image when the server cannot read text. Needs a model that can see. */
+	useImages: boolean;
+};
+
+/** API keys, alone in their own blob. Never logged, never passed whole into a component. */
+export type AiKeys = {
+	anthropic: string;
+	openai: string;
+};
+
+export const AI_KEY = 'yass.ai';
+export const AI_KEYS_KEY = 'yass.ai.keys';
+
+export const defaultAiPrefs: AiPrefs = {
+	provider: 'off',
+	baseUrl: '',
+	models: {},
+	useImages: true
+};
+
+export const defaultAiKeys: AiKeys = { anthropic: '', openai: '' };
+
 /** Review-screen preferences, next to the export ones so they share the same storage helper. */
 export type ReviewPrefs = {
 	/** Tile width the all-pages overview was last zoomed to. */
@@ -135,7 +168,15 @@ export const createExportPrefs = (storage: Storage | undefined) =>
 export const createReviewPrefs = (storage: Storage | undefined) =>
 	persisted<ReviewPrefs>(storage, REVIEW_KEY, defaultReviewPrefs);
 
+export const createAiPrefs = (storage: Storage | undefined) =>
+	persisted<AiPrefs>(storage, AI_KEY, defaultAiPrefs);
+
+export const createAiKeys = (storage: Storage | undefined) =>
+	persisted<AiKeys>(storage, AI_KEYS_KEY, defaultAiKeys);
+
 const storage = typeof localStorage === 'undefined' ? undefined : localStorage;
 export const presets = createPresets(storage);
 export const exportPrefs = createExportPrefs(storage);
 export const reviewPrefs = createReviewPrefs(storage);
+export const aiPrefs = createAiPrefs(storage);
+export const aiKeys = createAiKeys(storage);
