@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
 	cancelled,
-	documentName,
+	numberedFileName,
 	exportBaseName,
 	exportFileName,
 	safeFileName,
@@ -77,8 +77,8 @@ describe('file names', () => {
 	});
 
 	it('numbers documents only once there is more than one', () => {
-		expect(documentName('Invoice', 0, '.pdf')).toBe('Invoice.pdf');
-		expect(documentName('Invoice', 1, '.pdf')).toBe('Invoice-2.pdf');
+		expect(numberedFileName('Invoice', 0, '.pdf')).toBe('Invoice.pdf');
+		expect(numberedFileName('Invoice', 1, '.pdf')).toBe('Invoice-2.pdf');
 	});
 });
 

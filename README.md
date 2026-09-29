@@ -247,6 +247,11 @@ changed.
 Saving without filling the slot drops it, and its separator with it: a template of
 `{YEAR}-{MONTH}-{DAY}_{NAME}` saves as `2026-09-29.pdf`.
 
+The list of past scans calls each scan the same thing the review screen does, and the
+search box and the A–Z sort go by that name too — so a scan nobody has named is listed
+under the file name it would be saved as, not under the time of day it happened. Open
+it and rename it whenever you like; the list follows.
+
 ### Where the found name goes
 
 **Settings → File name template** takes a `{NAME}` token alongside `{YEAR}`, `{MONTH}`

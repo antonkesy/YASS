@@ -2,6 +2,7 @@
 	import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { browse, statusCounts, type SortOrder, type StatusFilter } from '$lib/sessions/browse';
 	import { formatBytes } from '$lib/format';
+	import { exportPrefs } from '$lib/presets';
 	import SessionRow from './SessionRow.svelte';
 	import SessionTile from './SessionTile.svelte';
 	import SortMenu from './SortMenu.svelte';
@@ -36,8 +37,12 @@
 	let selecting = $state(false);
 	let picked = $state<Set<string>>(clear());
 
+	// What an unnamed scan is called, so the list, the search box and the A-Z sort all read
+	// the same name the review screen shows and the save writes.
+	const template = $derived($exportPrefs.nameTemplate);
+
 	const counts = $derived(statusCounts(sessions));
-	const shown = $derived(browse(sessions, { query, status, order }));
+	const shown = $derived(browse(sessions, { query, status, order, template }));
 	const bytes = $derived(sessions.reduce((n, s) => n + s.SizeBytes, 0));
 
 	// A filter that no longer matches anything would otherwise strand the panel empty
@@ -172,6 +177,7 @@
 					<div class="animate-page-in" style="animation-delay: {Math.min(i, 10) * 45}ms">
 						<SessionTile
 							{session}
+							{template}
 							landed={session.Id === landed}
 							selectable={selecting}
 							selected={picked.has(session.Id)}
@@ -186,6 +192,7 @@
 					<div class="animate-page-in" style="animation-delay: {Math.min(i, 10) * 45}ms">
 						<SessionRow
 							{session}
+							{template}
 							landed={session.Id === landed}
 							selectable={selecting}
 							selected={picked.has(session.Id)}

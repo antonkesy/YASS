@@ -356,6 +356,31 @@ test('pressing for a name fills the slot, and the rest of the template stays', a
 	);
 });
 
+test('the list of past scans calls a scan what the review screen calls it', async ({ page }) => {
+	await openNaming(page);
+	await page.getByTestId('template-input').fill('{YEAR}-{MONTH}-{DAY}_scan');
+
+	await scanToReview(page);
+	const shown = await page.getByTestId('document-name').getAttribute('data-name');
+	expect(shown).toMatch(/^\d{4}-\d{2}-\d{2}_scan$/);
+
+	// Nobody has named it, so the list shows what it will be saved as — not the time of day.
+	await page.goto('/');
+	const tile = page.getByTestId('session-list').getByTestId('session-tile').first();
+	await expect(tile).toContainText(shown!);
+
+	// And a rename moves both, because both ask the same question.
+	await tile.click();
+	await expect(page.getByTestId('document-name')).toBeVisible();
+	await page.getByTestId('name-input').fill('Tax return 2025');
+	await page.getByTestId('name-input').press('Enter');
+
+	await page.goto('/');
+	await expect(page.getByTestId('session-list').getByTestId('session-tile').first()).toContainText(
+		'Tax return 2025'
+	);
+});
+
 test('a name typed by hand replaces the slot and survives a reload', async ({ page }) => {
 	await openNaming(page);
 	await page.getByTestId('template-input').fill('{YEAR}-{MONTH}-{DAY}_{NAME}');
