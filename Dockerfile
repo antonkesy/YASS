@@ -12,7 +12,12 @@ RUN pnpm build
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS server
 ARG TARGETARCH
 WORKDIR /src
+# Yass.Fake renders the pages its scanner feeds from Markdown during the build, so the toolchain
+# for that has to be here. Build stage only: none of it reaches the runtime image below.
+RUN apk add --no-cache pandoc-cli typst poppler-utils font-dejavu
+ENV TYPST_FONT_PATHS=/usr/share/fonts
 COPY global.json Directory.Build.props Directory.Packages.props Yass.sln .editorconfig ./
+COPY scripts/render-fixtures.sh scripts/
 COPY src/ src/
 COPY tests/ tests/
 RUN --mount=type=cache,target=/root/.nuget/packages \
