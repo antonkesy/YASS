@@ -203,10 +203,20 @@ Everything above configures the **server**. **Settings → Find name** configure
   Anything else that speaks the OpenAI chat shape works too — point the base URL
   at LM Studio, llama.cpp or Ollama. Ollama refuses requests from a page until
   `OLLAMA_ORIGINS` names your YASS origin.
-- **In-browser** — a model runs on your own machine through WebGPU, with no key
-  and no third party. It downloads a few hundred megabytes the first time, then
-  works offline. Needs WebGPU, and needs `naming.ocr: true` on the server,
-  because a model in the browser reads text and cannot see the page.
+- **In-browser (GPU)** — a model runs on your own machine through WebGPU, with
+  no key and no third party. It downloads a few hundred megabytes the first
+  time, then works offline. Needs WebGPU.
+- **In-browser (CPU)** — the same idea without a graphics card: llama.cpp
+  compiled to WebAssembly, decoding on the processor with the weights in
+  ordinary RAM. Works in any browser. Pick one of the models offered (145 MB to
+  800 MB) or paste the URL of any instruct-tuned GGUF. Budget roughly the
+  download size again in free RAM while it answers, and expect a few seconds
+  rather than a fraction of one — it runs on a single core, because more than
+  that needs the page to be cross-origin isolated.
+
+Both in-browser options need `naming.ocr: true` on the server, because a model
+in the browser reads text and cannot see the page. Where the server reads
+nothing, the suggestions popover says so instead of coming back empty.
 
 Two things worth knowing. A key in `localStorage` can be read by anything running
 on that page and stays until you clear it, so think twice on a browser other
