@@ -85,6 +85,10 @@ export type ScanOptionsDto = {
     AllowDownload?: boolean;
     /** Transpiled from string[]? */
     ExportRoots?: string[];
+    /** Transpiled from bool */
+    CanReadPageText?: boolean;
+    /** Transpiled from int */
+    PageTextPages?: number;
 }
 
 /** Transpiled from Yass.Core.Hub.NameSuggestionsDto */

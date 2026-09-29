@@ -69,6 +69,8 @@ public sealed class HubClient : IAsyncDisposable
 
     public Task<ScanOptionsDto> GetEffectiveOptions() => _connection.InvokeAsync<ScanOptionsDto>(nameof(IYassHub.GetEffectiveOptions));
 
+    public Task<NameSuggestionsDto> SuggestNames(string id) => _connection.InvokeAsync<NameSuggestionsDto>(nameof(IYassHub.SuggestNames), id);
+
     public Task ReloadConfig() => _connection.InvokeAsync(nameof(IYassHub.ReloadConfig));
 
     /// <summary>Starts a scan and waits for the session to leave <see cref="SessionState.Scanning"/>.</summary>
