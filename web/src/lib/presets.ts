@@ -59,8 +59,6 @@ export type ExportPrefs = {
 	directory: string;
 	nameTemplate: string;
 	exportButton: boolean;
-	/** Folders saved to before, newest first, offered by the Save to… menu. */
-	recentFolders: string[];
 };
 
 export const EXPORT_KEY = 'yass.export';
@@ -69,20 +67,8 @@ export const defaultExportPrefs: ExportPrefs = {
 	format: ExportFormat.Pdf,
 	directory: '',
 	nameTemplate: '',
-	exportButton: true,
-	recentFolders: []
+	exportButton: true
 };
-
-/** How many folders the Save to… menu remembers, matching the mockup. */
-export const RECENT_FOLDERS = 4;
-
-/** Moves `directory` to the front of the recent list, without repeating it. */
-export function rememberFolder(prefs: ExportPrefs, directory: string): ExportPrefs {
-	const clean = directory.trim().replace(/\/+$/, '');
-	if (clean === '') return prefs;
-	const rest = prefs.recentFolders.filter((p) => p !== clean);
-	return { ...prefs, recentFolders: [clean, ...rest].slice(0, RECENT_FOLDERS) };
-}
 
 /** Review-screen preferences, next to the export ones so they share the same storage helper. */
 export type ReviewPrefs = {

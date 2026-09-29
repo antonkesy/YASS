@@ -33,8 +33,17 @@
 	import CropModal from '$lib/components/CropModal.svelte';
 	import MergeModal from '$lib/components/MergeModal.svelte';
 	import NameSuggestions from '$lib/components/NameSuggestions.svelte';
-	import { saveToBrowser, savedLabel } from '$lib/review/download';
-	import { exportPrefs, rememberFolder, reviewPrefs } from '$lib/presets';
+	import {
+		cancelled,
+		exportBaseName,
+		fileExtensions,
+		savePicker,
+		saveToBrowser,
+		saveToDisk,
+		savedLabel,
+		type SaveTarget
+	} from '$lib/review/download';
+	import { exportPrefs, reviewPrefs } from '$lib/presets';
 	import { ExportMode, type NameSuggestionsDto } from '$lib/hub/generated/Yass.Core.Hub';
 
 	const client = getHub();
@@ -179,29 +188,70 @@
 		}
 	}
 
-	async function exportAs(mode: ExportMode, directory: string | null = null) {
+	/** The name field wins; the template is what an unnamed scan falls back to. */
+	const exportName = $derived(
+		session?.Name?.trim() || $exportPrefs.nameTemplate.trim() || undefined
+	);
+
+	/** Export: the server writes the document into the folder settings point at. */
+	async function save() {
 		error = null;
 		exporting = true;
-		const target = (directory ?? $exportPrefs.directory).trim();
 		try {
 			const result = await client.hub.export(id, {
-				Mode: mode,
+				Mode: ExportMode.Save,
 				Format: $exportPrefs.format,
-				// The name field wins; the template is what an unnamed scan falls back to.
-				Name: session?.Name?.trim() || $exportPrefs.nameTemplate.trim() || undefined,
-				Directory: mode === ExportMode.Save ? target || undefined : undefined
+				Name: exportName,
+				Directory: $exportPrefs.directory.trim() || undefined
 			});
-			// Only once the server has accepted it: an offer to save somewhere it refuses
-			// is worse than no offer at all.
-			if (directory) exportPrefs.set(rememberFolder($exportPrefs, directory));
-			if (mode === ExportMode.Save) {
-				savedPath = savedLabel(result);
-				const count = result.Documents.length;
-				toast.show(count === 1 ? 'Saved' : `Saved ${count} documents`);
-			} else {
-				const started = saveToBrowser(result);
-				toast.show(started === 1 ? 'Downloaded' : `Downloaded ${started} files`);
+			savedPath = savedLabel(result);
+			const count = result.Documents.length;
+			toast.show(count === 1 ? 'Saved' : `Saved ${count} documents`);
+		} catch (e) {
+			error = hubError(e);
+		} finally {
+			exporting = false;
+		}
+	}
+
+	/**
+	 * Save as…: asks where the file goes first, while the click is still a user gesture —
+	 * the export itself takes long enough that a browser would refuse to open a dialog
+	 * afterwards — then streams the finished document straight there. Browsers without
+	 * the File System Access API, which needs a secure context, get a plain download.
+	 */
+	async function saveAs() {
+		const picker = savePicker();
+		let target: SaveTarget | null = null;
+		const base = session ? exportBaseName(session, $exportPrefs.nameTemplate) : 'scan';
+		const extension = fileExtensions[$exportPrefs.format];
+
+		if (picker) {
+			try {
+				target =
+					documentCount > 1
+						? { directory: await picker.showDirectoryPicker({ mode: 'readwrite' }) }
+						: { file: await picker.showSaveFilePicker({ suggestedName: base + extension }) };
+			} catch (e) {
+				if (cancelled(e)) return;
+				// The dialog exists but would not open: the plain download still gets the file out.
+				target = null;
 			}
+		}
+
+		error = null;
+		exporting = true;
+		try {
+			const result = await client.hub.export(id, {
+				Mode: ExportMode.Download,
+				Format: $exportPrefs.format,
+				Name: exportName
+			});
+			const count = target
+				? await saveToDisk(result, target, base, extension)
+				: saveToBrowser(result);
+			const verb = target ? 'Saved' : 'Downloaded';
+			toast.show(count === 1 ? verb : `${verb} ${count} files`);
 		} catch (e) {
 			error = hubError(e);
 		} finally {
@@ -570,10 +620,9 @@
 					{savedPath}
 					exportDirectory={$exportPrefs.directory.trim() || exportRoots[0] || ''}
 					exportEnabled={$exportPrefs.exportButton}
-					roots={exportRoots}
-					recent={$exportPrefs.recentFolders}
-					onsave={(directory) => exportAs(ExportMode.Save, directory)}
-					ondownload={() => exportAs(ExportMode.Download)}
+					picker={savePicker() !== null}
+					onsave={save}
+					ondownload={saveAs}
 				/>
 
 				<div class="flex flex-col gap-0.5 border-t border-line pt-2">

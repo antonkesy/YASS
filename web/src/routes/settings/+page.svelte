@@ -427,12 +427,12 @@
 				<Toggle
 					name="export-button"
 					label="Export button"
-					hint="One-click export to a fixed folder. When off, use Save to… or Download."
+					hint="One-click export to a fixed folder. When off, Save as… is the way out."
 					checked={$exportPrefs.exportButton}
 					onchange={(v) => exportPrefs.set({ ...$exportPrefs, exportButton: v })}
 				/>
 
-				<!-- Dimmed rather than hidden: the folder is still where Save to… offers to write. -->
+				<!-- Dimmed rather than hidden: it is still where Export will go once it is back on. -->
 				<label
 					class="flex flex-col gap-1.5 transition-opacity duration-200 {$exportPrefs.exportButton
 						? ''

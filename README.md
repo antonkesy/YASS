@@ -33,9 +33,12 @@ review the pages, and save a PDF straight into your
   selection the toolbar acts on — rotate, delete/restore, colour mode per page
   or for all, drag to reorder, full-page preview with swipe. Blank pages are
   detected and pre-marked deleted.
-- **Save** writes the PDF atomically into `output.directory` under a templated
-  name — point that at your paperless-ngx consume folder, or anywhere else;
-  **Download** hands the PDF to the browser instead.
+- **Export** writes the PDF atomically into `output.directory` under a templated
+  name — point that at your paperless-ngx consume folder, or anywhere else.
+  **Save as…** puts a copy on the machine you are browsing from: it opens the
+  browser's own save dialog over https or on localhost, and is a plain download
+  anywhere else (the button then says *Download*, and your browser's "ask where
+  to save each file" setting is what brings the dialog back).
 - **Installable PWA**, works without a service worker, everything reachable by
   keyboard, touch targets ≥ 44 px.
 - **Single config file** (`yass.yaml`), every key overridable through the
@@ -152,7 +155,7 @@ values stop startup and name the offending key.
 | `output.pdf.compression` | `jpeg` | `jpeg` or `lossless`. |
 | `output.pdf.jpeg_quality` | `75` | 1–100. |
 | `output.allowed_roots` | `[]` | Folders the UI may export into, each including everything beneath it. Empty = `output.directory` only. `["/"]` = anywhere. |
-| `output.allow_download` | `true` | Show the Download button. |
+| `output.allow_download` | `true` | Show the Save as… button, which copies the document to the browsing machine. |
 | `output.on_success` | `keep_session` | `keep_session` or `delete_session` after a successful save. |
 | `processing.max_concurrent_renders` | `2` | Upper bound on decoded bitmaps in memory. |
 | `processing.thumbnail_width` | `320` | px |
@@ -205,7 +208,7 @@ which of those is happening.
 | `GET /` | The web UI (SvelteKit SPA). |
 | `/hub` | SignalR hub (WebSocket, MessagePack): state, commands, events. |
 | `GET /img/{session}/{page}/thumb\|preview?h=HASH` | WebP images, immutable-cached by content hash. |
-| `GET /export/{session}/{token}.pdf` | One-shot download URL returned by *Download*. |
+| `GET /export/{session}/{token}.EXT` | One-shot download URL returned by *Save as…*; `.pdf`, `.jpg` or `.png`. |
 | `GET /healthz` | Liveness. |
 
 ## Development

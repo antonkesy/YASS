@@ -4,7 +4,6 @@
 	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 	import { activePageCount } from '$lib/format';
 	import { Icon } from '$lib/icons';
-	import SaveToMenu from './SaveToMenu.svelte';
 
 	let {
 		session,
@@ -14,8 +13,7 @@
 		savedPath = null,
 		exportDirectory = '',
 		exportEnabled = true,
-		roots = [],
-		recent = [],
+		picker = false,
 		onsave,
 		ondownload
 	}: {
@@ -28,10 +26,9 @@
 		exportDirectory?: string;
 		/** `output.allow_export_button` equivalent: the user's own preference. */
 		exportEnabled?: boolean;
-		roots?: string[];
-		recent?: string[];
-		/** A directory of null means "wherever Export goes". */
-		onsave: (directory: string | null) => void;
+		/** Whether the browser can offer a save dialog, which is what the button says it will do. */
+		picker?: boolean;
+		onsave: () => void;
 		ondownload: () => void;
 	} = $props();
 
@@ -45,7 +42,9 @@
 			(session.State === SessionState.Review || session.State === SessionState.Done)
 	);
 
-	let saveTo = $state(false);
+	// Export can be switched off, but not down to nothing: with downloads disabled by
+	// config it is the only way a document leaves the machine.
+	const showExport = $derived(exportEnabled || !allowDownload);
 
 	const primary =
 		'flex h-[50px] items-center justify-center gap-2 rounded-[14px] bg-linear-135 from-accent-light to-accent-grad2 text-[15px] font-extrabold text-white shadow-export transition-[transform,box-shadow] duration-200 hover:-translate-y-px hover:shadow-export-hover disabled:pointer-events-none disabled:opacity-40';
@@ -103,11 +102,11 @@
 			{/if}
 		</div>
 	{:else}
-		{#if exportEnabled}
+		{#if showExport}
 			<button
 				type="button"
 				class={primary}
-				onclick={() => onsave(null)}
+				onclick={onsave}
 				disabled={!canExport}
 				data-testid="save-button"
 			>
@@ -128,42 +127,20 @@
 			{/if}
 		{/if}
 
-		<div class="relative">
-			<button
-				type="button"
-				class="w-full {exportEnabled ? secondary : primary}"
-				onclick={() => (saveTo = !saveTo)}
-				disabled={!canExport}
-				aria-expanded={saveTo}
-				data-testid="save-to-button"
-			>
-				<Icon name="folderOpen" />
-				Save to…
-			</button>
-
-			{#if saveTo}
-				<SaveToMenu
-					{roots}
-					{recent}
-					onpick={(directory) => {
-						saveTo = false;
-						onsave(directory);
-					}}
-					onclose={() => (saveTo = false)}
-				/>
-			{/if}
-		</div>
-
 		{#if allowDownload}
+			<!--
+				One button for "get the file off the server": it opens the browser's own save
+				dialog where there is one, and is a plain download where there is not.
+			-->
 			<button
 				type="button"
-				class={secondary}
+				class="w-full {showExport ? secondary : primary}"
 				onclick={ondownload}
 				disabled={!canExport}
 				data-testid="download-button"
 			>
 				<Icon name="download" />
-				Download
+				{picker ? 'Save as…' : 'Download'}
 			</button>
 		{/if}
 	{/if}
