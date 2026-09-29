@@ -712,18 +712,6 @@
 				/>
 			</div>
 
-			{#if $aiPrefs.findName}
-				<div class="rounded-[16px] bg-app px-3.5 py-1.5">
-					<Toggle
-						name="auto_name"
-						label="Name a scan as it finishes"
-						hint="Fills the name in from the heading on the page and your template. A model is still something you press Find name for."
-						checked={$aiPrefs.autoName}
-						onchange={(v) => aiPrefs.set({ ...$aiPrefs, autoName: v })}
-					/>
-				</div>
-			{/if}
-
 			{#if !$aiPrefs.findName}
 				<p class="text-[11px] text-ink-faint" data-testid="find-name-off">
 					The button is hidden on the review screen, and no page is read: the server only reads one
