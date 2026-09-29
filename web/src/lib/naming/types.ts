@@ -16,10 +16,11 @@ export function isInBrowser(provider: AiProvider): boolean {
 	return provider === 'webllm' || provider === 'wllama';
 }
 
-/** What the model is given: what the server read, or the page itself when it could not read. */
-export type NamingInput =
-	| { kind: 'text'; text: string; pages: number }
-	| { kind: 'image'; mediaType: string; base64: string };
+/**
+ * What the model is given: the text the server read off the page. Only ever text — Find name
+ * is not offered at all where there is none, so there is no second shape to fall back to.
+ */
+export type NamingInput = { kind: 'text'; text: string; pages: number };
 
 /** Where a call has got to, for the popover's loading line. */
 export type Phase = 'reading' | 'downloading' | 'thinking';
@@ -34,15 +35,6 @@ export class NamingError extends Error {
 		this.name = 'NamingError';
 	}
 }
-
-/**
- * Why a model in this browser has nothing to work with. It reads text and cannot see, so a
- * server that reads no page text leaves it nothing — which is worth saying, in one place,
- * both where the page decides not to ask and where the ask itself is refused.
- */
-export const NEEDS_PAGE_TEXT =
-	'A model running in this browser can only read text, and this server reads none. ' +
-	'Turn on naming.ocr in yass.yaml, or use an API key instead.';
 
 /** A starting point per provider; every one of them is an editable field in settings. */
 export const defaultModels: Record<AiProvider, string> = {

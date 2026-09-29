@@ -67,14 +67,9 @@ describe('NameSuggestions', () => {
 		expect(screen.getByTestId('suggest-privacy')).toHaveTextContent('Nothing left it');
 		unmount();
 
-		const away = result({ Local: false });
-		const { unmount: second } = open({ result: away, sent: 'text' });
+		// Text is the only thing there is to send now, so the line has nothing to choose between.
+		open({ result: result({ Local: false }) });
 		expect(screen.getByTestId('suggest-privacy')).toHaveTextContent('The text read from the page');
-		second();
-
-		// OCR off means the page itself went, and saying "the text" would be a lie.
-		open({ result: away, sent: 'image' });
-		expect(screen.getByTestId('suggest-privacy')).toHaveTextContent('The page image was sent');
 	});
 
 	it('hands back the name that was picked', async () => {

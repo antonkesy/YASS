@@ -218,15 +218,15 @@ Everything above configures the **server**. **Settings → Find name** configure
   serves itself cross-origin isolated (`Cross-Origin-Opener-Policy` and
   `Cross-Origin-Embedder-Policy`) so that the browser allows the threads.
 
-Both in-browser options need `naming.ocr: true` on the server, because a model
-in the browser reads text and cannot see the page. Where the server reads
-nothing, the suggestions popover says so instead of coming back empty.
+Every option here needs `naming.ocr: true` on the server, because a name comes
+from the words on the page. Where the server reads nothing — `ocr: false`, or no
+`tesseract` — Find name is not offered at all, and the settings sheet says why.
 
-Two things worth knowing. A key in `localStorage` can be read by anything running
+One thing worth knowing: a key in `localStorage` can be read by anything running
 on that page and stays until you clear it, so think twice on a browser other
-people use. And where the server does not read page text, the **page image** is
-sent to the model instead of a few lines of text — the settings sheet says so,
-and the toggle beside it turns that off.
+people use. What goes to a model is only ever the few lines of text read off the
+page — never the page image — and the suggestions popover says which model saw
+them.
 
 ## Scanner setup
 

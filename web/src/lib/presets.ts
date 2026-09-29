@@ -86,8 +86,6 @@ export type AiPrefs = {
 	baseUrl: string;
 	/** Model per provider, so switching away and back does not lose the one you had. */
 	models: Partial<Record<AiProvider, string>>;
-	/** Send the page image when the server cannot read text. Needs a model that can see. */
-	useImages: boolean;
 };
 
 /** API keys, alone in their own blob. Never logged, never passed whole into a component. */
@@ -103,8 +101,7 @@ export const defaultAiPrefs: AiPrefs = {
 	findName: true,
 	provider: 'off',
 	baseUrl: '',
-	models: {},
-	useImages: true
+	models: {}
 };
 
 export const defaultAiKeys: AiKeys = { anthropic: '', openai: '' };

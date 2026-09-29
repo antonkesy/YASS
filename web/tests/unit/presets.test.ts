@@ -104,7 +104,7 @@ describe('loading stored preferences', () => {
 		const prefs = get(store);
 		expect(prefs.provider).toBe('openai');
 		expect(prefs.models).toEqual({});
-		expect(prefs.useImages).toBe(defaultAiPrefs.useImages);
+		expect(prefs.findName).toBe(defaultAiPrefs.findName);
 	});
 
 	it('keeps a stored value that happens to match a falsy default', () => {

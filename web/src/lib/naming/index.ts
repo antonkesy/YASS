@@ -7,7 +7,6 @@ import {
 	defaultModels,
 	isInBrowser,
 	NamingError,
-	NEEDS_PAGE_TEXT,
 	type AiProvider,
 	type NamingInput,
 	type Phase
@@ -15,7 +14,6 @@ import {
 
 export { cleanName } from './clean';
 export { CPU_MODELS, cpuModelLabel, cpuModelSizeMb, type CpuModel } from './cpu-models';
-export { fetchPageImage } from './image';
 export { aiSuggestion, isLocalEndpoint, merge, MAX_ROWS } from './merge';
 export { askAnthropic, askOpenAiCompatible } from './providers';
 export { INSTRUCTION } from './prompt';
@@ -66,8 +64,6 @@ export async function suggestName(
 	const baseUrl = chosenBaseUrl(prefs);
 
 	if (isInBrowser(prefs.provider)) {
-		if (input.kind === 'image') throw new NamingError(NEEDS_PAGE_TEXT);
-
 		const onphase = (phase: Phase, detail?: string) => hooks.onphase?.(phase, detail);
 
 		// Loaded only when it is asked for: either package dwarfs the rest of the app.
