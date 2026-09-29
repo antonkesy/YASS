@@ -4,6 +4,7 @@ import StatusPill from '$lib/components/StatusPill.svelte';
 import Toolbar from '$lib/components/Toolbar.svelte';
 import ExportBar from '$lib/components/ExportBar.svelte';
 import PageThumb from '$lib/components/PageThumb.svelte';
+import ScanStage from '$lib/components/ScanStage.svelte';
 import SettingsChips from '$lib/components/SettingsChips.svelte';
 import SortMenu from '$lib/components/SortMenu.svelte';
 import AppFooter from '$lib/components/AppFooter.svelte';
@@ -33,6 +34,51 @@ describe('StatusPill', () => {
 		expect(screen.getByRole('status')).toHaveTextContent(/Ready/);
 		rerender({ status: null, connection: 'reconnecting' });
 		expect(screen.getByRole('status')).toHaveTextContent(/Offline/);
+	});
+});
+
+describe('ScanStage', () => {
+	const stage = (
+		state: ScannerState | null,
+		connection: 'connected' | 'connecting' | 'reconnecting' = 'connected',
+		Message?: string
+	) =>
+		render(ScanStage, {
+			status: state === null ? null : { State: state, DeviceName: 'ADF', CheckedAt: '', Message },
+			connection,
+			options: null,
+			onscan: vi.fn(),
+			onsettings: vi.fn()
+		});
+
+	it('says nothing when the scanner is ready: the button being pressable is the message', () => {
+		stage(ScannerState.Ready);
+		expect(screen.getByTestId('scan-button')).toBeEnabled();
+		expect(screen.queryByTestId('scanner-trouble')).toBeNull();
+		expect(screen.getByTestId('scan-button-wrap')).not.toHaveAttribute('title');
+		expect(screen.queryByText(/ready/i)).toBeNull();
+	});
+
+	it('greys the button out and says why, on hover and on screen', () => {
+		const { unmount } = stage(ScannerState.NoDevice);
+		expect(screen.getByTestId('scan-button')).toBeDisabled();
+		expect(screen.getByTestId('scan-button-wrap')).toHaveAttribute('title', 'No scanner found');
+		expect(screen.getByTestId('scanner-trouble')).toHaveTextContent('No scanner found');
+		unmount();
+
+		// What the scanner itself said wins over our own guess at the reason.
+		stage(ScannerState.Error, 'connected', 'Cover open');
+		expect(screen.getByTestId('scanner-trouble')).toHaveTextContent('Cover open');
+		expect(screen.getByTestId('scan-button-wrap')).toHaveAttribute(
+			'title',
+			'The scanner reported a problem'
+		);
+	});
+
+	it('blames the connection, not the scanner, when there is none', () => {
+		stage(null, 'connecting');
+		expect(screen.getByTestId('scan-button')).toBeDisabled();
+		expect(screen.getByTestId('scanner-trouble')).toHaveTextContent(/Connecting/);
 	});
 });
 
