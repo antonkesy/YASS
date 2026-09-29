@@ -257,13 +257,15 @@ public sealed class YassHub(
             new TemplateFacts(Dpi: session.OptionsUsed.Dpi, Color: session.OptionsUsed.Color.ToString()),
             extension: "");
 
-        IReadOnlyList<NameSuggestion> suggestions =
+        NameSuggestionSet found =
             await namer.SuggestAsync(pages, fallback, Context.ConnectionAborted).ConfigureAwait(false);
 
         return new NameSuggestionsDto(
-            [.. suggestions],
+            [.. found.Suggestions],
             namer.CanRead,
-            naming.Provider != NamingProvider.Anthropic);
+            naming.Provider != NamingProvider.Anthropic,
+            found.Text,
+            found.Error);
     }
 
     public Task<ScannerStatusDto> GetScannerStatus() => Task.FromResult(scanner.Current);

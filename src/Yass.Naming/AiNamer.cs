@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -20,12 +21,13 @@ public sealed class AiNamer(HttpClient http, ILogger<AiNamer> logger)
         "no path, no quotes, no explanation. Prefer the document's own title, its issuer and its " +
         "date if they appear. Use spaces, not underscores.";
 
-    public async Task<string?> SuggestAsync(string documentText, NamingConfig naming, CancellationToken cancellationToken)
+    /// <returns>The name, or the reason there is none. Both null means there was nothing to ask.</returns>
+    public async Task<(string? Name, string? Error)> SuggestAsync(string documentText, NamingConfig naming, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(naming);
         if (naming.Provider == NamingProvider.Off || string.IsNullOrWhiteSpace(documentText))
         {
-            return null;
+            return (null, null);
         }
 
         // Enough for a title and a letterhead; more is cost without accuracy.
@@ -41,15 +43,33 @@ public sealed class AiNamer(HttpClient http, ILogger<AiNamer> logger)
                 NamingProvider.Anthropic => await AskAnthropicAsync(excerpt, naming, timeout.Token).ConfigureAwait(false),
                 _ => null,
             };
-            return Clean(name);
+            return (Clean(name), null);
         }
         catch (Exception ex) when (ex is HttpRequestException or JsonException or OperationCanceledException or InvalidOperationException)
         {
-            // A naming suggestion is a nicety; never let it take a scan down with it.
+            // A naming suggestion is a nicety; never let it take a scan down with it. It is
+            // still worth saying why it produced nothing: a bad key and a blank page used to
+            // look identical from the UI.
             logger.LogWarning(ex, "Name suggestion from {Provider} failed", naming.Provider);
-            return null;
+            return (null, Explain(ex, naming));
         }
     }
+
+    /// <summary>Turns a failure into a sentence someone can act on.</summary>
+    private static string Explain(Exception ex, NamingConfig naming) => ex switch
+    {
+        HttpRequestException { StatusCode: HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden } =>
+            $"{naming.Provider} rejected the API key.",
+        HttpRequestException { StatusCode: HttpStatusCode.TooManyRequests } =>
+            $"{naming.Provider} is rate limiting; try again shortly.",
+        HttpRequestException { StatusCode: { } status } =>
+            $"{naming.Provider} refused the request ({(int)status}).",
+        HttpRequestException => $"{naming.Provider} could not be reached.",
+        OperationCanceledException => $"{naming.Provider} did not answer within {naming.TimeoutSeconds}s.",
+        JsonException => $"{naming.Provider} sent a reply that could not be read.",
+        // The key-file checks below throw this, and their messages already name the path.
+        _ => ex.Message,
+    };
 
     private async Task<string?> AskOllamaAsync(string text, NamingConfig naming, CancellationToken cancellationToken)
     {

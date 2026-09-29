@@ -69,10 +69,17 @@ public sealed record ScanOptionsDto(
     int? PageTextPages = null);
 
 /// <param name="Suggestions">Best first.</param>
-/// <param name="CanRead">Whether page text could be read at all; the UI hides Find name when not.</param>
+/// <param name="CanRead">Whether page text could be read at all, which decides what the UI can offer.</param>
 /// <param name="Local">Whether the text stayed on the scanner server, which the UI says out loud.</param>
+/// <param name="Text">What was read off the pages, for a browser that wants to ask its own model.</param>
+/// <param name="Error">Why the server's own provider produced nothing, in words fit to show someone.</param>
 [TranspilationSource]
-public sealed record NameSuggestionsDto(NameSuggestion[] Suggestions, bool CanRead, bool Local);
+public sealed record NameSuggestionsDto(
+    NameSuggestion[] Suggestions,
+    bool CanRead,
+    bool Local,
+    string? Text = null,
+    string? Error = null);
 
 [TranspilationSource]
 public sealed record ScannerStatusDto(ScannerState State, string? DeviceName, string? Message, string CheckedAt);

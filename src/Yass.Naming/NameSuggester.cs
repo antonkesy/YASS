@@ -19,7 +19,7 @@ public sealed class NameSuggester(
 {
     public bool CanRead => config().Ocr && reader.Available;
 
-    public async Task<IReadOnlyList<NameSuggestion>> SuggestAsync(
+    public async Task<NameSuggestionSet> SuggestAsync(
         IReadOnlyList<string> pageImagePaths,
         string fallback,
         CancellationToken cancellationToken)
@@ -39,7 +39,7 @@ public sealed class NameSuggester(
 
         if (!CanRead)
         {
-            return suggestions;
+            return new NameSuggestionSet(suggestions, null, null);
         }
 
         var lines = new List<PageLine>();
@@ -51,7 +51,7 @@ public sealed class NameSuggester(
         if (lines.Count == 0)
         {
             logger.LogInformation("No text found on the first {Pages} page(s)", naming.OcrPages);
-            return suggestions;
+            return new NameSuggestionSet(suggestions, null, null);
         }
 
         if (Heading(lines) is { } heading)
@@ -59,10 +59,9 @@ public sealed class NameSuggester(
             suggestions.Insert(0, heading);
         }
 
-        string? written = await ai.SuggestAsync(
-            string.Join('\n', lines.Select(l => l.Text)),
-            naming,
-            cancellationToken).ConfigureAwait(false);
+        // Handed back whole: a browser with a model of its own reads the same page this did.
+        string text = string.Join('\n', lines.Select(l => l.Text));
+        (string? written, string? error) = await ai.SuggestAsync(text, naming, cancellationToken).ConfigureAwait(false);
 
         if (written is not null)
         {
@@ -73,7 +72,7 @@ public sealed class NameSuggester(
                 0.9));
         }
 
-        return suggestions;
+        return new NameSuggestionSet(suggestions, text, error);
     }
 
     /// <summary>
