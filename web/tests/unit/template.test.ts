@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { expandTemplate, resolveName, templateTokens, unknownTokens } from '$lib/template';
+import {
+	expandParts,
+	expandTemplate,
+	resolveName,
+	templateTokens,
+	unknownTokens
+} from '$lib/template';
 
 const at = new Date(2026, 8, 24, 15, 4, 5); // 24 September 2026, 15:04:05 local
 const facts = { preset: 'Document', counter: 42, dpi: 300, color: 'Color', name: '' };
@@ -40,6 +46,44 @@ describe('expandTemplate', () => {
 		// Twelve the server knows, plus {NAME}, which only this browser can fill.
 		expect(templateTokens).toHaveLength(13);
 		expect(templateTokens).toContain('NAME');
+	});
+});
+
+describe('expandParts', () => {
+	const named = { ...facts, name: 'quarterly-report' };
+
+	it('marks the run the found name fills, and only that one', () => {
+		expect(expandParts('{YEAR}-{MONTH}_{NAME}', at, named)).toEqual([
+			{ text: '2026-09_', name: false },
+			{ text: 'quarterly-report', name: true }
+		]);
+	});
+
+	it('marks every one when the template asks twice', () => {
+		expect(expandParts('{NAME}-{NAME}', at, named).filter((p) => p.name)).toHaveLength(2);
+	});
+
+	it('has nothing to mark when the template does not ask for a name', () => {
+		expect(expandParts('{YEAR}-{MONTH}', at, named)).toEqual([{ text: '2026-09', name: false }]);
+	});
+
+	it('leaves no empty run behind when nothing has been found', () => {
+		// The separator goes with the name, so the preview reads as the file name would.
+		expect(expandParts('{YEAR}-{MONTH}_{NAME}', at, facts)).toEqual([
+			{ text: '2026-09', name: false }
+		]);
+	});
+
+	it('joins back into exactly what expandTemplate produces', () => {
+		for (const template of ['{YEAR}_{NAME}', '{NAME}', 'scan', '{NAME}_{YEAR}_{NAME}']) {
+			for (const f of [facts, named]) {
+				expect(
+					expandParts(template, at, f)
+						.map((p) => p.text)
+						.join('')
+				).toBe(expandTemplate(template, at, f));
+			}
+		}
 	});
 });
 

@@ -1,22 +1,28 @@
 <script lang="ts">
 	import { Icon } from '$lib/icons';
+	import type { TemplatePart } from '$lib/template';
 
 	let {
 		value,
 		tokens,
 		preview,
+		presets = [],
 		unknown,
 		onchange
 	}: {
 		value: string;
 		/** Tokens offered as chips, without braces. */
 		tokens: readonly string[];
-		/** What the template expands to right now. */
-		preview: string;
+		/** What the template expands to right now, cut around the part a found name fills. */
+		preview: readonly TemplatePart[];
+		/** Whole templates worth offering, each with what it would produce. */
+		presets?: readonly { template: string; example: string }[];
 		/** Tokens in the template the server does not know. */
 		unknown: readonly string[];
 		onchange: (value: string) => void;
 	} = $props();
+
+	let open = $state(false);
 
 	let field = $state<HTMLInputElement | null>(null);
 	/** Where the caret was when the field last lost focus, so a chip inserts in place. */
@@ -62,6 +68,52 @@
 		<span class="font-mono text-[13px] font-semibold text-ink-faint">.pdf</span>
 	</label>
 
+	{#if presets.length > 0}
+		<div class="relative">
+			<button
+				type="button"
+				class="flex h-7 items-center gap-1 rounded-[8px] bg-ctl px-2.5 text-xs font-semibold text-ink-2 transition-colors hover:bg-ctl-track"
+				aria-expanded={open}
+				onclick={() => (open = !open)}
+				data-testid="template-presets"
+			>
+				Ready-made <span class="text-[9px] leading-none">{open ? '▴' : '▾'}</span>
+			</button>
+
+			{#if open}
+				<!-- Click-catcher first, so anywhere outside closes the menu. -->
+				<button
+					type="button"
+					class="fixed inset-0 z-34 cursor-default"
+					aria-label="Close ready-made templates"
+					onclick={() => (open = false)}
+				></button>
+				<div
+					class="absolute top-[calc(100%+4px)] left-0 z-35 flex min-w-[min(420px,80vw)] animate-pop-in flex-col rounded-[14px] bg-surface p-1.5 shadow-popover"
+					role="menu"
+				>
+					{#each presets as preset (preset.template)}
+						<button
+							type="button"
+							role="menuitem"
+							class="flex flex-col gap-0.5 rounded-[10px] px-2.5 py-2 text-left transition-colors hover:bg-accent-hover50 {preset.template ===
+							value
+								? 'bg-accent-50'
+								: ''}"
+							onclick={() => {
+								onchange(preset.template);
+								open = false;
+							}}
+						>
+							<span class="font-mono text-[13px] font-bold">{preset.example}.pdf</span>
+							<span class="font-mono text-[11px] text-ink-muted">{preset.template}</span>
+						</button>
+					{/each}
+				</div>
+			{/if}
+		</div>
+	{/if}
+
 	<div class="flex flex-wrap gap-1.5">
 		{#each tokens as token (token)}
 			<button
@@ -78,16 +130,24 @@
 		<p class="text-xs font-semibold text-danger" role="alert" data-testid="template-error">
 			Unknown: {unknown.map((t) => `{${t}}`).join(', ')}
 		</p>
-	{:else if preview}
+	{:else if preview.length > 0}
 		<p
 			class="rounded-[10px] bg-success-bg px-3 py-1.5 font-mono text-[13px] font-semibold text-success-ink"
 			data-testid="template-preview"
 		>
-			{preview}
+			{#each preview as part, i (i)}{#if part.name}<span
+						class="rounded-[5px] bg-ai-bg px-1 text-ai-ink"
+						title="Filled in by Find name"
+						data-testid="template-preview-name">{part.text}</span
+					>{:else}{part.text}{/if}{/each}.pdf
 		</p>
 	{/if}
 
 	<p class="text-[11px] text-ink-faint">
 		Click a tag to add it at the cursor. Scans you have not named are saved with this.
+		{#if preview.some((p) => p.name)}
+			The <span class="rounded-[4px] bg-ai-bg px-1 text-ai-ink">highlighted</span> part is what Find name
+			puts there.
+		{/if}
 	</p>
 </div>

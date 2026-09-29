@@ -25,7 +25,7 @@
 	} from '$lib/naming';
 	import { ExportFormat } from '$lib/hub/generated/Yass.Core.Hub';
 	import { exportFormatLabels } from '$lib/format';
-	import { expandTemplate, templateTokens, unknownTokens } from '$lib/template';
+	import { expandParts, expandTemplate, templateTokens, unknownTokens } from '$lib/template';
 	import { SAMPLE_NAME, styleName, type NameStyle } from '$lib/naming/style';
 	import { colorModeLabels } from '$lib/review/edits';
 
@@ -204,8 +204,26 @@
 	});
 	const templatePreview = $derived(
 		$exportPrefs.nameTemplate.trim()
-			? expandTemplate($exportPrefs.nameTemplate, new Date(), previewFacts) + '.pdf'
-			: ''
+			? expandParts($exportPrefs.nameTemplate, new Date(), previewFacts)
+			: []
+	);
+
+	/**
+	 * Whole templates worth starting from, each shown as what it would produce. The examples
+	 * are expanded with the same facts as the preview, so what the menu promises is what the
+	 * field will show once it is picked.
+	 */
+	const templatePresets = $derived(
+		[
+			'{YEAR}-{MONTH}-{DAY}_{NAME}',
+			'{NAME}',
+			'{YEAR}-{MONTH}-{DAY}',
+			'{YEAR}-{MONTH}-{DAY}_{HOUR}{MINUTE}',
+			'{PRESET}-{COUNTER}'
+		].map((template) => ({
+			template,
+			example: expandTemplate(template, new Date(), previewFacts)
+		}))
 	);
 	const templateUnknown = $derived(unknownTokens($exportPrefs.nameTemplate));
 
@@ -654,6 +672,7 @@
 					value={$exportPrefs.nameTemplate}
 					tokens={templateTokens}
 					preview={templatePreview}
+					presets={templatePresets}
 					unknown={templateUnknown}
 					onchange={(v) => exportPrefs.set({ ...$exportPrefs, nameTemplate: v })}
 				/>
@@ -692,6 +711,18 @@
 					onchange={(v) => aiPrefs.set({ ...$aiPrefs, findName: v })}
 				/>
 			</div>
+
+			{#if $aiPrefs.findName}
+				<div class="rounded-[16px] bg-app px-3.5 py-1.5">
+					<Toggle
+						name="auto_name"
+						label="Name a scan as it finishes"
+						hint="Fills the name in from the heading on the page and your template. A model is still something you press Find name for."
+						checked={$aiPrefs.autoName}
+						onchange={(v) => aiPrefs.set({ ...$aiPrefs, autoName: v })}
+					/>
+				</div>
+			{/if}
 
 			{#if !$aiPrefs.findName}
 				<p class="text-[11px] text-ink-faint" data-testid="find-name-off">

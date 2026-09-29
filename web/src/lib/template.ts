@@ -97,6 +97,32 @@ export function expandTemplate(template: string, at: Date, facts: TemplateFacts)
 	return resolveName(expanded, facts.name);
 }
 
+/** A run of the expanded name, and whether it is the bit `{NAME}` stood for. */
+export type TemplatePart = { text: string; name: boolean };
+
+/**
+ * The same expansion, cut into the bits around the found name — so a preview can point at the
+ * part that will change with every scan instead of showing one flat string that looks fixed.
+ */
+export function expandParts(template: string, at: Date, facts: TemplateFacts): TemplatePart[] {
+	// A character no file name has in it, standing in for the name so the joins can be found
+	// again after the tidying `resolveName` does around an empty one.
+	const MARK = '\u0000';
+	const marked = expandTemplate(template, at, { ...facts, name: facts.name ? MARK : '' });
+
+	return marked
+		.split(MARK)
+		.flatMap((text, i): TemplatePart[] =>
+			i === 0
+				? [{ text, name: false }]
+				: [
+						{ text: facts.name, name: true },
+						{ text, name: false }
+					]
+		)
+		.filter((part) => part.text !== '');
+}
+
 /** Placeholders the server would not recognise, without braces. */
 export function unknownTokens(template: string): string[] {
 	const known = new Set<string>(templateTokens);
