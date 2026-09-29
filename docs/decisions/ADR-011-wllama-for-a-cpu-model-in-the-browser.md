@@ -56,9 +56,10 @@ GPU would pay for the tidiness.
 - The consequence ADR-010 listed — "WebGPU is required; where it is missing the option
   is disabled with that as its reason" — is retired. There is now an in-browser option
   for every browser, and the WebGPU message points at it.
-- CPU naming is slower than GPU naming, and honestly so: seconds rather than
-  sub-second for one file name. Small enough for a name, too slow for anything longer,
-  which is the only thing being asked of it.
+- CPU naming is slower than GPU naming, and honestly so. Measured on a 16-core desktop,
+  single-threaded, SmolLM2 135M Q8_0: **13.1 s** for the first name after the download,
+  **4.3 s** for every one after. Small enough for a file name, too slow for anything
+  longer — which is the only thing being asked of it.
 - Two engines is two catalogues, two workers and two sets of weights in the cache. The
   shared plumbing keeps the duplication to the part that genuinely differs.
 - The curated list will age. The sha pinning means it ages *visibly* — a stale entry is

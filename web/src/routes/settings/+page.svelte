@@ -14,6 +14,10 @@
 	import {
 		chosenBaseUrl,
 		chosenModel,
+		CPU_MODELS,
+		cpuModelLabel,
+		cpuModelSizeMb,
+		isInBrowser,
 		knownBaseUrls,
 		NamingError,
 		suggestName,
@@ -46,19 +50,22 @@
 		{ value: 'off', label: 'Off' },
 		{ value: 'anthropic', label: 'Anthropic' },
 		{ value: 'openai', label: 'OpenAI-style' },
-		{ value: 'webllm', label: 'In-browser' }
+		{ value: 'webllm', label: 'In-browser (GPU)' },
+		{ value: 'wllama', label: 'In-browser (CPU)' }
 	];
 
-	// WebGPU or nothing, and it is worth saying which before someone picks it.
+	// WebGPU or nothing for the GPU engine, and it is worth saying which before someone picks
+	// it. The CPU engine needs no such check: every browser has a processor (ADR-011).
 	const canRunLocally = typeof navigator !== 'undefined' && navigator.gpu != null;
-	let localModels = $state<{ id: string; sizeMb: number }[]>([]);
+	let gpuModels = $state<{ id: string; sizeMb: number }[]>([]);
 	let downloading = $state<string | null>(null);
 
-	// The catalogue comes from the package, so the list and its sizes cannot go stale here.
+	// The GPU catalogue comes from the package, so its list and sizes cannot go stale here.
+	// The CPU one is ours, pinned to commit shas so its sizes cannot either.
 	$effect(() => {
-		if (provider === 'webllm' && canRunLocally && localModels.length === 0) {
+		if (provider === 'webllm' && canRunLocally && gpuModels.length === 0) {
 			void import('$lib/naming/webllm').then(async (m) => {
-				localModels = await m.localModels();
+				gpuModels = await m.localModels();
 			});
 		}
 	});
@@ -69,9 +76,14 @@
 		testResult = null;
 		downloading = '0%';
 		try {
-			const { loadModel } = await import('$lib/naming/webllm');
-			await loadModel(model, (_phase, detail) => (downloading = detail ?? downloading));
-			testResult = { ok: true, message: `${model} is ready, and stays on this machine.` };
+			const engine =
+				provider === 'wllama'
+					? await import('$lib/naming/wllama')
+					: await import('$lib/naming/webllm');
+			await engine.loadModel(model, (_phase, detail) => (downloading = detail ?? downloading));
+			// The CPU setting is a URL; say which model by name, the way the popover will.
+			const named = provider === 'wllama' ? cpuModelLabel(model) : model;
+			testResult = { ok: true, message: `${named} is ready, and stays on this machine.` };
 		} catch (e) {
 			testResult = {
 				ok: false,
@@ -84,6 +96,20 @@
 	const provider = $derived($aiPrefs.provider);
 	const needsKey = $derived(provider === 'anthropic' || provider === 'openai');
 	const key = $derived(provider === 'anthropic' ? $aiKeys.anthropic : $aiKeys.openai);
+
+	const localModels = $derived(
+		provider === 'wllama'
+			? CPU_MODELS.map((m) => ({ id: m.url, label: m.label, sizeMb: cpuModelSizeMb(m.bytes) }))
+			: gpuModels.map((m) => ({ id: m.id, label: m.id, sizeMb: m.sizeMb }))
+	);
+
+	/** The chosen model is a GGUF URL for CPU and a catalogue id for GPU; both live here. */
+	const localModel = $derived($aiPrefs.models[provider] ?? '');
+
+	/** A pasted URL is not in the list, so the select shows nothing and the field holds it. */
+	const isPasted = $derived(
+		provider === 'wllama' && localModel !== '' && !CPU_MODELS.some((m) => m.url === localModel)
+	);
 
 	function setKey(value: string) {
 		aiKeys.set(
@@ -655,38 +681,64 @@
 				<p class="text-[11px] text-ink-faint">
 					Find name still offers the heading it reads off the page and your file name template.
 				</p>
-			{:else if provider === 'webllm'}
-				{#if !canRunLocally}
+			{:else if isInBrowser(provider)}
+				{#if provider === 'webllm' && !canRunLocally}
 					<p class="text-xs font-bold text-danger" role="alert" data-testid="no-webgpu">
-						This browser has no WebGPU, so it cannot run a model itself. Use an API key instead.
+						This browser has no WebGPU, so it cannot run a model on the graphics card. Pick
+						In-browser (CPU) instead: it runs on the processor, needs no key either, and is only
+						slower.
 					</p>
 				{:else}
 					<label class="flex flex-col gap-1.5">
 						<span class="text-[13px] font-bold text-ink-2">Model</span>
 						<select
 							class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
-							value={$aiPrefs.models.webllm ?? ''}
+							value={isPasted ? '' : localModel}
 							onchange={(e) => setModel(e.currentTarget.value)}
 							data-testid="ai-local-model"
 						>
 							<option value="">Choose a model…</option>
 							{#each localModels as model (model.id)}
-								<option value={model.id}>{model.id} · {model.sizeMb} MB</option>
+								<option value={model.id}>{model.label} · {model.sizeMb} MB</option>
 							{/each}
 						</select>
 						<span class="text-[11px] text-ink-faint">
 							Downloaded once from the internet, then kept in this browser and used offline. Every
 							browser you use YASS from downloads its own copy. A model here cannot see the page, so
 							it needs a server that reads page text.
+							{#if provider === 'wllama'}
+								It decodes on the processor and holds its weights in RAM, so budget roughly the
+								download size again while it is answering.
+							{/if}
 						</span>
 					</label>
+
+					{#if provider === 'wllama'}
+						<label class="flex flex-col gap-1.5">
+							<span class="text-[13px] font-bold text-ink-2">Or a GGUF file of your own</span>
+							<input
+								class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
+								type="url"
+								autocomplete="off"
+								spellcheck="false"
+								placeholder="https://huggingface.co/…/model.gguf"
+								value={isPasted ? localModel : ''}
+								onchange={(e) => setModel(e.currentTarget.value.trim())}
+								data-testid="ai-gguf-url"
+							/>
+							<span class="text-[11px] text-ink-faint">
+								Any instruct-tuned GGUF small enough for this machine. The host has to allow the
+								request from a web page, which Hugging Face does.
+							</span>
+						</label>
+					{/if}
 
 					<div class="flex flex-col gap-1.5">
 						<span class="flex items-center gap-2">
 							<button
 								type="button"
 								class="h-10 rounded-[12px] bg-accent-50 px-3.5 text-[13px] font-bold text-accent transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-45"
-								disabled={downloading !== null || !$aiPrefs.models.webllm}
+								disabled={downloading !== null || !localModel}
 								onclick={download}
 								data-testid="ai-download"
 							>
@@ -695,7 +747,7 @@
 							<button
 								type="button"
 								class="h-10 rounded-[12px] bg-accent-50 px-3.5 text-[13px] font-bold text-accent transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-45"
-								disabled={testing || downloading !== null || !$aiPrefs.models.webllm}
+								disabled={testing || downloading !== null || !localModel}
 								onclick={test}
 								data-testid="ai-test"
 							>
