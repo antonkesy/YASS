@@ -134,6 +134,51 @@ test('a model set up in settings names the scan, and says so', async ({ page }) 
 	await expect(page.getByTestId('toast')).toContainText('Renamed to');
 });
 
+test('a second press shows the names already found, and only the refresh reads again', async ({
+	page
+}) => {
+	// Counted, and numbered, so the popover itself says which read it is showing.
+	let asked = 0;
+	await page.route('**/chat/completions', (route) => {
+		asked += 1;
+		return route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify({ choices: [{ message: { content: `Quarterly Report ${asked}` } }] })
+		});
+	});
+
+	await page.goto('/settings');
+	await page.getByTestId('naming-section').getByRole('radio', { name: 'OpenAI-style' }).check();
+	await page.getByTestId('ai-key').fill('sk-not-a-real-key');
+
+	await scanToReview(page);
+	const popover = page.getByTestId('name-suggestions');
+
+	await page.getByTestId('name-suggest').click();
+	await expect(popover.getByRole('button', { name: /Quarterly Report 1/ })).toBeVisible({
+		timeout: 20_000
+	});
+	expect(asked).toBe(1);
+
+	await page.getByRole('button', { name: 'Close name suggestions' }).click();
+	await expect(popover).toHaveCount(0);
+
+	// Open again: the same rows, at once. OCR on the server and a model that costs money or a
+	// download are not worth paying for the same paper twice.
+	await page.getByTestId('name-suggest').click();
+	await expect(popover.getByRole('button', { name: /Quarterly Report 1/ })).toBeVisible();
+	await expect(popover).not.toContainText('Reading text on');
+	expect(asked).toBe(1);
+
+	// The refresh button is how you say the paper has changed.
+	await page.getByTestId('suggest-retry').click();
+	await expect(popover.getByRole('button', { name: /Quarterly Report 2/ })).toBeVisible({
+		timeout: 20_000
+	});
+	expect(asked).toBe(2);
+});
+
 test('a refused key is reported in the popover, with the rows that did work', async ({ page }) => {
 	await stubModel(page, { error: { message: 'nope' } }, 401);
 

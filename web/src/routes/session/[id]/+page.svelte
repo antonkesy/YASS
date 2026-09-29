@@ -46,6 +46,7 @@
 	import { aiKeys, aiPrefs, exportPrefs, reviewPrefs } from '$lib/presets';
 	import {
 		aiSuggestion,
+		chosenModel,
 		merge as mergeSuggestions,
 		suggestName,
 		NamingError,
@@ -487,8 +488,38 @@
 	function closeSuggestions() {
 		run++;
 		suggesting = null;
-		suggestError = null;
 		downloading = null;
+	}
+
+	/**
+	 * What a set of suggestions would be read from, so the cache below can tell when it no
+	 * longer applies. The server reads the source images of the active pages, so adding or
+	 * dropping one changes the answer and turning or cropping one does not; a different model
+	 * would answer differently even about the same paper.
+	 */
+	const readFrom = $derived(
+		[
+			...(session?.Pages ?? []).filter((page) => !page.Deleted).map((page) => page.Hash),
+			$aiPrefs.provider,
+			chosenModel($aiPrefs)
+		].join(',')
+	);
+
+	/** The value of {@link readFrom} the suggestions on hand belong to, or null for none. */
+	let suggestedFor = $state<string | null>(null);
+
+	/**
+	 * Opening the popover again shows what came back last time. Reading the pages costs OCR on
+	 * the server and a model costs money or a download, and neither is worth paying twice for
+	 * the same paper — the refresh button in the popover is there to say when it is.
+	 */
+	function openSuggestions() {
+		if (suggestions && suggestedFor === readFrom) {
+			suggesting = 'ready';
+			return;
+		}
+
+		void findName();
 	}
 
 	// The retry button can re-enter this while a call is in flight; only the latest one writes.
@@ -498,6 +529,7 @@
 		const mine = ++run;
 		suggesting = 'reading';
 		suggestions = null;
+		suggestedFor = null;
 		suggestError = null;
 		downloading = null;
 
@@ -543,6 +575,9 @@
 			if (run === mine) {
 				suggesting = 'ready';
 				downloading = null;
+				// Including a run that ended in an error: what did arrive is what reopening
+				// shows, error line and all, rather than quietly reading the pages again.
+				suggestedFor = readFrom;
 			}
 		}
 	}
@@ -780,7 +815,7 @@
 						canSuggest={offerFindName}
 						percent={downloading}
 						onrename={rename}
-						onsuggest={() => (suggesting ? closeSuggestions() : findName())}
+						onsuggest={() => (suggesting ? closeSuggestions() : openSuggestions())}
 					/>
 
 					{#if suggesting}
