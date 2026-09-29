@@ -410,7 +410,15 @@
 	{/if}
 {/snippet}
 
-<div class="mx-auto flex max-w-[2200px] animate-slide-from-right flex-col px-4 pt-2 pb-7 sm:px-7">
+<!--
+	Side by side, the three panes get exactly the height left over after the header, the
+	footer and this container's own padding -- so the review screen fits without scrolling
+	and each pane scrolls its own overflow instead. Stacked (below lg) they keep their
+	natural height and the page scrolls, which is the right behaviour on a phone.
+-->
+<div
+	class="mx-auto flex max-w-[2200px] animate-slide-from-right flex-col px-4 pt-2 pb-7 sm:px-7 lg:h-[calc(100dvh-var(--app-header-h)-var(--app-footer-h))] lg:min-h-0"
+>
 	{#if missing}
 		<p class="rounded-[14px] bg-danger-bg px-4 py-3 font-semibold text-danger" role="alert">
 			This session no longer exists.
@@ -432,9 +440,9 @@
 			</p>
 		{/if}
 
-		<div class="flex flex-wrap items-start gap-5">
+		<div class="flex min-h-0 flex-wrap items-start gap-5 lg:flex-1 lg:flex-nowrap lg:items-stretch">
 			<!-- Filmstrip: down the left on desktop, above the page on a phone. -->
-			<nav class="order-2 w-full flex-none lg:order-1 lg:w-auto" aria-label="Pages">
+			<nav class="order-2 w-full flex-none lg:order-1 lg:min-h-0 lg:w-auto" aria-label="Pages">
 				<PageGrid
 					sessionId={id}
 					pages={session.Pages}
@@ -453,7 +461,7 @@
 			</nav>
 
 			<main
-				class="order-1 flex w-full flex-1 basis-full flex-col items-center gap-[18px] lg:order-2 lg:basis-[380px]"
+				class="order-1 flex w-full flex-1 basis-full flex-col items-center gap-[18px] lg:order-2 lg:min-h-0 lg:basis-[380px]"
 			>
 				<!--
 					Stop sits in a slot of its own rather than after the pills: the pills change
@@ -492,7 +500,7 @@
 				</div>
 
 				{#if shown}
-					<div class="flex w-full items-center justify-center gap-2">
+					<div class="flex w-full items-center justify-center gap-2 lg:min-h-0 lg:flex-1">
 						<button
 							type="button"
 							class="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-surface shadow-nav transition-[background-color,transform] duration-150 hover:scale-105 hover:bg-accent-wash disabled:pointer-events-none disabled:opacity-35"
@@ -507,9 +515,11 @@
 							The box is reserved at page proportions so the column does not reflow when
 							the image arrives; a rotated page letterboxes inside it.
 						-->
+						<!-- Beside the stage the page is as tall as the pane allows, and as wide
+						     as that height makes it; stacked it is as wide as the phone allows. -->
 						<div
 							bind:this={stage}
-							class="w-full max-w-[max(280px,calc((100dvh-230px)/1.414))] flex-1"
+							class="w-full max-w-[max(280px,calc((100dvh-230px)/1.414))] flex-1 lg:h-full lg:w-auto lg:max-w-none lg:flex-none"
 							style="aspect-ratio: 1 / 1.414"
 						>
 							<img
@@ -542,7 +552,7 @@
 			</main>
 
 			<aside
-				class="order-3 flex w-full min-w-0 basis-full flex-col gap-3.5 rounded-[24px] bg-surface p-[22px] shadow-panel lg:sticky lg:top-[72px] lg:w-auto lg:basis-[clamp(300px,22vw,380px)]"
+				class="order-3 flex w-full min-w-0 basis-full flex-col gap-3.5 rounded-[24px] bg-surface p-[22px] shadow-panel lg:min-h-0 lg:w-auto lg:basis-[clamp(300px,22vw,380px)] lg:overflow-y-auto"
 			>
 				<div class="flex items-center gap-2">
 					<p class="flex-1 text-xs font-bold tracking-[0.06em] text-ink-muted uppercase">
