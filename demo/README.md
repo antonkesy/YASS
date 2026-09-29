@@ -9,7 +9,11 @@ docker compose up --build
 ```
 
 Then open <http://localhost:8080> (first build takes a few minutes; after that
-it starts in seconds).
+it starts in seconds). If something else already has 8080, pick another port:
+
+```sh
+YASS_PORT=9000 docker compose up --build
+```
 
 ## What to try
 
@@ -84,3 +88,22 @@ The container runs as uid 1000 so `output/` stays yours. If your uid differs:
 ```sh
 UID=$(id -u) GID=$(id -g) docker compose up --build
 ```
+
+## If port 8080 is taken
+
+`YASS_PORT` moves the host side of the mapping. The container always listens on
+8080, so only the number you type in the browser changes:
+
+```sh
+YASS_PORT=9000 docker compose up --build   # then http://localhost:9000
+```
+
+To stop repeating it, put it in `demo/.env`, which compose reads on its own:
+
+```sh
+echo YASS_PORT=9000 > .env
+```
+
+The address stays `127.0.0.1`, whatever the port: YASS has no authentication, so
+the demo does not listen beyond this machine. Exposing it to a LAN is a decision
+for [`docker-compose.example.yml`](../docker-compose.example.yml), not the demo.
