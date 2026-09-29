@@ -1,6 +1,7 @@
 # One-command YASS demo: fake scanner, no hardware, no paperless.
 #
-#   cd demo && docker compose up --build   ->   http://localhost:8080
+#   cd demo && docker compose up --build              ->  http://localhost:8080
+#   cd demo && YASS_PORT=9000 docker compose up --build  ->  http://localhost:9000
 #
 # Scan, reorder/rotate/delete pages, then "Save": the PDF appears
 # in ./output on the host. Sessions live in the container's /tmp and are gone
@@ -20,7 +21,10 @@ services:
     # your uid is not 1000:  UID=$(id -u) GID=$(id -g) docker compose up --build
     user: "${UID:-1000}:${GID:-1000}"
     ports:
-      - "127.0.0.1:8080:8080" # localhost only; YASS has no authentication
+      # localhost only; YASS has no authentication. YASS_PORT moves the host side
+      # when 8080 is taken — the container always listens on 8080, so only the
+      # number in front changes:  YASS_PORT=9000 docker compose up --build
+      - "127.0.0.1:${YASS_PORT:-8080}:8080"
     volumes:
       - ./yass.yaml:/etc/yass/yass.yaml:ro
       - ./output:/data/consume
