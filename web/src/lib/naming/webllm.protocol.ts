@@ -10,9 +10,6 @@ export type ToWorker =
 	| { type: 'load'; id: number; model: string }
 	| { type: 'name'; id: number; model: string; system: string; user: string; maxTokens: number };
 
-/** A request without the id the caller has not assigned yet, distributed over the union. */
-export type Request<T = ToWorker> = T extends { id: number } ? Omit<T, 'id'> : never;
-
 export type FromWorker =
 	| { type: 'progress'; percent: number; text: string }
 	| { type: 'done'; id: number; models?: LocalModel[]; text?: string | null }
