@@ -2,7 +2,7 @@
 	import type { ScanOptionsDto, ScannerStatusDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 	import type { ConnectionState } from '$lib/hub/client';
-	import { pageSizeLabel, usesFeeder } from '$lib/format';
+	import { pageSizeLabel } from '$lib/format';
 	import { activePreset, exportPrefs, presets } from '$lib/presets';
 	import { exportFormatLabels } from '$lib/format';
 	import { settings } from '$lib/settings';
@@ -43,25 +43,23 @@
 	const offline = $derived(connection !== 'connected');
 	const ready = $derived(!offline && status?.State === ScannerState.Ready);
 
-	const headline = $derived(
+	/**
+	 * Why the Scan button is greyed out, for its tooltip. Ready needs no headline of its
+	 * own: the header pill says so, and a button that can be pressed says the rest.
+	 */
+	const blocked = $derived(
 		offline
 			? connection === 'connecting'
-				? 'Connecting…'
-				: 'Not connected'
-			: status?.State === ScannerState.Ready
-				? 'Ready to scan'
-				: status?.State === ScannerState.Busy
-					? 'Scanner busy'
-					: status?.State === ScannerState.NoDevice
-						? 'No scanner found'
-						: status?.State === ScannerState.Error
-							? 'Scanner problem'
-							: 'Checking the scanner…'
+				? 'Connecting to the scanner service…'
+				: 'Not connected to the scanner service'
+			: status?.State === ScannerState.Busy
+				? 'The scanner is busy'
+				: status?.State === ScannerState.NoDevice
+					? 'No scanner found'
+					: status?.State === ScannerState.Error
+						? 'The scanner reported a problem'
+						: 'Still checking the scanner…'
 	);
-
-	// "Feeder loaded" in the mockup, but readiness is all the scanner actually tells us,
-	// so the pill names the source the scan will use rather than claiming paper is in it.
-	const readyPill = $derived(usesFeeder(options?.Source) ? 'Feeder ready' : 'Flatbed ready');
 
 	const caption = $derived(
 		[pageSizeLabel(options?.PageSize), options?.Dpi ? `${options.Dpi} dpi` : '']
@@ -78,24 +76,15 @@
 >
 	<PaperStack {caption} sweeping={busy} />
 
-	{#if ready}
+	<!-- Nothing when all is well: whatever the scanner has to say is a problem to show. -->
+	{#if !ready}
 		<p
-			class="flex items-center gap-[7px] rounded-full bg-success-bg px-3 py-1.5 text-[13px] font-bold text-success-ink"
+			class="max-w-[420px] text-center text-[13px] font-semibold text-ink-muted"
+			data-testid="scanner-trouble"
 		>
-			<span class="h-[7px] w-[7px] rounded-full bg-success" aria-hidden="true"></span>
-			{readyPill}
-		</p>
-	{:else if status?.Message}
-		<p class="max-w-[420px] text-center text-[13px] font-semibold text-ink-muted">
-			{status.Message}
+			{status?.Message || blocked}
 		</p>
 	{/if}
-
-	<h1
-		class="text-center text-[34px] font-extrabold tracking-[-0.03em] text-balance sm:text-[clamp(28px,min(3.6vw,4vh),60px)]"
-	>
-		{headline}
-	</h1>
 
 	<PresetPills
 		presets={$presets}
@@ -124,5 +113,5 @@
 		Change settings
 	</button>
 
-	<ScanButton disabled={!ready || busy} {busy} onclick={onscan} />
+	<ScanButton disabled={!ready || busy} {busy} reason={blocked} onclick={onscan} />
 </section>
