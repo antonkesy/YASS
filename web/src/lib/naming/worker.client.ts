@@ -40,8 +40,11 @@ export function workerClient<Send extends { id: number }, Receive extends Reply>
 	function connect(): Worker {
 		if (worker) return worker;
 
+		let spoke = false;
+
 		worker = spawn();
 		worker.onmessage = (event: MessageEvent<Receive>) => {
+			spoke = true;
 			const message = event.data;
 			if (message.type === 'progress') {
 				onProgress?.('downloading', `${message.percent}%`);
@@ -55,8 +58,20 @@ export function workerClient<Send extends { id: number }, Receive extends Reply>
 			else pending.resolve(message);
 		};
 		worker.onerror = () => {
+			// A worker that never said anything did not crash, it failed to start — and the browser
+			// gives an error event with nothing in it either way. The distinction is worth drawing,
+			// because on an isolated page the usual cause is a copy of the worker cached from before
+			// isolation was turned on: the headers are part of what the browser checks, a year-long
+			// immutable cache does not revalidate, and the symptom is otherwise unreadable.
+			const reason = spoke
+				? 'The model worker stopped unexpectedly.'
+				: 'The model worker would not start.' +
+					(globalThis.crossOriginIsolated
+						? ' If this browser ran YASS before, a cached copy from then is the likely cause; reload the page with the cache emptied.'
+						: '');
+
 			for (const pending of waiting.values()) {
-				pending.reject(new NamingError('The model worker stopped unexpectedly.'));
+				pending.reject(new NamingError(reason));
 			}
 			waiting.clear();
 			worker?.terminate();

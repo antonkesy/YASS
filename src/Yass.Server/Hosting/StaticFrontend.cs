@@ -21,6 +21,20 @@ public static class StaticFrontend
         return Directory.Exists(beside) ? beside : Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
     }
 
+    /// <summary>
+    /// Cross-origin isolation, which is what lets the in-browser CPU model use more than one
+    /// thread: threads need <c>SharedArrayBuffer</c>, and a browser only hands that to an isolated
+    /// page (ADR-011). Everything this app loads from elsewhere — model weights, a naming API — it
+    /// loads with <c>fetch</c> under CORS, which <c>require-corp</c> already accepts, so nothing
+    /// has to be given up for it. <c>require-corp</c> rather than <c>credentialless</c> because
+    /// every browser understands it, Safari included.
+    /// </summary>
+    private static void Isolate(HttpResponse response)
+    {
+        response.Headers["Cross-Origin-Opener-Policy"] = "same-origin";
+        response.Headers["Cross-Origin-Embedder-Policy"] = "require-corp";
+    }
+
     public static void Map(WebApplication app)
     {
         ArgumentNullException.ThrowIfNull(app);
@@ -33,16 +47,23 @@ public static class StaticFrontend
             return;
         }
 
-        app.UseDefaultFiles();
-        app.UseStaticFiles(new StaticFileOptions
+        StaticFileOptions options = new StaticFileOptions
         {
             OnPrepareResponse = ctx =>
             {
                 // Hashed immutable assets vs. everything else (index.html, manifest, service worker).
                 bool immutable = ctx.Context.Request.Path.StartsWithSegments("/_app/immutable");
                 ctx.Context.Response.Headers.CacheControl = immutable ? "public, max-age=31536000, immutable" : "no-cache";
+                Isolate(ctx.Context.Response);
             },
-        });
-        app.MapFallbackToFile("index.html");
+        };
+
+        app.UseDefaultFiles();
+        app.UseStaticFiles(options);
+
+        // The same options, because every deep link is served by the fallback rather than by the
+        // static middleware: without this, isolation would hold on "/" and silently fail on
+        // "/settings", which is the one page that turns the model on.
+        app.MapFallbackToFile("index.html", options);
     }
 }

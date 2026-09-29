@@ -107,6 +107,8 @@ describe('the page half of a model worker', () => {
 		const second = c.ask({ type: 'name' });
 		const worker = FakeWorker.made[0];
 
+		// It answered once, so it ran and then fell over.
+		worker.reply({ type: 'progress', percent: 10 });
 		worker.onerror?.();
 
 		await expect(first).rejects.toThrow('The model worker stopped unexpectedly.');
@@ -118,6 +120,27 @@ describe('the page half of a model worker', () => {
 		expect(FakeWorker.made).toHaveLength(2);
 		FakeWorker.made[1].reply({ type: 'done', id: 3 });
 		await third;
+	});
+
+	it('tells a worker that never started apart from one that crashed', async () => {
+		const c = client();
+		const pending = c.ask({ type: 'load' });
+
+		// Not a word before the error: it never ran, which is a different problem with a
+		// different fix, and the browser's own error event says nothing either way.
+		FakeWorker.made[0].onerror?.();
+
+		await expect(pending).rejects.toThrow('would not start');
+	});
+
+	it('names the cached-worker trap when the page is cross-origin isolated', async () => {
+		vi.stubGlobal('crossOriginIsolated', true);
+		const c = client();
+		const pending = c.ask({ type: 'load' });
+		FakeWorker.made[0].onerror?.();
+
+		await expect(pending).rejects.toThrow(/cached copy/);
+		vi.unstubAllGlobals();
 	});
 
 	it('ignores an answer to a question nobody asked', async () => {

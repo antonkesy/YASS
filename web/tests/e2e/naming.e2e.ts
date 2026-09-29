@@ -220,6 +220,51 @@ test('the CPU engine offers its models to a browser with no WebGPU at all', asyn
 	await expect(page.getByTestId('ai-download')).toBeEnabled();
 });
 
+test.describe('cross-origin isolation', () => {
+	// A model on the processor only gets more than one thread on an isolated page: threads need
+	// SharedArrayBuffer, and a browser only hands that to a page that asked on both headers.
+	for (const path of ['/', '/settings', '/session/20260929-000000-000000']) {
+		test(`${path} asks the browser to isolate it`, async ({ page }) => {
+			const response = await page.goto(path);
+			const headers = response?.headers() ?? {};
+
+			expect(headers['cross-origin-opener-policy']).toBe('same-origin');
+			expect(headers['cross-origin-embedder-policy']).toBe('require-corp');
+		});
+	}
+
+	test('and the browser agrees, so a model here can use more than one thread', async ({ page }) => {
+		// The deep link matters on its own: it is the SPA fallback rather than a file on disk,
+		// a separate route from "/", and it is the page that turns the model on.
+		await page.goto('/settings');
+
+		expect(await page.evaluate(() => self.crossOriginIsolated)).toBe(true);
+		expect(await page.evaluate(() => typeof SharedArrayBuffer !== 'undefined')).toBe(true);
+		// What wllama itself checks before it asks for a thread pool.
+		expect(
+			await page.evaluate(() => {
+				try {
+					new MessageChannel().port1.postMessage(new SharedArrayBuffer(1));
+					return true;
+				} catch {
+					return false;
+				}
+			})
+		).toBe(true);
+	});
+
+	test('the scanner images the review screen lives on still load', async ({ page }) => {
+		// require-corp blocks a cross-origin subresource that has not opted in. These are
+		// same-origin, so they must be unaffected — but that is worth proving, not assuming.
+		await scanToReview(page);
+		const thumb = page.getByTestId('page-thumb').first();
+		await expect(thumb).toBeVisible();
+		expect(
+			await thumb.locator('img').evaluate((img: HTMLImageElement) => img.naturalWidth)
+		).toBeGreaterThan(0);
+	});
+});
+
 test('a model runtime is not on the bill for anyone who has not asked for it', async ({ page }) => {
 	const fetched: string[] = [];
 	page.on('response', (r) => {
