@@ -1,16 +1,20 @@
 import type { AiKeys, AiPrefs } from '$lib/presets';
 import { askAnthropic, askOpenAiCompatible } from './providers';
 import { isLocalEndpoint } from './merge';
+import { cpuModelLabel } from './cpu-models';
 import {
 	defaultBaseUrls,
 	defaultModels,
+	isInBrowser,
 	NamingError,
+	NEEDS_PAGE_TEXT,
 	type AiProvider,
 	type NamingInput,
 	type Phase
 } from './types';
 
 export { cleanName } from './clean';
+export { CPU_MODELS, cpuModelLabel, cpuModelSizeMb, type CpuModel } from './cpu-models';
 export { fetchPageImage } from './image';
 export { aiSuggestion, isLocalEndpoint, merge, MAX_ROWS } from './merge';
 export { askAnthropic, askOpenAiCompatible } from './providers';
@@ -61,16 +65,21 @@ export async function suggestName(
 	const model = chosenModel(prefs);
 	const baseUrl = chosenBaseUrl(prefs);
 
-	if (prefs.provider === 'webllm') {
-		if (input.kind === 'image') {
-			throw new NamingError(
-				'A model running in this browser can only read text, and this server reads none. ' +
-					'Turn on naming.ocr in yass.yaml, or use an API key instead.'
-			);
+	if (isInBrowser(prefs.provider)) {
+		if (input.kind === 'image') throw new NamingError(NEEDS_PAGE_TEXT);
+
+		const onphase = (phase: Phase, detail?: string) => hooks.onphase?.(phase, detail);
+
+		// Loaded only when it is asked for: either package dwarfs the rest of the app.
+		if (prefs.provider === 'wllama') {
+			const { askWllama } = await import('./wllama');
+			const name = await askWllama(input, model, onphase);
+			// The setting holds a GGUF URL; the popover has to credit something readable.
+			return name ? { name, model: cpuModelLabel(model), local: true } : null;
 		}
-		// Loaded only when it is asked for: the package dwarfs the rest of the app.
+
 		const { askWebLlm } = await import('./webllm');
-		const name = await askWebLlm(input, model, (phase, detail) => hooks.onphase?.(phase, detail));
+		const name = await askWebLlm(input, model, onphase);
 		return name ? { name, model, local: true } : null;
 	}
 

@@ -47,9 +47,11 @@
 	import {
 		aiSuggestion,
 		fetchPageImage,
+		isInBrowser,
 		merge as mergeSuggestions,
 		suggestName,
 		NamingError,
+		NEEDS_PAGE_TEXT,
 		type NamingInput,
 		type Phase
 	} from '$lib/naming';
@@ -326,12 +328,14 @@
 
 	/**
 	 * What the browser's own model should read: what the server read, or the page itself when
-	 * it read nothing. A model running in this browser cannot see, so it only gets text.
+	 * it read nothing. A model running in this browser cannot see, so it only gets text — and
+	 * when there is none it says so rather than leaving the popover thin with no reason given.
 	 */
 	async function modelInput(read: NameSuggestionsDto): Promise<NamingInput | null> {
 		const text = read.Text?.trim();
 		if (text) return { kind: 'text', text, pages: Math.min(activePages, pageTextPages) };
-		if (!$aiPrefs.useImages || $aiPrefs.provider === 'webllm') return null;
+		if (isInBrowser($aiPrefs.provider)) throw new NamingError(NEEDS_PAGE_TEXT);
+		if (!$aiPrefs.useImages) return null;
 
 		const page = session?.Pages.find((p) => !p.Deleted);
 		if (!page) return null;

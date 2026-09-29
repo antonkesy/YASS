@@ -6,7 +6,11 @@ import {
 	chosenBaseUrl,
 	chosenModel,
 	cleanName,
+	CPU_MODELS,
+	cpuModelLabel,
+	cpuModelSizeMb,
 	INSTRUCTION,
+	isInBrowser,
 	isLocalEndpoint,
 	merge,
 	NamingError,
@@ -174,6 +178,70 @@ describe('choosing who to ask', () => {
 			local
 		);
 		expect(near?.local).toBe(true);
+	});
+
+	it.each([
+		['off', false],
+		['anthropic', false],
+		['openai', false],
+		['webllm', true],
+		['wllama', true]
+	] as const)('knows whether %s runs here', (provider, here) => {
+		expect(isInBrowser(provider)).toBe(here);
+	});
+
+	it.each(['webllm', 'wllama'] as const)(
+		'tells %s the page image is not something it can read',
+		async (provider) => {
+			await expect(suggestName(image, prefs({ provider }), defaultAiKeys)).rejects.toThrow(
+				/can only read text/
+			);
+		}
+	);
+
+	it('asks the model on the processor, and credits it by name rather than by URL', async () => {
+		const chosen = CPU_MODELS[0];
+		const askWllama = vi.fn(async () => 'Quarterly Report');
+		vi.doMock('$lib/naming/wllama', () => ({ askWllama }));
+
+		const named = await suggestName(
+			text,
+			prefs({ provider: 'wllama', models: { wllama: chosen.url } }),
+			defaultAiKeys
+		);
+
+		expect(askWllama).toHaveBeenCalledWith(text, chosen.url, expect.any(Function));
+		expect(named).toEqual({ name: 'Quarterly Report', model: chosen.label, local: true });
+		vi.doUnmock('$lib/naming/wllama');
+	});
+});
+
+describe('the models that fit on a processor', () => {
+	it('pins every URL to a commit, so the size beside it cannot start lying', () => {
+		for (const model of CPU_MODELS) {
+			expect(model.url).toMatch(
+				/^https:\/\/huggingface\.co\/[\w.-]+\/[\w.-]+\/resolve\/[0-9a-f]{40}\/[\w.-]+\.gguf$/
+			);
+			expect(model.bytes).toBeGreaterThan(0);
+		}
+	});
+
+	it('offers them smallest first, the way the GPU engine sorts its own', () => {
+		const sizes = CPU_MODELS.map((m) => m.bytes);
+		expect(sizes).toEqual([...sizes].sort((a, b) => a - b));
+	});
+
+	it('names a model the popover can credit, whether it was chosen or pasted', () => {
+		expect(cpuModelLabel(CPU_MODELS[0].url)).toBe(CPU_MODELS[0].label);
+		expect(cpuModelLabel('https://example.com/weights/My-Own-Model-Q4_K_M.gguf')).toBe(
+			'My-Own-Model-Q4_K_M'
+		);
+		expect(cpuModelLabel('https://example.com/weights/model.gguf?download=true')).toBe('model');
+		expect(cpuModelLabel('not a url')).toBe('not a url');
+	});
+
+	it('reports a size someone can weigh against their disk', () => {
+		expect(cpuModelSizeMb(144_811_360)).toBe(145);
 	});
 });
 

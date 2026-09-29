@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { CPU_MODELS } from '../../src/lib/naming/cpu-models';
 
 // The server runs with the default `naming:` block: no OCR, no provider (see playwright.config.ts).
 
@@ -154,35 +155,82 @@ test('Find name waits its turn while a scan is running, and says why', async ({ 
 	await expect(button).toBeEnabled({ timeout: 20_000 });
 });
 
-test('a browser with no WebGPU is told so rather than left to fail', async ({ page }) => {
+/** What Firefox, Safari and anything without a supported GPU look like. */
+async function withoutWebGpu(page: Page) {
 	await page.addInitScript(() => {
-		// What Firefox, Safari and anything without a supported GPU look like.
 		Object.defineProperty(Navigator.prototype, 'gpu', {
 			get: () => undefined,
 			configurable: true
 		});
 	});
+}
+
+test('a browser with no WebGPU is sent to the processor, not to an API key', async ({ page }) => {
+	await withoutWebGpu(page);
 
 	await page.goto('/settings');
-	await page.getByTestId('naming-section').getByRole('radio', { name: 'In-browser' }).check();
+	const naming = page.getByTestId('naming-section');
+	await naming.getByRole('radio', { name: 'In-browser (GPU)' }).check();
 
 	await expect(page.getByTestId('no-webgpu')).toContainText('no WebGPU');
+	await expect(page.getByTestId('no-webgpu')).toContainText('In-browser (CPU)');
 	// And it does not go looking for six megabytes of runtime it cannot use.
 	await expect(page.getByTestId('ai-local-model')).toHaveCount(0);
 });
 
-test('the model runtime is not on the bill for anyone who has not asked for it', async ({
+test('a model in this browser says why it has nothing to read, rather than nothing', async ({
 	page
 }) => {
-	let workerBytes = 0;
+	// Set up through settings, the way anyone would, then take it to a real scan.
+	const section = await openNaming(page);
+	await section.getByRole('radio', { name: 'In-browser (CPU)' }).check();
+	await page.getByTestId('ai-local-model').selectOption({ index: 1 });
+
+	await scanToReview(page);
+	await page.getByTestId('suggest-button').click();
+
+	// This server reads no page text, and a model here cannot see the page. Before this, the
+	// popover simply came back thin with no reason given — and no weights are needed to say so.
+	const popover = page.getByTestId('name-suggestions');
+	await expect(popover).toContainText('can only read text');
+	await expect(popover).toContainText('naming.ocr');
+	// The rows that did work are still there; the model's absence costs nothing already paid for.
+	await expect(popover.getByRole('button', { name: /scan/i }).first()).toBeVisible();
+});
+
+test('the CPU engine offers its models to a browser with no WebGPU at all', async ({ page }) => {
+	await withoutWebGpu(page);
+
+	await page.goto('/settings');
+	const naming = page.getByTestId('naming-section');
+	await naming.getByRole('radio', { name: 'In-browser (CPU)' }).check();
+
+	// No dead end this time: a catalogue, on the same browser that was just turned away.
+	await expect(page.getByTestId('no-webgpu')).toHaveCount(0);
+	const models = page.getByTestId('ai-local-model');
+	// The catalogue plus the "Choose a model…" placeholder, with each size beside its name.
+	await expect(models.locator('option')).toHaveCount(CPU_MODELS.length + 1);
+	await expect(models).toContainText(CPU_MODELS[0].label);
+
+	// Nothing can be downloaded until something is chosen, and a URL of one's own is offered.
+	await expect(page.getByTestId('ai-download')).toBeDisabled();
+	await expect(page.getByTestId('ai-gguf-url')).toBeVisible();
+
+	await models.selectOption({ index: 1 });
+	await expect(page.getByTestId('ai-download')).toBeEnabled();
+});
+
+test('a model runtime is not on the bill for anyone who has not asked for it', async ({ page }) => {
+	const fetched: string[] = [];
 	page.on('response', (r) => {
-		if (r.url().includes('/workers/')) workerBytes += 1;
+		const url = r.url();
+		if (url.includes('/workers/') || url.endsWith('.wasm')) fetched.push(url);
 	});
 
 	await page.goto('/');
 	await page.goto('/settings');
 	await expect(page.getByTestId('naming-section')).toBeVisible();
 
-	// Six megabytes of WebGPU runtime, fetched only by the browser that opts into it.
-	expect(workerBytes).toBe(0);
+	// Six megabytes of WebGPU runtime and eight of WebAssembly, fetched only when opted into.
+	expect(fetched).toEqual([]);
 });
