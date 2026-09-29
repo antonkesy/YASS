@@ -17,6 +17,9 @@ importers:
       '@mlc-ai/web-llm':
         specifier: 0.2.85
         version: 0.2.85
+      '@wllama/wllama':
+        specifier: 3.6.1
+        version: 3.6.1
     devDependencies:
       '@eslint/js':
         specifier: ^10.0.1
@@ -1363,6 +1366,9 @@ packages:
 
   '@vitest/spy@5.0.2':
     resolution: {integrity: sha512-Ijc7T1nT9efNb5LxvjaBrEqw3f/QwUv5EE0nKqZxgqsaV/FxAAZ8baGylA8X/Z2oS4Lp+K74Jr6dTJsDKxJDeg==}
+
+  '@wllama/wllama@3.6.1':
+    resolution: {integrity: sha512-v6cA0w6sHuaTLmUo9nSU37Sln+5YqZy/OGWp2dXWaR3ts26yLiMnKHGGbjdzQolPSPydPSKUlHHSKZgXK5Prkw==}
 
   abort-controller@3.0.0:
     resolution: {integrity: sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==}
@@ -4516,6 +4522,8 @@ snapshots:
       vite: 8.3.1(@types/node@24.19.0)(jiti@2.7.0)(terser@5.51.2)
 
   '@vitest/spy@5.0.2': {}
+
+  '@wllama/wllama@3.6.1': {}
 
   abort-controller@3.0.0:
     dependencies:
