@@ -28,7 +28,9 @@ YASS_PORT=9000 docker compose up --build
    reads the page with `tesseract` (in the image, and on by default) and offers
    what it found. For a name written rather than copied, point **Settings → Find
    name** at a model: **In-browser (CPU)** needs no key and no account, and
-   downloads its weights once.
+   downloads its weights once. Put `{NAME}` in the file name template and what
+   you pick lands inside it, so `{YEAR}-{MONTH}-{DAY}_{NAME}` keeps the date;
+   **Found names** beside it picks `lower_snake` or `lower-kebab`.
 5. **Save** — the PDFs land in [`output/`](output) on your host, the demo's
    stand-in for a paperless-ngx consume folder.
    **Download** hands them to the browser instead.
