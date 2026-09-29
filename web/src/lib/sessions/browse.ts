@@ -27,25 +27,44 @@ export const filterableStatuses = [
 
 export type StatusFilter = 'all' | (typeof filterableStatuses)[number];
 
-export function matchesQuery(session: SessionDto, query: string, now?: Date): boolean {
+/**
+ * Searching and sorting both go through the title, and the title needs the file name template
+ * to know what an unnamed scan is called. Passing it in keeps the box matching what the list
+ * actually shows: typing the year of a scan named by `{YEAR}-{MONTH}-{DAY}` has to find it.
+ */
+export function matchesQuery(
+	session: SessionDto,
+	query: string,
+	template = '',
+	now?: Date
+): boolean {
 	const q = query.trim().toLowerCase();
 	if (q === '') return true;
-	return sessionTitle(session, now).toLowerCase().includes(q);
+	return sessionTitle(session, template, now).toLowerCase().includes(q);
 }
 
 export function browse(
 	sessions: readonly SessionDto[],
-	options: { query?: string; status?: StatusFilter; order?: SortOrder; now?: Date } = {}
+	options: {
+		query?: string;
+		status?: StatusFilter;
+		order?: SortOrder;
+		template?: string;
+		now?: Date;
+	} = {}
 ): SessionDto[] {
-	const { query = '', status = 'all', order = 'newest', now } = options;
+	const { query = '', status = 'all', order = 'newest', template = '', now } = options;
 
 	const kept = sessions.filter(
-		(s) => matchesQuery(s, query, now) && (status === 'all' || sessionStatus(s) === status)
+		(s) =>
+			matchesQuery(s, query, template, now) && (status === 'all' || sessionStatus(s) === status)
 	);
 
 	// Sorted on a copy: the caller's array is store-owned.
 	return [...kept].sort((a, b) => {
-		if (order === 'name') return sessionTitle(a, now).localeCompare(sessionTitle(b, now));
+		if (order === 'name') {
+			return sessionTitle(a, template, now).localeCompare(sessionTitle(b, template, now));
+		}
 		const diff = Date.parse(a.CreatedAt) - Date.parse(b.CreatedAt);
 		return order === 'oldest' ? diff : -diff;
 	});

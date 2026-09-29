@@ -1,5 +1,5 @@
 import { ExportFormat, type ExportResult, type SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
-import { expandTemplate } from '$lib/template';
+import { documentName } from '$lib/format';
 
 /**
  * As much of the File System Access API as a save needs. It is typed here because
@@ -57,23 +57,11 @@ export function safeFileName(name: string): string {
  * extension — the caller adds the one its format wants.
  */
 export function exportBaseName(session: SessionDto, template: string, now = new Date()): string {
-	const named = session.Name?.trim();
-	if (named) return safeFileName(named);
+	const name = documentName(session, template, now);
+	if (name) return safeFileName(name);
 
 	const at = new Date(session.CreatedAt);
 	const createdAt = Number.isNaN(at.getTime()) ? now : at;
-	const pattern = template.trim();
-	if (pattern) {
-		const expanded = expandTemplate(pattern, createdAt, {
-			preset: 'Scan',
-			counter: 1,
-			dpi: session.OptionsUsed.Dpi ?? 300,
-			color: String(session.OptionsUsed.Color ?? ''),
-			// A named session never reaches here, so there is no found name to put in.
-			name: ''
-		});
-		if (expanded.trim()) return safeFileName(expanded);
-	}
 	return safeFileName(`scan-${createdAt.toISOString().slice(0, 16).replace(/[T:]/g, '-')}`);
 }
 
@@ -88,7 +76,7 @@ export function exportFileName(
 }
 
 /** Names for the documents of one scan, numbered only once there is more than one. */
-export function documentName(base: string, index: number, extension: string): string {
+export function numberedFileName(base: string, index: number, extension: string): string {
 	return index === 0 ? `${base}${extension}` : `${base}-${index + 1}${extension}`;
 }
 
@@ -115,7 +103,7 @@ export async function saveToDisk(
 		const handle =
 			'file' in target
 				? target.file
-				: await target.directory.getFileHandle(documentName(base, index, extension), {
+				: await target.directory.getFileHandle(numberedFileName(base, index, extension), {
 						create: true
 					});
 		const writable = await handle.createWritable();

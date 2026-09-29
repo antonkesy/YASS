@@ -9,7 +9,13 @@
 	import { getHub, imageUrl, sortedSessions } from '$lib/hub/hub';
 	import { PageFilter, SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 	import type { CropBox, PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
-	import { activePageCount, formatBytes, formatTime, sessionStateLabel } from '$lib/format';
+	import {
+		activePageCount,
+		documentName,
+		formatBytes,
+		formatTime,
+		sessionStateLabel
+	} from '$lib/format';
 	import {
 		applyOptimistic,
 		deleteEdit,
@@ -207,7 +213,7 @@
 	 * and Save as… must not name the file from a session that has not caught up yet.
 	 */
 	let renamedTo = $state<string | null>(null);
-	const documentName = $derived(renamedTo ?? session?.Name ?? null);
+	const storedName = $derived(renamedTo ?? session?.Name ?? null);
 
 	// Held until the session comes back carrying it: the call returning is not the same as the
 	// session this page reads from having caught up, and dropping it in between would leave
@@ -232,7 +238,7 @@
 	 * `{NAME}` out as five literal characters — nothing has been found, so it resolves away.
 	 */
 	const exportName = $derived(
-		documentName?.trim() || resolveName($exportPrefs.nameTemplate, '').trim() || undefined
+		storedName?.trim() || resolveName($exportPrefs.nameTemplate, '').trim() || undefined
 	);
 
 	/**
@@ -294,7 +300,7 @@
 		// The name this browser asked for, not the one the session has caught up to — a rename
 		// can still be in the air behind a page read when Save as… is pressed.
 		const base = session
-			? exportBaseName({ ...session, Name: documentName ?? undefined }, $exportPrefs.nameTemplate)
+			? exportBaseName({ ...session, Name: storedName ?? undefined }, $exportPrefs.nameTemplate)
 			: 'scan';
 		const extension = fileExtensions[$exportPrefs.format];
 
@@ -419,15 +425,15 @@
 	});
 
 	/**
-	 * What the field shows. A scan nobody has named reads as the template from settings, which
-	 * is what it will be saved as — not a name off the page, because reading one costs either
-	 * money or seconds and is worth asking for.
+	 * What the field shows, and the same thing the list of past scans shows for this scan: a
+	 * scan nobody has named reads as the template from settings, which is what it will be
+	 * saved as — not a name off the page, because reading one costs either money or seconds
+	 * and is worth asking for.
 	 */
 	const displayName = $derived(
-		documentName ??
-			(session && $exportPrefs.nameTemplate.trim()
-				? expandTemplate($exportPrefs.nameTemplate, new Date(session.CreatedAt), templateFacts)
-				: null)
+		session
+			? documentName({ ...session, Name: storedName ?? undefined }, $exportPrefs.nameTemplate)
+			: null
 	);
 
 	/**
@@ -443,7 +449,7 @@
 		if (!session || !template.includes('{NAME}')) return null;
 
 		const at = new Date(session.CreatedAt);
-		const name = documentName?.trim();
+		const name = storedName?.trim();
 		if (name) {
 			const found = findGenerated(name, template, at, templateFacts);
 			return found ? { ...found, filled: true } : null;
@@ -824,7 +830,7 @@
 							percent={downloading}
 							result={suggestions}
 							error={suggestError ?? suggestions?.Error ?? null}
-							current={documentName?.trim() ?? null}
+							current={storedName?.trim() ?? null}
 							resolved={pickedName}
 							pages={Math.min(activePages, pageTextPages)}
 							onpick={(suggestion) => {
@@ -922,6 +928,7 @@
 {#if merging}
 	<MergeModal
 		sessions={mergeable}
+		template={$exportPrefs.nameTemplate}
 		busy={merged}
 		onpick={merge}
 		oncancel={() => (merging = false)}

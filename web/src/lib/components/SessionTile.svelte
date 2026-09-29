@@ -8,12 +8,15 @@
 
 	let {
 		session,
+		template = '',
 		selectable = false,
 		selected = false,
 		landed = false,
 		ontoggle
 	}: {
 		session: SessionDto;
+		/** The file name template, which is what an unnamed scan is called. */
+		template?: string;
 		selectable?: boolean;
 		selected?: boolean;
 		/** Plays the arrival animation once, for the scan just returned from. */
@@ -75,7 +78,9 @@
 	</span>
 
 	<span class="flex flex-col gap-0.5">
-		<span class="line-clamp-2 text-[13px] leading-[1.3] font-bold">{sessionTitle(session)}</span>
+		<span class="line-clamp-2 text-[13px] leading-[1.3] font-bold"
+			>{sessionTitle(session, template)}</span
+		>
 		<span class="text-[11px] text-ink-muted">{meta}</span>
 	</span>
 </svelte:element>

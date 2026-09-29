@@ -6,12 +6,15 @@
 
 	let {
 		sessions,
+		template = '',
 		busy = false,
 		onpick,
 		oncancel
 	}: {
 		/** Candidates, already excluding the scan being merged into. */
 		sessions: SessionDto[];
+		/** The file name template, which is what an unnamed scan is called. */
+		template?: string;
 		busy?: boolean;
 		onpick: (id: string) => void;
 		oncancel: () => void;
@@ -70,7 +73,7 @@
 							{/if}
 						</span>
 						<span class="flex min-w-0 flex-1 flex-col">
-							<span class="truncate text-sm font-bold">{sessionTitle(session)}</span>
+							<span class="truncate text-sm font-bold">{sessionTitle(session, template)}</span>
 							<span class="text-xs text-ink-muted">
 								{formatTime(session.CreatedAt)} · {activePageCount(session)} pages
 							</span>

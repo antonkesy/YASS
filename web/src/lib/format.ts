@@ -7,6 +7,7 @@ import {
 } from './hub/generated/Yass.Core.Domain';
 import { ScannerState } from './hub/generated/Yass.Core.Scanning';
 import { ExportFormat, type SessionDto } from './hub/generated/Yass.Core.Hub';
+import { expandTemplate } from './template';
 
 export function sessionStateLabel(state: SessionState): string {
 	switch (state) {
@@ -147,9 +148,45 @@ export const exportFormatLabels: Record<ExportFormat, string> = {
 	[ExportFormat.Png]: 'PNG'
 };
 
-/** The name the user gave a scan, or its timestamp when they have not named it. */
-export function sessionTitle(session: SessionDto, now: Date = new Date()): string {
-	return session.Name?.trim() || formatTime(session.CreatedAt, now);
+/**
+ * What a document is called, wherever it is shown or saved: the name on it, or the file name
+ * template from settings expanded for it. Null when there is neither — an unnamed scan and an
+ * empty template — which is the only case anything has to stand in for.
+ *
+ * One definition on purpose. A scan that arrives named by its template reads that way on the
+ * review screen, in the list of past scans, and in the file that eventually lands on disk; a
+ * rename afterwards moves all three, because all three ask this.
+ */
+export function documentName(
+	session: SessionDto,
+	template: string,
+	now: Date = new Date()
+): string | null {
+	const named = session.Name?.trim();
+	if (named) return named;
+
+	const pattern = template.trim();
+	if (!pattern) return null;
+
+	const at = new Date(session.CreatedAt);
+	const expanded = expandTemplate(pattern, Number.isNaN(at.getTime()) ? now : at, {
+		preset: 'Scan',
+		counter: 1,
+		dpi: session.OptionsUsed.Dpi ?? 300,
+		color: String(session.OptionsUsed.Color ?? ''),
+		// A named scan never reaches here, so there is no found name to put in.
+		name: ''
+	});
+	return expanded.trim() || null;
+}
+
+/** What a scan is called, or its timestamp when it is called nothing at all. */
+export function sessionTitle(
+	session: SessionDto,
+	template: string,
+	now: Date = new Date()
+): string {
+	return documentName(session, template, now) ?? formatTime(session.CreatedAt, now);
 }
 
 /** Where a session's document ended up, when its last event produced a file. */
