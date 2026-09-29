@@ -9,6 +9,7 @@
 		page,
 		selected = false,
 		current = false,
+		selectable = true,
 		document = null,
 		onshow,
 		ontoggle,
@@ -20,6 +21,8 @@
 		selected?: boolean;
 		/** The page the stage is showing, picked by tapping the thumbnail. */
 		current?: boolean;
+		/** Whether the tick box is offered; the filmstrip leaves selecting to the overview. */
+		selectable?: boolean;
 		/** Document number to badge this page with, when it opens one past the first. */
 		document?: number | null;
 		onshow: (index: number) => void;
@@ -103,26 +106,34 @@
 		{/if}
 	</button>
 
-	<div class="flex items-center justify-between gap-1 px-0.5">
-		<!-- Ticking pages is what the toolbar acts on; tapping the page above only moves the stage. -->
-		<button
-			type="button"
-			class="-m-1 flex items-center gap-1 rounded-full p-1 transition-colors hover:bg-accent-wash"
-			aria-pressed={selected}
-			aria-label="Select page {page.Index + 1}"
-			data-testid="page-select"
-			onclick={() => ontoggle(page.Index)}
+	{#snippet number()}
+		<span
+			class="font-mono text-[11px] font-bold {selected || current
+				? 'text-accent'
+				: 'text-ink-muted'}"
+			aria-hidden="true"
 		>
-			<SelectCheckbox checked={selected} size={15} />
-			<span
-				class="font-mono text-[11px] font-bold {selected || current
-					? 'text-accent'
-					: 'text-ink-muted'}"
-				aria-hidden="true"
+			{String(page.Index + 1).padStart(2, '0')}
+		</span>
+	{/snippet}
+
+	<div class="flex items-center justify-between gap-1 px-0.5">
+		{#if selectable}
+			<!-- Ticking pages is what the toolbar acts on; tapping the page above only moves the stage. -->
+			<button
+				type="button"
+				class="-m-1 flex items-center gap-1 rounded-full p-1 transition-colors hover:bg-accent-wash"
+				aria-pressed={selected}
+				aria-label="Select page {page.Index + 1}"
+				data-testid="page-select"
+				onclick={() => ontoggle(page.Index)}
 			>
-				{String(page.Index + 1).padStart(2, '0')}
-			</span>
-		</button>
+				<SelectCheckbox checked={selected} size={15} />
+				{@render number()}
+			</button>
+		{:else}
+			<span class="px-0.5">{@render number()}</span>
+		{/if}
 		<button
 			type="button"
 			class="flex h-6 w-6 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-accent-wash hover:text-accent"

@@ -227,21 +227,16 @@
 
 <div class={panel}>
 	{#if onexpand && !overview}
-		<div class="flex items-center gap-1 pr-0.5 pl-1.5">
-			<p class="flex-1 truncate text-xs font-bold tracking-[0.06em] text-ink-muted uppercase">
-				{pages.length}
-				{pages.length === 1 ? 'page' : 'pages'}
-			</p>
-			<button
-				type="button"
-				class="flex h-8 items-center gap-1.5 rounded-full px-2 text-xs font-bold text-accent transition-colors hover:bg-accent-hover50"
-				onclick={onexpand}
-				data-testid="overview-open"
-			>
-				<Icon name="expand" size={14} />
-				All pages
-			</button>
-		</div>
+		<!-- No page count here: the stage already says which page of how many. -->
+		<button
+			type="button"
+			class="flex h-8 w-full flex-none items-center justify-center gap-1.5 rounded-full text-xs font-bold text-accent transition-colors hover:bg-accent-hover50"
+			onclick={onexpand}
+			data-testid="overview-open"
+		>
+			<Icon name="expand" size={14} />
+			All pages
+		</button>
 	{/if}
 
 	<div
@@ -250,8 +245,8 @@
 			? `grid-template-columns: repeat(auto-fill, minmax(${tile}px, 1fr))`
 			: undefined}
 		role="listbox"
-		aria-multiselectable="true"
-		aria-label="Pages. Hold and drag to reorder, or use Alt+Arrow keys."
+		aria-multiselectable={overview}
+		aria-label="Pages. Drag to reorder, or use Alt+Arrow keys."
 		tabindex="-1"
 		bind:this={grid}
 		onpointerdown={pointerdown}
@@ -273,7 +268,7 @@
 					? 'rounded-[14px] shadow-ring-outline'
 					: ''}"
 				role="option"
-				aria-selected={selection.has(page.Index)}
+				aria-selected={overview ? selection.has(page.Index) : page.Index === current}
 				data-index={page.Index}
 				style="animation-delay: {Math.min(page.Index, 10) * 45}ms"
 			>
@@ -282,6 +277,7 @@
 					{page}
 					selected={selection.has(page.Index)}
 					current={page.Index === current}
+					selectable={overview}
 					document={page.StartsDocument && (documents?.get(page.Index) ?? 0) > 1
 						? documents!.get(page.Index)!
 						: null}

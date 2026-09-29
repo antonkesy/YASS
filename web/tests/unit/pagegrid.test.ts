@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/svelte';
-import { tick } from 'svelte';
+import { createRawSnippet, tick } from 'svelte';
 import PageGrid from '$lib/components/PageGrid.svelte';
 import PageOverview from '$lib/components/PageOverview.svelte';
 import { TILE_SIZES, zoomTile } from '$lib/review/overview';
@@ -104,6 +104,20 @@ describe('PageGrid drag reorder', () => {
 		expect(onreorder).toHaveBeenCalledWith([1, 0, 2]);
 	});
 
+	it('leaves ticking pages to the overview, which the strip only links to', () => {
+		render(PageGrid, {
+			sessionId: 's1',
+			pages,
+			selection: new Set<number>(),
+			onshow: vi.fn(),
+			ontoggle: vi.fn(),
+			onopen: vi.fn(),
+			onreorder: vi.fn()
+		});
+		expect(screen.queryAllByTestId('page-select')).toHaveLength(0);
+		expect(grid()).toHaveAttribute('aria-multiselectable', 'false');
+	});
+
 	it('offers the overview only when the caller can open one', async () => {
 		const onexpand = vi.fn();
 		const props = {
@@ -137,7 +151,6 @@ describe('PageOverview', () => {
 			onopen: vi.fn(),
 			onreorder: vi.fn(),
 			onselectall: vi.fn(),
-			onclear: vi.fn(),
 			onclose: vi.fn(),
 			...over
 		};
@@ -163,14 +176,28 @@ describe('PageOverview', () => {
 		expect(screen.getAllByTestId('overview-zoom-in')[1]).toBeDisabled();
 	});
 
-	it('selects every page, then clears once they all are', async () => {
+	it('ticks pages here, and stops offering select all once they all are', async () => {
 		const props = open();
+		expect(screen.getAllByTestId('page-select')).toHaveLength(pages.length);
+		await fireEvent.click(screen.getAllByTestId('page-select')[1]);
+		expect(props.ontoggle).toHaveBeenCalledWith(1);
+
 		await fireEvent.click(screen.getByTestId('overview-select-all'));
 		expect(props.onselectall).toHaveBeenCalled();
 
-		const all = open({ selection: new Set([0, 1, 2]) });
-		await fireEvent.click(screen.getAllByTestId('overview-select-all')[1]);
-		expect(all.onclear).toHaveBeenCalled();
+		open({ selection: new Set([0, 1, 2]) });
+		expect(screen.getAllByTestId('overview-select-all')[1]).toBeDisabled();
+	});
+
+	it('shows the page-edit toolbar it is handed, so edits act without leaving', () => {
+		open({
+			children: createRawSnippet(() => ({
+				render: () => '<div data-testid="stub-toolbar">tools</div>'
+			}))
+		});
+		expect(screen.getByTestId('page-overview')).toContainElement(
+			screen.getByTestId('stub-toolbar')
+		);
 	});
 
 	it('closes on Escape and on the close button', async () => {
