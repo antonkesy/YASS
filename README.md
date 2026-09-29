@@ -171,12 +171,15 @@ renamed into place once complete, so the consumer never sees a partial document.
 
 ### Naming (optional)
 
-YASS can suggest a file name from what is printed on the page. Everything here is
-off by default — this is the only part of YASS that reads your documents.
+YASS can suggest a file name from what is printed on the page. Reading it is on by
+default and happens only when you press **Find name** — never during a scan. What
+is off by default is `provider`: no model is asked, and nothing leaves the machine
+unless you say so. Turning **Find name** off in the browser's settings hides the
+button, and then nothing is read at all.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `naming.ocr` | `false` | Read page text. Needs the `tesseract` binary on PATH (in the Docker image and the Nix package already). |
+| `naming.ocr` | `true` | Read page text, on demand when someone presses Find name. Needs the `tesseract` binary on PATH (in the Docker image and the Nix package already); without it, nothing is read and the UI says so. |
 | `naming.ocr_language` | `eng` | Tesseract language code. |
 | `naming.ocr_pages` | `2` | How many pages to read; a title is almost always on the first. |
 | `naming.provider` | `off` | `off`, `ollama` or `anthropic`. |
@@ -185,9 +188,9 @@ off by default — this is the only part of YASS that reads your documents.
 | `naming.api_key_file` | `""` | Path to a file holding the API key. Never the key itself. |
 | `naming.timeout_seconds` | `20` | Per-request timeout. |
 
-With `ocr: true` and `provider: off` you get a suggestion from the largest heading
-on the page plus one from your filename template, and nothing leaves the machine.
-Adding `provider: ollama` asks a local model to summarise the page instead;
+Out of the box — `ocr: true`, `provider: off` — you get a suggestion from the
+largest heading on the page plus one from your filename template, and nothing
+leaves the machine. Adding `provider: ollama` asks a local model to summarise the page instead;
 `anthropic` sends the page text to Anthropic's API. The suggestions popover says
 which of those is happening.
 

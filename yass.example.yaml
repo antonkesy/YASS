@@ -57,7 +57,7 @@ naming:
   # default: this is the only part of YASS that reads your documents or talks to a model.
   # This section is the server's model. A browser can point at one of its own instead,
   # under Settings -> Find name, with no key on this machine at all.
-  ocr: false # read page text; needs the `tesseract` binary on PATH
+  ocr: true # read page text; needs the `tesseract` binary on PATH. Only ever on demand
   ocr_language: eng # tesseract language code, e.g. eng, deu, fra
   ocr_pages: 2 # how many pages to read; the title is almost always on the first
   provider: off # off | ollama | anthropic

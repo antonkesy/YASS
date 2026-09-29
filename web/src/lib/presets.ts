@@ -76,6 +76,11 @@ export const defaultExportPrefs: ExportPrefs = {
  * kept apart in `AiKeys`, so spreading this object can never leak it into a prop or a log.
  */
 export type AiPrefs = {
+	/**
+	 * Whether Find name is offered at all. Off hides the button, and then nothing is ever read:
+	 * the server only reads a page when the button asks it to, never during a scan.
+	 */
+	findName: boolean;
 	provider: AiProvider;
 	/** Base URL for the OpenAI-compatible shape. Empty falls back per provider. */
 	baseUrl: string;
@@ -95,6 +100,7 @@ export const AI_KEY = 'yass.ai';
 export const AI_KEYS_KEY = 'yass.ai.keys';
 
 export const defaultAiPrefs: AiPrefs = {
+	findName: true,
 	provider: 'off',
 	baseUrl: '',
 	models: {},

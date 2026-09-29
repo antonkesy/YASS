@@ -15,11 +15,19 @@ public enum NamingProvider
     Anthropic,
 }
 
-/// <summary><c>naming:</c> section. Off by default: this is the only part of YASS that can talk to anything else.</summary>
+/// <summary>
+/// <c>naming:</c> section. <see cref="Provider"/> is off by default: this is the only part of
+/// YASS that can talk to anything else, and reading a page locally is not that.
+/// </summary>
 public sealed record NamingConfig
 {
-    /// <summary>Read text off the scanned pages. Needs the <c>tesseract</c> binary on PATH.</summary>
-    public bool Ocr { get; init; }
+    /// <summary>
+    /// Read text off the scanned pages. Needs the <c>tesseract</c> binary on PATH; where it is
+    /// absent this reports itself unavailable rather than failing. On by default, and nothing is
+    /// read until someone presses Find name — reading is what the whole naming section is for,
+    /// and a default of off made the one feature that needs it look broken.
+    /// </summary>
+    public bool Ocr { get; init; } = true;
 
     /// <summary>Tesseract language code, e.g. <c>eng</c> or <c>deu</c>.</summary>
     [Required]

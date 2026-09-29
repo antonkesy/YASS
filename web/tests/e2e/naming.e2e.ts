@@ -1,7 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { CPU_MODELS } from '../../src/lib/naming/cpu-models';
 
-// The server runs with the default `naming:` block: no OCR, no provider (see playwright.config.ts).
+// The server reads page text and has no provider of its own (see playwright.config.ts), which
+// is the default everywhere: reading is local and on demand, asking a model is opt-in.
 
 /** Answers the model host, so the real request path runs without a real provider. */
 async function stubModel(page: Page, body: object, status = 200) {
@@ -20,8 +21,9 @@ async function openNaming(page: Page) {
 test('the settings sheet says what the server can read', async ({ page }) => {
 	await openNaming(page);
 
-	// The default server reads nothing, and says so instead of leaving Find name unexplained.
-	await expect(page.getByTestId('ocr-state')).toContainText('does not read page text');
+	// Find name is on out of the box, and the sheet says what the server brings to it.
+	await expect(page.getByTestId('ocr-state')).toContainText('reads page text');
+	// No provider chosen yet, so there is no key to ask for.
 	await expect(page.getByTestId('ai-key')).toHaveCount(0);
 });
 
@@ -78,10 +80,10 @@ async function scanToReview(page: Page) {
 	});
 }
 
-test('Find name is offered even on a server that reads nothing', async ({ page }) => {
+test('Find name is offered with no model set up at all', async ({ page }) => {
 	await scanToReview(page);
 
-	// The bug that started this: with naming.ocr off, the button used to be absent entirely.
+	// No provider, no key: the heading off the page and the template are still worth having.
 	await expect(page.getByTestId('suggest-button')).toBeVisible();
 	await expect(page.getByTestId('suggest-button')).toBeEnabled();
 
@@ -117,8 +119,8 @@ test('a model set up in settings names the scan, and says so', async ({ page }) 
 	const suggestion = popover.getByRole('button', { name: /Quarterly Report Northwind/ });
 	await expect(suggestion).toBeVisible({ timeout: 20_000 });
 
-	// This server reads no text, so it was the page image that went — and it says which.
-	await expect(popover.getByTestId('suggest-privacy')).toContainText('page image was sent');
+	// The text is what went, and the popover says so rather than leaving it to be assumed.
+	await expect(popover.getByTestId('suggest-privacy')).toContainText('text read from the page');
 
 	await suggestion.click();
 	await expect(page.getByTestId('name-input')).toHaveValue('Quarterly Report Northwind');
@@ -178,24 +180,24 @@ test('a browser with no WebGPU is sent to the processor, not to an API key', asy
 	await expect(page.getByTestId('ai-local-model')).toHaveCount(0);
 });
 
-test('a model in this browser says why it has nothing to read, rather than nothing', async ({
-	page
-}) => {
-	// Set up through settings, the way anyone would, then take it to a real scan.
+test('turning Find name off hides it, and then nothing reads the page', async ({ page }) => {
 	const section = await openNaming(page);
-	await section.getByRole('radio', { name: 'In-browser (CPU)' }).check();
-	await page.getByTestId('ai-local-model').selectOption({ index: 1 });
+	await expect(section.getByRole('radio', { name: 'OpenAI-style' })).toBeVisible();
+
+	await section.getByLabel('Find name').uncheck();
+
+	// The provider choice goes with it: all of it was configuring the one feature.
+	await expect(section.getByRole('radio', { name: 'OpenAI-style' })).toHaveCount(0);
+	await expect(page.getByTestId('find-name-off')).toBeVisible();
 
 	await scanToReview(page);
-	await page.getByTestId('suggest-button').click();
+	await expect(page.getByTestId('suggest-button')).toHaveCount(0);
 
-	// This server reads no page text, and a model here cannot see the page. Before this, the
-	// popover simply came back thin with no reason given — and no weights are needed to say so.
-	const popover = page.getByTestId('name-suggestions');
-	await expect(popover).toContainText('can only read text');
-	await expect(popover).toContainText('naming.ocr');
-	// The rows that did work are still there; the model's absence costs nothing already paid for.
-	await expect(popover.getByRole('button', { name: /scan/i }).first()).toBeVisible();
+	// And it comes back, because this is a preference and not a one-way door.
+	await openNaming(page);
+	await page.getByTestId('naming-section').getByLabel('Find name').check();
+	await scanToReview(page);
+	await expect(page.getByTestId('suggest-button')).toBeVisible();
 });
 
 test('the CPU engine offers its models to a browser with no WebGPU at all', async ({ page }) => {

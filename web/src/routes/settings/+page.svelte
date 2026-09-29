@@ -654,107 +654,223 @@
 			class="col-span-full flex flex-col gap-3 border-t border-line pt-3.5"
 			data-testid="naming-section"
 		>
-			<Segmented
-				name="ai-provider"
-				label="Find name"
-				hint="who turns a page into a file name"
-				options={providers.map((p) => ({ value: p.value, label: p.label }))}
-				value={provider}
-				onchange={(v) => aiPrefs.set({ ...$aiPrefs, provider: v as AiProvider })}
-			/>
+			<div class="rounded-[16px] bg-app px-3.5 py-1.5">
+				<Toggle
+					name="find_name"
+					label="Find name"
+					hint="Suggest a file name from the words on the page"
+					checked={$aiPrefs.findName}
+					onchange={(v) => aiPrefs.set({ ...$aiPrefs, findName: v })}
+				/>
+			</div>
 
-			<!-- What the server can do is half the story, and the half nobody can guess. -->
-			<p class="rounded-[12px] bg-app px-3 py-2.5 text-xs text-ink-muted" data-testid="ocr-state">
-				{#if effective === null}
-					Asking the server what it can read…
-				{:else if effective.CanReadPageText}
-					This server reads page text, so only the text is sent — the page image stays here.
-				{:else}
-					This server does not read page text: <code class="font-mono">naming.ocr</code> is off in
-					<code class="font-mono">yass.yaml</code>, or
-					<code class="font-mono">tesseract</code> is not installed. The page image is sent instead, which
-					needs a model that can see.
-				{/if}
-			</p>
-
-			{#if provider === 'off'}
-				<p class="text-[11px] text-ink-faint">
-					Find name still offers the heading it reads off the page and your file name template.
+			{#if !$aiPrefs.findName}
+				<p class="text-[11px] text-ink-faint" data-testid="find-name-off">
+					The button is hidden on the review screen, and no page is read: the server only reads one
+					when that button asks it to.
 				</p>
-			{:else if isInBrowser(provider)}
-				{#if provider === 'webllm' && !canRunLocally}
-					<p class="text-xs font-bold text-danger" role="alert" data-testid="no-webgpu">
-						This browser has no WebGPU, so it cannot run a model on the graphics card. Pick
-						In-browser (CPU) instead: it runs on the processor, needs no key either, and is only
-						slower.
+			{:else}
+				<Segmented
+					name="ai-provider"
+					label="Who writes it"
+					hint="the heading on the page always counts; a model is optional"
+					options={providers.map((p) => ({ value: p.value, label: p.label }))}
+					value={provider}
+					onchange={(v) => aiPrefs.set({ ...$aiPrefs, provider: v as AiProvider })}
+				/>
+
+				<!-- What the server can do is half the story, and the half nobody can guess. -->
+				<p class="rounded-[12px] bg-app px-3 py-2.5 text-xs text-ink-muted" data-testid="ocr-state">
+					{#if effective === null}
+						Asking the server what it can read…
+					{:else if effective.CanReadPageText}
+						This server reads page text, so the text is all that is ever sent — the page image stays
+						here.
+					{:else}
+						This server does not read page text: <code class="font-mono">naming.ocr</code> is off in
+						<code class="font-mono">yass.yaml</code>, or
+						<code class="font-mono">tesseract</code> is not installed. Find name has nothing to work from,
+						so it is hidden on the review screen.
+					{/if}
+				</p>
+
+				{#if provider === 'off'}
+					<p class="text-[11px] text-ink-faint">
+						Find name still offers the heading it reads off the page and your file name template.
 					</p>
+				{:else if isInBrowser(provider)}
+					{#if provider === 'webllm' && !canRunLocally}
+						<p class="text-xs font-bold text-danger" role="alert" data-testid="no-webgpu">
+							This browser has no WebGPU, so it cannot run a model on the graphics card. Pick
+							In-browser (CPU) instead: it runs on the processor, needs no key either, and is only
+							slower.
+						</p>
+					{:else}
+						<label class="flex flex-col gap-1.5">
+							<span class="text-[13px] font-bold text-ink-2">Model</span>
+							<select
+								class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
+								value={isPasted ? '' : localModel}
+								onchange={(e) => setModel(e.currentTarget.value)}
+								data-testid="ai-local-model"
+							>
+								<option value="">Choose a model…</option>
+								{#each localModels as model (model.id)}
+									<option value={model.id}>{model.label} · {model.sizeMb} MB</option>
+								{/each}
+							</select>
+							<span class="text-[11px] text-ink-faint">
+								Downloaded once from the internet, then kept in this browser and used offline. Every
+								browser you use YASS from downloads its own copy. A model here cannot see the page,
+								so it needs a server that reads page text.
+								{#if provider === 'wllama'}
+									It decodes on the processor and holds its weights in RAM, so budget roughly the
+									download size again while it is answering.
+								{/if}
+							</span>
+						</label>
+
+						{#if provider === 'wllama'}
+							<label class="flex flex-col gap-1.5">
+								<span class="text-[13px] font-bold text-ink-2">Or a GGUF file of your own</span>
+								<input
+									class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
+									type="url"
+									autocomplete="off"
+									spellcheck="false"
+									placeholder="https://huggingface.co/…/model.gguf"
+									value={isPasted ? localModel : ''}
+									onchange={(e) => setModel(e.currentTarget.value.trim())}
+									data-testid="ai-gguf-url"
+								/>
+								<span class="text-[11px] text-ink-faint">
+									Any instruct-tuned GGUF small enough for this machine. The host has to allow the
+									request from a web page, which Hugging Face does.
+								</span>
+							</label>
+						{/if}
+
+						<div class="flex flex-col gap-1.5">
+							<span class="flex items-center gap-2">
+								<button
+									type="button"
+									class="h-10 rounded-[12px] bg-accent-50 px-3.5 text-[13px] font-bold text-accent transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-45"
+									disabled={downloading !== null || !localModel}
+									onclick={download}
+									data-testid="ai-download"
+								>
+									{downloading ? `Downloading… ${downloading}` : 'Download model'}
+								</button>
+								<button
+									type="button"
+									class="h-10 rounded-[12px] bg-accent-50 px-3.5 text-[13px] font-bold text-accent transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-45"
+									disabled={testing || downloading !== null || !localModel}
+									onclick={test}
+									data-testid="ai-test"
+								>
+									{testing ? 'Asking…' : 'Test'}
+								</button>
+								<span class="text-[11px] text-ink-faint">
+									Hundreds of megabytes, once. Better here than on a scan.
+								</span>
+							</span>
+							{#if testResult}
+								<span
+									class="text-xs font-bold {testResult.ok ? 'text-success-ink' : 'text-danger'}"
+									role={testResult.ok ? 'status' : 'alert'}
+									data-testid="ai-test-result"
+								>
+									{testResult.ok ? '✓ ' : ''}{testResult.message}
+								</span>
+							{/if}
+						</div>
+					{/if}
 				{:else}
 					<label class="flex flex-col gap-1.5">
-						<span class="text-[13px] font-bold text-ink-2">Model</span>
-						<select
+						<span class="text-[13px] font-bold text-ink-2">API key</span>
+						<input
 							class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
-							value={isPasted ? '' : localModel}
-							onchange={(e) => setModel(e.currentTarget.value)}
-							data-testid="ai-local-model"
-						>
-							<option value="">Choose a model…</option>
-							{#each localModels as model (model.id)}
-								<option value={model.id}>{model.label} · {model.sizeMb} MB</option>
-							{/each}
-						</select>
+							type="password"
+							autocomplete="off"
+							spellcheck="false"
+							placeholder={provider === 'anthropic' ? 'sk-ant-…' : 'sk-…'}
+							value={key}
+							oninput={(e) => setKey(e.currentTarget.value)}
+							data-testid="ai-key"
+						/>
 						<span class="text-[11px] text-ink-faint">
-							Downloaded once from the internet, then kept in this browser and used offline. Every
-							browser you use YASS from downloads its own copy. A model here cannot see the page, so
-							it needs a server that reads page text.
-							{#if provider === 'wllama'}
-								It decodes on the processor and holds its weights in RAM, so budget roughly the
-								download size again while it is answering.
-							{/if}
+							Kept in this browser and sent straight to the model, never to the scanner server.
+							Anything running on this page can read it, and it stays until you clear it — think
+							twice on a browser other people use.
 						</span>
 					</label>
 
-					{#if provider === 'wllama'}
+					{#if provider === 'openai'}
 						<label class="flex flex-col gap-1.5">
-							<span class="text-[13px] font-bold text-ink-2">Or a GGUF file of your own</span>
+							<span class="text-[13px] font-bold text-ink-2">Base URL</span>
 							<input
 								class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
-								type="url"
-								autocomplete="off"
+								type="text"
 								spellcheck="false"
-								placeholder="https://huggingface.co/…/model.gguf"
-								value={isPasted ? localModel : ''}
-								onchange={(e) => setModel(e.currentTarget.value.trim())}
-								data-testid="ai-gguf-url"
+								placeholder="https://api.openai.com/v1"
+								value={$aiPrefs.baseUrl}
+								oninput={(e) => aiPrefs.set({ ...$aiPrefs, baseUrl: e.currentTarget.value })}
+								data-testid="ai-base-url"
 							/>
+							<span class="flex flex-wrap gap-1.5">
+								{#each knownBaseUrls as known (known.url)}
+									<button
+										type="button"
+										class="rounded-full bg-accent-50 px-2.5 py-1 font-mono text-[11px] font-bold text-accent transition-colors hover:bg-accent-100"
+										onclick={() => aiPrefs.set({ ...$aiPrefs, baseUrl: known.url })}
+									>
+										{known.label}
+									</button>
+								{/each}
+							</span>
 							<span class="text-[11px] text-ink-faint">
-								Any instruct-tuned GGUF small enough for this machine. The host has to allow the
-								request from a web page, which Hugging Face does.
+								Anything that speaks the OpenAI chat shape. One running on your own machine has to
+								allow requests from this page — Ollama needs
+								<code class="font-mono">OLLAMA_ORIGINS</code>.
 							</span>
 						</label>
 					{/if}
+
+					<label class="flex flex-col gap-1.5">
+						<span class="text-[13px] font-bold text-ink-2">Model</span>
+						<input
+							class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
+							type="text"
+							spellcheck="false"
+							placeholder={chosenModel($aiPrefs)}
+							value={$aiPrefs.models[provider] ?? ''}
+							oninput={(e) => setModel(e.currentTarget.value)}
+							data-testid="ai-model"
+						/>
+					</label>
+
+					<Toggle
+						name="ai-images"
+						label="Send the page when text cannot be read"
+						hint="Needs a model that can see. Off means Find name falls back to your template on a server with OCR switched off."
+						checked={$aiPrefs.useImages}
+						onchange={(v) => aiPrefs.set({ ...$aiPrefs, useImages: v })}
+					/>
 
 					<div class="flex flex-col gap-1.5">
 						<span class="flex items-center gap-2">
 							<button
 								type="button"
 								class="h-10 rounded-[12px] bg-accent-50 px-3.5 text-[13px] font-bold text-accent transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-45"
-								disabled={downloading !== null || !localModel}
-								onclick={download}
-								data-testid="ai-download"
-							>
-								{downloading ? `Downloading… ${downloading}` : 'Download model'}
-							</button>
-							<button
-								type="button"
-								class="h-10 rounded-[12px] bg-accent-50 px-3.5 text-[13px] font-bold text-accent transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-45"
-								disabled={testing || downloading !== null || !localModel}
+								disabled={testing || (needsKey && !key.trim())}
 								onclick={test}
 								data-testid="ai-test"
 							>
 								{testing ? 'Asking…' : 'Test'}
 							</button>
 							<span class="text-[11px] text-ink-faint">
-								Hundreds of megabytes, once. Better here than on a scan.
+								Sends one short document to {chosenBaseUrl($aiPrefs)}. It costs whatever your
+								provider charges.
 							</span>
 						</span>
 						{#if testResult}
@@ -768,104 +884,6 @@
 						{/if}
 					</div>
 				{/if}
-			{:else}
-				<label class="flex flex-col gap-1.5">
-					<span class="text-[13px] font-bold text-ink-2">API key</span>
-					<input
-						class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
-						type="password"
-						autocomplete="off"
-						spellcheck="false"
-						placeholder={provider === 'anthropic' ? 'sk-ant-…' : 'sk-…'}
-						value={key}
-						oninput={(e) => setKey(e.currentTarget.value)}
-						data-testid="ai-key"
-					/>
-					<span class="text-[11px] text-ink-faint">
-						Kept in this browser and sent straight to the model, never to the scanner server.
-						Anything running on this page can read it, and it stays until you clear it — think twice
-						on a browser other people use.
-					</span>
-				</label>
-
-				{#if provider === 'openai'}
-					<label class="flex flex-col gap-1.5">
-						<span class="text-[13px] font-bold text-ink-2">Base URL</span>
-						<input
-							class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
-							type="text"
-							spellcheck="false"
-							placeholder="https://api.openai.com/v1"
-							value={$aiPrefs.baseUrl}
-							oninput={(e) => aiPrefs.set({ ...$aiPrefs, baseUrl: e.currentTarget.value })}
-							data-testid="ai-base-url"
-						/>
-						<span class="flex flex-wrap gap-1.5">
-							{#each knownBaseUrls as known (known.url)}
-								<button
-									type="button"
-									class="rounded-full bg-accent-50 px-2.5 py-1 font-mono text-[11px] font-bold text-accent transition-colors hover:bg-accent-100"
-									onclick={() => aiPrefs.set({ ...$aiPrefs, baseUrl: known.url })}
-								>
-									{known.label}
-								</button>
-							{/each}
-						</span>
-						<span class="text-[11px] text-ink-faint">
-							Anything that speaks the OpenAI chat shape. One running on your own machine has to
-							allow requests from this page — Ollama needs
-							<code class="font-mono">OLLAMA_ORIGINS</code>.
-						</span>
-					</label>
-				{/if}
-
-				<label class="flex flex-col gap-1.5">
-					<span class="text-[13px] font-bold text-ink-2">Model</span>
-					<input
-						class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
-						type="text"
-						spellcheck="false"
-						placeholder={chosenModel($aiPrefs)}
-						value={$aiPrefs.models[provider] ?? ''}
-						oninput={(e) => setModel(e.currentTarget.value)}
-						data-testid="ai-model"
-					/>
-				</label>
-
-				<Toggle
-					name="ai-images"
-					label="Send the page when text cannot be read"
-					hint="Needs a model that can see. Off means Find name falls back to your template on a server with OCR switched off."
-					checked={$aiPrefs.useImages}
-					onchange={(v) => aiPrefs.set({ ...$aiPrefs, useImages: v })}
-				/>
-
-				<div class="flex flex-col gap-1.5">
-					<span class="flex items-center gap-2">
-						<button
-							type="button"
-							class="h-10 rounded-[12px] bg-accent-50 px-3.5 text-[13px] font-bold text-accent transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-45"
-							disabled={testing || (needsKey && !key.trim())}
-							onclick={test}
-							data-testid="ai-test"
-						>
-							{testing ? 'Asking…' : 'Test'}
-						</button>
-						<span class="text-[11px] text-ink-faint">
-							Sends one short document to {chosenBaseUrl($aiPrefs)}. It costs whatever your provider
-							charges.
-						</span>
-					</span>
-					{#if testResult}
-						<span
-							class="text-xs font-bold {testResult.ok ? 'text-success-ink' : 'text-danger'}"
-							role={testResult.ok ? 'status' : 'alert'}
-							data-testid="ai-test-result"
-						>
-							{testResult.ok ? '✓ ' : ''}{testResult.message}
-						</span>
-					{/if}
-				</div>
 			{/if}
 		</div>
 

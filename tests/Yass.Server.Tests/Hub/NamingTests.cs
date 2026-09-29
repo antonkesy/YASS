@@ -12,15 +12,17 @@ namespace Yass.Server.Tests.Hub;
 public sealed class NamingTests
 {
     [Fact]
-    public async Task Suggests_the_template_when_nothing_is_configured()
+    public async Task Suggests_the_template_when_nothing_can_be_read()
     {
-        await using var factory = new YassFactory(FakeScenario.Pages(2));
+        await using var factory = new YassFactory(
+            FakeScenario.Pages(2),
+            c => c with { Naming = c.Naming with { Ocr = false } });
         await using HubClient hub = await HubClient.ConnectAsync(factory);
         SessionDto done = await hub.ScanToEnd();
 
         NameSuggestionsDto result = await hub.SuggestNames(done.Id);
 
-        // Off by default: no OCR, no model, and still a usable name rather than an empty list.
+        // Reading switched off and no model: still a usable name rather than an empty list.
         Assert.False(result.CanRead);
         Assert.Equal(NameSource.Template, Assert.Single(result.Suggestions).Source);
         Assert.NotEmpty(Assert.Single(result.Suggestions).Name);
