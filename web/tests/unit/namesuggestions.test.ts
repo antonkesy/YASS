@@ -72,10 +72,14 @@ describe('NameSuggestions', () => {
 		expect(screen.getByTestId('suggest-privacy')).toHaveTextContent('The text read from the page');
 	});
 
-	it('hands back the name that was picked', async () => {
+	it('hands back the whole row that was picked, source and all', async () => {
+		// The source decides what the name becomes: a Template row is already a file name,
+		// the others are raw material for the template and the style.
 		const onpick = vi.fn();
 		open({ onpick });
 		await fireEvent.click(screen.getByRole('button', { name: /Quarterly Report/ }));
-		expect(onpick).toHaveBeenCalledWith('Quarterly Report');
+		expect(onpick).toHaveBeenCalledWith(
+			expect.objectContaining({ Name: 'Quarterly Report', Source: NameSource.Ai })
+		);
 	});
 });

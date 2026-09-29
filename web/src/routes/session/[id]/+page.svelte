@@ -53,6 +53,9 @@
 		type Phase
 	} from '$lib/naming';
 	import { ExportMode, type NameSuggestionsDto } from '$lib/hub/generated/Yass.Core.Hub';
+	import { NameSource, type NameSuggestion } from '$lib/hub/generated/Yass.Core.Naming';
+	import { expandTemplate, resolveName } from '$lib/template';
+	import { styleName } from '$lib/naming/style';
 
 	const client = getHub();
 	const sessions = client.sessions;
@@ -203,10 +206,40 @@
 		}
 	}
 
-	/** The name field wins; the template is what an unnamed scan falls back to. */
+	/**
+	 * The name field wins; the template is what an unnamed scan falls back to. The template
+	 * still has to go through `resolveName`, because the server expands it and would write
+	 * `{NAME}` out as five literal characters — nothing has been found, so it resolves away.
+	 */
 	const exportName = $derived(
-		session?.Name?.trim() || $exportPrefs.nameTemplate.trim() || undefined
+		session?.Name?.trim() || resolveName($exportPrefs.nameTemplate, '').trim() || undefined
 	);
+
+	/**
+	 * What a picked suggestion becomes. A Template row is already a file name, so it is taken
+	 * as it is; anything read off the page or written by a model is raw material, styled and
+	 * then dropped into the template wherever `{NAME}` says. With no `{NAME}` to drop it into,
+	 * it replaces the name outright, which is what picking one has always done.
+	 */
+	function pickedName(suggestion: NameSuggestion): string {
+		// A Template row is the server's own `output.filename_template`, already expanded —
+		// styling it would replace the separators the operator chose, and dropping it into
+		// `{NAME}` would nest one file name inside another. It is taken as written, less any
+		// `{NAME}` the operator put in yass.yaml, which the server leaves standing.
+		if (suggestion.Source === NameSource.Template) return resolveName(suggestion.Name, '');
+
+		const styled = styleName(suggestion.Name, $exportPrefs.nameStyle);
+		const template = $exportPrefs.nameTemplate.trim();
+		if (!template.includes('{NAME}')) return styled;
+
+		return expandTemplate(template, new Date(session?.CreatedAt ?? Date.now()), {
+			preset: 'Scan',
+			counter: 1,
+			dpi: session?.OptionsUsed.Dpi ?? 300,
+			color: String(session?.OptionsUsed.Color ?? ''),
+			name: styled
+		});
+	}
 
 	/** Export: the server writes the document into the folder settings point at. */
 	async function save() {
@@ -660,9 +693,11 @@
 							result={suggestions}
 							error={suggestError ?? suggestions?.Error ?? null}
 							current={session.Name?.trim() ?? null}
+							resolved={pickedName}
 							pages={Math.min(activePages, pageTextPages)}
-							onpick={(name) => {
+							onpick={(suggestion) => {
 								closeSuggestions();
+								const name = pickedName(suggestion);
 								rename(name);
 								toast.show(`Renamed to “${name}”`);
 							}}
