@@ -42,25 +42,24 @@ YASS_PORT=9000 docker compose up --build
 `Ctrl-C` stops it; `docker compose down` removes the container. Scan sessions
 live in the container's `/tmp`, so nothing survives except the PDFs you saved.
 
-## Two things are simulated
+## What is simulated
 
-`--fake` replaces both the scanner and the PDF writer, so:
+`--fake` replaces the scanner and the PDF writer. Both produce real output:
 
-- The pages are **PNG fixtures embedded in `Yass.Fake`** (three text pages, one
-  colour page, one near-blank), not files you can swap out. They cycle, so
-  `pages=9` shows each fixture more than once.
-- The saved PDF is a **text-only placeholder** — one line per page recording the
-  source file, rotation and colour mode. It is a valid PDF and proves the save
-  path works, but it does not contain the scanned images. A scan you have named
-  uses that name; an unnamed one falls back to `fake_<timestamp>.pdf` rather than
-  `output.filename_template`, which only the real store expands.
+- The pages are an invoice, a letter, a payslip, a report in colour and a
+  near-blank sheet, written as Markdown in
+  [`src/Yass.Fake/Fixtures`](../src/Yass.Fake/Fixtures) and rendered to A4 at
+  150 dpi by the build. They are documents with titles on them, which is what
+  makes **Find name** worth pressing here. They cycle, so `pages=9` shows each
+  more than once; to change what a page says, edit its Markdown and rebuild.
+- The saved PDF holds those pages as images, rotated and greyed the way your
+  edits ask. It opens in any reader and shows the document. A scan you have
+  named uses that name; an unnamed one falls back to `fake_<timestamp>.pdf`
+  rather than `output.filename_template`, which only the real store expands.
 
-For real pages and a real PDF you need a scanner and the non-fake path — see the
+What is *not* simulated is the scanner itself: there is no glass, no feeder and
+no driver. For that you need hardware and the non-fake path — see the
 [main README](../README.md).
-
-The fixtures are also only 620 px wide, so zooming in looks soft here. Real
-scans are capped by `processing.preview_max_width` (1600 by default, up to
-4096) — raise it if zoom looks blurry on a large screen.
 
 ## Changing the scenario
 

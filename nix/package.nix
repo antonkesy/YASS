@@ -9,6 +9,10 @@
   pnpm,
   nodejs_24,
   sane-backends,
+  pandoc,
+  typst,
+  poppler-utils,
+  dejavu_fonts,
   version,
   src,
 }:
@@ -53,6 +57,14 @@ buildDotnetModule {
 
   dotnet-sdk = dotnetCorePackages.sdk_10_0;
   dotnet-runtime = dotnetCorePackages.aspnetcore_10_0;
+
+  # Yass.Fake renders the pages its scanner feeds from Markdown as part of the build.
+  nativeBuildInputs = [
+    pandoc
+    typst
+    poppler-utils
+  ];
+  TYPST_FONT_PATHS = "${dejavu_fonts}/share/fonts";
 
   # The csproj enables PublishTrimmed for the container build; Nix ships the shared runtime instead.
   selfContainedBuild = false;

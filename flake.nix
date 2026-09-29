@@ -69,8 +69,16 @@
             nixfmt
             git
             python3 # scripts/coverage-gate.py
+            # scripts/render-fixtures.sh, run by Yass.Fake's build: the fake scanner's pages
+            # are rendered from Markdown rather than committed as images. typst ships no fonts
+            # of its own, so one has to be on the path or it refuses to lay anything out.
+            pandoc
+            typst
+            poppler-utils
+            dejavu_fonts
           ];
 
+          TYPST_FONT_PATHS = "${pkgs.dejavu_fonts}/share/fonts";
           DOTNET_ROOT = "${dotnet}";
           DOTNET_CLI_TELEMETRY_OPTOUT = "1";
           DOTNET_NOLOGO = "1";

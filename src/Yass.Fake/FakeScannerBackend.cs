@@ -56,7 +56,7 @@ public sealed class FakeScannerBackend(FakeScenario scenario) : IScannerBackend
 
                 bool blank = Scenario.BlankPages.Contains(number);
                 byte[] png = blank ? Fixtures.Load(Fixtures.BlankPage) : Fixtures.ContentPage(number);
-                yield return new ScannedPage(number, png, blank && options.BlankPageDetection);
+                yield return new ScannedPage(number, Fixtures.AtDpi(png, options.Dpi), blank && options.BlankPageDetection);
             }
         }
         finally

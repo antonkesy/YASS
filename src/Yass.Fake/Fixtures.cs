@@ -1,11 +1,26 @@
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+
 namespace Yass.Fake;
 
-/// <summary>PNG pages embedded in this assembly: three text pages, one colour page and one near-blank page.</summary>
+/// <summary>
+/// Pages embedded in this assembly, rendered at build time from the Markdown in Fixtures/:
+/// an invoice, a letter, a payslip, a report in colour, and a near-blank page. They read as
+/// real documents on purpose — OCR and the naming that leans on it are only worth exercising
+/// against something that has a title on it.
+/// </summary>
 public static class Fixtures
 {
-    public static IReadOnlyList<string> ContentPages { get; } = ["page-1.png", "page-2.png", "page-3.png", "page-4-color.png"];
+    public static IReadOnlyList<string> ContentPages { get; } = ["invoice.png", "letter.png", "payslip.png", "report-color.png"];
 
     public const string BlankPage = "blank.png";
+
+    /// <summary>
+    /// What the pages are rendered at, matching <c>scanner.defaults.dpi</c>. A scan asking for
+    /// something else is resampled from this, the way a scanner would give you what you asked
+    /// for rather than what its glass happens to be.
+    /// </summary>
+    public const int Dpi = 300;
 
     public static byte[] Load(string name)
     {
@@ -13,6 +28,29 @@ public static class Fixtures
             ?? throw new FileNotFoundException($"Embedded fixture '{name}' not found.", name);
         using var buffer = new MemoryStream();
         stream.CopyTo(buffer);
+        return buffer.ToArray();
+    }
+
+    /// <summary>
+    /// The page at the resolution the scan asked for. A page is only worth calling 300 dpi if
+    /// it has the pixels for it: without this a 150 dpi scan would come back the same size as a
+    /// 300 dpi one, and the PDF built from it would claim a page half the size of the paper.
+    /// </summary>
+    public static byte[] AtDpi(byte[] png, int dpi)
+    {
+        ArgumentNullException.ThrowIfNull(png);
+        if (dpi <= 0 || dpi == Dpi)
+        {
+            return png;
+        }
+
+        using Image image = Image.Load(png);
+        image.Mutate(x => x.Resize(
+            Math.Max(1, image.Width * dpi / Dpi),
+            Math.Max(1, image.Height * dpi / Dpi)));
+
+        using var buffer = new MemoryStream();
+        image.SaveAsPng(buffer);
         return buffer.ToArray();
     }
 
