@@ -210,9 +210,10 @@ Everything above configures the **server**. **Settings → Find name** configure
   compiled to WebAssembly, decoding on the processor with the weights in
   ordinary RAM. Works in any browser. Pick one of the models offered (145 MB to
   800 MB) or paste the URL of any instruct-tuned GGUF. Budget roughly the
-  download size again in free RAM while it answers, and expect a few seconds
-  rather than a fraction of one — it runs on a single core, because more than
-  that needs the page to be cross-origin isolated.
+  download size again in free RAM while it answers, and expect around a second
+  rather than a fraction of one. It decodes on half the machine's cores: YASS
+  serves itself cross-origin isolated (`Cross-Origin-Opener-Policy` and
+  `Cross-Origin-Embedder-Policy`) so that the browser allows the threads.
 
 Both in-browser options need `naming.ocr: true` on the server, because a model
 in the browser reads text and cannot see the page. Where the server reads

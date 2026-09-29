@@ -39,12 +39,16 @@ the weights in ordinary RAM.
   branch, so the bytes behind it cannot change and the size beside it cannot go wrong.
   A free-text field takes any other GGUF URL, which is the escape hatch a fixed list
   needs.
-- **One thread.** Multi-threaded wasm needs `SharedArrayBuffer`, which needs
-  cross-origin isolation, which means `Cross-Origin-Opener-Policy` and
-  `Cross-Origin-Embedder-Policy` on every response the host serves. That is a change to
-  how the whole app is served in exchange for a feature most people never turn on, and
-  wllama falls back to one thread on its own. Roughly 4x is left on the table; it is
-  there to take later, in `StaticFrontend.cs`, if anyone asks.
+- **As many threads as the machine will spare.** Multi-threaded wasm needs
+  `SharedArrayBuffer`, which a browser only hands to a cross-origin isolated page, which
+  means `Cross-Origin-Opener-Policy: same-origin` and
+  `Cross-Origin-Embedder-Policy: require-corp` on what the host serves —
+  `StaticFrontend.cs`, and the same from Vite in development so that the two do not differ.
+  wllama then takes half the cores. `require-corp` rather than `credentialless` because
+  every browser understands it, Safari included, and nothing is given up for it: everything
+  this app loads from elsewhere — model weights, a naming API — it loads with `fetch` under
+  CORS, which `require-corp` already accepts. Verified: the GPU engine's worker and its
+  catalogue are unaffected.
 
 Rejected: replacing web-llm with wllama, which does both backends from one GGUF
 catalogue. It would be one dependency instead of two — but MLC compiles its own WebGPU
@@ -56,10 +60,17 @@ GPU would pay for the tidiness.
 - The consequence ADR-010 listed — "WebGPU is required; where it is missing the option
   is disabled with that as its reason" — is retired. There is now an in-browser option
   for every browser, and the WebGPU message points at it.
-- CPU naming is slower than GPU naming, and honestly so. Measured on a 16-core desktop,
-  single-threaded, SmolLM2 135M Q8_0: **13.1 s** for the first name after the download,
-  **4.3 s** for every one after. Small enough for a file name, too slow for anything
+- CPU naming is slower than GPU naming, and honestly so. Measured on a 16-core desktop with
+  SmolLM2 135M Q8_0, first name after the download then five more: **13.1 s / 4.3 s** on one
+  thread, **5.1 s / 0.9 s** on eight. Small enough for a file name, too slow for anything
   longer — which is the only thing being asked of it.
+- Cross-origin isolation is checked when a worker is *created*, and the check reads the
+  headers on the worker script. A copy cached from before isolation was turned on does not
+  carry them, and `_app/immutable` is cached for a year without revalidating — so an upgrade
+  across this change can leave a browser refusing to start a worker whose file never changed.
+  Nothing has been released yet, so no one is in that position; what remains is that the
+  browser's error event for it is empty, which `worker.client.ts` now answers by saying the
+  worker never started and naming the cache as the likely cause.
 - Two engines is two catalogues, two workers and two sets of weights in the cache. The
   shared plumbing keeps the duplication to the part that genuinely differs.
 - The curated list will age. The sha pinning means it ages *visibly* — a stale entry is

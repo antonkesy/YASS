@@ -16,6 +16,9 @@ import type { FromWorker, ToWorker } from './wllama.protocol';
 let wllama: Wllama | null = null;
 let loaded = '';
 
+/** Which request an error from somewhere below this worker should be blamed on. */
+let pending = 0;
+
 /**
  * Enough context for `MAX_TEXT` characters of page text plus the instruction, and no more:
  * the KV cache for a context this size is the other half of what the weights ask of RAM.
@@ -68,6 +71,7 @@ async function handle(request: ToWorker): Promise<FromWorker> {
 }
 
 self.onmessage = async (event: MessageEvent<ToWorker>) => {
+	pending = event.data.id;
 	try {
 		post(await handle(event.data));
 	} catch (e) {
@@ -78,3 +82,22 @@ self.onmessage = async (event: MessageEvent<ToWorker>) => {
 		});
 	}
 };
+
+/**
+ * llama.cpp runs in workers of wllama's own, below this one, and what goes wrong down there
+ * arrives here as an `error` event the page can only see as "the worker stopped". Catching it
+ * turns that into the sentence the thing itself gave — which is the difference between a
+ * report worth acting on and a shrug.
+ */
+self.addEventListener('error', (event) => {
+	post({ type: 'failed', id: pending, error: event.message || 'The model failed to start.' });
+});
+
+self.addEventListener('unhandledrejection', (event) => {
+	const reason = (event as PromiseRejectionEvent).reason;
+	post({
+		type: 'failed',
+		id: pending,
+		error: reason instanceof Error ? reason.message : String(reason)
+	});
+});
