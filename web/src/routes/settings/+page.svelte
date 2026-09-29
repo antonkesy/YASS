@@ -10,7 +10,15 @@
 	import Toggle from '$lib/components/Toggle.svelte';
 	import TemplateEditor from '$lib/components/TemplateEditor.svelte';
 	import { Icon, presetIcons, type PresetIconName } from '$lib/icons';
-	import { activePreset, exportPrefs, presets, type Preset } from '$lib/presets';
+	import { activePreset, aiKeys, aiPrefs, exportPrefs, presets, type Preset } from '$lib/presets';
+	import {
+		chosenBaseUrl,
+		chosenModel,
+		knownBaseUrls,
+		NamingError,
+		suggestName,
+		type AiProvider
+	} from '$lib/naming';
 	import { ExportFormat } from '$lib/hub/generated/Yass.Core.Hub';
 	import { exportFormatLabels } from '$lib/format';
 	import { expandTemplate, templateTokens, unknownTokens } from '$lib/template';
@@ -32,6 +40,57 @@
 	});
 
 	const editable = $derived(new Set(effective?.Editable ?? []));
+
+	/** Who writes the name, and what each choice needs filled in. */
+	const providers: { value: AiProvider; label: string }[] = [
+		{ value: 'off', label: 'Off' },
+		{ value: 'anthropic', label: 'Anthropic' },
+		{ value: 'openai', label: 'OpenAI-style' }
+	];
+	const provider = $derived($aiPrefs.provider);
+	const needsKey = $derived(provider === 'anthropic' || provider === 'openai');
+	const key = $derived(provider === 'anthropic' ? $aiKeys.anthropic : $aiKeys.openai);
+
+	function setKey(value: string) {
+		aiKeys.set(
+			provider === 'anthropic' ? { ...$aiKeys, anthropic: value } : { ...$aiKeys, openai: value }
+		);
+	}
+
+	function setModel(value: string) {
+		aiPrefs.set({ ...$aiPrefs, models: { ...$aiPrefs.models, [provider]: value } });
+	}
+
+	/**
+	 * One short request down the real path, because a special test endpoint would prove
+	 * nothing about the one that matters. This is where a provider that refuses requests
+	 * from web pages should be discovered, rather than at a scanner with a document in hand.
+	 */
+	const SAMPLE =
+		'Northwind Traders GmbH\nQuarterly Report 2026 Q3\nPrepared for the board, 29 September 2026.';
+
+	let testing = $state(false);
+	let testResult = $state<{ ok: boolean; message: string } | null>(null);
+
+	async function test() {
+		testing = true;
+		testResult = null;
+		const started = performance.now();
+		try {
+			const named = await suggestName({ kind: 'text', text: SAMPLE, pages: 1 }, $aiPrefs, $aiKeys);
+			const ms = Math.round(performance.now() - started);
+			testResult = named
+				? { ok: true, message: `${named.model} answered “${named.name}” · ${ms} ms` }
+				: { ok: false, message: 'Nothing was asked: no model is set up.' };
+		} catch (e) {
+			testResult = {
+				ok: false,
+				message: e instanceof NamingError ? e.message : 'Something went wrong asking the model.'
+			};
+		} finally {
+			testing = false;
+		}
+	}
 	const overrides = $derived($settings);
 	const changed = $derived(
 		Object.keys(editableKeys).some(
@@ -525,6 +584,143 @@
 				</p>
 			{/if}
 		{/if}
+
+		<!--
+			Outside the editable branch above: this is a preference of this browser's, with
+			nothing to do with scanner.ui_editable, and it has to be reachable even on a server
+			that lets the UI change nothing.
+		-->
+		<div
+			class="col-span-full flex flex-col gap-3 border-t border-line pt-3.5"
+			data-testid="naming-section"
+		>
+			<Segmented
+				name="ai-provider"
+				label="Find name"
+				hint="who turns a page into a file name"
+				options={providers.map((p) => ({ value: p.value, label: p.label }))}
+				value={provider}
+				onchange={(v) => aiPrefs.set({ ...$aiPrefs, provider: v as AiProvider })}
+			/>
+
+			<!-- What the server can do is half the story, and the half nobody can guess. -->
+			<p class="rounded-[12px] bg-app px-3 py-2.5 text-xs text-ink-muted" data-testid="ocr-state">
+				{#if effective === null}
+					Asking the server what it can read…
+				{:else if effective.CanReadPageText}
+					This server reads page text, so only the text is sent — the page image stays here.
+				{:else}
+					This server does not read page text: <code class="font-mono">naming.ocr</code> is off in
+					<code class="font-mono">yass.yaml</code>, or
+					<code class="font-mono">tesseract</code> is not installed. The page image is sent instead, which
+					needs a model that can see.
+				{/if}
+			</p>
+
+			{#if provider === 'off'}
+				<p class="text-[11px] text-ink-faint">
+					Find name still offers the heading it reads off the page and your file name template.
+				</p>
+			{:else}
+				<label class="flex flex-col gap-1.5">
+					<span class="text-[13px] font-bold text-ink-2">API key</span>
+					<input
+						class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
+						type="password"
+						autocomplete="off"
+						spellcheck="false"
+						placeholder={provider === 'anthropic' ? 'sk-ant-…' : 'sk-…'}
+						value={key}
+						oninput={(e) => setKey(e.currentTarget.value)}
+						data-testid="ai-key"
+					/>
+					<span class="text-[11px] text-ink-faint">
+						Kept in this browser and sent straight to the model, never to the scanner server.
+						Anything running on this page can read it, and it stays until you clear it — think twice
+						on a browser other people use.
+					</span>
+				</label>
+
+				{#if provider === 'openai'}
+					<label class="flex flex-col gap-1.5">
+						<span class="text-[13px] font-bold text-ink-2">Base URL</span>
+						<input
+							class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
+							type="text"
+							spellcheck="false"
+							placeholder="https://api.openai.com/v1"
+							value={$aiPrefs.baseUrl}
+							oninput={(e) => aiPrefs.set({ ...$aiPrefs, baseUrl: e.currentTarget.value })}
+							data-testid="ai-base-url"
+						/>
+						<span class="flex flex-wrap gap-1.5">
+							{#each knownBaseUrls as known (known.url)}
+								<button
+									type="button"
+									class="rounded-full bg-accent-50 px-2.5 py-1 font-mono text-[11px] font-bold text-accent transition-colors hover:bg-accent-100"
+									onclick={() => aiPrefs.set({ ...$aiPrefs, baseUrl: known.url })}
+								>
+									{known.label}
+								</button>
+							{/each}
+						</span>
+						<span class="text-[11px] text-ink-faint">
+							Anything that speaks the OpenAI chat shape. One running on your own machine has to
+							allow requests from this page — Ollama needs
+							<code class="font-mono">OLLAMA_ORIGINS</code>.
+						</span>
+					</label>
+				{/if}
+
+				<label class="flex flex-col gap-1.5">
+					<span class="text-[13px] font-bold text-ink-2">Model</span>
+					<input
+						class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
+						type="text"
+						spellcheck="false"
+						placeholder={chosenModel($aiPrefs)}
+						value={$aiPrefs.models[provider] ?? ''}
+						oninput={(e) => setModel(e.currentTarget.value)}
+						data-testid="ai-model"
+					/>
+				</label>
+
+				<Toggle
+					name="ai-images"
+					label="Send the page when text cannot be read"
+					hint="Needs a model that can see. Off means Find name falls back to your template on a server with OCR switched off."
+					checked={$aiPrefs.useImages}
+					onchange={(v) => aiPrefs.set({ ...$aiPrefs, useImages: v })}
+				/>
+
+				<div class="flex flex-col gap-1.5">
+					<span class="flex items-center gap-2">
+						<button
+							type="button"
+							class="h-10 rounded-[12px] bg-accent-50 px-3.5 text-[13px] font-bold text-accent transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-45"
+							disabled={testing || (needsKey && !key.trim())}
+							onclick={test}
+							data-testid="ai-test"
+						>
+							{testing ? 'Asking…' : 'Test'}
+						</button>
+						<span class="text-[11px] text-ink-faint">
+							Sends one short document to {chosenBaseUrl($aiPrefs)}. It costs whatever your provider
+							charges.
+						</span>
+					</span>
+					{#if testResult}
+						<span
+							class="text-xs font-bold {testResult.ok ? 'text-success-ink' : 'text-danger'}"
+							role={testResult.ok ? 'status' : 'alert'}
+							data-testid="ai-test-result"
+						>
+							{testResult.ok ? '✓ ' : ''}{testResult.message}
+						</span>
+					{/if}
+				</div>
+			{/if}
+		</div>
 
 		<button
 			type="button"
