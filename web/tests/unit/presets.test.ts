@@ -2,8 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { ColorMode, PageSize, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
 import {
 	activePreset,
+	AI_KEY,
+	AI_KEYS_KEY,
+	createAiKeys,
+	createAiPrefs,
 	createExportPrefs,
 	createPresets,
+	defaultAiKeys,
+	defaultAiPrefs,
 	defaultExportPrefs,
 	defaultPresets,
 	EXPORT_KEY,
@@ -71,6 +77,34 @@ describe('loading stored preferences', () => {
 		const prefs = get(store);
 		expect(prefs.directory).toBe('/data/consume');
 		expect(prefs.exportButton).toBe(defaultExportPrefs.exportButton);
+	});
+
+	it('keeps the model settings and the key in separate blobs', () => {
+		const entries: Record<string, string> = {};
+		const store = fake(entries);
+		const prefs = createAiPrefs(store);
+		const keys = createAiKeys(store);
+
+		prefs.set({ ...defaultAiPrefs, provider: 'anthropic', models: { anthropic: 'claude-x' } });
+		keys.set({ ...defaultAiKeys, anthropic: 'sk-secret' });
+
+		// Two keys, and the one holding the secret is not the one the settings write to.
+		expect(entries[AI_KEY]).not.toContain('sk-secret');
+		expect(entries[AI_KEYS_KEY]).toContain('sk-secret');
+
+		// Resetting the settings leaves the key where it was: they are cleared separately.
+		prefs.reset();
+		expect(get(prefs).provider).toBe('off');
+		expect(get(keys).anthropic).toBe('sk-secret');
+	});
+
+	it('fills in a model preference stored before the provider existed', () => {
+		// `load` merges over the defaults, so an older blob reads as its defaults, not undefined.
+		const store = createAiPrefs(fake({ [AI_KEY]: JSON.stringify({ provider: 'openai' }) }));
+		const prefs = get(store);
+		expect(prefs.provider).toBe('openai');
+		expect(prefs.models).toEqual({});
+		expect(prefs.useImages).toBe(defaultAiPrefs.useImages);
 	});
 
 	it('keeps a stored value that happens to match a falsy default', () => {
