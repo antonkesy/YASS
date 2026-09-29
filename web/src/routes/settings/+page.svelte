@@ -9,9 +9,19 @@
 	import Segmented from '$lib/components/Segmented.svelte';
 	import Toggle from '$lib/components/Toggle.svelte';
 	import ProgressBar from '$lib/components/ProgressBar.svelte';
+	import SettingsSection from '$lib/components/SettingsSection.svelte';
 	import TemplateEditor from '$lib/components/TemplateEditor.svelte';
 	import { Icon, presetIcons, type PresetIconName } from '$lib/icons';
-	import { activePreset, aiKeys, aiPrefs, exportPrefs, presets, type Preset } from '$lib/presets';
+	import {
+		activePreset,
+		aiKeys,
+		aiPrefs,
+		exportPrefs,
+		presets,
+		reviewPrefs,
+		type Preset
+	} from '$lib/presets';
+	import { TILE_SIZES } from '$lib/review/overview';
 	import {
 		chosenBaseUrl,
 		chosenModel,
@@ -108,6 +118,15 @@
 
 	/** The chosen model is a GGUF URL for CPU and a catalogue id for GPU; both live here. */
 	const localModel = $derived($aiPrefs.models[provider] ?? '');
+
+	/**
+	 * The overview's zoom steps as a row of choices. Named rather than shown in pixels: the
+	 * number means nothing to anyone, and there are only ever a handful of steps.
+	 */
+	const tileSizes = TILE_SIZES.map((size, i) => ({
+		value: String(size),
+		label: ['Tiny', 'Small', 'Medium', 'Large', 'Huge'][i] ?? String(size)
+	}));
 
 	/** What to call it while it downloads: the CPU setting is a URL, which reads as nothing. */
 	const localLabel = $derived(provider === 'wllama' ? cpuModelLabel(localModel) : localModel);
@@ -289,7 +308,7 @@
 <div class="fixed inset-0 z-40 bg-[rgb(19_26_43_/_0.35)] backdrop-blur-[3px]"></div>
 
 <div
-	class="fixed inset-x-0 bottom-0 z-41 max-h-[86%] animate-pop-in overflow-y-auto rounded-t-[28px] bg-surface px-[22px] pt-[22px] pb-6 shadow-modal sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:max-h-[calc(100%-48px)] sm:w-[min(920px,calc(100%-64px))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[26px] sm:px-[34px] sm:py-[30px]"
+	class="fixed inset-x-0 bottom-0 z-41 max-h-[92%] animate-pop-in overflow-y-auto rounded-t-[28px] bg-surface px-[22px] pt-[22px] pb-6 shadow-modal sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:max-h-[calc(100%-32px)] sm:w-[min(1180px,calc(100%-40px))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[26px] sm:px-[34px] sm:py-[30px]"
 	role="dialog"
 	aria-modal="true"
 	aria-label="Scan settings"
@@ -326,261 +345,268 @@
 			<code class="font-mono">yass.yaml</code>.
 		</p>
 
-		{#if error}
-			<p
-				class="col-span-full rounded-[14px] bg-danger-bg px-4 py-2 font-semibold text-danger"
-				role="alert"
-			>
-				{error}
-			</p>
-		{:else if !effective}
-			<p class="col-span-full text-ink-muted">Loading…</p>
-		{:else if editable.size === 0}
-			<p class="col-span-full text-ink-muted" data-testid="nothing-editable">
-				Nothing is editable from the UI.
-			</p>
-		{:else}
-			<div
-				class="col-span-full flex flex-col gap-2.5 rounded-[18px] bg-app p-3.5"
-				data-testid="presets"
-			>
-				<div class="flex items-center gap-2">
-					<span class="text-[13px] font-bold text-ink-2">Presets</span>
-					{#if !chosen}
-						<span class="text-xs font-bold text-warning-ink">Unsaved changes</span>
+		<SettingsSection
+			title="Scanner"
+			hint="What the next scan asks the scanner for, kept in this browser. Only the keys scanner.ui_editable opens up can be set here."
+			testid="scanner-section"
+		>
+			{#if error}
+				<p
+					class="col-span-full rounded-[14px] bg-danger-bg px-4 py-2 font-semibold text-danger"
+					role="alert"
+				>
+					{error}
+				</p>
+			{:else if !effective}
+				<p class="col-span-full text-ink-muted">Loading…</p>
+			{:else if editable.size === 0}
+				<p class="col-span-full text-ink-muted" data-testid="nothing-editable">
+					Nothing is editable from the UI.
+				</p>
+			{:else}
+				<div
+					class="col-span-full flex flex-col gap-2.5 rounded-[18px] bg-app p-3.5"
+					data-testid="presets"
+				>
+					<div class="flex items-center gap-2">
+						<span class="text-[13px] font-bold text-ink-2">Presets</span>
+						{#if !chosen}
+							<span class="text-xs font-bold text-warning-ink">Unsaved changes</span>
+						{/if}
+					</div>
+
+					<div class="flex flex-wrap gap-1.5">
+						{#each $presets as preset (preset.id)}
+							<button
+								type="button"
+								class="flex h-[38px] items-center gap-2 rounded-full px-3.5 text-[13px] font-bold transition-all duration-200 {chosen?.id ===
+								preset.id
+									? 'bg-accent text-white shadow-preset'
+									: 'bg-surface text-accent-deep shadow-chip'}"
+								aria-pressed={chosen?.id === preset.id}
+								onclick={() => settings.set({ ...$settings, ...preset.settings })}
+							>
+								<Icon name={preset.icon} />
+								{preset.name}
+							</button>
+						{/each}
+					</div>
+
+					{#if drafting}
+						<div class="flex flex-col gap-2">
+							<div class="flex flex-wrap gap-2">
+								<input
+									class="h-9 min-w-[160px] flex-1 rounded-[10px] border-[1.5px] border-accent bg-surface px-3 text-sm outline-none"
+									type="text"
+									placeholder="Preset name"
+									bind:value={draftName}
+									data-testid="preset-name"
+								/>
+								<button
+									type="button"
+									class="h-9 rounded-full bg-accent px-3 text-xs font-extrabold text-white transition-opacity disabled:pointer-events-none disabled:opacity-45"
+									disabled={!draftName.trim()}
+									onclick={savePreset}
+									data-testid="preset-save"
+								>
+									Save
+								</button>
+								<button
+									type="button"
+									class="h-9 rounded-full px-3 text-xs font-bold text-ink-3 transition-colors hover:bg-ctl"
+									onclick={() => (drafting = false)}
+								>
+									Cancel
+								</button>
+							</div>
+							<div class="flex flex-wrap gap-1.5">
+								{#each presetIcons as icon (icon)}
+									<button
+										type="button"
+										class="flex h-9 w-9 items-center justify-center rounded-[10px] transition-transform duration-150 hover:scale-110 {draftIcon ===
+										icon
+											? 'bg-accent text-white shadow-swatch'
+											: 'bg-surface text-ink-2 shadow-chip'}"
+										aria-pressed={draftIcon === icon}
+										aria-label={icon}
+										onclick={() => (draftIcon = icon)}
+									>
+										<Icon name={icon} />
+									</button>
+								{/each}
+							</div>
+						</div>
+					{:else}
+						<div class="flex flex-wrap gap-1.5">
+							{#if chosen}
+								<button
+									type="button"
+									class="h-8 rounded-full bg-accent px-3 text-xs font-extrabold text-white transition-colors hover:bg-accent-hover"
+									onclick={updatePreset}
+								>
+									Update “{chosen.name}”
+								</button>
+								<button
+									type="button"
+									class="h-8 rounded-full px-3 text-xs font-bold text-danger transition-colors hover:bg-danger-bg"
+									onclick={() => deletePreset(chosen.id)}
+								>
+									Delete “{chosen.name}”
+								</button>
+							{/if}
+							<button
+								type="button"
+								class="h-8 rounded-full bg-surface px-3 text-xs font-bold text-accent-deep shadow-chip transition-colors hover:bg-accent-50"
+								onclick={() => (drafting = true)}
+								data-testid="preset-new"
+							>
+								Save as new preset
+							</button>
+						</div>
 					{/if}
 				</div>
 
-				<div class="flex flex-wrap gap-1.5">
-					{#each $presets as preset (preset.id)}
-						<button
-							type="button"
-							class="flex h-[38px] items-center gap-2 rounded-full px-3.5 text-[13px] font-bold transition-all duration-200 {chosen?.id ===
-							preset.id
-								? 'bg-accent text-white shadow-preset'
-								: 'bg-surface text-accent-deep shadow-chip'}"
-							aria-pressed={chosen?.id === preset.id}
-							onclick={() => settings.set({ ...$settings, ...preset.settings })}
-						>
-							<Icon name={preset.icon} />
-							{preset.name}
-						</button>
+				<form
+					class="col-span-full grid items-start gap-x-7 gap-y-[18px] sm:grid-cols-[repeat(auto-fit,minmax(320px,1fr))]"
+					onsubmit={(e) => e.preventDefault()}
+					data-testid="settings-form"
+				>
+					{#if editable.has('source')}
+						<Segmented
+							name="source"
+							label="Source"
+							options={withDefault(sources)}
+							value={asSegment(overrides.Source)}
+							onchange={(v) => setNumber('Source', v)}
+						/>
+					{/if}
+					{#if editable.has('color')}
+						<Segmented
+							name="color"
+							label="Colour mode"
+							options={withDefault(colors)}
+							value={asSegment(overrides.Color)}
+							onchange={(v) => setNumber('Color', v)}
+						/>
+					{/if}
+					{#if editable.has('dpi')}
+						<Segmented
+							name="dpi"
+							label="Resolution"
+							hint="dpi"
+							options={withDefault(dpis)}
+							value={asSegment(overrides.Dpi)}
+							onchange={(v) => setNumber('Dpi', v)}
+						/>
+					{/if}
+					{#if editable.has('page_size')}
+						<Segmented
+							name="page_size"
+							label="Paper size"
+							options={withDefault(pageSizes)}
+							value={asSegment(overrides.PageSize)}
+							onchange={(v) => setNumber('PageSize', v)}
+						/>
+					{/if}
+
+					{#if editable.has('blank_page_detection') || editable.has('auto_deskew')}
+						<div class="rounded-[16px] bg-app px-3.5 py-1.5">
+							{#if editable.has('blank_page_detection')}
+								<Toggle
+									name="blank_page_detection"
+									label="Skip blank pages"
+									hint="Pages that look empty start out deleted"
+									checked={overrides.BlankPageDetection ?? effective.BlankPageDetection ?? false}
+									onchange={(v) => settings.update('BlankPageDetection', v)}
+								/>
+							{/if}
+							{#if editable.has('auto_deskew')}
+								<Toggle
+									name="auto_deskew"
+									label="Auto-deskew"
+									hint="Straighten pages that went through crooked"
+									checked={overrides.AutoDeskew ?? effective.AutoDeskew ?? false}
+									onchange={(v) => settings.update('AutoDeskew', v)}
+								/>
+							{/if}
+						</div>
+					{/if}
+
+					{#each [['brightness', 'Brightness', 'Brightness'], ['contrast', 'Contrast', 'Contrast']] as const as [key, label, prop] (key)}
+						{#if editable.has(key)}
+							<label class="flex flex-col gap-1.5">
+								<span class="flex justify-between text-[13px] font-bold text-ink-2">
+									{label}
+									<span class="text-ink-muted tabular-nums">
+										{overrides[prop] ?? effective[prop] ?? 0}
+									</span>
+								</span>
+								<input
+									class="h-11 accent-accent"
+									type="range"
+									name={key}
+									min="-100"
+									max="100"
+									step="5"
+									value={overrides[prop] ?? effective[prop] ?? 0}
+									oninput={(e) =>
+										settings.update(prop, Number((e.currentTarget as HTMLInputElement).value))}
+								/>
+							</label>
+						{/if}
 					{/each}
-				</div>
 
-				{#if drafting}
-					<div class="flex flex-col gap-2">
-						<div class="flex flex-wrap gap-2">
-							<input
-								class="h-9 min-w-[160px] flex-1 rounded-[10px] border-[1.5px] border-accent bg-surface px-3 text-sm outline-none"
-								type="text"
-								placeholder="Preset name"
-								bind:value={draftName}
-								data-testid="preset-name"
-							/>
-							<button
-								type="button"
-								class="h-9 rounded-full bg-accent px-3 text-xs font-extrabold text-white transition-opacity disabled:pointer-events-none disabled:opacity-45"
-								disabled={!draftName.trim()}
-								onclick={savePreset}
-								data-testid="preset-save"
-							>
-								Save
-							</button>
-							<button
-								type="button"
-								class="h-9 rounded-full px-3 text-xs font-bold text-ink-3 transition-colors hover:bg-ctl"
-								onclick={() => (drafting = false)}
-							>
-								Cancel
-							</button>
-						</div>
-						<div class="flex flex-wrap gap-1.5">
-							{#each presetIcons as icon (icon)}
-								<button
-									type="button"
-									class="flex h-9 w-9 items-center justify-center rounded-[10px] transition-transform duration-150 hover:scale-110 {draftIcon ===
-									icon
-										? 'bg-accent text-white shadow-swatch'
-										: 'bg-surface text-ink-2 shadow-chip'}"
-									aria-pressed={draftIcon === icon}
-									aria-label={icon}
-									onclick={() => (draftIcon = icon)}
-								>
-									<Icon name={icon} />
-								</button>
-							{/each}
-						</div>
-					</div>
-				{:else}
-					<div class="flex flex-wrap gap-1.5">
-						{#if chosen}
-							<button
-								type="button"
-								class="h-8 rounded-full bg-accent px-3 text-xs font-extrabold text-white transition-colors hover:bg-accent-hover"
-								onclick={updatePreset}
-							>
-								Update “{chosen.name}”
-							</button>
-							<button
-								type="button"
-								class="h-8 rounded-full px-3 text-xs font-bold text-danger transition-colors hover:bg-danger-bg"
-								onclick={() => deletePreset(chosen.id)}
-							>
-								Delete “{chosen.name}”
-							</button>
-						{/if}
-						<button
-							type="button"
-							class="h-8 rounded-full bg-surface px-3 text-xs font-bold text-accent-deep shadow-chip transition-colors hover:bg-accent-50"
-							onclick={() => (drafting = true)}
-							data-testid="preset-new"
-						>
-							Save as new preset
-						</button>
-					</div>
-				{/if}
-			</div>
-
-			<form
-				class="col-span-full grid items-start gap-x-7 gap-y-[18px] sm:grid-cols-[repeat(auto-fit,minmax(320px,1fr))]"
-				onsubmit={(e) => e.preventDefault()}
-				data-testid="settings-form"
-			>
-				{#if editable.has('source')}
-					<Segmented
-						name="source"
-						label="Source"
-						options={withDefault(sources)}
-						value={asSegment(overrides.Source)}
-						onchange={(v) => setNumber('Source', v)}
-					/>
-				{/if}
-				{#if editable.has('color')}
-					<Segmented
-						name="color"
-						label="Colour mode"
-						options={withDefault(colors)}
-						value={asSegment(overrides.Color)}
-						onchange={(v) => setNumber('Color', v)}
-					/>
-				{/if}
-				{#if editable.has('dpi')}
-					<Segmented
-						name="dpi"
-						label="Resolution"
-						hint="dpi"
-						options={withDefault(dpis)}
-						value={asSegment(overrides.Dpi)}
-						onchange={(v) => setNumber('Dpi', v)}
-					/>
-				{/if}
-				{#if editable.has('page_size')}
-					<Segmented
-						name="page_size"
-						label="Paper size"
-						options={withDefault(pageSizes)}
-						value={asSegment(overrides.PageSize)}
-						onchange={(v) => setNumber('PageSize', v)}
-					/>
-				{/if}
-
-				{#if editable.has('blank_page_detection') || editable.has('auto_deskew')}
-					<div class="col-span-full rounded-[16px] bg-app px-3.5 py-1.5">
-						{#if editable.has('blank_page_detection')}
-							<Toggle
-								name="blank_page_detection"
-								label="Skip blank pages"
-								hint="Pages that look empty start out deleted"
-								checked={overrides.BlankPageDetection ?? effective.BlankPageDetection ?? false}
-								onchange={(v) => settings.update('BlankPageDetection', v)}
-							/>
-						{/if}
-						{#if editable.has('auto_deskew')}
-							<Toggle
-								name="auto_deskew"
-								label="Auto-deskew"
-								hint="Straighten pages that went through crooked"
-								checked={overrides.AutoDeskew ?? effective.AutoDeskew ?? false}
-								onchange={(v) => settings.update('AutoDeskew', v)}
-							/>
-						{/if}
-					</div>
-				{/if}
-
-				{#each [['brightness', 'Brightness', 'Brightness'], ['contrast', 'Contrast', 'Contrast']] as const as [key, label, prop] (key)}
-					{#if editable.has(key)}
+					{#if editable.has('blank_page_threshold')}
 						<label class="flex flex-col gap-1.5">
-							<span class="flex justify-between text-[13px] font-bold text-ink-2">
-								{label}
-								<span class="text-ink-muted tabular-nums">
-									{overrides[prop] ?? effective[prop] ?? 0}
+							<span class="text-[13px] font-bold text-ink-2">
+								Blank threshold
+								<span class="font-semibold text-ink-muted">
+									· default {effective.BlankPageThreshold}
 								</span>
 							</span>
 							<input
-								class="h-11 accent-accent"
-								type="range"
-								name={key}
-								min="-100"
-								max="100"
-								step="5"
-								value={overrides[prop] ?? effective[prop] ?? 0}
-								oninput={(e) =>
-									settings.update(prop, Number((e.currentTarget as HTMLInputElement).value))}
+								class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm"
+								type="number"
+								name="blank_page_threshold"
+								min="0"
+								max="1"
+								step="0.01"
+								value={overrides.BlankPageThreshold ?? ''}
+								placeholder={String(effective.BlankPageThreshold)}
+								onchange={(e) => {
+									const v = (e.currentTarget as HTMLInputElement).value;
+									settings.update('BlankPageThreshold', v === '' ? undefined : Number(v));
+								}}
 							/>
 						</label>
 					{/if}
-				{/each}
+				</form>
 
-				{#if editable.has('blank_page_threshold')}
-					<label class="flex flex-col gap-1.5">
-						<span class="text-[13px] font-bold text-ink-2">
-							Blank threshold
-							<span class="font-semibold text-ink-muted">
-								· default {effective.BlankPageThreshold}
-							</span>
-						</span>
-						<input
-							class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm"
-							type="number"
-							name="blank_page_threshold"
-							min="0"
-							max="1"
-							step="0.01"
-							value={overrides.BlankPageThreshold ?? ''}
-							placeholder={String(effective.BlankPageThreshold)}
-							onchange={(e) => {
-								const v = (e.currentTarget as HTMLInputElement).value;
-								settings.update('BlankPageThreshold', v === '' ? undefined : Number(v));
-							}}
-						/>
-					</label>
-				{/if}
-			</form>
-
-			<p class="col-span-full text-[11px] text-ink-faint">
-				Editable keys: {[...editable].join(', ')} — set by
-				<code class="font-mono">scanner.ui_editable</code>.
-			</p>
-
-			{#if changed}
-				<p
-					class="col-span-full rounded-[12px] bg-success-bg px-3 py-2.5 text-xs font-bold text-success-ink"
-					data-testid="overrides-active"
-				>
-					Overrides active for the next scan.
+				<p class="col-span-full text-[11px] text-ink-faint">
+					Editable keys: {[...editable].join(', ')} — set by
+					<code class="font-mono">scanner.ui_editable</code>.
 				</p>
+
+				{#if changed}
+					<p
+						class="col-span-full rounded-[12px] bg-success-bg px-3 py-2.5 text-xs font-bold text-success-ink"
+						data-testid="overrides-active"
+					>
+						Overrides active for the next scan.
+					</p>
+				{/if}
 			{/if}
-		{/if}
+		</SettingsSection>
 
 		<!--
-			Outside the editable branch too, and for the same reason: where a document goes,
+			Outside the scanner section above, and for the same reason: where a document goes,
 			what it is called and how it is written are this browser's business. A server that
 			lets the UI change no scan setting still has to let you name what comes off it.
 		-->
-		<div
-			class="col-span-full flex flex-col gap-3 border-t border-line pt-3.5"
-			data-testid="export-section"
+		<SettingsSection
+			title="Export"
+			hint="Where a saved document goes and what kind of file it is."
+			testid="export-section"
 		>
 			<Segmented
 				name="format"
@@ -607,7 +633,7 @@
 
 			<!-- Dimmed rather than hidden: it is still where Export will go once it is back on. -->
 			<label
-				class="flex flex-col gap-1.5 transition-opacity duration-200 {$exportPrefs.exportButton
+				class="col-span-full flex flex-col gap-1.5 transition-opacity duration-200 {$exportPrefs.exportButton
 					? ''
 					: 'opacity-45'}"
 			>
@@ -670,8 +696,19 @@
 					<code class="font-mono">yass.yaml</code>.
 				</span>
 			</label>
+		</SettingsSection>
 
-			<div class="flex flex-col gap-1.5">
+		<!--
+			Outside the scanner section above: these are preferences of this browser's, with
+			nothing to do with scanner.ui_editable, and they have to be reachable even on a
+			server that lets the UI change nothing.
+		-->
+		<SettingsSection
+			title="Naming"
+			hint="What a document is called, before and after anything reads the page."
+			testid="naming-section"
+		>
+			<div class="col-span-full flex flex-col gap-1.5">
 				<span class="text-[13px] font-bold text-ink-2">File name template</span>
 				<TemplateEditor
 					value={$exportPrefs.nameTemplate}
@@ -688,26 +725,18 @@
 				</span>
 			</div>
 
-			<Segmented
-				name="name-style"
-				label="Found names"
-				hint="how the words of a found name are joined"
-				options={nameStyles.map((n) => ({ value: n.value, label: n.label }))}
-				value={$exportPrefs.nameStyle}
-				onchange={(v) => exportPrefs.set({ ...$exportPrefs, nameStyle: v as NameStyle })}
-			/>
-		</div>
+			<div class="col-span-full">
+				<Segmented
+					name="name-style"
+					label="Found names"
+					hint="how the words of a found name are joined"
+					options={nameStyles.map((n) => ({ value: n.value, label: n.label }))}
+					value={$exportPrefs.nameStyle}
+					onchange={(v) => exportPrefs.set({ ...$exportPrefs, nameStyle: v as NameStyle })}
+				/>
+			</div>
 
-		<!--
-			Outside the editable branch above: this is a preference of this browser's, with
-			nothing to do with scanner.ui_editable, and it has to be reachable even on a server
-			that lets the UI change nothing.
-		-->
-		<div
-			class="col-span-full flex flex-col gap-3 border-t border-line pt-3.5"
-			data-testid="naming-section"
-		>
-			<div class="rounded-[16px] bg-app px-3.5 py-1.5">
+			<div class="col-span-full rounded-[16px] bg-app px-3.5 py-1.5">
 				<Toggle
 					name="find_name"
 					label="Find name"
@@ -717,126 +746,226 @@
 				/>
 			</div>
 
-			{#if !$aiPrefs.findName}
-				<p class="text-[11px] text-ink-faint" data-testid="find-name-off">
-					The button is hidden on the review screen, and no page is read: the server only reads one
-					when that button asks it to.
-				</p>
-			{:else}
-				<Segmented
-					name="ai-provider"
-					label="Who writes it"
-					hint="the heading on the page always counts; a model is optional"
-					options={providers.map((p) => ({ value: p.value, label: p.label }))}
-					value={provider}
-					onchange={(v) => aiPrefs.set({ ...$aiPrefs, provider: v as AiProvider })}
-				/>
-
-				<!-- What the server can do is half the story, and the half nobody can guess. -->
-				<p class="rounded-[12px] bg-app px-3 py-2.5 text-xs text-ink-muted" data-testid="ocr-state">
-					{#if effective === null}
-						Asking the server what it can read…
-					{:else if effective.CanReadPageText}
-						This server reads page text, so the text is all that is ever sent — the page image stays
-						here.
-					{:else}
-						This server does not read page text: <code class="font-mono">naming.ocr</code> is off in
-						<code class="font-mono">yass.yaml</code>, or
-						<code class="font-mono">tesseract</code> is not installed. Find name has nothing to work from,
-						so it is hidden on the review screen.
-					{/if}
-				</p>
-
-				{#if provider === 'off'}
-					<p class="text-[11px] text-ink-faint">
-						Find name still offers the heading it reads off the page and your file name template.
+			<!--
+				One flow of fields that depend on each other — a provider, then what that provider
+				needs — so it takes the width rather than being broken across columns.
+			-->
+			<div class="col-span-full flex flex-col gap-3">
+				{#if !$aiPrefs.findName}
+					<p class="text-[11px] text-ink-faint" data-testid="find-name-off">
+						The button is hidden on the review screen, and no page is read: the server only reads
+						one when that button asks it to.
 					</p>
-				{:else if isInBrowser(provider)}
-					{#if provider === 'webllm' && !canRunLocally}
-						<p class="text-xs font-bold text-danger" role="alert" data-testid="no-webgpu">
-							This browser has no WebGPU, so it cannot run a model on the graphics card. Pick
-							In-browser (CPU) instead: it runs on the processor, needs no key either, and is only
-							slower.
+				{:else}
+					<Segmented
+						name="ai-provider"
+						label="Who writes it"
+						hint="the heading on the page always counts; a model is optional"
+						options={providers.map((p) => ({ value: p.value, label: p.label }))}
+						value={provider}
+						onchange={(v) => aiPrefs.set({ ...$aiPrefs, provider: v as AiProvider })}
+					/>
+
+					<!-- What the server can do is half the story, and the half nobody can guess. -->
+					<p
+						class="rounded-[12px] bg-app px-3 py-2.5 text-xs text-ink-muted"
+						data-testid="ocr-state"
+					>
+						{#if effective === null}
+							Asking the server what it can read…
+						{:else if effective.CanReadPageText}
+							This server reads page text, so the text is all that is ever sent — the page image
+							stays here.
+						{:else}
+							This server does not read page text: <code class="font-mono">naming.ocr</code> is off
+							in
+							<code class="font-mono">yass.yaml</code>, or
+							<code class="font-mono">tesseract</code> is not installed. Find name has nothing to work
+							from, so it is hidden on the review screen.
+						{/if}
+					</p>
+
+					{#if provider === 'off'}
+						<p class="text-[11px] text-ink-faint">
+							Find name still offers the heading it reads off the page and your file name template.
 						</p>
+					{:else if isInBrowser(provider)}
+						{#if provider === 'webllm' && !canRunLocally}
+							<p class="text-xs font-bold text-danger" role="alert" data-testid="no-webgpu">
+								This browser has no WebGPU, so it cannot run a model on the graphics card. Pick
+								In-browser (CPU) instead: it runs on the processor, needs no key either, and is only
+								slower.
+							</p>
+						{:else}
+							<label class="flex flex-col gap-1.5">
+								<span class="text-[13px] font-bold text-ink-2">Model</span>
+								<select
+									class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
+									value={isPasted ? '' : localModel}
+									onchange={(e) => setModel(e.currentTarget.value)}
+									data-testid="ai-local-model"
+								>
+									<option value="">Choose a model…</option>
+									{#each localModels as model (model.id)}
+										<option value={model.id}>{model.label} · {model.sizeMb} MB</option>
+									{/each}
+								</select>
+								<span class="text-[11px] text-ink-faint">
+									Downloaded once from the internet, then kept in this browser and used offline.
+									Every browser you use YASS from downloads its own copy. A model here cannot see
+									the page, so it needs a server that reads page text.
+									{#if provider === 'wllama'}
+										It decodes on the processor and holds its weights in RAM, so budget roughly the
+										download size again while it is answering.
+									{/if}
+								</span>
+							</label>
+
+							{#if provider === 'wllama'}
+								<label class="flex flex-col gap-1.5">
+									<span class="text-[13px] font-bold text-ink-2">Or a GGUF file of your own</span>
+									<input
+										class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
+										type="url"
+										autocomplete="off"
+										spellcheck="false"
+										placeholder="https://huggingface.co/…/model.gguf"
+										value={isPasted ? localModel : ''}
+										onchange={(e) => setModel(e.currentTarget.value.trim())}
+										data-testid="ai-gguf-url"
+									/>
+									<span class="text-[11px] text-ink-faint">
+										Any instruct-tuned GGUF small enough for this machine. The host has to allow the
+										request from a web page, which Hugging Face does.
+									</span>
+								</label>
+							{/if}
+
+							<div class="flex flex-col gap-1.5">
+								<span class="flex items-center gap-2">
+									<button
+										type="button"
+										class="h-10 rounded-[12px] bg-accent-50 px-3.5 text-[13px] font-bold text-accent transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-45"
+										disabled={downloading !== null || !localModel}
+										onclick={download}
+										data-testid="ai-download"
+									>
+										{downloading === null ? 'Download model' : `Downloading… ${downloading}%`}
+									</button>
+									<button
+										type="button"
+										class="h-10 rounded-[12px] bg-accent-50 px-3.5 text-[13px] font-bold text-accent transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-45"
+										disabled={testing || downloading !== null || !localModel}
+										onclick={test}
+										data-testid="ai-test"
+									>
+										{testing ? 'Asking…' : 'Test'}
+									</button>
+									<span class="text-[11px] text-ink-faint">
+										Hundreds of megabytes, once. Better here than on a scan.
+									</span>
+								</span>
+								{#if downloading !== null}
+									<!-- Hundreds of megabytes deserves a bar, not a spinner: this is the one
+								     wait in the app where knowing how much is left changes what you do. -->
+									<div class="flex flex-col gap-1" data-testid="ai-download-progress">
+										<ProgressBar percent={downloading} label="Model download" />
+										<span class="text-[11px] text-ink-faint">
+											{localLabel || 'The model'} — this browser keeps it, so this happens once.
+										</span>
+									</div>
+								{/if}
+								{#if testResult}
+									<span
+										class="text-xs font-bold {testResult.ok ? 'text-success-ink' : 'text-danger'}"
+										role={testResult.ok ? 'status' : 'alert'}
+										data-testid="ai-test-result"
+									>
+										{testResult.ok ? '✓ ' : ''}{testResult.message}
+									</span>
+								{/if}
+							</div>
+						{/if}
 					{:else}
 						<label class="flex flex-col gap-1.5">
-							<span class="text-[13px] font-bold text-ink-2">Model</span>
-							<select
+							<span class="text-[13px] font-bold text-ink-2">API key</span>
+							<input
 								class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
-								value={isPasted ? '' : localModel}
-								onchange={(e) => setModel(e.currentTarget.value)}
-								data-testid="ai-local-model"
-							>
-								<option value="">Choose a model…</option>
-								{#each localModels as model (model.id)}
-									<option value={model.id}>{model.label} · {model.sizeMb} MB</option>
-								{/each}
-							</select>
+								type="password"
+								autocomplete="off"
+								spellcheck="false"
+								placeholder={provider === 'anthropic' ? 'sk-ant-…' : 'sk-…'}
+								value={key}
+								oninput={(e) => setKey(e.currentTarget.value)}
+								data-testid="ai-key"
+							/>
 							<span class="text-[11px] text-ink-faint">
-								Downloaded once from the internet, then kept in this browser and used offline. Every
-								browser you use YASS from downloads its own copy. A model here cannot see the page,
-								so it needs a server that reads page text.
-								{#if provider === 'wllama'}
-									It decodes on the processor and holds its weights in RAM, so budget roughly the
-									download size again while it is answering.
-								{/if}
+								Kept in this browser and sent straight to the model, never to the scanner server.
+								Anything running on this page can read it, and it stays until you clear it — think
+								twice on a browser other people use.
 							</span>
 						</label>
 
-						{#if provider === 'wllama'}
+						{#if provider === 'openai'}
 							<label class="flex flex-col gap-1.5">
-								<span class="text-[13px] font-bold text-ink-2">Or a GGUF file of your own</span>
+								<span class="text-[13px] font-bold text-ink-2">Base URL</span>
 								<input
 									class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
-									type="url"
-									autocomplete="off"
+									type="text"
 									spellcheck="false"
-									placeholder="https://huggingface.co/…/model.gguf"
-									value={isPasted ? localModel : ''}
-									onchange={(e) => setModel(e.currentTarget.value.trim())}
-									data-testid="ai-gguf-url"
+									placeholder="https://api.openai.com/v1"
+									value={$aiPrefs.baseUrl}
+									oninput={(e) => aiPrefs.set({ ...$aiPrefs, baseUrl: e.currentTarget.value })}
+									data-testid="ai-base-url"
 								/>
+								<span class="flex flex-wrap gap-1.5">
+									{#each knownBaseUrls as known (known.url)}
+										<button
+											type="button"
+											class="rounded-full bg-accent-50 px-2.5 py-1 font-mono text-[11px] font-bold text-accent transition-colors hover:bg-accent-100"
+											onclick={() => aiPrefs.set({ ...$aiPrefs, baseUrl: known.url })}
+										>
+											{known.label}
+										</button>
+									{/each}
+								</span>
 								<span class="text-[11px] text-ink-faint">
-									Any instruct-tuned GGUF small enough for this machine. The host has to allow the
-									request from a web page, which Hugging Face does.
+									Anything that speaks the OpenAI chat shape. One running on your own machine has to
+									allow requests from this page — Ollama needs
+									<code class="font-mono">OLLAMA_ORIGINS</code>.
 								</span>
 							</label>
 						{/if}
+
+						<label class="flex flex-col gap-1.5">
+							<span class="text-[13px] font-bold text-ink-2">Model</span>
+							<input
+								class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
+								type="text"
+								spellcheck="false"
+								placeholder={chosenModel($aiPrefs)}
+								value={$aiPrefs.models[provider] ?? ''}
+								oninput={(e) => setModel(e.currentTarget.value)}
+								data-testid="ai-model"
+							/>
+						</label>
 
 						<div class="flex flex-col gap-1.5">
 							<span class="flex items-center gap-2">
 								<button
 									type="button"
 									class="h-10 rounded-[12px] bg-accent-50 px-3.5 text-[13px] font-bold text-accent transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-45"
-									disabled={downloading !== null || !localModel}
-									onclick={download}
-									data-testid="ai-download"
-								>
-									{downloading === null ? 'Download model' : `Downloading… ${downloading}%`}
-								</button>
-								<button
-									type="button"
-									class="h-10 rounded-[12px] bg-accent-50 px-3.5 text-[13px] font-bold text-accent transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-45"
-									disabled={testing || downloading !== null || !localModel}
+									disabled={testing || (needsKey && !key.trim())}
 									onclick={test}
 									data-testid="ai-test"
 								>
 									{testing ? 'Asking…' : 'Test'}
 								</button>
 								<span class="text-[11px] text-ink-faint">
-									Hundreds of megabytes, once. Better here than on a scan.
+									Sends one short document to {chosenBaseUrl($aiPrefs)}. It costs whatever your
+									provider charges.
 								</span>
 							</span>
-							{#if downloading !== null}
-								<!-- Hundreds of megabytes deserves a bar, not a spinner: this is the one
-								     wait in the app where knowing how much is left changes what you do. -->
-								<div class="flex flex-col gap-1" data-testid="ai-download-progress">
-									<ProgressBar percent={downloading} label="Model download" />
-									<span class="text-[11px] text-ink-faint">
-										{localLabel || 'The model'} — this browser keeps it, so this happens once.
-									</span>
-								</div>
-							{/if}
 							{#if testResult}
 								<span
 									class="text-xs font-bold {testResult.ok ? 'text-success-ink' : 'text-danger'}"
@@ -848,99 +977,28 @@
 							{/if}
 						</div>
 					{/if}
-				{:else}
-					<label class="flex flex-col gap-1.5">
-						<span class="text-[13px] font-bold text-ink-2">API key</span>
-						<input
-							class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
-							type="password"
-							autocomplete="off"
-							spellcheck="false"
-							placeholder={provider === 'anthropic' ? 'sk-ant-…' : 'sk-…'}
-							value={key}
-							oninput={(e) => setKey(e.currentTarget.value)}
-							data-testid="ai-key"
-						/>
-						<span class="text-[11px] text-ink-faint">
-							Kept in this browser and sent straight to the model, never to the scanner server.
-							Anything running on this page can read it, and it stays until you clear it — think
-							twice on a browser other people use.
-						</span>
-					</label>
-
-					{#if provider === 'openai'}
-						<label class="flex flex-col gap-1.5">
-							<span class="text-[13px] font-bold text-ink-2">Base URL</span>
-							<input
-								class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
-								type="text"
-								spellcheck="false"
-								placeholder="https://api.openai.com/v1"
-								value={$aiPrefs.baseUrl}
-								oninput={(e) => aiPrefs.set({ ...$aiPrefs, baseUrl: e.currentTarget.value })}
-								data-testid="ai-base-url"
-							/>
-							<span class="flex flex-wrap gap-1.5">
-								{#each knownBaseUrls as known (known.url)}
-									<button
-										type="button"
-										class="rounded-full bg-accent-50 px-2.5 py-1 font-mono text-[11px] font-bold text-accent transition-colors hover:bg-accent-100"
-										onclick={() => aiPrefs.set({ ...$aiPrefs, baseUrl: known.url })}
-									>
-										{known.label}
-									</button>
-								{/each}
-							</span>
-							<span class="text-[11px] text-ink-faint">
-								Anything that speaks the OpenAI chat shape. One running on your own machine has to
-								allow requests from this page — Ollama needs
-								<code class="font-mono">OLLAMA_ORIGINS</code>.
-							</span>
-						</label>
-					{/if}
-
-					<label class="flex flex-col gap-1.5">
-						<span class="text-[13px] font-bold text-ink-2">Model</span>
-						<input
-							class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
-							type="text"
-							spellcheck="false"
-							placeholder={chosenModel($aiPrefs)}
-							value={$aiPrefs.models[provider] ?? ''}
-							oninput={(e) => setModel(e.currentTarget.value)}
-							data-testid="ai-model"
-						/>
-					</label>
-
-					<div class="flex flex-col gap-1.5">
-						<span class="flex items-center gap-2">
-							<button
-								type="button"
-								class="h-10 rounded-[12px] bg-accent-50 px-3.5 text-[13px] font-bold text-accent transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-45"
-								disabled={testing || (needsKey && !key.trim())}
-								onclick={test}
-								data-testid="ai-test"
-							>
-								{testing ? 'Asking…' : 'Test'}
-							</button>
-							<span class="text-[11px] text-ink-faint">
-								Sends one short document to {chosenBaseUrl($aiPrefs)}. It costs whatever your
-								provider charges.
-							</span>
-						</span>
-						{#if testResult}
-							<span
-								class="text-xs font-bold {testResult.ok ? 'text-success-ink' : 'text-danger'}"
-								role={testResult.ok ? 'status' : 'alert'}
-								data-testid="ai-test-result"
-							>
-								{testResult.ok ? '✓ ' : ''}{testResult.message}
-							</span>
-						{/if}
-					</div>
 				{/if}
-			{/if}
-		</div>
+			</div>
+		</SettingsSection>
+
+		<!--
+			The one preference the review screen keeps, and it had nowhere to be said out loud:
+			the overview's own zoom buttons set it, which you only find by opening the overview.
+		-->
+		<SettingsSection
+			title="Editing"
+			hint="How the review screen behaves while you go through the pages."
+			testid="editing-section"
+		>
+			<Segmented
+				name="overview-tile"
+				label="Page size in the all-pages view"
+				hint="the zoom buttons in that view move this too"
+				options={tileSizes}
+				value={String($reviewPrefs.overviewTile)}
+				onchange={(v) => reviewPrefs.set({ ...$reviewPrefs, overviewTile: Number(v) })}
+			/>
+		</SettingsSection>
 
 		<button
 			type="button"
