@@ -4,19 +4,38 @@
 	let {
 		value,
 		placeholder,
-		onrename
+		generated = null,
+		busy = false,
+		reason = '',
+		canSuggest = true,
+		onrename,
+		onsuggest
 	}: {
 		/** The stored name, or null when the scan has never been named. */
 		value: string | null;
 		/** Shown when unnamed — the timestamp the list falls back to. */
 		placeholder: string;
+		/**
+		 * Where the found name sits inside {@link value}, when it is still in there. Shown as a
+		 * chip so the part that came off the page is telling you so, rather than looking like
+		 * something that was typed.
+		 */
+		generated?: { before: string; generated: string; after: string } | null;
+		/** A name is being worked out right now. */
+		busy?: boolean;
+		/** Why a name cannot be asked for, for the tooltip. Empty means it can. */
+		reason?: string;
+		/** Whether asking for a name is on offer at all. */
+		canSuggest?: boolean;
 		onrename: (name: string) => void;
+		onsuggest: () => void;
 	} = $props();
 
 	// Seeded by the effect below rather than from `value` directly, which would only
 	// ever capture what it was on the first render.
 	let draft = $state('');
 	let editing = $state(false);
+	let field = $state<HTMLInputElement | null>(null);
 
 	// While the field is not being edited it mirrors the server, so a rename from
 	// another tab shows up here too.
@@ -24,33 +43,101 @@
 		if (!editing) draft = value ?? '';
 	});
 
+	/** Segments only earn their keep when there is a generated run to point at. */
+	const segmented = $derived(!editing && generated !== null);
+
 	function commit() {
 		editing = false;
 		if (draft.trim() !== (value ?? '')) onrename(draft.trim());
 	}
+
+	export function edit() {
+		editing = true;
+		requestAnimationFrame(() => {
+			field?.focus();
+			field?.select();
+		});
+	}
 </script>
 
-<label
-	class="flex min-h-12 items-center gap-2 rounded-[14px] border-[1.5px] border-transparent bg-app px-3 transition-colors focus-within:border-accent hover:bg-accent-hover50"
+<div
+	class="flex min-h-12 items-center gap-2 rounded-[14px] border-[1.5px] border-transparent bg-app px-3 py-1.5 transition-colors focus-within:border-accent hover:bg-accent-hover50"
+	data-testid="document-name"
+	data-name={value ?? ''}
 >
 	<span class="text-ink-faint"><Icon name="pencil" /></span>
-	<span class="sr-only">Document name</span>
-	<input
-		class="min-w-0 flex-1 bg-transparent text-base font-extrabold tracking-[-0.01em] outline-none"
-		type="text"
-		{placeholder}
-		bind:value={draft}
-		onfocus={() => (editing = true)}
-		onblur={commit}
-		onkeydown={(e) => {
-			if (e.key === 'Enter') e.currentTarget.blur();
-			if (e.key === 'Escape') {
-				draft = value ?? '';
-				editing = false;
-				e.currentTarget.blur();
-			}
-		}}
-		data-testid="name-input"
-	/>
+
+	{#if segmented && generated}
+		<!-- Reads as one name, but the middle of it is a button: that is the part a scan fills
+		     in, and the part worth being able to change without retyping the rest. -->
+		<span
+			class="min-w-0 flex-1 py-1 text-base font-extrabold tracking-[-0.01em] break-words"
+			data-testid="name-segments"
+			>{#if generated.before}<button
+					type="button"
+					class="cursor-text text-left whitespace-pre-wrap"
+					aria-label="Edit the whole name"
+					onclick={edit}>{generated.before}</button
+				>{/if}<button
+				type="button"
+				class="mx-px inline-flex max-w-full translate-y-px items-center rounded-[7px] bg-ai-bg px-1.5 align-bottom text-ai-ink transition-colors hover:bg-accent-100"
+				title="Read off the page — click to change it"
+				onclick={onsuggest}
+				data-testid="name-generated"
+				><span class="truncate">{generated.generated}</span><span
+					class="ml-1 shrink-0 text-[9px] opacity-70">▾</span
+				></button
+			>{#if generated.after}<button
+					type="button"
+					class="cursor-text text-left whitespace-pre-wrap"
+					aria-label="Edit the whole name"
+					onclick={edit}>{generated.after}</button
+				>{/if}</span
+		>
+	{:else}
+		<label class="flex min-w-0 flex-1 items-center">
+			<span class="sr-only">Document name</span>
+			<input
+				bind:this={field}
+				class="min-w-0 flex-1 bg-transparent text-base font-extrabold tracking-[-0.01em] outline-none"
+				type="text"
+				placeholder={busy ? 'Finding a name…' : placeholder}
+				bind:value={draft}
+				onfocus={() => (editing = true)}
+				onblur={commit}
+				onkeydown={(e) => {
+					if (e.key === 'Enter') e.currentTarget.blur();
+					if (e.key === 'Escape') {
+						draft = value ?? '';
+						editing = false;
+						e.currentTarget.blur();
+					}
+				}}
+				data-testid="name-input"
+			/>
+		</label>
+	{/if}
+
+	<!--
+		Here whether or not anything has been generated: a template with no {NAME} in it still
+		has to have a way to ask for a name, now that the Find name button has gone. Gone with
+		the rest of it, though, when this browser reads no pages.
+	-->
+	{#if canSuggest}
+		<button
+			type="button"
+			class="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] text-ink-faint transition-colors hover:bg-accent-50 hover:text-accent disabled:pointer-events-none disabled:opacity-40 {busy
+				? 'animate-pulse text-ai-ink'
+				: ''}"
+			title={reason || 'Name this from the page'}
+			aria-label="Name this from the page"
+			disabled={reason !== '' || busy}
+			onclick={onsuggest}
+			data-testid="name-suggest"
+		>
+			<Icon name="sparkle" />
+		</button>
+	{/if}
+
 	<span class="font-mono text-[13px] font-semibold text-ink-faint">.pdf</span>
-</label>
+</div>

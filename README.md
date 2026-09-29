@@ -171,16 +171,14 @@ renamed into place once complete, so the consumer never sees a partial document.
 
 ### Naming (optional)
 
-YASS can name a file from what is printed on the page. Reading it is on by default
-and happens twice: once as a scan finishes, so it names itself, and again whenever
-you press **Find name**. Both stay on this machine — what is off by default is
-`provider`, so no model is asked and nothing leaves unless you say so. Turning
-**Find name** off in the browser's settings hides the button and stops both, and
-then nothing is read at all.
+YASS names a file from what is printed on the page, as each scan finishes. Reading
+is on by default and stays on this machine; `provider` is what decides whether a
+model is asked as well, and it is off until you set one. Turning **Find name** off
+in the browser's settings stops all of it, and then nothing is read at all.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `naming.ocr` | `true` | Read page text, on demand when someone presses Find name. Needs the `tesseract` binary on PATH (in the Docker image and the Nix package already); without it, nothing is read and the UI says so. |
+| `naming.ocr` | `true` | Read page text, when a scan finishes or a name is asked for. Needs the `tesseract` binary on PATH (in the Docker image and the Nix package already); without it, nothing is read and the UI says so. |
 | `naming.ocr_language` | `eng` | Tesseract language code. |
 | `naming.ocr_pages` | `2` | How many pages to read; a title is almost always on the first. |
 | `naming.provider` | `off` | `off`, `ollama` or `anthropic`. |
@@ -221,15 +219,24 @@ Everything above configures the **server**. **Settings → Find name** configure
 
 Every option here needs `naming.ocr: true` on the server, because a name comes
 from the words on the page. Where the server reads nothing — `ocr: false`, or no
-`tesseract` — Find name is not offered at all, and the settings sheet says why.
+`tesseract` — nothing is named from the page, and the settings sheet says why.
 
 ### Naming a scan as it finishes
 
-A scan that nobody has named names itself as soon as it is done, from the heading
-on the page and your template. It only ever uses what the server read — a model is
-still something you press **Find name** for, because a model costs either money or
-seconds and should not spend either unasked. A name you typed is never written
-over, and **Settings → Name a scan as it finishes** turns it off.
+A scan that nobody has named names itself as soon as it is done, from your file
+name template. Where the template has a `{NAME}` in it, that part is filled by
+whatever **Settings → Find name** points at — the heading read off the page when
+no model is set up, and the model itself when one is. Which means a scan costs
+whatever your provider costs, every time, so an API key is worth thinking about
+before you leave it running; **In-browser (CPU)** costs only seconds and no money.
+
+A name you typed is never written over, and **Settings → Name a scan as it
+finishes** turns the whole thing off.
+
+In the review screen the filled-in part is shown as a chip inside the document
+name. Click it to generate another, pick a different suggestion, or take the name
+over and type it yourself. The sparkle beside the field does the same for a
+template with no `{NAME}` in it.
 
 ### Where the found name goes
 

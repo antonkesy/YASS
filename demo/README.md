@@ -25,13 +25,14 @@ YASS_PORT=9000 docker compose up --build
 3. **Split** — select a page and press **Split**: it opens a second document,
    badged `Doc 2` in the filmstrip, and **Save** then writes one PDF per document.
 4. **Name it** — the scan has already named itself from the heading on the page,
-   read with `tesseract` (in the image, and on by default). Press **Find name**
-   to see the other candidates, or type your own. For a name written rather than
-   copied, point **Settings → Find name** at a model: **In-browser (CPU)** needs
-   no key and no account, and downloads its weights once. Put `{NAME}` in the
-   file name template and the found name lands inside it, so
+   read with `tesseract` (in the image, and on by default). Put `{NAME}` in the
+   file name template and that part is shown as a chip inside the document name:
+   click it for other candidates, another go, or to type the name yourself.
    `{YEAR}-{MONTH}-{DAY}_{NAME}` keeps the date; the **Ready-made** button offers
    whole templates, and **Found names** picks `lower_snake` or `lower-kebab`.
+   For a name written rather than copied, point **Settings → Find name** at a
+   model: **In-browser (CPU)** needs no key and no account, and downloads its
+   weights once.
 5. **Save** — the PDFs land in [`output/`](output) on your host, the demo's
    stand-in for a paperless-ngx consume folder.
    **Download** hands them to the browser instead.
@@ -51,7 +52,7 @@ live in the container's `/tmp`, so nothing survives except the PDFs you saved.
   near-blank sheet, written as Markdown in
   [`src/Yass.Fake/Fixtures`](../src/Yass.Fake/Fixtures) and rendered to A4 at
   150 dpi by the build. They are documents with titles on them, which is what
-  makes **Find name** worth pressing here. They cycle, so `pages=9` shows each
+  makes naming worth watching here. They cycle, so `pages=9` shows each
   more than once; to change what a page says, edit its Markdown and rebuild.
 - The saved PDF holds those pages as images, rotated and greyed the way your
   edits ask. It opens in any reader and shows the document. A scan you have

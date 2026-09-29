@@ -88,10 +88,10 @@ test('Find name is offered with no model set up at all', async ({ page }) => {
 	await scanToReview(page);
 
 	// No provider, no key: the heading off the page and the template are still worth having.
-	await expect(page.getByTestId('suggest-button')).toBeVisible();
-	await expect(page.getByTestId('suggest-button')).toBeEnabled();
+	await expect(page.getByTestId('name-suggest')).toBeVisible();
+	await expect(page.getByTestId('name-suggest')).toBeEnabled();
 
-	await page.getByTestId('suggest-button').click();
+	await page.getByTestId('name-suggest').click();
 	const popover = page.getByTestId('name-suggestions');
 	await expect(popover).toBeVisible();
 	// No model set up in this browser, so what is left is the template — and it is offered.
@@ -99,11 +99,11 @@ test('Find name is offered with no model set up at all', async ({ page }) => {
 
 	// The button is a toggle. With a mouse the popover's own click-catcher takes the second
 	// click and closes it either way; from the keyboard the button itself does.
-	await page.getByTestId('suggest-button').focus();
+	await page.getByTestId('name-suggest').focus();
 	await page.keyboard.press('Enter');
 	await expect(popover).toHaveCount(0);
 
-	await page.getByTestId('suggest-button').click();
+	await page.getByTestId('name-suggest').click();
 	await expect(popover).toBeVisible();
 	await page.getByRole('button', { name: 'Close name suggestions' }).click();
 	await expect(popover).toHaveCount(0);
@@ -117,7 +117,7 @@ test('a model set up in settings names the scan, and says so', async ({ page }) 
 	await page.getByTestId('ai-key').fill('sk-not-a-real-key');
 
 	await scanToReview(page);
-	await page.getByTestId('suggest-button').click();
+	await page.getByTestId('name-suggest').click();
 
 	const popover = page.getByTestId('name-suggestions');
 	const suggestion = popover.getByRole('button', { name: /Quarterly Report Northwind/ });
@@ -127,7 +127,10 @@ test('a model set up in settings names the scan, and says so', async ({ page }) 
 	await expect(popover.getByTestId('suggest-privacy')).toContainText('text read from the page');
 
 	await suggestion.click();
-	await expect(page.getByTestId('name-input')).toHaveValue('Quarterly Report Northwind');
+	await expect(page.getByTestId('document-name')).toHaveAttribute(
+		'data-name',
+		'Quarterly Report Northwind'
+	);
 	await expect(page.getByTestId('toast')).toContainText('Renamed to');
 });
 
@@ -139,7 +142,7 @@ test('a refused key is reported in the popover, with the rows that did work', as
 	await page.getByTestId('ai-key').fill('sk-wrong');
 
 	await scanToReview(page);
-	await page.getByTestId('suggest-button').click();
+	await page.getByTestId('name-suggest').click();
 
 	await expect(page.getByTestId('suggest-error')).toContainText('rejected the API key');
 	// Not a red bar over the whole screen, and not at the cost of the template row.
@@ -152,12 +155,10 @@ test('Find name waits its turn while a scan is running, and says why', async ({ 
 	await page.goto('/');
 	await page.getByTestId('scan-button').click();
 
-	const button = page.getByTestId('suggest-button');
+	await expect(page.getByTestId('session-state')).toHaveText('Scanning');
+	const button = page.getByTestId('name-suggest');
 	await expect(button).toBeDisabled();
-	await expect(page.getByTestId('suggest-button-wrap')).toHaveAttribute(
-		'title',
-		'Wait for the scan to finish'
-	);
+	await expect(button).toHaveAttribute('title', 'Wait for the scan to finish');
 	await expect(button).toBeEnabled({ timeout: 20_000 });
 });
 
@@ -200,7 +201,7 @@ for (const [style, expected] of [
 		await page.getByRole('radio', { name: style }).check();
 
 		await scanToReview(page);
-		await page.getByTestId('suggest-button').click();
+		await page.getByTestId('name-suggest').click();
 
 		// The row stays readable whatever the style: the convention is for the file name.
 		const row = page
@@ -216,7 +217,10 @@ for (const [style, expected] of [
 			String(today.getMonth() + 1).padStart(2, '0'),
 			String(today.getDate()).padStart(2, '0')
 		].join('-');
-		await expect(page.getByTestId('name-input')).toHaveValue(`${date}_${expected}`);
+		await expect(page.getByTestId('document-name')).toHaveAttribute(
+			'data-name',
+			`${date}_${expected}`
+		);
 	});
 }
 
@@ -230,7 +234,7 @@ test('the styled name in the template is what lands on disk', async ({ page }) =
 	await page.getByRole('radio', { name: 'lower-kebab' }).check();
 
 	await scanToReview(page);
-	await page.getByTestId('suggest-button').click();
+	await page.getByTestId('name-suggest').click();
 	await page
 		.getByTestId('name-suggestions')
 		.getByRole('button', { name: /Quarterly Report Northwind/ })
@@ -271,9 +275,13 @@ test('a finished scan names itself from the page, without being asked', async ({
 
 	// No Find name pressed, no provider set up: the heading the server read is enough.
 	await scanToReview(page);
-	await expect(page.getByTestId('name-input')).toHaveValue(/^\d{4}-\d{2}-\d{2}_[a-z0-9-]+$/, {
-		timeout: 20_000
-	});
+	await expect(page.getByTestId('document-name')).toHaveAttribute(
+		'data-name',
+		/^\d{4}-\d{2}-\d{2}_[a-z0-9-]+$/,
+		{
+			timeout: 20_000
+		}
+	);
 });
 
 test('a name typed by hand is not written over by the scan naming itself', async ({ page }) => {
@@ -281,16 +289,18 @@ test('a name typed by hand is not written over by the scan naming itself', async
 	await page.getByTestId('template-input').fill('{YEAR}-{MONTH}-{DAY}_{NAME}');
 
 	await scanToReview(page);
-	const name = page.getByTestId('name-input');
-	await expect(name).not.toHaveValue('', { timeout: 20_000 });
+	const name = page.getByTestId('document-name');
+	await expect(name).not.toHaveAttribute('data-name', '', { timeout: 20_000 });
 
-	await name.fill('Mine');
-	await name.press('Enter');
-	await expect(name).toHaveValue('Mine');
+	await page.getByTestId('name-generated').click();
+	await page.getByTestId('suggest-mine').click();
+	await page.getByTestId('name-input').fill('Mine');
+	await page.getByTestId('name-input').press('Enter');
+	await expect(name).toHaveAttribute('data-name', 'Mine');
 
 	// Back to the same scan: the name is still the one that was typed.
 	await page.reload();
-	await expect(page.getByTestId('name-input')).toHaveValue('Mine');
+	await expect(page.getByTestId('document-name')).toHaveAttribute('data-name', 'Mine');
 });
 
 test('turning the naming off leaves the scan unnamed', async ({ page }) => {
@@ -299,9 +309,9 @@ test('turning the naming off leaves the scan unnamed', async ({ page }) => {
 
 	await scanToReview(page);
 	// Nothing written; the field shows the time it was scanned as its placeholder.
-	await expect(page.getByTestId('name-input')).toHaveValue('');
+	await expect(page.getByTestId('document-name')).toHaveAttribute('data-name', '');
 	// And Find name is still there to press.
-	await expect(page.getByTestId('suggest-button')).toBeVisible();
+	await expect(page.getByTestId('name-suggest')).toBeVisible();
 });
 
 test('the template menu offers whole templates, shown as what they produce', async ({ page }) => {
@@ -330,7 +340,7 @@ test('turning Find name off hides it, and then nothing reads the page', async ({
 	await expect(page.getByTestId('find-name-off')).toBeVisible();
 
 	await scanToReview(page);
-	await expect(page.getByTestId('suggest-button')).toHaveCount(0);
+	await expect(page.getByTestId('name-suggest')).toHaveCount(0);
 
 	// And it comes back, because this is a preference and not a one-way door.
 	await openNaming(page);
@@ -339,7 +349,7 @@ test('turning Find name off hides it, and then nothing reads the page', async ({
 		.getByRole('checkbox', { name: /^Find name/ })
 		.check();
 	await scanToReview(page);
-	await expect(page.getByTestId('suggest-button')).toBeVisible();
+	await expect(page.getByTestId('name-suggest')).toBeVisible();
 });
 
 test('the CPU engine offers its models to a browser with no WebGPU at all', async ({ page }) => {
