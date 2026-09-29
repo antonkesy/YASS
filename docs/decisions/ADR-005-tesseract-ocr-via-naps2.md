@@ -31,3 +31,11 @@ page's median line size is a usable confidence signal — without a model in the
   paperless-ngx remains the thing that makes an archive searchable.
 - Accuracy is Tesseract's. The suggestion is a proposal the user accepts or ignores, so a poor
   read costs a click rather than a wrong file.
+
+## Amended 2026-09-29: optional for the AI suggestion
+
+ADR-008 lets a model configured in the browser name a document. Where this reader is
+unavailable — `naming.ocr: false`, or no binary — that model is sent the page image instead, so
+`tesseract` is no longer required for a suggestion to appear at all. It is still required for
+the heading suggestion, which is the one that needs no model, and for a model running inside
+the browser, which cannot see images.

@@ -32,3 +32,11 @@ suggestions that did work. Naming never fails a scan.
 - The privacy claim in the UI is derived from config rather than hardcoded, so it cannot drift
   from what the server actually does.
 - Adding a provider is a new branch plus a config value, not a new abstraction layer.
+
+## Amended 2026-09-29: extended by ADR-008
+
+The browser may now hold its own model settings and call a provider directly. Everything
+above is unchanged — the config section, the file-only key, the degrade-never-fail rule — and
+the browser path is additive. One line does change: the "nothing leaves the scanner server"
+claim is now derived from what the browser did as well as what the server did, because a
+server with `provider: off` no longer has the last word on where the text went.
