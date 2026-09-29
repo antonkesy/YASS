@@ -18,12 +18,17 @@ WebGPU has made a third option real: the model runs in the page.
 `@mlc-ai/web-llm`, pinned at `0.2.85`, as a runtime dependency of the web app — the third one
 it has ever had, after the two SignalR packages.
 
-- **Loaded only when it is used.** `await import('@mlc-ai/web-llm')` sits behind the provider
-  switch, so the entry bundle is untouched for everyone who does not turn it on. SPEC §8's
-  150 kB budget is a target nothing in CI enforces, so this is verified by comparing the built
-  entry chunk before and after.
-- **In a worker.** Decoding on the main thread would freeze the review screen for seconds, on
-  the one screen where someone is flipping through pages.
+- **In a worker, and only in the worker.** Decoding on the main thread would freeze the review
+  screen for seconds, on the one screen where someone is flipping through pages — but that is
+  the smaller reason. The package is six megabytes, and a dynamic `import()` of it from the
+  page still produces a six-megabyte page chunk. So the page holds no reference to it at all:
+  the worker owns it, and the two speak a message protocol of ours instead of through
+  `WebWorkerMLCEngine`, whose client half lives on the page and would bring the package with
+  it. Measured: 0 bytes of it are fetched on first paint, and the page's own JavaScript grows
+  by 2 kB.
+- **Not precached.** The service worker's glob skips `workers/**`; without that, every visitor
+  would download the runtime on their first visit, and `vite-plugin-pwa` fails the build
+  rather than let it silently happen.
 - **The model list comes from the package**, not from us: `prebuiltAppConfig.model_list`
   carries the ids and each entry's own `vram_required_MB`, so no size or name is written down
   here to go stale.

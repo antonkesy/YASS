@@ -153,3 +153,36 @@ test('Find name waits its turn while a scan is running, and says why', async ({ 
 	);
 	await expect(button).toBeEnabled({ timeout: 20_000 });
 });
+
+test('a browser with no WebGPU is told so rather than left to fail', async ({ page }) => {
+	await page.addInitScript(() => {
+		// What Firefox, Safari and anything without a supported GPU look like.
+		Object.defineProperty(Navigator.prototype, 'gpu', {
+			get: () => undefined,
+			configurable: true
+		});
+	});
+
+	await page.goto('/settings');
+	await page.getByTestId('naming-section').getByRole('radio', { name: 'In-browser' }).check();
+
+	await expect(page.getByTestId('no-webgpu')).toContainText('no WebGPU');
+	// And it does not go looking for six megabytes of runtime it cannot use.
+	await expect(page.getByTestId('ai-local-model')).toHaveCount(0);
+});
+
+test('the model runtime is not on the bill for anyone who has not asked for it', async ({
+	page
+}) => {
+	let workerBytes = 0;
+	page.on('response', (r) => {
+		if (r.url().includes('/workers/')) workerBytes += 1;
+	});
+
+	await page.goto('/');
+	await page.goto('/settings');
+	await expect(page.getByTestId('naming-section')).toBeVisible();
+
+	// Six megabytes of WebGPU runtime, fetched only by the browser that opts into it.
+	expect(workerBytes).toBe(0);
+});

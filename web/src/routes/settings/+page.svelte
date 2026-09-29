@@ -45,8 +45,42 @@
 	const providers: { value: AiProvider; label: string }[] = [
 		{ value: 'off', label: 'Off' },
 		{ value: 'anthropic', label: 'Anthropic' },
-		{ value: 'openai', label: 'OpenAI-style' }
+		{ value: 'openai', label: 'OpenAI-style' },
+		{ value: 'webllm', label: 'In-browser' }
 	];
+
+	// WebGPU or nothing, and it is worth saying which before someone picks it.
+	const canRunLocally = typeof navigator !== 'undefined' && navigator.gpu != null;
+	let localModels = $state<{ id: string; sizeMb: number }[]>([]);
+	let downloading = $state<string | null>(null);
+
+	// The catalogue comes from the package, so the list and its sizes cannot go stale here.
+	$effect(() => {
+		if (provider === 'webllm' && canRunLocally && localModels.length === 0) {
+			void import('$lib/naming/webllm').then(async (m) => {
+				localModels = await m.localModels();
+			});
+		}
+	});
+
+	async function download() {
+		const model = chosenModel($aiPrefs);
+		if (!model) return;
+		testResult = null;
+		downloading = '0%';
+		try {
+			const { loadModel } = await import('$lib/naming/webllm');
+			await loadModel(model, (_phase, detail) => (downloading = detail ?? downloading));
+			testResult = { ok: true, message: `${model} is ready, and stays on this machine.` };
+		} catch (e) {
+			testResult = {
+				ok: false,
+				message: e instanceof NamingError ? e.message : 'The model could not be loaded.'
+			};
+		} finally {
+			downloading = null;
+		}
+	}
 	const provider = $derived($aiPrefs.provider);
 	const needsKey = $derived(provider === 'anthropic' || provider === 'openai');
 	const key = $derived(provider === 'anthropic' ? $aiKeys.anthropic : $aiKeys.openai);
@@ -621,6 +655,67 @@
 				<p class="text-[11px] text-ink-faint">
 					Find name still offers the heading it reads off the page and your file name template.
 				</p>
+			{:else if provider === 'webllm'}
+				{#if !canRunLocally}
+					<p class="text-xs font-bold text-danger" role="alert" data-testid="no-webgpu">
+						This browser has no WebGPU, so it cannot run a model itself. Use an API key instead.
+					</p>
+				{:else}
+					<label class="flex flex-col gap-1.5">
+						<span class="text-[13px] font-bold text-ink-2">Model</span>
+						<select
+							class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm outline-none focus:ring-2 focus:ring-accent"
+							value={$aiPrefs.models.webllm ?? ''}
+							onchange={(e) => setModel(e.currentTarget.value)}
+							data-testid="ai-local-model"
+						>
+							<option value="">Choose a model…</option>
+							{#each localModels as model (model.id)}
+								<option value={model.id}>{model.id} · {model.sizeMb} MB</option>
+							{/each}
+						</select>
+						<span class="text-[11px] text-ink-faint">
+							Downloaded once from the internet, then kept in this browser and used offline. Every
+							browser you use YASS from downloads its own copy. A model here cannot see the page, so
+							it needs a server that reads page text.
+						</span>
+					</label>
+
+					<div class="flex flex-col gap-1.5">
+						<span class="flex items-center gap-2">
+							<button
+								type="button"
+								class="h-10 rounded-[12px] bg-accent-50 px-3.5 text-[13px] font-bold text-accent transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-45"
+								disabled={downloading !== null || !$aiPrefs.models.webllm}
+								onclick={download}
+								data-testid="ai-download"
+							>
+								{downloading ? `Downloading… ${downloading}` : 'Download model'}
+							</button>
+							<button
+								type="button"
+								class="h-10 rounded-[12px] bg-accent-50 px-3.5 text-[13px] font-bold text-accent transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-45"
+								disabled={testing || downloading !== null || !$aiPrefs.models.webllm}
+								onclick={test}
+								data-testid="ai-test"
+							>
+								{testing ? 'Asking…' : 'Test'}
+							</button>
+							<span class="text-[11px] text-ink-faint">
+								Hundreds of megabytes, once. Better here than on a scan.
+							</span>
+						</span>
+						{#if testResult}
+							<span
+								class="text-xs font-bold {testResult.ok ? 'text-success-ink' : 'text-danger'}"
+								role={testResult.ok ? 'status' : 'alert'}
+								data-testid="ai-test-result"
+							>
+								{testResult.ok ? '✓ ' : ''}{testResult.message}
+							</span>
+						{/if}
+					</div>
+				{/if}
 			{:else}
 				<label class="flex flex-col gap-1.5">
 					<span class="text-[13px] font-bold text-ink-2">API key</span>

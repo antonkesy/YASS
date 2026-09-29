@@ -36,6 +36,11 @@ export default defineConfig({
 			workbox: {
 				// Only the app shell is cached; scanner images and the hub are always live.
 				globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,woff2}'],
+				// The in-browser naming model is megabytes of WebGPU runtime that most people
+				// never turn on (ADR-010), and it lives entirely in a worker so that the page
+				// never loads it. Precaching it would undo that; it is fetched on demand, like
+				// the weights it goes on to download.
+				globIgnores: ['**/workers/**'],
 				navigateFallback: '/',
 				navigateFallbackDenylist: [/^\/hub/, /^\/img\//, /^\/export\//, /^\/healthz/],
 				runtimeCaching: []

@@ -62,8 +62,16 @@ export async function suggestName(
 	const baseUrl = chosenBaseUrl(prefs);
 
 	if (prefs.provider === 'webllm') {
-		// Arrives with the package that can do it; until then settings does not offer it.
-		throw new NamingError('Running a model in this browser is not set up.');
+		if (input.kind === 'image') {
+			throw new NamingError(
+				'A model running in this browser can only read text, and this server reads none. ' +
+					'Turn on naming.ocr in yass.yaml, or use an API key instead.'
+			);
+		}
+		// Loaded only when it is asked for: the package dwarfs the rest of the app.
+		const { askWebLlm } = await import('./webllm');
+		const name = await askWebLlm(input, model, (phase, detail) => hooks.onphase?.(phase, detail));
+		return name ? { name, model, local: true } : null;
 	}
 
 	const ask = { key: keyFor(prefs.provider, keys), model, baseUrl, signal: hooks.signal };
