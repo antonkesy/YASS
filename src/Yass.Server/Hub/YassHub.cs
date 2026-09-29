@@ -268,7 +268,16 @@ public sealed class YassHub(
 
     public Task<ScannerStatusDto> GetScannerStatus() => Task.FromResult(scanner.Current);
 
-    public Task<ScanOptionsDto> GetEffectiveOptions() => Task.FromResult(options.Current());
+    /// <remarks>
+    /// The two naming capabilities are added here rather than in <see cref="EffectiveOptions"/>:
+    /// that shapes <c>session.OptionsUsed</c> too, where what the server can read today says
+    /// nothing about the scan that already happened.
+    /// </remarks>
+    public Task<ScanOptionsDto> GetEffectiveOptions() => Task.FromResult(options.Current() with
+    {
+        CanReadPageText = namer.CanRead,
+        PageTextPages = config.Current.Naming.OcrPages,
+    });
 
     public Task ReloadConfig()
     {
