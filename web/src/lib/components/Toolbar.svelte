@@ -19,6 +19,7 @@
 		onsplit,
 		splits = false,
 		firstPage = false,
+		scoped = false,
 		onclear,
 		onselectall
 	}: {
@@ -42,6 +43,12 @@
 		splits?: boolean;
 		/** The target page is the first one, which always opens a document. */
 		firstPage?: boolean;
+		/**
+		 * Whether this toolbar manages a selection. Only the all-pages view does: the review
+		 * screen shows one page at a time, and a toolbar under it that could be acting on
+		 * some other set of pages is a question nobody wanted to have to ask.
+		 */
+		scoped?: boolean;
 		onclear: () => void;
 		/** Takes the whole scan, which is the way out of acting on one page at a time. */
 		onselectall?: () => void;
@@ -67,31 +74,33 @@
 	aria-label="Page edits"
 	data-testid="toolbar"
 >
-	<span class="px-3 text-[13px] font-semibold text-ink-muted" data-testid="toolbar-scope">
-		Acting on {scope}
-	</span>
+	{#if scoped}
+		<span class="px-3 text-[13px] font-semibold text-ink-muted" data-testid="toolbar-scope">
+			Acting on {scope}
+		</span>
 
-	{#if selectedCount > 0}
-		<button
-			type="button"
-			class="h-9 rounded-full px-3 text-[13px] font-bold text-accent transition-colors hover:bg-accent-wash"
-			onclick={onclear}
-		>
-			Clear
-		</button>
-	{:else if onselectall && total > 1}
-		<button
-			type="button"
-			class="h-9 rounded-full px-3 text-[13px] font-bold text-accent transition-colors hover:bg-accent-wash"
-			{disabled}
-			onclick={onselectall}
-			data-testid="toolbar-select-all"
-		>
-			All {total}
-		</button>
+		{#if selectedCount > 0}
+			<button
+				type="button"
+				class="h-9 rounded-full px-3 text-[13px] font-bold text-accent transition-colors hover:bg-accent-wash"
+				onclick={onclear}
+			>
+				Clear
+			</button>
+		{:else if onselectall && total > 1}
+			<button
+				type="button"
+				class="h-9 rounded-full px-3 text-[13px] font-bold text-accent transition-colors hover:bg-accent-wash"
+				{disabled}
+				onclick={onselectall}
+				data-testid="toolbar-select-all"
+			>
+				All {total}
+			</button>
+		{/if}
+
+		<span class="mx-1 h-8 w-px bg-line" aria-hidden="true"></span>
 	{/if}
-
-	<span class="mx-1 h-8 w-px bg-line" aria-hidden="true"></span>
 
 	{#if onexpand}
 		<!-- Looking at a page is not editing it, so this one stays on while a scan runs. -->

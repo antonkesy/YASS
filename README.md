@@ -31,8 +31,9 @@ review the pages, and save a PDF straight into your
 - **Review before saving.** Page strip beside the page on screen — tap a
   thumbnail to put it on the stage and the toolbar under it edits that page:
   rotate, delete/restore, colour mode, crop, full-page preview with swipe, drag
-  to reorder. Tick pages in the all-pages view, or press **All**, to act on more
-  than one at a time. Blank pages are detected and pre-marked deleted.
+  to reorder. **All pages** opens the scan sized to fit the screen, and that is
+  where you tick several pages to edit them at once. Blank pages are detected and
+  pre-marked deleted.
 - **Export** writes the PDF atomically into `output.directory` under a templated
   name — point that at your paperless-ngx consume folder, or anywhere else.
   **Save as…** puts a copy on the machine you are browsing from: it opens the

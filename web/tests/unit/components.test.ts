@@ -83,7 +83,7 @@ describe('ScanStage', () => {
 });
 
 describe('Toolbar', () => {
-	it('acts on all pages when nothing is selected and emits edits', async () => {
+	it('emits edits, and says nothing about a selection it does not have', async () => {
 		const onrotate = vi.fn();
 		const onfilter = vi.fn();
 		const onclear = vi.fn();
@@ -97,7 +97,9 @@ describe('Toolbar', () => {
 			onfilter,
 			onclear
 		});
-		expect(screen.getByTestId('toolbar-scope')).toHaveTextContent(/this page/);
+		// No scope line and no All: this toolbar edits the page it sits under, full stop.
+		expect(screen.queryByTestId('toolbar-scope')).toBeNull();
+		expect(screen.queryByTestId('toolbar-select-all')).toBeNull();
 		await fireEvent.click(screen.getByRole('button', { name: 'Rotate right' }));
 		expect(onrotate).toHaveBeenCalledWith(90);
 		expect(screen.getByTestId('restore-button')).toBeDisabled();
@@ -131,9 +133,10 @@ describe('Toolbar', () => {
 		expect(screen.getByTestId('expand-button')).toBeDisabled();
 	});
 
-	it('acts on the page on screen until asked for the whole scan', async () => {
+	it('acts on the page on screen until asked for the whole scan, where it is scoped', async () => {
 		const onselectall = vi.fn();
 		const props = {
+			scoped: true,
 			selectedCount: 0,
 			total: 4,
 			anyDeleted: false,
@@ -163,6 +166,7 @@ describe('Toolbar', () => {
 	it('shows the selection count and a clear button', async () => {
 		const onclear = vi.fn();
 		render(Toolbar, {
+			scoped: true,
 			selectedCount: 2,
 			total: 4,
 			anyDeleted: true,
