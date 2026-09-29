@@ -20,7 +20,13 @@
 		 * chip so the part that came off the page is telling you so, rather than looking like
 		 * something that was typed.
 		 */
-		generated?: { before: string; generated: string; after: string } | null;
+		generated?: {
+			before: string;
+			generated: string;
+			after: string;
+			/** False while the slot is still waiting to be filled. */
+			filled: boolean;
+		} | null;
 		/** A name is being worked out right now. */
 		busy?: boolean;
 		/** Why a name cannot be asked for, for the tooltip. Empty means it can. */
@@ -80,11 +86,15 @@
 					onclick={edit}>{generated.before}</button
 				>{/if}<button
 				type="button"
-				class="mx-px inline-flex max-w-full translate-y-px items-center rounded-[7px] bg-ai-bg px-1.5 align-bottom text-ai-ink transition-colors hover:bg-accent-100"
-				title="Read off the page — click to change it"
+				class="mx-px inline-flex max-w-full translate-y-px items-center rounded-[7px] px-1.5 align-bottom transition-colors hover:bg-accent-100 {generated.filled
+					? 'bg-ai-bg text-ai-ink'
+					: 'bg-ctl-track text-ink-muted italic'}"
+				title={generated.filled
+					? 'Read off the page — click to change it'
+					: 'Click to name this from the page'}
 				onclick={onsuggest}
 				data-testid="name-generated"
-				><span class="truncate">{generated.generated}</span><span
+				><span class="truncate">{generated.filled ? generated.generated : 'name it'}</span><span
 					class="ml-1 shrink-0 text-[9px] opacity-70">▾</span
 				></button
 			>{#if generated.after}<button

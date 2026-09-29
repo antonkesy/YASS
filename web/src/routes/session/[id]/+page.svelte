@@ -404,31 +404,65 @@
 	 * being asked is what the Find name button is for. Runs once per scan, and never over a
 	 * name someone typed.
 	 */
-	let autoNamed = $state('');
 	let nameField = $state<{ edit: () => void } | null>(null);
 
-	/**
-	 * Which run of the name came off the page, worked out from the template rather than
-	 * remembered — so it survives a reload, and goes away the moment the name stops fitting
-	 * the template, which is exactly when it stopped being generated and started being typed.
-	 */
-	const generatedPart = $derived.by(() => {
-		const name = documentName?.trim();
-		if (!name || !session) return null;
-
-		return findGenerated(name, $exportPrefs.nameTemplate.trim(), new Date(session.CreatedAt), {
-			preset: 'Scan',
-			counter: 1,
-			dpi: session.OptionsUsed.Dpi ?? 300,
-			color: String(session.OptionsUsed.Color ?? ''),
-			name: ''
-		});
+	/** The facts the template is expanded with here, which the scan itself supplies. */
+	const templateFacts = $derived({
+		preset: 'Scan',
+		counter: 1,
+		dpi: session?.OptionsUsed.Dpi ?? 300,
+		color: String(session?.OptionsUsed.Color ?? ''),
+		name: ''
 	});
 
 	/**
-	 * One page read at a time. Naming a scan as it finishes and pressing Find name both want
-	 * the same thing, and the hub runs one call per connection — two would mean waiting out
-	 * OCR twice with the rest of the screen stuck behind it.
+	 * What the field shows. A scan nobody has named reads as the template from settings, which
+	 * is what it will be saved as — not a name off the page, because reading one costs either
+	 * money or seconds and is worth asking for.
+	 */
+	const displayName = $derived(
+		documentName ??
+			(session && $exportPrefs.nameTemplate.trim()
+				? expandTemplate($exportPrefs.nameTemplate, new Date(session.CreatedAt), templateFacts)
+				: null)
+	);
+
+	/**
+	 * Where the found name goes, and whether anything is in it yet.
+	 *
+	 * Filled, it is worked out from the template rather than remembered — the name is the only
+	 * thing that survives a reload, and asking the template where `{NAME}` went beats keeping a
+	 * second copy of the answer in step with it. Empty, it is the slot the template describes,
+	 * shown so that a `{NAME}` nobody has filled is visible rather than merely absent.
+	 */
+	const generatedPart = $derived.by(() => {
+		const template = $exportPrefs.nameTemplate.trim();
+		if (!session || !template.includes('{NAME}')) return null;
+
+		const at = new Date(session.CreatedAt);
+		const name = documentName?.trim();
+		if (name) {
+			const found = findGenerated(name, template, at, templateFacts);
+			return found ? { ...found, filled: true } : null;
+		}
+
+		// Nothing named yet: expand around an empty name to find where the slot sits. The
+		// separator goes with it, so the parts are what a saved file would really be called.
+		const shape = expandTemplate(template, at, { ...templateFacts, name: '\u0000' });
+		const mark = shape.indexOf('\u0000');
+		if (mark < 0) return null;
+
+		return {
+			before: shape.slice(0, mark),
+			generated: '',
+			after: shape.slice(mark + 1),
+			filled: false
+		};
+	});
+
+	/**
+	 * One page read at a time. The hub runs one call per connection, so two reads would mean
+	 * waiting out OCR twice with the rest of the screen stuck behind it.
 	 */
 	let reading: Promise<NameSuggestionsDto> | null = null;
 
@@ -440,56 +474,6 @@
 		}
 
 		return reading;
-	}
-
-	$effect(() => {
-		const ready = session?.State === SessionState.Review;
-		if (!ready || !offerFindName || !$aiPrefs.autoName) return;
-		if (documentName?.trim() || autoNamed === id || activePages === 0) return;
-
-		autoNamed = id;
-		void autoName();
-	});
-
-	async function autoName() {
-		// The same ticket a click takes: choosing a name by hand overtakes one on its way.
-		const mine = ++run;
-		try {
-			const read = await readPage();
-			if (run !== mine || documentName?.trim()) return;
-
-			// `{NAME}` in the template means the name is asked for by the method that is set
-			// up — a model, if there is one. Without the token there is nothing to fill, so
-			// the heading is as far as this goes.
-			const wanted = $exportPrefs.nameTemplate.includes('{NAME}');
-			const input = wanted ? modelInput(read) : null;
-			const named = input
-				? await suggestName(input, $aiPrefs, $aiKeys, {
-						onphase: (phase: Phase) => {
-							if (run === mine) suggesting = phase;
-						}
-					})
-				: null;
-			if (run !== mine || documentName?.trim()) return;
-
-			const merged = mergeSuggestions(
-				read,
-				named ? aiSuggestion(named.name, named.model, named.local) : null,
-				named?.local ?? true
-			);
-			suggestions = merged;
-
-			// The template row is the fallback the name already falls back to; writing it down
-			// would fix a name that is better left to expand at save time.
-			const found = merged.Suggestions.find((s) => s.Source !== NameSource.Template);
-			if (!found) return;
-
-			await rename(pickedName(found));
-		} catch {
-			// A name nobody asked for is not worth an error on screen; the menu still works.
-		} finally {
-			if (suggesting !== null && run === mine) suggesting = null;
-		}
 	}
 
 	/** Why Find name cannot run, for its tooltip. Empty means it can. */
@@ -779,7 +763,7 @@
 				<div class="relative">
 					<NameField
 						bind:this={nameField}
-						value={documentName}
+						value={displayName}
 						placeholder={formatTime(session.CreatedAt)}
 						generated={generatedPart}
 						busy={busySuggesting}

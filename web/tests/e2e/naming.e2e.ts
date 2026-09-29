@@ -268,50 +268,66 @@ test('a template with nothing found in it never writes {NAME} into a file', asyn
 	expect(written.some((f) => /^\d{4}-\d{2}-\d{2}\.pdf$/.test(f))).toBe(true);
 });
 
-test('a finished scan names itself from the page, without being asked', async ({ page }) => {
+test('a finished scan reads as the template, with the name left as a slot', async ({ page }) => {
 	await openNaming(page);
+	await page.getByTestId('template-input').fill('{YEAR}-{MONTH}-{DAY}_{NAME}');
+
+	await scanToReview(page);
+
+	// Nothing has been read: the name is the template, and where {NAME} sits is a slot that
+	// says so rather than a name nobody asked for.
+	await expect(page.getByTestId('document-name')).toHaveAttribute(
+		'data-name',
+		/^\d{4}-\d{2}-\d{2}$/
+	);
+	await expect(page.getByTestId('name-generated')).toHaveText(/name it/);
+});
+
+test('pressing for a name fills the slot, and the rest of the template stays', async ({ page }) => {
+	await stubModel(page, { choices: [{ message: { content: 'Quarterly Report Northwind' } }] });
+
+	const section = await openNaming(page);
+	await section.getByRole('radio', { name: 'OpenAI-style' }).check();
+	await page.getByTestId('ai-key').fill('sk-not-a-real-key');
 	await page.getByTestId('template-input').fill('{YEAR}-{MONTH}-{DAY}_{NAME}');
 	await page.getByRole('radio', { name: 'lower-kebab' }).check();
 
-	// No Find name pressed, no provider set up: the heading the server read is enough.
 	await scanToReview(page);
+	await page.getByTestId('name-generated').click();
+	await page
+		.getByTestId('name-suggestions')
+		.getByRole('button', { name: /Quarterly Report Northwind/ })
+		.click();
+
+	const today = new Date();
+	const date = [
+		today.getFullYear(),
+		String(today.getMonth() + 1).padStart(2, '0'),
+		String(today.getDate()).padStart(2, '0')
+	].join('-');
 	await expect(page.getByTestId('document-name')).toHaveAttribute(
 		'data-name',
-		/^\d{4}-\d{2}-\d{2}_[a-z0-9-]+$/,
-		{
-			timeout: 20_000
-		}
+		`${date}_quarterly-report-northwind`
 	);
 });
 
-test('a name typed by hand is not written over by the scan naming itself', async ({ page }) => {
+test('a name typed by hand replaces the slot and survives a reload', async ({ page }) => {
 	await openNaming(page);
 	await page.getByTestId('template-input').fill('{YEAR}-{MONTH}-{DAY}_{NAME}');
 
 	await scanToReview(page);
-	const name = page.getByTestId('document-name');
-	await expect(name).not.toHaveAttribute('data-name', '', { timeout: 20_000 });
-
 	await page.getByTestId('name-generated').click();
 	await page.getByTestId('suggest-mine').click();
 	await page.getByTestId('name-input').fill('Mine');
 	await page.getByTestId('name-input').press('Enter');
-	await expect(name).toHaveAttribute('data-name', 'Mine');
 
-	// Back to the same scan: the name is still the one that was typed.
+	const name = page.getByTestId('document-name');
+	await expect(name).toHaveAttribute('data-name', 'Mine');
+	// The slot is gone: a name that no longer fits the template is nobody's but yours.
+	await expect(page.getByTestId('name-generated')).toHaveCount(0);
+
 	await page.reload();
 	await expect(page.getByTestId('document-name')).toHaveAttribute('data-name', 'Mine');
-});
-
-test('turning the naming off leaves the scan unnamed', async ({ page }) => {
-	const section = await openNaming(page);
-	await section.getByLabel('Name a scan as it finishes').uncheck();
-
-	await scanToReview(page);
-	// Nothing written; the field shows the time it was scanned as its placeholder.
-	await expect(page.getByTestId('document-name')).toHaveAttribute('data-name', '');
-	// And Find name is still there to press.
-	await expect(page.getByTestId('name-suggest')).toBeVisible();
 });
 
 test('the template menu offers whole templates, shown as what they produce', async ({ page }) => {
