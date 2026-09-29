@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { detectSwipe, step } from '$lib/review/swipe';
 import { EDGE_SPEED, edgeScroll, isIdentity, moveIndex, slotAt } from '$lib/review/reorder';
-import { DEFAULT_TILE, TILE_SIZES, tileStep, zoomTile } from '$lib/review/overview';
+import { DEFAULT_TILE, fitTile, TILE_SIZES, tileStep, zoomTile } from '$lib/review/overview';
 
 describe('swipe', () => {
 	it('needs a mostly horizontal move past the threshold', () => {
@@ -67,5 +67,48 @@ describe('overview zoom', () => {
 
 	it('snaps a stored size that is no longer a step to the nearest one', () => {
 		expect(zoomTile(TILE_SIZES[2] + 3, 0)).toBe(TILE_SIZES[2]);
+	});
+
+	it('steps from the size on screen, which a fitted one need not be a step at all', () => {
+		const top = TILE_SIZES[TILE_SIZES.length - 1];
+
+		// Fitted well past the top step: out lands on the top step, not on the one below it.
+		expect(zoomTile(top + 160, -1)).toBe(top);
+
+		// Fitted a hair above it: out has to go past it, or the button does nothing visible.
+		expect(zoomTile(top + 7, -1)).toBe(TILE_SIZES[TILE_SIZES.length - 2]);
+
+		// A stored size between two steps moves to the step on the side you asked for.
+		expect(zoomTile(TILE_SIZES[2] + 3, 1)).toBe(TILE_SIZES[3]);
+		expect(zoomTile(TILE_SIZES[2] + 3, -1)).toBe(TILE_SIZES[1]);
+	});
+});
+
+describe('fitting the overview to the screen', () => {
+	// A tile is its thumbnail plus a fixed row of controls: the numbers a browser measured.
+	const tile = { slope: 1.42, intercept: 22, gap: 12 };
+
+	it('picks the widest tile that still puts every page on one screen', () => {
+		// Three pages across a desktop: one row, each page a third of the width.
+		const fitted = fitTile({ ...tile, count: 3, width: 1384, height: 689 });
+		expect(fitted).toBeGreaterThan(TILE_SIZES[TILE_SIZES.length - 1]);
+		expect(fitted).toBeLessThanOrEqual((1384 - 2 * tile.gap) / 3);
+
+		// Twice the pages in the same space: smaller, and still everything at once.
+		const many = fitTile({ ...tile, count: 12, width: 1384, height: 689 });
+		expect(many).toBeLessThan(fitted);
+		expect(Math.ceil(12 / Math.floor((1384 + tile.gap) / (many + tile.gap)))).toBeLessThanOrEqual(
+			2
+		);
+	});
+
+	it('gives up at the smallest step rather than shrink a scan out of sight', () => {
+		expect(fitTile({ ...tile, count: 400, width: 600, height: 400 })).toBe(TILE_SIZES[0]);
+	});
+
+	it('has an answer before anything has been laid out', () => {
+		expect(fitTile({ ...tile, count: 0, width: 1384, height: 689 })).toBe(DEFAULT_TILE);
+		expect(fitTile({ ...tile, count: 3, width: 0, height: 0 })).toBe(DEFAULT_TILE);
+		expect(fitTile({ ...tile, slope: 0, count: 3, width: 1384, height: 689 })).toBe(DEFAULT_TILE);
 	});
 });
