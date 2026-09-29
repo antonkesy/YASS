@@ -54,7 +54,7 @@
 	} from '$lib/naming';
 	import { ExportMode, type NameSuggestionsDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { NameSource, type NameSuggestion } from '$lib/hub/generated/Yass.Core.Naming';
-	import { expandTemplate, resolveName } from '$lib/template';
+	import { expandTemplate, findGenerated, resolveName } from '$lib/template';
 	import { styleName } from '$lib/naming/style';
 
 	const client = getHub();
@@ -405,6 +405,25 @@
 	 * name someone typed.
 	 */
 	let autoNamed = $state('');
+	let nameField = $state<{ edit: () => void } | null>(null);
+
+	/**
+	 * Which run of the name came off the page, worked out from the template rather than
+	 * remembered — so it survives a reload, and goes away the moment the name stops fitting
+	 * the template, which is exactly when it stopped being generated and started being typed.
+	 */
+	const generatedPart = $derived.by(() => {
+		const name = documentName?.trim();
+		if (!name || !session) return null;
+
+		return findGenerated(name, $exportPrefs.nameTemplate.trim(), new Date(session.CreatedAt), {
+			preset: 'Scan',
+			counter: 1,
+			dpi: session.OptionsUsed.Dpi ?? 300,
+			color: String(session.OptionsUsed.Color ?? ''),
+			name: ''
+		});
+	});
 
 	/**
 	 * One page read at a time. Naming a scan as it finishes and pressing Find name both want
@@ -433,20 +452,43 @@
 	});
 
 	async function autoName() {
-		// The same ticket Find name takes: pressing it means the name is being chosen by hand,
-		// and a result that arrives after that has been overtaken.
+		// The same ticket a click takes: choosing a name by hand overtakes one on its way.
 		const mine = ++run;
 		try {
 			const read = await readPage();
-			// The rows the server found, minus its own template row: that one is the fallback
-			// the name field already falls back to, so writing it down would fix a name that
-			// is better left to expand at save time.
-			const found = read.Suggestions.find((s) => s.Source !== NameSource.Template);
-			if (run !== mine || !found || documentName?.trim()) return;
+			if (run !== mine || documentName?.trim()) return;
+
+			// `{NAME}` in the template means the name is asked for by the method that is set
+			// up — a model, if there is one. Without the token there is nothing to fill, so
+			// the heading is as far as this goes.
+			const wanted = $exportPrefs.nameTemplate.includes('{NAME}');
+			const input = wanted ? modelInput(read) : null;
+			const named = input
+				? await suggestName(input, $aiPrefs, $aiKeys, {
+						onphase: (phase: Phase) => {
+							if (run === mine) suggesting = phase;
+						}
+					})
+				: null;
+			if (run !== mine || documentName?.trim()) return;
+
+			const merged = mergeSuggestions(
+				read,
+				named ? aiSuggestion(named.name, named.model, named.local) : null,
+				named?.local ?? true
+			);
+			suggestions = merged;
+
+			// The template row is the fallback the name already falls back to; writing it down
+			// would fix a name that is better left to expand at save time.
+			const found = merged.Suggestions.find((s) => s.Source !== NameSource.Template);
+			if (!found) return;
 
 			await rename(pickedName(found));
 		} catch {
-			// A name nobody asked for is not worth an error on screen; Find name still works.
+			// A name nobody asked for is not worth an error on screen; the menu still works.
+		} finally {
+			if (suggesting !== null && run === mine) suggesting = null;
 		}
 	}
 
@@ -732,32 +774,19 @@
 					<p class="flex-1 text-xs font-bold tracking-[0.06em] text-ink-muted uppercase">
 						Document name
 					</p>
-					<!-- Dimmed rather than hidden, and the tooltip rides the wrapper because a
-					     disabled button takes no pointer events. Gone entirely, though, when there
-					     is nothing for it to read: a name has to come from the words on the page. -->
-					{#if offerFindName}
-						<span title={suggestReason || undefined} data-testid="suggest-button-wrap">
-							<button
-								type="button"
-								class="flex h-[30px] items-center gap-1.5 rounded-full px-2.5 text-xs font-bold transition-transform duration-150 hover:-translate-y-px disabled:pointer-events-none disabled:opacity-45 {suggesting
-									? 'bg-ai text-white'
-									: 'bg-ai-bg text-ai-ink'}"
-								onclick={() => (suggesting ? closeSuggestions() : findName())}
-								disabled={suggestReason !== '' || busySuggesting}
-								data-testid="suggest-button"
-							>
-								<Icon name="sparkle" />
-								Find name
-							</button>
-						</span>
-					{/if}
 				</div>
 
 				<div class="relative">
 					<NameField
+						bind:this={nameField}
 						value={documentName}
 						placeholder={formatTime(session.CreatedAt)}
+						generated={generatedPart}
+						busy={busySuggesting}
+						reason={suggestReason}
+						canSuggest={offerFindName}
 						onrename={rename}
+						onsuggest={() => (suggesting ? closeSuggestions() : findName())}
 					/>
 
 					{#if suggesting}
@@ -775,6 +804,10 @@
 								toast.show(`Renamed to “${name}”`);
 							}}
 							onretry={findName}
+							onmine={() => {
+								closeSuggestions();
+								nameField?.edit();
+							}}
 							onclose={closeSuggestions}
 						/>
 					{/if}

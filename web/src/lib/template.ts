@@ -123,6 +123,37 @@ export function expandParts(template: string, at: Date, facts: TemplateFacts): T
 		.filter((part) => part.text !== '');
 }
 
+/**
+ * Where the found name sits inside a name that has already been built, or null when it is not
+ * in there any more.
+ *
+ * Derived rather than remembered: the name is the only thing that outlives a reload, and
+ * asking the template where `{NAME}` went is cheaper than keeping a second copy of the answer
+ * in step with it. Edit the text so it no longer fits the template and the answer is null,
+ * which is the right one — at that point the name is yours, not something that was generated.
+ */
+export function findGenerated(
+	name: string,
+	template: string,
+	at: Date,
+	facts: TemplateFacts
+): { before: string; generated: string; after: string } | null {
+	// One `{NAME}` only: with two there is no telling which run of the name belongs to which.
+	if ((template.match(/\{NAME\}/g) ?? []).length !== 1) return null;
+
+	const MARK = '\u0000';
+	const shape = expandTemplate(template, at, { ...facts, name: MARK });
+	const at_ = shape.indexOf(MARK);
+	if (at_ < 0) return null;
+
+	const before = shape.slice(0, at_);
+	const after = shape.slice(at_ + MARK.length);
+	if (!name.startsWith(before) || !name.endsWith(after)) return null;
+
+	const generated = name.slice(before.length, name.length - after.length);
+	return generated ? { before, generated, after } : null;
+}
+
 /** Placeholders the server would not recognise, without braces. */
 export function unknownTokens(template: string): string[] {
 	const known = new Set<string>(templateTokens);

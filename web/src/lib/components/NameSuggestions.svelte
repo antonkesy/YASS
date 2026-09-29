@@ -11,6 +11,7 @@
 		pages = 1,
 		resolved = (suggestion) => suggestion.Name,
 		onpick,
+		onmine,
 		onretry,
 		onclose
 	}: {
@@ -30,6 +31,8 @@
 		pages?: number;
 		/** The whole row, because what a picked name becomes depends on where it came from. */
 		onpick: (suggestion: NameSuggestion) => void;
+		/** Hand the whole name over to be typed, rather than picked. */
+		onmine: () => void;
 		onretry: () => void;
 		onclose: () => void;
 	} = $props();
@@ -141,6 +144,16 @@
 				</span>
 			</button>
 		{/each}
+
+		<button
+			type="button"
+			class="flex items-center gap-2 rounded-[14px] px-3 py-2.5 text-left text-sm font-bold transition-colors hover:bg-accent-hover50"
+			onclick={onmine}
+			data-testid="suggest-mine"
+		>
+			<span class="text-ink-faint"><Icon name="pencil" /></span>
+			Type the whole name myself
+		</button>
 
 		<!-- Exactly what left, not roughly: it is the one line here nobody can check. -->
 		<p class="px-1.5 pb-1 text-[11px] text-ink-faint" data-testid="suggest-privacy">

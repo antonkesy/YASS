@@ -19,6 +19,7 @@ const open = (props: Partial<Record<string, unknown>> = {}) =>
 		state: 'ready',
 		result: result(),
 		onpick: vi.fn(),
+		onmine: vi.fn(),
 		onretry: vi.fn(),
 		onclose: vi.fn(),
 		...props
