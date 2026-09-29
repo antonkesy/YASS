@@ -250,6 +250,24 @@ public sealed class ExportTests
     }
 
     [Fact]
+    public async Task Download_serves_an_image_export_under_its_own_extension()
+    {
+        await using var factory = new YassFactory(FakeScenario.Pages(1));
+        await using HubClient hub = await HubClient.ConnectAsync(factory);
+        HttpClient http = factory.CreateClient();
+        SessionDto done = await hub.ScanToEnd();
+
+        ExportResult result = await hub.Export(done.Id, new ExportRequest(ExportMode.Download, ExportFormat.Jpg, null, null));
+
+        string url = Assert.Single(result.Documents).DownloadPath!;
+        Assert.EndsWith(".jpg", url, StringComparison.Ordinal);
+        HttpResponseMessage response = await http.GetAsync(new Uri(url, UriKind.Relative));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("image/jpeg", response.Content.Headers.ContentType!.MediaType);
+        Assert.EndsWith(".jpg", response.Content.Headers.ContentDisposition!.FileName, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Download_disabled_by_config_is_rejected()
     {
         await using var factory = new YassFactory(FakeScenario.Pages(1), c => c with { Output = c.Output with { AllowDownload = false } });
