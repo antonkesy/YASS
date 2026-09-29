@@ -171,11 +171,12 @@ renamed into place once complete, so the consumer never sees a partial document.
 
 ### Naming (optional)
 
-YASS can suggest a file name from what is printed on the page. Reading it is on by
-default and happens only when you press **Find name** — never during a scan. What
-is off by default is `provider`: no model is asked, and nothing leaves the machine
-unless you say so. Turning **Find name** off in the browser's settings hides the
-button, and then nothing is read at all.
+YASS can name a file from what is printed on the page. Reading it is on by default
+and happens twice: once as a scan finishes, so it names itself, and again whenever
+you press **Find name**. Both stay on this machine — what is off by default is
+`provider`, so no model is asked and nothing leaves unless you say so. Turning
+**Find name** off in the browser's settings hides the button and stops both, and
+then nothing is read at all.
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -221,6 +222,14 @@ Everything above configures the **server**. **Settings → Find name** configure
 Every option here needs `naming.ocr: true` on the server, because a name comes
 from the words on the page. Where the server reads nothing — `ocr: false`, or no
 `tesseract` — Find name is not offered at all, and the settings sheet says why.
+
+### Naming a scan as it finishes
+
+A scan that nobody has named names itself as soon as it is done, from the heading
+on the page and your template. It only ever uses what the server read — a model is
+still something you press **Find name** for, because a model costs either money or
+seconds and should not spend either unasked. A name you typed is never written
+over, and **Settings → Name a scan as it finishes** turns it off.
 
 ### Where the found name goes
 

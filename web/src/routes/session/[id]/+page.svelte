@@ -198,10 +198,27 @@
 		}
 	}
 
+	/**
+	 * The name this browser last asked for, held until the session comes back carrying it.
+	 * Hub calls run one at a time per connection, so a rename can sit behind a page read —
+	 * and Save as… must not name the file from a session that has not caught up yet.
+	 */
+	let renamedTo = $state<string | null>(null);
+	const documentName = $derived(renamedTo ?? session?.Name ?? null);
+
+	// Held until the session comes back carrying it: the call returning is not the same as the
+	// session this page reads from having caught up, and dropping it in between would leave
+	// Save as… naming the file from a session that still thinks it is unnamed.
+	$effect(() => {
+		if (renamedTo !== null && (session?.Name ?? '') === renamedTo) renamedTo = null;
+	});
+
 	async function rename(name: string) {
+		renamedTo = name.trim();
 		try {
 			await client.hub.renameSession(id, name);
 		} catch (e) {
+			renamedTo = null;
 			error = hubError(e);
 		}
 	}
@@ -212,7 +229,7 @@
 	 * `{NAME}` out as five literal characters — nothing has been found, so it resolves away.
 	 */
 	const exportName = $derived(
-		session?.Name?.trim() || resolveName($exportPrefs.nameTemplate, '').trim() || undefined
+		documentName?.trim() || resolveName($exportPrefs.nameTemplate, '').trim() || undefined
 	);
 
 	/**
@@ -271,7 +288,11 @@
 	async function saveAs() {
 		const picker = savePicker();
 		let target: SaveTarget | null = null;
-		const base = session ? exportBaseName(session, $exportPrefs.nameTemplate) : 'scan';
+		// The name this browser asked for, not the one the session has caught up to — a rename
+		// can still be in the air behind a page read when Save as… is pressed.
+		const base = session
+			? exportBaseName({ ...session, Name: documentName ?? undefined }, $exportPrefs.nameTemplate)
+			: 'scan';
 		const extension = fileExtensions[$exportPrefs.format];
 
 		if (picker) {
@@ -377,6 +398,58 @@
 	 */
 	const offerFindName = $derived($aiPrefs.findName && canReadPageText);
 
+	/**
+	 * Names a scan as it finishes, from the heading the server read and your template. Only
+	 * ever what the server offers: a model costs money or seconds, and doing either without
+	 * being asked is what the Find name button is for. Runs once per scan, and never over a
+	 * name someone typed.
+	 */
+	let autoNamed = $state('');
+
+	/**
+	 * One page read at a time. Naming a scan as it finishes and pressing Find name both want
+	 * the same thing, and the hub runs one call per connection — two would mean waiting out
+	 * OCR twice with the rest of the screen stuck behind it.
+	 */
+	let reading: Promise<NameSuggestionsDto> | null = null;
+
+	function readPage(): Promise<NameSuggestionsDto> {
+		if (!reading) {
+			const started = client.hub.suggestNames(id);
+			reading = started;
+			void started.catch(() => undefined).finally(() => (reading = null));
+		}
+
+		return reading;
+	}
+
+	$effect(() => {
+		const ready = session?.State === SessionState.Review;
+		if (!ready || !offerFindName || !$aiPrefs.autoName) return;
+		if (documentName?.trim() || autoNamed === id || activePages === 0) return;
+
+		autoNamed = id;
+		void autoName();
+	});
+
+	async function autoName() {
+		// The same ticket Find name takes: pressing it means the name is being chosen by hand,
+		// and a result that arrives after that has been overtaken.
+		const mine = ++run;
+		try {
+			const read = await readPage();
+			// The rows the server found, minus its own template row: that one is the fallback
+			// the name field already falls back to, so writing it down would fix a name that
+			// is better left to expand at save time.
+			const found = read.Suggestions.find((s) => s.Source !== NameSource.Template);
+			if (run !== mine || !found || documentName?.trim()) return;
+
+			await rename(pickedName(found));
+		} catch {
+			// A name nobody asked for is not worth an error on screen; Find name still works.
+		}
+	}
+
 	/** Why Find name cannot run, for its tooltip. Empty means it can. */
 	const suggestReason = $derived(
 		scanning ? 'Wait for the scan to finish' : activePages === 0 ? 'No pages to read' : ''
@@ -401,7 +474,7 @@
 		try {
 			// Whatever the server can offer goes up first: a slow or broken model must never
 			// cost you the heading and the template, which are already paid for.
-			const read = await client.hub.suggestNames(id);
+			const read = await readPage();
 			if (run !== mine) return;
 			suggestions = read;
 			suggesting = 'ready';
@@ -682,7 +755,7 @@
 
 				<div class="relative">
 					<NameField
-						value={session.Name ?? null}
+						value={documentName}
 						placeholder={formatTime(session.CreatedAt)}
 						onrename={rename}
 					/>
@@ -692,7 +765,7 @@
 							state={suggesting}
 							result={suggestions}
 							error={suggestError ?? suggestions?.Error ?? null}
-							current={session.Name?.trim() ?? null}
+							current={documentName?.trim() ?? null}
 							resolved={pickedName}
 							pages={Math.min(activePages, pageTextPages)}
 							onpick={(suggestion) => {

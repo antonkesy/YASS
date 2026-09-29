@@ -264,11 +264,66 @@ test('a template with nothing found in it never writes {NAME} into a file', asyn
 	expect(written.some((f) => /^\d{4}-\d{2}-\d{2}\.pdf$/.test(f))).toBe(true);
 });
 
+test('a finished scan names itself from the page, without being asked', async ({ page }) => {
+	await openNaming(page);
+	await page.getByTestId('template-input').fill('{YEAR}-{MONTH}-{DAY}_{NAME}');
+	await page.getByRole('radio', { name: 'lower-kebab' }).check();
+
+	// No Find name pressed, no provider set up: the heading the server read is enough.
+	await scanToReview(page);
+	await expect(page.getByTestId('name-input')).toHaveValue(/^\d{4}-\d{2}-\d{2}_[a-z0-9-]+$/, {
+		timeout: 20_000
+	});
+});
+
+test('a name typed by hand is not written over by the scan naming itself', async ({ page }) => {
+	await openNaming(page);
+	await page.getByTestId('template-input').fill('{YEAR}-{MONTH}-{DAY}_{NAME}');
+
+	await scanToReview(page);
+	const name = page.getByTestId('name-input');
+	await expect(name).not.toHaveValue('', { timeout: 20_000 });
+
+	await name.fill('Mine');
+	await name.press('Enter');
+	await expect(name).toHaveValue('Mine');
+
+	// Back to the same scan: the name is still the one that was typed.
+	await page.reload();
+	await expect(page.getByTestId('name-input')).toHaveValue('Mine');
+});
+
+test('turning the naming off leaves the scan unnamed', async ({ page }) => {
+	const section = await openNaming(page);
+	await section.getByLabel('Name a scan as it finishes').uncheck();
+
+	await scanToReview(page);
+	// Nothing written; the field shows the time it was scanned as its placeholder.
+	await expect(page.getByTestId('name-input')).toHaveValue('');
+	// And Find name is still there to press.
+	await expect(page.getByTestId('suggest-button')).toBeVisible();
+});
+
+test('the template menu offers whole templates, shown as what they produce', async ({ page }) => {
+	await openNaming(page);
+	await page.getByTestId('template-presets').click();
+
+	const menu = page.getByRole('menu');
+	await expect(menu.getByRole('menuitem')).toHaveCount(5);
+
+	// Each row says what it would write, not just the tokens it is made of.
+	await menu.getByRole('menuitem').filter({ hasText: '{NAME}' }).first().click();
+	await expect(page.getByTestId('template-input')).toHaveValue(/\{NAME\}/);
+
+	// And the preview points at the part a found name fills.
+	await expect(page.getByTestId('template-preview-name')).toBeVisible();
+});
+
 test('turning Find name off hides it, and then nothing reads the page', async ({ page }) => {
 	const section = await openNaming(page);
 	await expect(section.getByRole('radio', { name: 'OpenAI-style' })).toBeVisible();
 
-	await section.getByLabel('Find name').uncheck();
+	await section.getByRole('checkbox', { name: /^Find name/ }).uncheck();
 
 	// The provider choice goes with it: all of it was configuring the one feature.
 	await expect(section.getByRole('radio', { name: 'OpenAI-style' })).toHaveCount(0);
@@ -279,7 +334,10 @@ test('turning Find name off hides it, and then nothing reads the page', async ({
 
 	// And it comes back, because this is a preference and not a one-way door.
 	await openNaming(page);
-	await page.getByTestId('naming-section').getByLabel('Find name').check();
+	await page
+		.getByTestId('naming-section')
+		.getByRole('checkbox', { name: /^Find name/ })
+		.check();
 	await scanToReview(page);
 	await expect(page.getByTestId('suggest-button')).toBeVisible();
 });
