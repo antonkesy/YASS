@@ -151,7 +151,7 @@ values stop startup and name the offending key.
 | `scanner.defaults.auto_deskew` | `false` | Straighten pages during the scan. |
 | `scanner.ui_editable` | `[source, dpi, color, page_size, blank_page_detection]` | Keys the Settings page may override (stored in the browser). |
 | `output.directory` | `/data/consume` | Where PDFs are saved; point it at paperless' consume dir. |
-| `output.filename_template` | `{date:yyyy-MM-dd}_{time:HHmm}_scan.pdf` | `{date:FMT}`, `{time:FMT}` (.NET formats), `{session}`. Existing names get `-2`, `-3`, … |
+| `output.filename_template` | `{date:yyyy-MM-dd}_{time:HHmm}_scan.pdf` | `{date:FMT}`, `{time:FMT}` (.NET formats), `{session}`. Existing names get `-2`, `-3`, …. `{NAME}` is **not** a key here — it is a browser token, below. |
 | `output.pdf.compression` | `jpeg` | `jpeg` or `lossless`. |
 | `output.pdf.jpeg_quality` | `75` | 1–100. |
 | `output.allowed_roots` | `[]` | Folders the UI may export into, each including everything beneath it. Empty = `output.directory` only. `["/"]` = anywhere. |
@@ -221,6 +221,29 @@ Everything above configures the **server**. **Settings → Find name** configure
 Every option here needs `naming.ocr: true` on the server, because a name comes
 from the words on the page. Where the server reads nothing — `ocr: false`, or no
 `tesseract` — Find name is not offered at all, and the settings sheet says why.
+
+### Where the found name goes
+
+**Settings → File name template** takes a `{NAME}` token alongside `{YEAR}`, `{MONTH}`
+and the rest. It stands for whatever **Find name** came back with, so
+
+```
+{YEAR}-{MONTH}-{DAY}_{NAME}    →   2026-09-29_quarterly-report-northwind.pdf
+```
+
+gives you a dated name *and* a written one. Without `{NAME}` in the template, picking a
+suggestion replaces the whole name, as it always has. With nothing found yet, `{NAME}`
+takes its neighbouring separator with it rather than leaving a name ending in `_`.
+
+`{NAME}` is the one token `yass.yaml` does not share: the name may have been written by a
+model running in your browser, which the server never sees. It is filled in before anything
+is sent, so `output.filename_template` has no use for it.
+
+**Settings → Found names** picks how those words are joined — as written, `lower_snake` or
+`lower-kebab`. The suggestions popover always shows the readable form, because that is what
+you are choosing between; the convention is applied on the way to the file name. It covers
+the heading read off the page as well as anything a model wrote, and leaves letters alone —
+`Gehaltsabrechnung Müller` becomes `gehaltsabrechnung-müller`, not `gehaltsabrechnung-mller`.
 
 One thing worth knowing: a key in `localStorage` can be read by anything running
 on that page and stays until you clear it, so think twice on a browser other
