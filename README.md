@@ -217,6 +217,11 @@ Everything above configures the **server**. **Settings → Find name** configure
   serves itself cross-origin isolated (`Cross-Origin-Opener-Policy` and
   `Cross-Origin-Embedder-Policy`) so that the browser allows the threads.
 
+The two in-browser options download their weights once. **Download model** in the
+settings sheet fetches them ahead of time and shows how far along it is; ask for a
+name before that and the same figure appears under the suggestions, with the
+sparkle filling up as it goes.
+
 Every option here needs `naming.ocr: true` on the server, because a name comes
 from the words on the page. Where the server reads nothing — `ocr: false`, or no
 `tesseract` — nothing is named from the page, and the settings sheet says why.
@@ -233,6 +238,11 @@ when no model is set up, the model itself when one is. The same click afterwards
 offers another go, the other suggestions, or handing the whole name over to type
 yourself — and a name that no longer fits the template has no slot in it, because
 at that point it is yours.
+
+Opening it again shows what came back the first time. Reading the page costs OCR on
+the server, and a model costs money or a download, so neither is paid twice for the
+same paper: the refresh button at the top of the list is how you say the paper has
+changed.
 
 Saving without filling the slot drops it, and its separator with it: a template of
 `{YEAR}-{MONTH}-{DAY}_{NAME}` saves as `2026-09-29.pdf`.
