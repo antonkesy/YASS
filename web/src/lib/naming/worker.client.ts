@@ -8,8 +8,11 @@ import { NamingError } from './types';
  * map of promises.
  */
 
-/** Where a download or a decode has got to, for the button label and the popover's loading line. */
-export type Progress = (phase: 'downloading' | 'thinking', detail?: string) => void;
+/**
+ * Where a download or a decode has got to. The percent is what the engine itself reports, and
+ * it is a number rather than a formatted string because both callers draw a bar with it.
+ */
+export type Progress = (phase: 'downloading' | 'thinking', percent?: number) => void;
 
 /** The shape both protocols share: every message carries an id, except progress. */
 type Reply =
@@ -47,7 +50,7 @@ export function workerClient<Send extends { id: number }, Receive extends Reply>
 			spoke = true;
 			const message = event.data;
 			if (message.type === 'progress') {
-				onProgress?.('downloading', `${message.percent}%`);
+				onProgress?.('downloading', message.percent);
 				return;
 			}
 

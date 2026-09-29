@@ -2,9 +2,11 @@
 	import type { NameSuggestionsDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { NameSource, type NameSuggestion } from '$lib/hub/generated/Yass.Core.Naming';
 	import { Icon } from '$lib/icons';
+	import ProgressBar from './ProgressBar.svelte';
 
 	let {
 		state,
+		percent = null,
 		result,
 		error = null,
 		current = null,
@@ -16,6 +18,8 @@
 		onclose
 	}: {
 		state: 'reading' | 'thinking' | 'downloading' | 'ready';
+		/** How far the model's weights have got, while `state` is `downloading`. */
+		percent?: number | null;
 		result: NameSuggestionsDto | null;
 		/** Why there is less here than there should be. Shown with whatever did arrive. */
 		error?: string | null;
@@ -98,6 +102,16 @@
 
 	{#if state !== 'ready'}
 		<p class="px-1.5 text-xs text-ink-muted">{loading[state]}</p>
+		{#if state === 'downloading'}
+			<!-- The one wait here that is worth measuring: the rest are seconds, this is
+			     hundreds of megabytes, and a shimmer alone says nothing about how long. -->
+			<div class="flex flex-col gap-1 px-1.5 pb-0.5" data-testid="suggest-download">
+				<ProgressBar {percent} label="Model download" />
+				{#if percent !== null}
+					<span class="text-[11px] text-ink-faint tabular-nums">{percent}%</span>
+				{/if}
+			</div>
+		{/if}
 		{#each [0, 1, 2] as row (row)}
 			<div
 				class="h-[52px] animate-shimmer rounded-[14px]"

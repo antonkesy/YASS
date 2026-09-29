@@ -6,6 +6,7 @@
 		placeholder,
 		generated = null,
 		busy = false,
+		percent = null,
 		reason = '',
 		canSuggest = true,
 		onrename,
@@ -29,6 +30,8 @@
 		} | null;
 		/** A name is being worked out right now. */
 		busy?: boolean;
+		/** How far the model's weights have got, when that is what the wait is. */
+		percent?: number | null;
 		/** Why a name cannot be asked for, for the tooltip. Empty means it can. */
 		reason?: string;
 		/** Whether asking for a name is on offer at all. */
@@ -136,16 +139,31 @@
 	{#if canSuggest}
 		<button
 			type="button"
-			class="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] text-ink-faint transition-colors hover:bg-accent-50 hover:text-accent disabled:pointer-events-none disabled:opacity-40 {busy
-				? 'animate-pulse text-ai-ink'
+			class="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-[8px] text-ink-faint transition-colors hover:bg-accent-50 hover:text-accent disabled:pointer-events-none {busy
+				? 'text-ai-ink'
+				: ''} {busy && percent === null ? 'animate-pulse' : ''} {percent === null
+				? 'disabled:opacity-40'
 				: ''}"
-			title={reason || 'Name this from the page'}
+			title={reason ||
+				(percent !== null ? `Downloading the model… ${percent}%` : 'Name this from the page')}
 			aria-label="Name this from the page"
 			disabled={reason !== '' || busy}
 			onclick={onsuggest}
 			data-testid="name-suggest"
 		>
-			<Icon name="sparkle" />
+			{#if percent !== null}
+				<!--
+					The download happens behind this button, so it fills up: the popover carries the
+					bar and the figure, and this is what is left to look at when it is scrolled past
+					or closed. Not a pulse — a pulse says "wait" and says nothing about how long.
+				-->
+				<span
+					class="absolute inset-x-0 bottom-0 bg-ai-bg transition-[height] duration-100 ease-linear"
+					style:height="{percent}%"
+					data-testid="name-suggest-progress"
+				></span>
+			{/if}
+			<span class="relative"><Icon name="sparkle" /></span>
 		</button>
 	{/if}
 

@@ -65,4 +65,32 @@ describe('NameField', () => {
 
 		expect(onrename).toHaveBeenCalledWith('');
 	});
+
+	it('fills the sparkle as the weights come down, and says how far in the tooltip', () => {
+		const { unmount } = render(NameField, {
+			value: 'Invoice',
+			placeholder: '10:00',
+			busy: true,
+			percent: 30,
+			onrename: vi.fn(),
+			onsuggest: vi.fn()
+		});
+
+		expect(screen.getByTestId('name-suggest-progress')).toHaveStyle({ height: '30%' });
+		expect(screen.getByTestId('name-suggest')).toHaveAttribute(
+			'title',
+			'Downloading the model… 30%'
+		);
+		unmount();
+
+		// A wait that is not a download has nothing to fill with, so the button only pulses.
+		render(NameField, {
+			value: 'Invoice',
+			placeholder: '10:00',
+			busy: true,
+			onrename: vi.fn(),
+			onsuggest: vi.fn()
+		});
+		expect(screen.queryByTestId('name-suggest-progress')).toBeNull();
+	});
 });

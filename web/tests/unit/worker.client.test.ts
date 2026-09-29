@@ -77,8 +77,8 @@ describe('the page half of a model worker', () => {
 
 	it('routes progress to the callback rather than to a waiting caller', async () => {
 		const c = client();
-		const seen: [string, string | undefined][] = [];
-		const pending = c.ask({ type: 'load' }, (phase, detail) => seen.push([phase, detail]));
+		const seen: [string, number | undefined][] = [];
+		const pending = c.ask({ type: 'load' }, (phase, percent) => seen.push([phase, percent]));
 		const worker = FakeWorker.made[0];
 
 		worker.reply({ type: 'progress', percent: 42 });
@@ -86,9 +86,10 @@ describe('the page half of a model worker', () => {
 		worker.reply({ type: 'done', id: 1 });
 
 		await pending;
+		// A number, not a formatted string: both callers draw a bar with it.
 		expect(seen).toEqual([
-			['downloading', '42%'],
-			['downloading', '100%']
+			['downloading', 42],
+			['downloading', 100]
 		]);
 	});
 

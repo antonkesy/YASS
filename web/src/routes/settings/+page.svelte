@@ -8,6 +8,7 @@
 	import { editableKeys, settings } from '$lib/settings';
 	import Segmented from '$lib/components/Segmented.svelte';
 	import Toggle from '$lib/components/Toggle.svelte';
+	import ProgressBar from '$lib/components/ProgressBar.svelte';
 	import TemplateEditor from '$lib/components/TemplateEditor.svelte';
 	import { Icon, presetIcons, type PresetIconName } from '$lib/icons';
 	import { activePreset, aiKeys, aiPrefs, exportPrefs, presets, type Preset } from '$lib/presets';
@@ -59,7 +60,8 @@
 	// it. The CPU engine needs no such check: every browser has a processor (ADR-011).
 	const canRunLocally = typeof navigator !== 'undefined' && navigator.gpu != null;
 	let gpuModels = $state<{ id: string; sizeMb: number }[]>([]);
-	let downloading = $state<string | null>(null);
+	/** How far the weights have got, 0-100, or null when nothing is downloading. */
+	let downloading = $state<number | null>(null);
 
 	// The GPU catalogue comes from the package, so its list and sizes cannot go stale here.
 	// The CPU one is ours, pinned to commit shas so its sizes cannot either.
@@ -75,13 +77,13 @@
 		const model = chosenModel($aiPrefs);
 		if (!model) return;
 		testResult = null;
-		downloading = '0%';
+		downloading = 0;
 		try {
 			const engine =
 				provider === 'wllama'
 					? await import('$lib/naming/wllama')
 					: await import('$lib/naming/webllm');
-			await engine.loadModel(model, (_phase, detail) => (downloading = detail ?? downloading));
+			await engine.loadModel(model, (_phase, percent) => (downloading = percent ?? downloading));
 			// The CPU setting is a URL; say which model by name, the way the popover will.
 			const named = provider === 'wllama' ? cpuModelLabel(model) : model;
 			testResult = { ok: true, message: `${named} is ready, and stays on this machine.` };
@@ -106,6 +108,9 @@
 
 	/** The chosen model is a GGUF URL for CPU and a catalogue id for GPU; both live here. */
 	const localModel = $derived($aiPrefs.models[provider] ?? '');
+
+	/** What to call it while it downloads: the CPU setting is a URL, which reads as nothing. */
+	const localLabel = $derived(provider === 'wllama' ? cpuModelLabel(localModel) : localModel);
 
 	/** A pasted URL is not in the list, so the select shows nothing and the field holds it. */
 	const isPasted = $derived(
@@ -807,7 +812,7 @@
 									onclick={download}
 									data-testid="ai-download"
 								>
-									{downloading ? `Downloading… ${downloading}` : 'Download model'}
+									{downloading === null ? 'Download model' : `Downloading… ${downloading}%`}
 								</button>
 								<button
 									type="button"
@@ -822,6 +827,16 @@
 									Hundreds of megabytes, once. Better here than on a scan.
 								</span>
 							</span>
+							{#if downloading !== null}
+								<!-- Hundreds of megabytes deserves a bar, not a spinner: this is the one
+								     wait in the app where knowing how much is left changes what you do. -->
+								<div class="flex flex-col gap-1" data-testid="ai-download-progress">
+									<ProgressBar percent={downloading} label="Model download" />
+									<span class="text-[11px] text-ink-faint">
+										{localLabel || 'The model'} — this browser keeps it, so this happens once.
+									</span>
+								</div>
+							{/if}
 							{#if testResult}
 								<span
 									class="text-xs font-bold {testResult.ok ? 'text-success-ink' : 'text-danger'}"

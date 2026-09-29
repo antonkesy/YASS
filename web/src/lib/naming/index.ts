@@ -23,7 +23,8 @@ export * from './types';
 export type Named = { name: string; model: string; local: boolean };
 
 export type Hooks = {
-	onphase?: (phase: Phase, detail?: string) => void;
+	/** The second argument is a download percentage, and only ever on `downloading`. */
+	onphase?: (phase: Phase, percent?: number) => void;
 	signal?: AbortSignal;
 };
 
@@ -64,7 +65,7 @@ export async function suggestName(
 	const baseUrl = chosenBaseUrl(prefs);
 
 	if (isInBrowser(prefs.provider)) {
-		const onphase = (phase: Phase, detail?: string) => hooks.onphase?.(phase, detail);
+		const onphase = (phase: Phase, percent?: number) => hooks.onphase?.(phase, percent);
 
 		// Loaded only when it is asked for: either package dwarfs the rest of the app.
 		if (prefs.provider === 'wllama') {
