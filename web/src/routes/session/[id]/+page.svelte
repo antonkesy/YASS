@@ -74,6 +74,8 @@
 	let exportRoots = $state<string[]>([]);
 	/** How many pages the server would read, which the popover's loading line repeats. */
 	let pageTextPages = $state(1);
+	/** Whether the server can read a page at all: `naming.ocr`, and tesseract being installed. */
+	let canReadPageText = $state(false);
 	/** Position in `pages` shown in the centre column. */
 	let current = $state(0);
 	/** Whether the filmstrip is expanded to the full-screen all-pages overview. */
@@ -87,6 +89,7 @@
 					allowDownload = o.AllowDownload ?? false;
 					exportRoots = o.ExportRoots ?? [];
 					pageTextPages = o.PageTextPages ?? 1;
+					canReadPageText = o.CanReadPageText ?? false;
 				})
 				.catch(() => undefined);
 		}
@@ -344,6 +347,15 @@
 		);
 		return { kind: 'image', mediaType, base64 };
 	}
+
+	/**
+	 * Whether to offer Find name at all. It needs words off the page: without them there is no
+	 * heading to read and nothing to hand a model, and a model in this browser cannot see. So
+	 * it goes when the server reads nothing — `naming.ocr` off, or no tesseract — and when this
+	 * browser has turned the feature off, which also stops anything being read in the first
+	 * place, since the server only reads when this button asks.
+	 */
+	const offerFindName = $derived($aiPrefs.findName && canReadPageText);
 
 	/** Why Find name cannot run, for its tooltip. Empty means it can. */
 	const suggestReason = $derived(
@@ -623,21 +635,24 @@
 						Document name
 					</p>
 					<!-- Dimmed rather than hidden, and the tooltip rides the wrapper because a
-					     disabled button takes no pointer events. -->
-					<span title={suggestReason || undefined} data-testid="suggest-button-wrap">
-						<button
-							type="button"
-							class="flex h-[30px] items-center gap-1.5 rounded-full px-2.5 text-xs font-bold transition-transform duration-150 hover:-translate-y-px disabled:pointer-events-none disabled:opacity-45 {suggesting
-								? 'bg-ai text-white'
-								: 'bg-ai-bg text-ai-ink'}"
-							onclick={() => (suggesting ? closeSuggestions() : findName())}
-							disabled={suggestReason !== '' || busySuggesting}
-							data-testid="suggest-button"
-						>
-							<Icon name="sparkle" />
-							Find name
-						</button>
-					</span>
+					     disabled button takes no pointer events. Gone entirely, though, when there
+					     is nothing for it to read: a name has to come from the words on the page. -->
+					{#if offerFindName}
+						<span title={suggestReason || undefined} data-testid="suggest-button-wrap">
+							<button
+								type="button"
+								class="flex h-[30px] items-center gap-1.5 rounded-full px-2.5 text-xs font-bold transition-transform duration-150 hover:-translate-y-px disabled:pointer-events-none disabled:opacity-45 {suggesting
+									? 'bg-ai text-white'
+									: 'bg-ai-bg text-ai-ink'}"
+								onclick={() => (suggesting ? closeSuggestions() : findName())}
+								disabled={suggestReason !== '' || busySuggesting}
+								data-testid="suggest-button"
+							>
+								<Icon name="sparkle" />
+								Find name
+							</button>
+						</span>
+					{/if}
 				</div>
 
 				<div class="relative">

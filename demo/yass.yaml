@@ -46,7 +46,7 @@ logging:
 naming:
   # Suggest a file name from what is printed on the page. Everything here is off by
   # default: this is the only part of YASS that reads your documents or talks to a model.
-  ocr: false # read page text; needs the `tesseract` binary on PATH
+  ocr: true # read page text; needs the `tesseract` binary on PATH (the image has it)
   ocr_language: eng # tesseract language code, e.g. eng, deu, fra
   ocr_pages: 2 # how many pages to read; the title is almost always on the first
   provider: off # off | ollama | anthropic
