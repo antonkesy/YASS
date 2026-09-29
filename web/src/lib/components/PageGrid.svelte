@@ -42,6 +42,7 @@
 		tile?: number;
 		onshow: (index: number) => void;
 		ontoggle: (index: number) => void;
+		/** Opens a page full screen, offered per tile in the overview and by the toolbar in the strip. */
 		onopen: (index: number) => void;
 		onreorder: (order: number[]) => void;
 		onscanmore?: () => void;
@@ -283,7 +284,7 @@
 						: null}
 					onshow={show}
 					ontoggle={toggle}
-					{onopen}
+					onopen={overview ? onopen : undefined}
 				/>
 			</div>
 		{/each}

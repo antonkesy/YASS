@@ -27,7 +27,8 @@
 		document?: number | null;
 		onshow: (index: number) => void;
 		ontoggle: (index: number) => void;
-		onopen: (index: number) => void;
+		/** Opens the page full screen. Left out where the toolbar offers that instead. */
+		onopen?: (index: number) => void;
 	} = $props();
 
 	// The image on screen may lag behind the page record (edit pending, thumbnail not rendered yet).
@@ -134,16 +135,18 @@
 		{:else}
 			<span class="px-0.5">{@render number()}</span>
 		{/if}
-		<button
-			type="button"
-			class="flex h-6 w-6 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-accent-wash hover:text-accent"
-			aria-label="Open page {page.Index + 1}"
-			onclick={(e) => {
-				e.stopPropagation();
-				onopen(page.Index);
-			}}
-		>
-			<Icon name="expand" size={13} />
-		</button>
+		{#if onopen}
+			<button
+				type="button"
+				class="flex h-6 w-6 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-accent-wash hover:text-accent"
+				aria-label="Open page {page.Index + 1}"
+				onclick={(e) => {
+					e.stopPropagation();
+					onopen(page.Index);
+				}}
+			>
+				<Icon name="expand" size={13} />
+			</button>
+		{/if}
 	</div>
 </div>
