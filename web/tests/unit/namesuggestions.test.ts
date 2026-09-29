@@ -62,13 +62,19 @@ describe('NameSuggestions', () => {
 		expect(empty).toHaveTextContent('Settings');
 	});
 
-	it('says where the text went, and the server does not get the last word', () => {
+	it('says exactly what left, since it is the one line nobody can check', () => {
 		const { unmount } = open();
-		expect(screen.getByTestId('name-suggestions')).toHaveTextContent('Nothing leaves the scanner');
+		expect(screen.getByTestId('suggest-privacy')).toHaveTextContent('Nothing left it');
 		unmount();
 
-		open({ result: result({ Local: false }) });
-		expect(screen.getByTestId('name-suggestions')).toHaveTextContent('sent to an external model');
+		const away = result({ Local: false });
+		const { unmount: second } = open({ result: away, sent: 'text' });
+		expect(screen.getByTestId('suggest-privacy')).toHaveTextContent('The text read from the page');
+		second();
+
+		// OCR off means the page itself went, and saying "the text" would be a lie.
+		open({ result: away, sent: 'image' });
+		expect(screen.getByTestId('suggest-privacy')).toHaveTextContent('The page image was sent');
 	});
 
 	it('hands back the name that was picked', async () => {

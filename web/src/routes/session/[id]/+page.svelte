@@ -355,12 +355,15 @@
 
 	// The retry button can re-enter this while a call is in flight; only the latest one writes.
 	let run = 0;
+	/** What the model was given, which the popover repeats back rather than guessing. */
+	let sentToModel = $state<'text' | 'image' | null>(null);
 
 	async function findName() {
 		const mine = ++run;
 		suggesting = 'reading';
 		suggestions = null;
 		suggestError = null;
+		sentToModel = null;
 
 		try {
 			// Whatever the server can offer goes up first: a slow or broken model must never
@@ -373,6 +376,7 @@
 			const input = await modelInput(read);
 			if (run !== mine || !input) return;
 
+			sentToModel = input.kind;
 			suggesting = 'thinking';
 			const named = await suggestName(input, $aiPrefs, $aiKeys, {
 				onphase: (phase: Phase) => {
@@ -646,6 +650,7 @@
 							error={suggestError ?? suggestions?.Error ?? null}
 							current={session.Name?.trim() ?? null}
 							pages={Math.min(activePages, pageTextPages)}
+							sent={sentToModel}
 							onpick={(name) => {
 								closeSuggestions();
 								rename(name);
