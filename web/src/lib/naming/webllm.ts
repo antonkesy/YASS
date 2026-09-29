@@ -1,69 +1,31 @@
 import { cleanName } from './clean';
 import { INSTRUCTION, MAX_TOKENS, question } from './prompt';
 import { NamingError, type NamingInput } from './types';
-import type { FromWorker, LocalModel, Request, ToWorker } from './webllm.protocol';
+import type { FromWorker, LocalModel, ToWorker } from './webllm.protocol';
+import { workerClient, type Progress } from './worker.client';
 
 /**
- * The page's half of the in-browser model (ADR-010). It knows how to ask; the worker owns the
- * package that answers, and nothing here imports it — that is what keeps six megabytes of
- * WebGPU runtime off the first visit of everyone who never turns this on.
+ * The page's half of the model that runs on the GPU (ADR-010). It knows how to ask; the worker
+ * owns the package that answers, and nothing here imports it — that is what keeps six megabytes
+ * of WebGPU runtime off the first visit of everyone who never turns this on.
  */
 
-export type Progress = (phase: 'downloading' | 'thinking', detail?: string) => void;
+export type { Progress } from './worker.client';
 export type { LocalModel };
 
-/** Whether this browser can run a model at all. */
+/** Whether this browser can run a model on its GPU at all. */
 export function hasWebGpu(): boolean {
 	return typeof navigator !== 'undefined' && navigator.gpu != null;
 }
 
-let worker: Worker | null = null;
-let nextId = 0;
-const waiting = new Map<number, { resolve: (m: FromWorker) => void; reject: (e: Error) => void }>();
-let onProgress: Progress | undefined;
-
-function connect(): Worker {
-	if (worker) return worker;
-
-	worker = new Worker(new URL('./webllm.worker.ts', import.meta.url), { type: 'module' });
-	worker.onmessage = (event: MessageEvent<FromWorker>) => {
-		const message = event.data;
-		if (message.type === 'progress') {
-			onProgress?.('downloading', `${message.percent}%`);
-			return;
-		}
-
-		const pending = waiting.get(message.id);
-		waiting.delete(message.id);
-		if (!pending) return;
-		if (message.type === 'failed') pending.reject(new NamingError(message.error));
-		else pending.resolve(message);
-	};
-	worker.onerror = () => {
-		for (const pending of waiting.values()) {
-			pending.reject(new NamingError('The model worker stopped unexpectedly.'));
-		}
-		waiting.clear();
-		worker?.terminate();
-		worker = null;
-	};
-
-	return worker;
-}
-
-function ask(request: Request, progress?: Progress): Promise<FromWorker> {
-	const id = ++nextId;
-	onProgress = progress;
-	return new Promise((resolve, reject) => {
-		waiting.set(id, { resolve, reject });
-		connect().postMessage({ ...request, id } as ToWorker);
-	});
-}
+const client = workerClient<ToWorker, FromWorker>(
+	() => new Worker(new URL('./webllm.worker.ts', import.meta.url), { type: 'module' })
+);
 
 /** The models the package ships, smallest first, with its own size figures rather than ours. */
 export async function localModels(): Promise<LocalModel[]> {
 	if (!hasWebGpu()) return [];
-	const answer = await ask({ type: 'models' });
+	const answer = await client.ask({ type: 'models' });
 	return answer.type === 'done' ? (answer.models ?? []) : [];
 }
 
@@ -74,7 +36,7 @@ export async function localModels(): Promise<LocalModel[]> {
 export async function loadModel(modelId: string, progress?: Progress): Promise<void> {
 	if (!hasWebGpu()) throw new NamingError('This browser has no WebGPU.');
 	try {
-		await ask({ type: 'load', model: modelId }, progress);
+		await client.ask({ type: 'load', model: modelId }, progress);
 	} catch (e) {
 		// Whatever it was — a GPU that lacks a feature, weights that would not download —
 		// it said so itself, and that is more use than a sentence of ours over the top.
@@ -96,7 +58,7 @@ export async function askWebLlm(
 		throw new NamingError('No in-browser model is chosen. Settings → Find name.');
 	}
 
-	const answer = await ask(
+	const answer = await client.ask(
 		{
 			type: 'name',
 			model: modelId,
