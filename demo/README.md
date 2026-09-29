@@ -24,15 +24,15 @@ YASS_PORT=9000 docker compose up --build
    fit-to-screen and full width; `Esc` backs out of zoom, then closes.
 3. **Split** — select a page and press **Split**: it opens a second document,
    badged `Doc 2` in the filmstrip, and **Save** then writes one PDF per document.
-4. **Name it** — the scan has already named itself from the heading on the page,
-   read with `tesseract` (in the image, and on by default). Put `{NAME}` in the
-   file name template and that part is shown as a chip inside the document name:
-   click it for other candidates, another go, or to type the name yourself.
-   `{YEAR}-{MONTH}-{DAY}_{NAME}` keeps the date; the **Ready-made** button offers
-   whole templates, and **Found names** picks `lower_snake` or `lower-kebab`.
-   For a name written rather than copied, point **Settings → Find name** at a
-   model: **In-browser (CPU)** needs no key and no account, and downloads its
-   weights once.
+4. **Name it** — the scan is already called what the file name template says. Put
+   `{NAME}` in that template and the slot shows up inside the document name as
+   **name it**; click it and the page is read with `tesseract` (in the image, and
+   on by default) and the slot filled. Clicking again offers another go, the other
+   candidates, or the whole name to type yourself. `{YEAR}-{MONTH}-{DAY}_{NAME}`
+   keeps the date; the **Ready-made** button offers whole templates, and **Found
+   names** picks `lower_snake` or `lower-kebab`. For a name written rather than
+   copied, point **Settings → Find name** at a model: **In-browser (CPU)** needs
+   no key and no account, and downloads its weights once.
 5. **Save** — the PDFs land in [`output/`](output) on your host, the demo's
    stand-in for a paperless-ngx consume folder.
    **Download** hands them to the browser instead.
