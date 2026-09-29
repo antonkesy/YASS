@@ -16,30 +16,36 @@ import { describe, expect, it } from 'vitest';
  */
 const page = readFileSync(resolve('src/routes/settings/+page.svelte'), 'utf8');
 
-describe('what the settings sheet shows when nothing is editable', () => {
-	const nothingEditable = page.indexOf('data-testid="nothing-editable"');
-	// The `{/if}` that closes the whole error / loading / nothing-editable / else chain.
-	const branchEnds = page.indexOf('\n\t\t{/if}\n', nothingEditable);
+const at = (testid: string) => page.indexOf(`testid="${testid}"`);
 
-	it('has a branch that hides the scan controls, and a place after it', () => {
-		expect(nothingEditable).toBeGreaterThan(-1);
-		expect(branchEnds).toBeGreaterThan(nothingEditable);
+describe('how the settings sheet is laid out', () => {
+	const scanner = at('scanner-section');
+	// Sections do not nest, so the first close after the scanner heading is its own.
+	const scannerEnds = page.indexOf('</SettingsSection>', scanner);
+
+	it('is a run of named sections, in the order they are worth reading', () => {
+		expect(scanner).toBeGreaterThan(-1);
+		expect(at('export-section')).toBeGreaterThan(scanner);
+		expect(at('naming-section')).toBeGreaterThan(at('export-section'));
+		expect(at('editing-section')).toBeGreaterThan(at('naming-section'));
 	});
 
-	it.each(['export-section', 'naming-section'])(
+	it.each(['export-section', 'naming-section', 'editing-section'])(
 		'keeps %s reachable on a server that lets the UI change nothing',
 		(section) => {
-			const at = page.indexOf(`data-testid="${section}"`);
-			expect(at).toBeGreaterThan(-1);
-			expect(at).toBeGreaterThan(branchEnds);
+			expect(at(section)).toBeGreaterThan(scannerEnds);
 		}
 	);
 
-	it('still keeps the scan controls inside it', () => {
-		// The other half of the rule: a preset is a bundle of scan overrides and has nothing
-		// to offer when none of them can be set.
+	it('keeps the scan controls, and the presets that bundle them, inside the branch', () => {
+		// A preset is a bundle of scan overrides and has nothing to offer when none of them
+		// can be set, so it belongs in the section that the branch hides.
+		const nothingEditable = page.indexOf('data-testid="nothing-editable"');
 		const presets = page.indexOf('data-testid="presets"');
+
+		expect(nothingEditable).toBeGreaterThan(scanner);
+		expect(nothingEditable).toBeLessThan(scannerEnds);
 		expect(presets).toBeGreaterThan(nothingEditable);
-		expect(presets).toBeLessThan(branchEnds);
+		expect(presets).toBeLessThan(scannerEnds);
 	});
 });
