@@ -43,7 +43,16 @@
 		savedLabel,
 		type SaveTarget
 	} from '$lib/review/download';
-	import { exportPrefs, reviewPrefs } from '$lib/presets';
+	import { aiKeys, aiPrefs, exportPrefs, reviewPrefs } from '$lib/presets';
+	import {
+		aiSuggestion,
+		fetchPageImage,
+		merge as mergeSuggestions,
+		suggestName,
+		NamingError,
+		type NamingInput,
+		type Phase
+	} from '$lib/naming';
 	import { ExportMode, type NameSuggestionsDto } from '$lib/hub/generated/Yass.Core.Hub';
 
 	const client = getHub();
@@ -61,6 +70,8 @@
 	let allowDownload = $state(false);
 	/** Folders the server will accept, from output.allowed_roots. */
 	let exportRoots = $state<string[]>([]);
+	/** How many pages the server would read, which the popover's loading line repeats. */
+	let pageTextPages = $state(1);
 	/** Position in `pages` shown in the centre column. */
 	let current = $state(0);
 	/** Whether the filmstrip is expanded to the full-screen all-pages overview. */
@@ -73,6 +84,7 @@
 				.then((o) => {
 					allowDownload = o.AllowDownload ?? false;
 					exportRoots = o.ExportRoots ?? [];
+					pageTextPages = o.PageTextPages ?? 1;
 				})
 				.catch(() => undefined);
 		}
@@ -103,10 +115,10 @@
 	let merging = $state(false);
 	let confirmDiscard = $state(false);
 	let merged = $state(false);
-	let suggesting = $state<'reading' | 'thinking' | 'ready' | null>(null);
+	let suggesting = $state<'reading' | 'thinking' | 'downloading' | 'ready' | null>(null);
 	let suggestions = $state<NameSuggestionsDto | null>(null);
-	/** Whether the server can read page text at all, which hides Find name when it cannot. */
-	let canSuggest = $state(false);
+	/** Why the suggestions are thin, shown in the popover rather than over the whole screen. */
+	let suggestError = $state<string | null>(null);
 
 	$effect(() => {
 		if ($connection === 'connected' && !$sessions.has(id)) {
@@ -134,6 +146,7 @@
 		)?.some((p) => p.Deleted) ?? false
 	);
 
+	const activePages = $derived(session ? activePageCount(session) : 0);
 	const shown = $derived(session?.Pages[current] ?? null);
 	const filters = $derived(
 		new Set((session?.Pages ?? []).filter((p) => !p.Deleted).map((p) => p.Filter))
@@ -311,31 +324,73 @@
 		}
 	}
 
-	// One probe on connect tells us whether the Find name button is worth showing.
-	$effect(() => {
-		if ($connection === 'connected' && !canSuggest && session && session.Pages.length > 0) {
-			client.hub
-				.suggestNames(id)
-				.then((r) => (canSuggest = r.CanRead))
-				.catch(() => undefined);
-		}
-	});
+	/**
+	 * What the browser's own model should read: what the server read, or the page itself when
+	 * it read nothing. A model running in this browser cannot see, so it only gets text.
+	 */
+	async function modelInput(read: NameSuggestionsDto): Promise<NamingInput | null> {
+		const text = read.Text?.trim();
+		if (text) return { kind: 'text', text, pages: Math.min(activePages, pageTextPages) };
+		if (!$aiPrefs.useImages || $aiPrefs.provider === 'webllm') return null;
+
+		const page = session?.Pages.find((p) => !p.Deleted);
+		if (!page) return null;
+		const { mediaType, base64 } = await fetchPageImage(
+			imageUrl(id, page.Index, page.Hash, 'preview')
+		);
+		return { kind: 'image', mediaType, base64 };
+	}
+
+	/** Why Find name cannot run, for its tooltip. Empty means it can. */
+	const suggestReason = $derived(
+		scanning ? 'Wait for the scan to finish' : activePages === 0 ? 'No pages to read' : ''
+	);
+	const busySuggesting = $derived(suggesting !== null && suggesting !== 'ready');
+
+	function closeSuggestions() {
+		run++;
+		suggesting = null;
+		suggestError = null;
+	}
+
+	// The retry button can re-enter this while a call is in flight; only the latest one writes.
+	let run = 0;
 
 	async function findName() {
+		const mine = ++run;
 		suggesting = 'reading';
 		suggestions = null;
-		error = null;
+		suggestError = null;
+
 		try {
-			// The two phases are the server's own: read the page, then ask the model.
-			const pending = client.hub.suggestNames(id);
-			setTimeout(() => {
-				if (suggesting === 'reading') suggesting = 'thinking';
-			}, 650);
-			suggestions = await pending;
+			// Whatever the server can offer goes up first: a slow or broken model must never
+			// cost you the heading and the template, which are already paid for.
+			const read = await client.hub.suggestNames(id);
+			if (run !== mine) return;
+			suggestions = read;
 			suggesting = 'ready';
+
+			const input = await modelInput(read);
+			if (run !== mine || !input) return;
+
+			suggesting = 'thinking';
+			const named = await suggestName(input, $aiPrefs, $aiKeys, {
+				onphase: (phase: Phase) => {
+					if (run === mine) suggesting = phase;
+				}
+			});
+			if (run !== mine) return;
+
+			suggestions = mergeSuggestions(
+				read,
+				named ? aiSuggestion(named.name, named.model, named.local) : null,
+				named?.local ?? true
+			);
 		} catch (e) {
-			error = hubError(e);
-			suggesting = null;
+			if (run !== mine) return;
+			suggestError = e instanceof NamingError ? e.message : hubError(e);
+		} finally {
+			if (run === mine) suggesting = 'ready';
 		}
 	}
 
@@ -559,20 +614,22 @@
 					<p class="flex-1 text-xs font-bold tracking-[0.06em] text-ink-muted uppercase">
 						Document name
 					</p>
-					{#if canSuggest}
+					<!-- Dimmed rather than hidden, and the tooltip rides the wrapper because a
+					     disabled button takes no pointer events. -->
+					<span title={suggestReason || undefined} data-testid="suggest-button-wrap">
 						<button
 							type="button"
 							class="flex h-[30px] items-center gap-1.5 rounded-full px-2.5 text-xs font-bold transition-transform duration-150 hover:-translate-y-px disabled:pointer-events-none disabled:opacity-45 {suggesting
 								? 'bg-ai text-white'
 								: 'bg-ai-bg text-ai-ink'}"
-							onclick={findName}
-							disabled={suggesting !== null && suggesting !== 'ready'}
+							onclick={() => (suggesting ? closeSuggestions() : findName())}
+							disabled={suggestReason !== '' || busySuggesting}
 							data-testid="suggest-button"
 						>
 							<Icon name="sparkle" />
 							Find name
 						</button>
-					{/if}
+					</span>
 				</div>
 
 				<div class="relative">
@@ -584,14 +641,18 @@
 
 					{#if suggesting}
 						<NameSuggestions
-							state={suggesting === 'ready' ? 'ready' : suggesting}
+							state={suggesting}
 							result={suggestions}
+							error={suggestError ?? suggestions?.Error ?? null}
+							current={session.Name?.trim() ?? null}
+							pages={Math.min(activePages, pageTextPages)}
 							onpick={(name) => {
-								suggesting = null;
+								closeSuggestions();
 								rename(name);
+								toast.show(`Renamed to “${name}”`);
 							}}
 							onretry={findName}
-							onclose={() => (suggesting = null)}
+							onclose={closeSuggestions}
 						/>
 					{/if}
 				</div>

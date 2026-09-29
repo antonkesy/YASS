@@ -6,16 +6,31 @@
 	let {
 		state,
 		result,
+		error = null,
+		current = null,
+		pages = 1,
 		onpick,
 		onretry,
 		onclose
 	}: {
-		state: 'reading' | 'thinking' | 'ready';
+		state: 'reading' | 'thinking' | 'downloading' | 'ready';
 		result: NameSuggestionsDto | null;
+		/** Why there is less here than there should be. Shown with whatever did arrive. */
+		error?: string | null;
+		/** The name on the document now, so the row that matches it is marked. */
+		current?: string | null;
+		/** How many pages are being read, which the server decides and the copy repeats. */
+		pages?: number;
 		onpick: (name: string) => void;
 		onretry: () => void;
 		onclose: () => void;
 	} = $props();
+
+	const loading: Record<string, string> = $derived({
+		reading: `Reading text on ${pages} page${pages === 1 ? '' : 's'}…`,
+		downloading: 'Downloading the model…',
+		thinking: 'Finding a good name…'
+	});
 
 	const badges: Record<NameSource, { label: string; chip: string }> = {
 		[NameSource.Ocr]: { label: 'OCR', chip: 'bg-success-bg2 text-success-ink' },
@@ -46,20 +61,32 @@
 	<div class="flex items-center gap-2 px-1.5 pt-1">
 		<span class="text-ai"><Icon name="sparkle" /></span>
 		<span class="flex-1 text-[13px] font-extrabold">Name suggestions</span>
-		<button
-			type="button"
-			class="flex h-[30px] w-[30px] items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-ctl hover:text-accent"
-			onclick={onretry}
-			aria-label="Try again"
-		>
-			<Icon name="rescan" size={15} />
-		</button>
+		{#if state === 'ready'}
+			<button
+				type="button"
+				class="flex h-[30px] w-[30px] items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-ctl hover:text-accent"
+				onclick={onretry}
+				aria-label="Read again"
+				data-testid="suggest-retry"
+			>
+				<Icon name="rescan" size={15} />
+			</button>
+		{/if}
 	</div>
 
-	{#if state !== 'ready'}
-		<p class="px-1.5 text-xs text-ink-muted">
-			{state === 'reading' ? 'Reading the text on the page…' : 'Finding a good name…'}
+	<!-- Above the rows, not instead of them: whatever did work is still worth offering. -->
+	{#if error}
+		<p
+			class="rounded-[12px] bg-danger-bg px-3 py-2 text-xs font-bold text-danger"
+			role="alert"
+			data-testid="suggest-error"
+		>
+			{error}
 		</p>
+	{/if}
+
+	{#if state !== 'ready'}
+		<p class="px-1.5 text-xs text-ink-muted">{loading[state]}</p>
 		{#each [0, 1, 2] as row (row)}
 			<div
 				class="h-[52px] animate-shimmer rounded-[14px]"
@@ -71,13 +98,16 @@
 		<p class="px-1.5 pb-2 text-xs text-ink-muted">
 			{result?.CanRead
 				? 'Nothing on these pages reads like a title.'
-				: 'Reading page text is switched off. Turn on naming.ocr in yass.yaml to use this.'}
+				: 'This server does not read page text. Set up a model in Settings, or turn on naming.ocr in yass.yaml.'}
 		</p>
 	{:else}
 		{#each result.Suggestions as suggestion, i (suggestion.Name + i)}
 			<button
 				type="button"
-				class="flex animate-page-in flex-col gap-1 rounded-[14px] px-3 py-2.5 text-left transition-colors hover:bg-accent-hover50"
+				class="flex animate-page-in flex-col gap-1 rounded-[14px] px-3 py-2.5 text-left transition-colors hover:bg-accent-hover50 {suggestion.Name ===
+				current
+					? 'bg-accent-50'
+					: ''}"
 				style="animation-delay: {i * 50}ms"
 				onclick={() => onpick(suggestion.Name)}
 			>
