@@ -91,36 +91,36 @@ describe('ExportBar', () => {
 		expect(screen.getByTestId('page-count')).toHaveTextContent(/3 of 3 pages/);
 		expect(screen.getByTestId('export-path')).toHaveTextContent(/\/data\/consume/);
 		expect(screen.getByTestId('autosave-strip')).toHaveTextContent(/Auto-saved to past scans/);
-		// null, not the path on screen: Export means "wherever the preference points".
 		await fireEvent.click(screen.getByTestId('save-button'));
-		expect(onsave).toHaveBeenCalledWith(null);
+		expect(onsave).toHaveBeenCalled();
 	});
 
-	it('picks a folder from the save-to menu and passes a typed one through', async () => {
-		const onsave = vi.fn();
-		render(ExportBar, {
+	it('says what the one download button will do, and asks for a place when it can', async () => {
+		const ondownload = vi.fn();
+		const { rerender } = render(ExportBar, {
 			session: session(),
-			roots: ['/data/consume'],
-			recent: ['/mnt/nas/scans'],
-			onsave,
-			ondownload: vi.fn()
+			allowDownload: true,
+			onsave: vi.fn(),
+			ondownload
 		});
-		expect(screen.queryByTestId('save-to-menu')).toBeNull();
-		await fireEvent.click(screen.getByTestId('save-to-button'));
-		await fireEvent.click(screen.getByRole('button', { name: /mnt\/nas\/scans/ }));
-		expect(onsave).toHaveBeenCalledWith('/mnt/nas/scans');
-		expect(screen.queryByTestId('save-to-menu')).toBeNull();
+		expect(screen.getByTestId('download-button')).toHaveTextContent('Download');
 
-		await fireEvent.click(screen.getByTestId('save-to-button'));
-		const custom = screen.getByTestId('save-to-custom');
-		await fireEvent.input(custom, { target: { value: ' /tmp/out/ ' } });
-		await fireEvent.click(screen.getByRole('button', { name: 'Save here' }));
-		expect(onsave).toHaveBeenLastCalledWith('/tmp/out/');
+		await rerender({
+			session: session(),
+			allowDownload: true,
+			picker: true,
+			onsave: vi.fn(),
+			ondownload
+		});
+		expect(screen.getByTestId('download-button')).toHaveTextContent('Save as…');
+		await fireEvent.click(screen.getByTestId('download-button'));
+		expect(ondownload).toHaveBeenCalled();
 	});
 
-	it('promotes save to… to the primary action when the export button is off', () => {
-		render(ExportBar, {
+	it('promotes the download button when the export button is off, and keeps one either way', () => {
+		const { rerender } = render(ExportBar, {
 			session: session(),
+			allowDownload: true,
 			exportEnabled: false,
 			exportDirectory: '/data/consume',
 			onsave: vi.fn(),
@@ -128,7 +128,18 @@ describe('ExportBar', () => {
 		});
 		expect(screen.queryByTestId('save-button')).toBeNull();
 		expect(screen.queryByTestId('export-path')).toBeNull();
-		expect(screen.getByTestId('save-to-button')).toBeInTheDocument();
+		expect(screen.getByTestId('download-button')).toBeInTheDocument();
+
+		// Nothing left to promote: with downloads off, Export comes back whatever the preference says.
+		rerender({
+			session: session(),
+			allowDownload: false,
+			exportEnabled: false,
+			onsave: vi.fn(),
+			ondownload: vi.fn()
+		});
+		expect(screen.getByTestId('save-button')).toBeInTheDocument();
+		expect(screen.queryByTestId('download-button')).toBeNull();
 	});
 
 	it('disables export while scanning, with everything deleted, or when downloads are off', () => {

@@ -8,8 +8,7 @@ import {
 	defaultPresets,
 	EXPORT_KEY,
 	matchesPreset,
-	PRESETS_KEY,
-	rememberFolder
+	PRESETS_KEY
 } from '$lib/presets';
 import { get } from 'svelte/store';
 
@@ -57,24 +56,6 @@ describe('preset matching against planned options', () => {
 	});
 });
 
-describe('recent export folders', () => {
-	const prefs = { ...defaultExportPrefs };
-
-	it('keeps the newest first, without repeats, capped at four', () => {
-		let p = prefs;
-		for (const dir of ['/a', '/b', '/c', '/d', '/e']) p = rememberFolder(p, dir);
-		expect(p.recentFolders).toEqual(['/e', '/d', '/c', '/b']);
-
-		p = rememberFolder(p, '/c');
-		expect(p.recentFolders).toEqual(['/c', '/e', '/d', '/b']);
-	});
-
-	it('normalises the path and ignores an empty one', () => {
-		expect(rememberFolder(prefs, ' /data/consume/ ').recentFolders).toEqual(['/data/consume']);
-		expect(rememberFolder(prefs, '   ')).toBe(prefs);
-	});
-});
-
 describe('loading stored preferences', () => {
 	const fake = (entries: Record<string, string>): Storage =>
 		({
@@ -90,7 +71,6 @@ describe('loading stored preferences', () => {
 		const prefs = get(store);
 		expect(prefs.directory).toBe('/data/consume');
 		expect(prefs.exportButton).toBe(defaultExportPrefs.exportButton);
-		expect(prefs.recentFolders).toEqual([]);
 	});
 
 	it('keeps a stored value that happens to match a falsy default', () => {

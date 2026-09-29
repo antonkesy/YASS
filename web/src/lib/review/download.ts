@@ -1,9 +1,135 @@
-import type { ExportResult } from '$lib/hub/generated/Yass.Core.Hub';
+import { ExportFormat, type ExportResult, type SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
+import { expandTemplate } from '$lib/template';
 
 /**
- * Hands every document of an export to the browser. A split session produces several
- * files, so this is a loop rather than a single link click; the browser will ask before
- * saving more than one, which is the right prompt for what is really several saves.
+ * As much of the File System Access API as a save needs. It is typed here because
+ * lib.dom does not carry it yet, and reached through `savePicker` because it only
+ * exists in a secure context: a box served over plain http on the LAN has no save
+ * dialog to offer, and callers fall back to an ordinary browser download.
+ */
+export type WritableFile = { write: (data: Blob) => Promise<void>; close: () => Promise<void> };
+export type FileTarget = { createWritable: () => Promise<WritableFile> };
+export type DirectoryTarget = {
+	getFileHandle: (name: string, options: { create: boolean }) => Promise<FileTarget>;
+};
+export type SavePicker = {
+	showSaveFilePicker: (options: { suggestedName?: string }) => Promise<FileTarget>;
+	showDirectoryPicker: (options?: { mode?: 'readwrite' }) => Promise<DirectoryTarget>;
+};
+
+/** One document goes into a chosen file; a scan that splits goes into a chosen folder. */
+export type SaveTarget = { file: FileTarget } | { directory: DirectoryTarget };
+
+export function savePicker(scope: object = globalThis): SavePicker | null {
+	const api = scope as Partial<SavePicker>;
+	return typeof api.showSaveFilePicker === 'function' &&
+		typeof api.showDirectoryPicker === 'function'
+		? (api as SavePicker)
+		: null;
+}
+
+/** True when the user closed the save dialog, which is not an error to report. */
+export function cancelled(error: unknown): boolean {
+	return error instanceof Error && error.name === 'AbortError';
+}
+
+export const fileExtensions: Record<ExportFormat, string> = {
+	[ExportFormat.Pdf]: '.pdf',
+	[ExportFormat.Jpg]: '.jpg',
+	[ExportFormat.Png]: '.png'
+};
+
+/** Trims a name down to what every filesystem will take, without leaving it empty. */
+export function safeFileName(name: string): string {
+	const clean = name
+		// eslint-disable-next-line no-control-regex
+		.replace(/[\u0000-\u001f<>:"/\\|?*]/g, '-')
+		.replace(/\s+/g, ' ')
+		.replace(/^[\s.]+|[\s.]+$/g, '')
+		.slice(0, 120)
+		.trim();
+	return clean === '' ? 'scan' : clean;
+}
+
+/**
+ * What the save dialog opens with: the name on the document, or the export template
+ * expanded the way the settings sheet previews it, or the date it was scanned. No
+ * extension — the caller adds the one its format wants.
+ */
+export function exportBaseName(session: SessionDto, template: string, now = new Date()): string {
+	const named = session.Name?.trim();
+	if (named) return safeFileName(named);
+
+	const at = new Date(session.CreatedAt);
+	const createdAt = Number.isNaN(at.getTime()) ? now : at;
+	const pattern = template.trim();
+	if (pattern) {
+		const expanded = expandTemplate(pattern, createdAt, {
+			preset: 'Scan',
+			counter: 1,
+			dpi: session.OptionsUsed.Dpi ?? 300,
+			color: String(session.OptionsUsed.Color ?? '')
+		});
+		if (expanded.trim()) return safeFileName(expanded);
+	}
+	return safeFileName(`scan-${createdAt.toISOString().slice(0, 16).replace(/[T:]/g, '-')}`);
+}
+
+/** The whole suggested name, extension and all, for a save dialog's name box. */
+export function exportFileName(
+	session: SessionDto,
+	template: string,
+	format: ExportFormat,
+	now = new Date()
+): string {
+	return exportBaseName(session, template, now) + fileExtensions[format];
+}
+
+/** Names for the documents of one scan, numbered only once there is more than one. */
+export function documentName(base: string, index: number, extension: string): string {
+	return index === 0 ? `${base}${extension}` : `${base}-${index + 1}${extension}`;
+}
+
+/**
+ * Streams every document of an export into the place the user picked. The bytes go
+ * from the one-shot URL to disk without the page keeping a copy of the document.
+ */
+export async function saveToDisk(
+	result: ExportResult,
+	target: SaveTarget,
+	base: string,
+	extension: string,
+	get: typeof fetch = fetch
+): Promise<number> {
+	const documents = result.Documents.filter((d) => d.DownloadPath);
+	if ('file' in target && documents.length > 1) {
+		throw new Error('This scan is several documents. Pick a folder to save them into.');
+	}
+
+	let written = 0;
+	for (const [index, document] of documents.entries()) {
+		const response = await get(document.DownloadPath!);
+		if (!response.ok) throw new Error(`The file could not be fetched (${response.status}).`);
+		const handle =
+			'file' in target
+				? target.file
+				: await target.directory.getFileHandle(documentName(base, index, extension), {
+						create: true
+					});
+		const writable = await handle.createWritable();
+		try {
+			await writable.write(await response.blob());
+		} finally {
+			await writable.close();
+		}
+		written += 1;
+	}
+	return written;
+}
+
+/**
+ * Hands every document of an export to the browser instead, for the browsers with no
+ * save dialog to offer. Where it lands is then their download setting, not our choice.
  */
 export function saveToBrowser(result: ExportResult): number {
 	let started = 0;

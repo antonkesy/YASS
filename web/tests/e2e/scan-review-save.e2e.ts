@@ -13,7 +13,19 @@ async function scanToReview(page: Page) {
 	await expect(page.getByTestId('page-thumb')).toHaveCount(3);
 }
 
+/**
+ * A browser with no save dialog to offer: what Firefox and Safari are, and what any
+ * box served over plain http on a LAN is, secure contexts being the API's price.
+ */
+async function withoutSavePicker(page: Page) {
+	await page.addInitScript(() => {
+		Reflect.deleteProperty(window, 'showSaveFilePicker');
+		Reflect.deleteProperty(window, 'showDirectoryPicker');
+	});
+}
+
 test('scan, review, edit, download and save', async ({ page }) => {
+	await withoutSavePicker(page);
 	await scanToReview(page);
 
 	// Blank page is pre-marked deleted with a badge; bottom bar counts active pages.
@@ -89,7 +101,8 @@ test('scan, review, edit, download and save', async ({ page }) => {
 	await page.getByTestId('name-input').fill('Tax return 2025');
 	await page.getByTestId('name-input').press('Enter');
 
-	// Download is a real one-shot PDF.
+	// With no save dialog to offer, the one button is a plain download of a real one-shot PDF.
+	await expect(page.getByTestId('download-button')).toHaveText(/Download/);
 	const download = page.waitForEvent('download');
 	await page.getByTestId('download-button').click();
 	const file = await download;
@@ -191,7 +204,46 @@ test('stop ends a scan early', async ({ page }) => {
 	await expect(page.getByTestId('stop-button')).toBeHidden();
 });
 
-test('scan more appends pages and save to… writes to a listed folder', async ({ page }) => {
+test('save as… writes the document where the save dialog points', async ({ page }) => {
+	type Saved = { name: string | null; bytes: number };
+	await page.addInitScript(() => {
+		const saved: Saved = { name: null, bytes: 0 };
+		Object.assign(window, {
+			__saved: saved,
+			// Stands in for the dialog: Playwright cannot drive a native one, but what the
+			// page does with the handle it gets back is the part worth testing.
+			showSaveFilePicker: (options: { suggestedName?: string }) => {
+				saved.name = options.suggestedName ?? null;
+				return Promise.resolve({
+					createWritable: () =>
+						Promise.resolve({
+							write: (data: Blob) => {
+								saved.bytes += data.size;
+								return Promise.resolve();
+							},
+							close: () => Promise.resolve()
+						})
+				});
+			},
+			showDirectoryPicker: () => Promise.reject(new Error('one document needs no folder'))
+		});
+	});
+	await scanToReview(page);
+	await page.getByTestId('name-input').fill('Tax return 2025');
+	await page.getByTestId('name-input').press('Enter');
+
+	await expect(page.getByTestId('download-button')).toHaveText(/Save as…/);
+	await page.getByTestId('download-button').click();
+
+	const saved = () => page.evaluate(() => (window as unknown as { __saved: Saved }).__saved);
+	// A two-page PDF of blank fake pages is small, but it is the whole document.
+	await expect.poll(async () => (await saved()).bytes, { timeout: 20_000 }).toBeGreaterThan(500);
+	expect((await saved()).name).toBe('Tax return 2025.pdf');
+	// Handing the document over finishes the session, the same as Export does.
+	await expect(page.getByTestId('session-state')).toHaveText('Saved');
+});
+
+test('scan more appends pages and export writes to the configured folder', async ({ page }) => {
 	await scanToReview(page);
 
 	// The dashed tile at the end of the filmstrip runs the feeder again.
@@ -203,16 +255,16 @@ test('scan more appends pages and save to… writes to a listed folder', async (
 	// 4 of 6: page 2 of each run comes out blank and starts deleted.
 	await expect(page.getByTestId('page-count')).toHaveText('4 of 6 pages');
 
-	// Save to… offers output.directory, the only root when allowed_roots is empty.
-	await page.getByTestId('save-to-button').click();
-	const menu = page.getByTestId('save-to-menu');
-	await expect(menu).toBeVisible();
-	await menu.getByRole('button').filter({ hasText: 'Allowed folder' }).first().click();
+	// Export writes into output.directory, which is where the path under the button points.
+	await expect(page.getByTestId('export-path')).toBeVisible();
+	await page.getByTestId('save-button').click();
 	await expect(page.getByTestId('saved-message')).toBeVisible({ timeout: 20_000 });
 	await expect(page.getByTestId('session-state')).toHaveText('Saved');
 });
 
-test('turning the export button off promotes save to… in its place', async ({ page }) => {
+test('turning the export button off promotes the download button in its place', async ({
+	page
+}) => {
 	await page.goto('/settings');
 	const toggle = page.getByTestId('toggle-export-button');
 	await expect(toggle).toBeVisible();
@@ -221,7 +273,7 @@ test('turning the export button off promotes save to… in its place', async ({ 
 	await scanToReview(page);
 	await expect(page.getByTestId('save-button')).toHaveCount(0);
 	await expect(page.getByTestId('export-path')).toHaveCount(0);
-	await expect(page.getByTestId('save-to-button')).toBeVisible();
+	await expect(page.getByTestId('download-button')).toBeVisible();
 
 	// Put it back so the following tests see the default sidebar.
 	await page.goto('/settings');
