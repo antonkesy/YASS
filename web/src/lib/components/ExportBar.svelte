@@ -4,6 +4,7 @@
 	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 	import { activePageCount } from '$lib/format';
 	import { Icon } from '$lib/icons';
+	import ProgressBar from './ProgressBar.svelte';
 
 	let {
 		session,
@@ -86,19 +87,7 @@
 				{/if}
 			</div>
 			{#if exporting}
-				<div
-					class="h-1.5 overflow-hidden rounded-full bg-accent-100"
-					role="progressbar"
-					aria-valuemin="0"
-					aria-valuemax="100"
-					aria-valuenow={progress ?? 0}
-					aria-label="Export progress"
-				>
-					<div
-						class="h-full bg-linear-to-r from-accent-sky to-accent transition-[width] duration-100 ease-linear"
-						style:width="{progress ?? 5}%"
-					></div>
-				</div>
+				<ProgressBar percent={progress} label="Export progress" />
 			{/if}
 		</div>
 	{:else}

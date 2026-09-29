@@ -124,6 +124,8 @@
 	let suggestions = $state<NameSuggestionsDto | null>(null);
 	/** Why the suggestions are thin, shown in the popover rather than over the whole screen. */
 	let suggestError = $state<string | null>(null);
+	/** How far the model's weights have got, for the bar. Null whenever nothing is downloading. */
+	let downloading = $state<number | null>(null);
 
 	$effect(() => {
 		if ($connection === 'connected' && !$sessions.has(id)) {
@@ -486,6 +488,7 @@
 		run++;
 		suggesting = null;
 		suggestError = null;
+		downloading = null;
 	}
 
 	// The retry button can re-enter this while a call is in flight; only the latest one writes.
@@ -496,6 +499,7 @@
 		suggesting = 'reading';
 		suggestions = null;
 		suggestError = null;
+		downloading = null;
 
 		try {
 			// Whatever the server can offer goes up first: a slow or broken model must never
@@ -519,8 +523,10 @@
 
 			suggesting = 'thinking';
 			const named = await suggestName(input, $aiPrefs, $aiKeys, {
-				onphase: (phase: Phase) => {
-					if (run === mine) suggesting = phase;
+				onphase: (phase: Phase, percent?: number) => {
+					if (run !== mine) return;
+					suggesting = phase;
+					downloading = phase === 'downloading' ? (percent ?? null) : null;
 				}
 			});
 			if (run !== mine) return;
@@ -534,7 +540,10 @@
 			if (run !== mine) return;
 			suggestError = e instanceof NamingError ? e.message : hubError(e);
 		} finally {
-			if (run === mine) suggesting = 'ready';
+			if (run === mine) {
+				suggesting = 'ready';
+				downloading = null;
+			}
 		}
 	}
 
@@ -769,6 +778,7 @@
 						busy={busySuggesting}
 						reason={suggestReason}
 						canSuggest={offerFindName}
+						percent={downloading}
 						onrename={rename}
 						onsuggest={() => (suggesting ? closeSuggestions() : findName())}
 					/>
@@ -776,6 +786,7 @@
 					{#if suggesting}
 						<NameSuggestions
 							state={suggesting}
+							percent={downloading}
 							result={suggestions}
 							error={suggestError ?? suggestions?.Error ?? null}
 							current={documentName?.trim() ?? null}

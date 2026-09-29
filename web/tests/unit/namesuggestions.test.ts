@@ -41,6 +41,31 @@ describe('NameSuggestions', () => {
 		expect(screen.getByTestId('name-suggestions')).toHaveTextContent('Downloading the model…');
 	});
 
+	it('measures the download, because it is the one wait here worth measuring', () => {
+		const { unmount } = open({ state: 'downloading', result: null, percent: 42 });
+		const bar = screen.getByRole('progressbar', { name: 'Model download' });
+		expect(bar).toHaveAttribute('aria-valuenow', '42');
+		expect(screen.getByTestId('suggest-download')).toHaveTextContent('42%');
+		unmount();
+
+		// Before the engine has said anything, a bar with no figure on it: the wait is real
+		// and there is nothing honest to put in the number yet.
+		open({ state: 'downloading', result: null });
+		expect(screen.getByRole('progressbar', { name: 'Model download' })).not.toHaveAttribute(
+			'aria-valuenow'
+		);
+		expect(screen.getByTestId('suggest-download')).not.toHaveTextContent('%');
+	});
+
+	it('leaves the bar out of the waits that are only seconds long', () => {
+		const { unmount } = open({ state: 'reading', result: null });
+		expect(screen.queryByTestId('suggest-download')).toBeNull();
+		unmount();
+
+		open({ state: 'thinking', result: null });
+		expect(screen.queryByTestId('suggest-download')).toBeNull();
+	});
+
 	it('marks the row the document is already called', () => {
 		open({ current: 'Quarterly Report' });
 		const rows = screen.getAllByRole('button', { name: /Quarterly Report|2026/ });
