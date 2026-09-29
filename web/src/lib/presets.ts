@@ -89,6 +89,12 @@ export type AiPrefs = {
 	 * the server only reads a page when the button asks it to, never during a scan.
 	 */
 	findName: boolean;
+	/**
+	 * Fill a finished scan's name in from what the page says, without being asked. Only the
+	 * heading the server read and your template — a model is still something you press for,
+	 * because a model costs money or seconds and should not do either behind your back.
+	 */
+	autoName: boolean;
 	provider: AiProvider;
 	/** Base URL for the OpenAI-compatible shape. Empty falls back per provider. */
 	baseUrl: string;
@@ -107,6 +113,7 @@ export const AI_KEYS_KEY = 'yass.ai.keys';
 
 export const defaultAiPrefs: AiPrefs = {
 	findName: true,
+	autoName: true,
 	provider: 'off',
 	baseUrl: '',
 	models: {}
