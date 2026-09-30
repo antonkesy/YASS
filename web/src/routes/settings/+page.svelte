@@ -222,6 +222,15 @@
 	let drafting = $state(false);
 	let draftName = $state('');
 	let draftIcon = $state<PresetIconName>('star');
+	/**
+	 * Whether the preset should pin the scanner as well as the settings. Off by default: a
+	 * preset is about how to scan, and a "Receipts" that silently moved the machine would be
+	 * a surprise nobody asked for.
+	 */
+	let draftDevice = $state(false);
+
+	/** A device id as its human name, falling back to the id for one the server no longer lists. */
+	const deviceLabel = (id: string) => devices?.find((d) => d.Id === id)?.Name ?? id;
 
 	/** The shapes a found name can take, worded as the file name each one produces. */
 	const nameStyles: { value: NameStyle; label: string }[] = [
@@ -286,15 +295,17 @@
 	function savePreset() {
 		const name = draftName.trim();
 		if (!name) return;
+		const { Device, ...rest } = $settings;
 		const preset: Preset = {
 			id: `${Date.now().toString(36)}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
 			name,
 			icon: draftIcon,
-			settings: { ...$settings }
+			settings: draftDevice && Device ? { ...rest, Device } : rest
 		};
 		presets.set([...$presets, preset]);
 		drafting = false;
 		draftName = '';
+		draftDevice = false;
 	}
 
 	function updatePreset() {
@@ -437,6 +448,18 @@
 									Cancel
 								</button>
 							</div>
+							{#if $settings.Device}
+								<!-- Only worth asking when a scanner has actually been chosen. -->
+								<label class="flex items-center gap-2 text-xs font-semibold text-ink-2">
+									<input
+										type="checkbox"
+										class="h-4 w-4 accent-accent"
+										bind:checked={draftDevice}
+										data-testid="preset-device"
+									/>
+									Also pin the scanner ({deviceLabel($settings.Device)})
+								</label>
+							{/if}
 							<div class="flex flex-wrap gap-1.5">
 								{#each presetIcons as icon (icon)}
 									<button
@@ -489,11 +512,12 @@
 					onsubmit={(e) => e.preventDefault()}
 					data-testid="settings-form"
 				>
-					{#if editable.has('device') && devices && devices.length > 1}
+					{#if editable.has('device') && devices}
 						<!--
-							Only worth a control when there is a choice: one scanner is not a decision, and
-							the status pill in the header already says which one that is. A select rather
-							than a segmented row — device names are long and there is no telling how many.
+							Shown as soon as the list is in, however short it is: what the server can see is
+							worth knowing even when there is only one of it, and a control that vanishes is
+							a control nobody finds. A select rather than a segmented row — device names are
+							long and there is no telling how many.
 						-->
 						<label class="flex flex-col gap-1.5" data-testid="device-picker">
 							<span class="text-[13px] font-bold text-ink-2">
@@ -517,6 +541,12 @@
 									<option value={device.Id}>{device.Name}</option>
 								{/each}
 							</select>
+							{#if devices.length === 0}
+								<span class="text-[11px] text-ink-faint">
+									The server found no scanner. The list fills in once one is attached and the status
+									above says Ready.
+								</span>
+							{/if}
 						</label>
 					{/if}
 					{#if editable.has('source')}
