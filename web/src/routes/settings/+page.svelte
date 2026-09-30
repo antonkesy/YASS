@@ -36,6 +36,7 @@
 	} from '$lib/naming';
 	import { ExportFormat } from '$lib/hub/generated/Yass.Core.Hub';
 	import { exportFormatLabels } from '$lib/format';
+	import { fileExtensions } from '$lib/review/download';
 	import { expandParts, expandTemplate, offeredTokens, unknownTokens } from '$lib/template';
 	import { SAMPLE_NAME, styleName, type NameStyle } from '$lib/naming/style';
 	import { colorModeLabels } from '$lib/review/edits';
@@ -724,6 +725,7 @@
 					preview={templatePreview}
 					presets={templatePresets}
 					unknown={templateUnknown}
+					extension={fileExtensions[$exportPrefs.format]}
 					onchange={(v) => exportPrefs.set({ ...$exportPrefs, nameTemplate: v })}
 				/>
 				{#if $aiPrefs.findName}

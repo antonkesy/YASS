@@ -344,3 +344,19 @@ test('turning the export button off promotes the download button in its place', 
 	await page.goto('/settings');
 	await page.getByTestId('toggle-export-button').click();
 });
+
+test('the name a scan is shown under ends in the format that will be written', async ({ page }) => {
+	// The suffix beside a name is a promise about the file, and JPG writes one file per page
+	// rather than one PDF. Wiring rather than markup: the settings preview and the review
+	// screen both have to read the chosen format instead of assuming the default.
+	await page.goto('/settings');
+	await page.getByTestId('template-input').fill('{YEAR}-{MONTH}-{DAY}');
+	await expect(page.getByTestId('template-preview')).toContainText('.pdf');
+
+	await page.getByTestId('export-section').getByRole('radio', { name: 'JPG' }).check();
+	await expect(page.getByTestId('template-preview')).toContainText('.jpg');
+	await expect(page.getByTestId('template-preview')).not.toContainText('.pdf');
+
+	await scanToReview(page);
+	await expect(page.getByTestId('document-name')).toContainText('.jpg');
+});

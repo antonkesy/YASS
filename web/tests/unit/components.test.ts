@@ -457,6 +457,24 @@ describe('TemplateEditor', () => {
 		expect(screen.getByRole('button', { name: '{YEAR}' })).toBeInTheDocument();
 	});
 
+	it('ends every name in the extension the export format asks for', async () => {
+		// The preview is a promise about the file that will be written, so a JPG export must
+		// not be previewed as a PDF. Three places say it: the field, the preview, and each
+		// ready-made template in the menu.
+		const { rerender } = render(TemplateEditor, {
+			...editor(['YEAR']),
+			extension: '.jpg',
+			presets: [{ template: '{YEAR}', example: '2026' }]
+		});
+
+		expect(screen.getByTestId('template-preview')).toHaveTextContent('2026-09-24.jpg');
+		await fireEvent.click(screen.getByTestId('template-presets'));
+		expect(screen.getByRole('menuitem')).toHaveTextContent('2026.jpg');
+
+		await rerender({ ...editor(['YEAR']), extension: '.pdf' });
+		expect(screen.getByTestId('template-preview')).toHaveTextContent('2026-09-24.pdf');
+	});
+
 	it('tints the found name only where the preview says there is one', async () => {
 		const { rerender } = render(TemplateEditor, editor(['YEAR']));
 		expect(screen.queryByTestId('template-preview-name')).toBeNull();
