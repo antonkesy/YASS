@@ -10,11 +10,20 @@ public sealed class HubClient : IAsyncDisposable
 {
     private readonly HubConnection _connection;
 
+    /// <summary>Pushes land on the connection's own thread; a test reading a list must not race them.</summary>
+    private readonly Lock _pushes = new();
+
     private HubClient(HubConnection connection)
     {
         _connection = connection;
         connection.On<ScannerStatusDto>(nameof(IYassClient.ScannerStatusChanged), s => StatusChanges.Add(s));
-        connection.On<SessionDto>(nameof(IYassClient.SessionChanged), s => SessionChanges.Add(s));
+        connection.On<SessionDto>(nameof(IYassClient.SessionChanged), s =>
+        {
+            lock (_pushes)
+            {
+                SessionChanges.Add(s);
+            }
+        });
         connection.On<string, PageDto>(nameof(IYassClient.PageAdded), (id, p) => PagesAdded.Add((id, p)));
         connection.On<string, PageDto>(nameof(IYassClient.PageUpdated), (id, p) => PagesUpdated.Add((id, p)));
         connection.On<string, int>(nameof(IYassClient.ExportProgress), (id, p) => Progress.Add((id, p)));
@@ -111,14 +120,20 @@ public sealed class HubClient : IAsyncDisposable
         DateTime deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(10));
         while (true)
         {
-            if (SessionChanges.FirstOrDefault(predicate) is { } pushed)
+            SessionDto[] seen;
+            lock (_pushes)
+            {
+                seen = [.. SessionChanges];
+            }
+
+            if (seen.FirstOrDefault(predicate) is { } pushed)
             {
                 return pushed;
             }
 
             if (DateTime.UtcNow > deadline)
             {
-                throw new TimeoutException($"No matching SessionChanged push arrived; saw {SessionChanges.Count}.");
+                throw new TimeoutException($"No matching SessionChanged push arrived; saw {seen.Length}.");
             }
 
             await Task.Delay(25);
