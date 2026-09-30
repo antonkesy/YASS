@@ -27,4 +27,11 @@ public sealed record ScanOptions
     public double BlankPageThreshold { get; init; } = 0.02;
 
     public bool AutoDeskew { get; init; }
+
+    /// <summary>
+    /// Which scanner to use, by the id <see cref="Yass.Core.Scanning.ScannerDevice"/> reports.
+    /// Empty means whatever <c>scanner.device</c> resolves to, which is the only behaviour there
+    /// was before a browser could choose.
+    /// </summary>
+    public string Device { get; init; } = "";
 }

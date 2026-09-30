@@ -52,6 +52,9 @@ public interface IYassHub
 
     Task<ScannerStatusDto> GetScannerStatus();
 
+    /// <summary>Every scanner the driver can see, so a browser can pick one to scan on.</summary>
+    Task<ScannerDeviceDto[]> ListDevices();
+
     Task<ScanOptionsDto> GetEffectiveOptions();
 
     /// <summary>Re-reads every section of the config file except <c>server</c>.</summary>

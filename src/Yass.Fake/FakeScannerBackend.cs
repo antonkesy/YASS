@@ -14,6 +14,18 @@ public sealed class FakeScannerBackend(FakeScenario scenario) : IScannerBackend
     /// <summary>Options of the most recent <see cref="ScanAsync"/> call, for assertions.</summary>
     public ScanOptions? LastOptions { get; private set; }
 
+    /// <summary>
+    /// The scanners this fake pretends to have. The id is the name: a fake device has no
+    /// driver identifier to be distinct from what it is called.
+    /// </summary>
+    public Task<IReadOnlyList<ScannerDevice>> ListDevicesAsync(CancellationToken cancellationToken)
+    {
+        IReadOnlyList<ScannerDevice> devices = Scenario.NoDevice
+            ? []
+            : [.. Scenario.AllDevices.Select(name => new ScannerDevice(name, name))];
+        return Task.FromResult(devices);
+    }
+
     public Task<ScannerStatus> GetStatusAsync(CancellationToken cancellationToken)
     {
         ScannerStatus status = Scenario.NoDevice
@@ -38,6 +50,12 @@ public sealed class FakeScannerBackend(FakeScenario scenario) : IScannerBackend
         }
 
         LastOptions = options;
+        if (options.Device.Length > 0 && !Scenario.AllDevices.Contains(options.Device, StringComparer.Ordinal))
+        {
+            Volatile.Write(ref _scanning, 0);
+            throw new InvalidOperationException($"No scanner named '{options.Device}'.");
+        }
+
         try
         {
             int count = options.Source == ScanSource.Flatbed ? Math.Min(1, Scenario.PageCount) : Scenario.PageCount;

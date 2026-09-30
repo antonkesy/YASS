@@ -136,7 +136,7 @@ public class ConfigRoundTripTests
     [Fact]
     public void Scan_option_keys_match_spec() =>
         Assert.Equal(
-            ["source", "dpi", "color", "page_size", "brightness", "contrast", "blank_page_detection", "blank_page_threshold", "auto_deskew"],
+            ["source", "dpi", "color", "page_size", "brightness", "contrast", "blank_page_detection", "blank_page_threshold", "auto_deskew", "device"],
             ConfigKeys.ScanOptionKeys);
 
     /// <summary>Compares every leaf value by key. Records holding lists do not have value equality, so walk instead.</summary>

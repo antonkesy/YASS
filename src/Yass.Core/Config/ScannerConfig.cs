@@ -27,5 +27,5 @@ public sealed record ScannerConfig
     /// <summary>Keys of <see cref="ScanOptions"/> the UI may override, in snake_case.</summary>
     [ScanOptionKeys]
     public string[] UiEditable { get; init; } =
-        ["source", "dpi", "color", "page_size", "blank_page_detection"];
+        ["source", "dpi", "color", "page_size", "blank_page_detection", "device"];
 }

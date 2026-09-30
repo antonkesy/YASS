@@ -3,6 +3,7 @@ using Yass.Core.Config;
 using Yass.Core.Domain;
 using Yass.Core.Hub;
 using Yass.Core.Naming;
+using Yass.Core.Scanning;
 using Yass.Export;
 using Yass.Server.Config;
 using Yass.Server.Export;
@@ -14,6 +15,7 @@ namespace Yass.Server.Hub;
 /// <summary>The single SignalR hub. Thin: every method delegates to a service and never blocks on scanning or rendering.</summary>
 public sealed class YassHub(
     ScannerStatusMonitor scanner,
+    IScannerBackend backend,
     EffectiveOptions options,
     ConfigStore config,
     SessionStore sessions,
@@ -269,6 +271,12 @@ public sealed class YassHub(
     }
 
     public Task<ScannerStatusDto> GetScannerStatus() => Task.FromResult(scanner.Current);
+
+    public async Task<ScannerDeviceDto[]> ListDevices()
+    {
+        IReadOnlyList<ScannerDevice> devices = await backend.ListDevicesAsync(Context.ConnectionAborted).ConfigureAwait(false);
+        return [.. devices.Select(d => new ScannerDeviceDto(d.Id, d.Name))];
+    }
 
     /// <remarks>
     /// The two naming capabilities are added here rather than in <see cref="EffectiveOptions"/>:

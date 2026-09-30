@@ -66,7 +66,8 @@ public sealed record ScanOptionsDto(
     bool? AllowDownload = null,
     string[]? ExportRoots = null,
     bool? CanReadPageText = null,
-    int? PageTextPages = null);
+    int? PageTextPages = null,
+    string? Device = null);
 
 /// <param name="Suggestions">Best first.</param>
 /// <param name="CanRead">Whether page text could be read at all, which decides what the UI can offer.</param>
@@ -83,6 +84,10 @@ public sealed record NameSuggestionsDto(
 
 [TranspilationSource]
 public sealed record ScannerStatusDto(ScannerState State, string? DeviceName, string? Message, string CheckedAt);
+
+/// <summary>One scanner to choose between. <see cref="Id"/> is what a scan asks for.</summary>
+[TranspilationSource]
+public sealed record ScannerDeviceDto(string Id, string Name);
 
 [TranspilationSource]
 public enum ExportMode

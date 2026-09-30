@@ -89,6 +89,8 @@ export type ScanOptionsDto = {
     CanReadPageText?: boolean;
     /** Transpiled from int */
     PageTextPages?: number;
+    /** Transpiled from string? */
+    Device?: string;
 }
 
 /** Transpiled from Yass.Core.Hub.NameSuggestionsDto */
@@ -115,6 +117,14 @@ export type ScannerStatusDto = {
     Message?: string;
     /** Transpiled from string */
     CheckedAt: string;
+}
+
+/** Transpiled from Yass.Core.Hub.ScannerDeviceDto */
+export type ScannerDeviceDto = {
+    /** Transpiled from string */
+    Id: string;
+    /** Transpiled from string */
+    Name: string;
 }
 
 /** Transpiled from Yass.Core.Hub.ExportMode */

@@ -78,6 +78,11 @@ public sealed class EffectiveOptions(ConfigStore config)
             options = options with { AutoDeskew = deskew };
         }
 
+        if (editable.Contains("device") && requested.Device is { } device)
+        {
+            options = options with { Device = device };
+        }
+
         return options;
     }
 
@@ -94,6 +99,9 @@ public sealed class EffectiveOptions(ConfigStore config)
             options.BlankPageDetection,
             options.BlankPageThreshold,
             options.AutoDeskew,
-            editable);
+            editable)
+        {
+            Device = options.Device,
+        };
     }
 }

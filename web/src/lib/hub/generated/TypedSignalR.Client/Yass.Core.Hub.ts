@@ -3,7 +3,7 @@
 /* tslint:disable */
 // @ts-nocheck
 import type { IStreamResult, Subject } from '@microsoft/signalr';
-import type { ScanOptionsDto, SessionDto, ExportRequest, ExportResult, NameSuggestionsDto, ScannerStatusDto, PageDto } from '../Yass.Core.Hub';
+import type { ScanOptionsDto, SessionDto, ExportRequest, ExportResult, NameSuggestionsDto, ScannerStatusDto, ScannerDeviceDto, PageDto } from '../Yass.Core.Hub';
 import type { PageEdit } from '../Yass.Core.Domain';
 
 /**
@@ -98,6 +98,11 @@ export type IYassHub = {
     * @returns Transpiled from System.Threading.Tasks.Task<Yass.Core.Hub.ScannerStatusDto>
     */
     getScannerStatus(): Promise<ScannerStatusDto>;
+    /**
+    * Every scanner the driver can see, so a browser can pick one to scan on.
+    * @returns Transpiled from System.Threading.Tasks.Task<Yass.Core.Hub.ScannerDeviceDto[]>
+    */
+    listDevices(): Promise<ScannerDeviceDto[]>;
     /**
     * @returns Transpiled from System.Threading.Tasks.Task<Yass.Core.Hub.ScanOptionsDto>
     */
