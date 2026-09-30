@@ -172,10 +172,12 @@ renamed into place once complete, so the consumer never sees a partial document.
 
 ### Naming (optional)
 
-YASS can name a file from what is printed on the page. Nothing is read until you
-ask for it, and what is read stays on this machine; `provider` decides whether a
-model is asked as well, and it is off until you set one. Turning **Find name**
-off in the browser's settings stops all of it.
+YASS can name a file from what is printed on the page. It is **experimental**, and
+**Settings → Find name** arrives switched off — turn it on and the rest of this
+section applies. Nothing is read until you ask for it, and what is read stays on
+this machine; `provider` decides whether a model is asked as well, and it is off
+until you set one. Turning **Find name** back off stops all of it, and takes the
+`{NAME}` token out of the template editor and the name field with it.
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -188,11 +190,12 @@ off in the browser's settings stops all of it.
 | `naming.api_key_file` | `""` | Path to a file holding the API key. Never the key itself. |
 | `naming.timeout_seconds` | `20` | Per-request timeout. |
 
-Out of the box — `ocr: true`, `provider: off` — you get a suggestion from the
-largest heading on the page plus one from your filename template, and nothing
-leaves the machine. Adding `provider: ollama` asks a local model to summarise the page instead;
-`anthropic` sends the page text to Anthropic's API. The suggestions popover says
-which of those is happening.
+With **Find name** on and the server at its defaults — `ocr: true`,
+`provider: off` — you get a suggestion from the largest heading on the page plus
+one from your filename template, and nothing leaves the machine. Adding
+`provider: ollama` asks a local model to summarise the page instead; `anthropic`
+sends the page text to Anthropic's API. The suggestions popover says which of
+those is happening.
 
 ### Setting up a model from the browser
 
@@ -226,12 +229,16 @@ sparkle filling up as it goes.
 Every option here needs `naming.ocr: true` on the server, because a name comes
 from the words on the page. Where the server reads nothing — `ocr: false`, or no
 `tesseract` — nothing is named from the page, and the settings sheet says why.
+Either way the browser's own **Find name** switch has to be on first: it starts
+off, and while it is off none of this is on screen.
 
 ### Naming a scan
 
 A finished scan is already called what your file name template says — no reading,
 no waiting, no cost. Where the template has a `{NAME}` in it, that part sits in
-the name as an empty slot marked **name it**.
+the name as an empty slot marked **name it** — while **Find name** is on and the
+server reads pages. With either off the name field is an ordinary field, and the
+slot is simply not there, because nothing could fill it.
 
 Click the slot, or the sparkle beside the field, and the page is read and the slot
 filled by whatever **Settings → Find name** points at: the heading off the page
@@ -246,7 +253,9 @@ same paper: the refresh button at the top of the list is how you say the paper h
 changed.
 
 Saving without filling the slot drops it, and its separator with it: a template of
-`{YEAR}-{MONTH}-{DAY}_{NAME}` saves as `2026-09-29.pdf`.
+`{YEAR}-{MONTH}-{DAY}_{NAME}` saves as `2026-09-29.pdf`. That is also what happens
+to a template left over from when **Find name** was on — the token is inert, never
+written into a file name, and waiting where you left it if you switch back.
 
 The list of past scans calls each scan the same thing the review screen does, and the
 search box and the A–Z sort go by that name too — so a scan nobody has named is listed
@@ -256,7 +265,8 @@ it and rename it whenever you like; the list follows.
 ### Where the found name goes
 
 **Settings → File name template** takes a `{NAME}` token alongside `{YEAR}`, `{MONTH}`
-and the rest. It stands for whatever **Find name** came back with, so
+and the rest, and offers it as a chip while **Find name** is on. It stands for
+whatever **Find name** came back with, so
 
 ```
 {YEAR}-{MONTH}-{DAY}_{NAME}    →   2026-09-29_quarterly-report-northwind.pdf

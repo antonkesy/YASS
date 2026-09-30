@@ -15,6 +15,24 @@ async function stubModel(page: Page, body: object, status = 200) {
 	);
 }
 
+/**
+ * Find name ships off — it is experimental, and it costs OCR on the server — so a suite about
+ * what it does has to turn it on first. Seeded rather than clicked so the setting is already
+ * there on first paint, and only where nothing has been stored yet: a test that unchecks the
+ * toggle must have that stick across the navigations that follow.
+ *
+ * First-run behaviour, with nothing seeded at all, is `naming-default.e2e.ts`.
+ */
+async function withFindName(page: Page) {
+	await page.addInitScript(() => {
+		if (localStorage.getItem('yass.ai') === null) {
+			localStorage.setItem('yass.ai', JSON.stringify({ findName: true }));
+		}
+	});
+}
+
+test.beforeEach(({ page }) => withFindName(page));
+
 async function openNaming(page: Page) {
 	await page.goto('/settings');
 	const section = page.getByTestId('naming-section');
@@ -25,7 +43,7 @@ async function openNaming(page: Page) {
 test('the settings sheet says what the server can read', async ({ page }) => {
 	await openNaming(page);
 
-	// Find name is on out of the box, and the sheet says what the server brings to it.
+	// Find name is on for this suite, and the sheet says what the server brings to it.
 	await expect(page.getByTestId('ocr-state')).toContainText('reads page text');
 	// No provider chosen yet, so there is no key to ask for.
 	await expect(page.getByTestId('ai-key')).toHaveCount(0);
@@ -418,6 +436,7 @@ test('the template menu offers whole templates, shown as what they produce', asy
 test('turning Find name off hides it, and then nothing reads the page', async ({ page }) => {
 	const section = await openNaming(page);
 	await expect(section.getByRole('radio', { name: 'OpenAI-style' })).toBeVisible();
+	await page.getByTestId('template-input').fill('{YEAR}-{MONTH}-{DAY}_{NAME}');
 
 	await section.getByRole('checkbox', { name: /^Find name/ }).uncheck();
 
@@ -425,8 +444,34 @@ test('turning Find name off hides it, and then nothing reads the page', async ({
 	await expect(section.getByRole('radio', { name: 'OpenAI-style' })).toHaveCount(0);
 	await expect(page.getByTestId('find-name-off')).toBeVisible();
 
+	// And so does {NAME}: the chip, the templates built on it, and the tinted run in the
+	// preview. What is left is what the file will really be called.
+	await expect(section.getByRole('button', { name: '{NAME}' })).toHaveCount(0);
+	await expect(page.getByTestId('template-preview-name')).toHaveCount(0);
+	await page.getByTestId('template-presets').click();
+	const menu = page.getByRole('menu');
+	await expect(menu.getByRole('menuitem')).toHaveCount(3);
+	await expect(menu.getByRole('menuitem').filter({ hasText: '{NAME}' })).toHaveCount(0);
+	await page.keyboard.press('Escape');
+
+	// The template itself is left alone — a preference is not a one-way door — and the sheet
+	// says what becomes of the token that is still in it.
+	await expect(page.getByTestId('template-input')).toHaveValue('{YEAR}-{MONTH}-{DAY}_{NAME}');
+	await expect(page.getByTestId('name-token-inert')).toBeVisible();
+
 	await scanToReview(page);
 	await expect(page.getByTestId('name-suggest')).toHaveCount(0);
+	// The slot goes with the sparkle: it is the same click in a different place.
+	await expect(page.getByTestId('name-generated')).toHaveCount(0);
+	await expect(page.getByTestId('document-name')).toHaveAttribute(
+		'data-name',
+		/^\d{4}-\d{2}-\d{2}$/
+	);
+
+	// Saving is unaffected — {NAME} is dropped on the way out, as it always was.
+	await page.getByTestId('save-button').click();
+	await expect(page.getByTestId('saved-message')).toBeVisible({ timeout: 20_000 });
+	expect(readdirSync(CONSUME_DIR).some((f) => f.includes('{NAME}'))).toBe(false);
 
 	// And it comes back, because this is a preference and not a one-way door.
 	await openNaming(page);
@@ -434,8 +479,12 @@ test('turning Find name off hides it, and then nothing reads the page', async ({
 		.getByTestId('naming-section')
 		.getByRole('checkbox', { name: /^Find name/ })
 		.check();
+	await expect(
+		page.getByTestId('naming-section').getByRole('button', { name: '{NAME}' })
+	).toBeVisible();
 	await scanToReview(page);
 	await expect(page.getByTestId('name-suggest')).toBeVisible();
+	await expect(page.getByTestId('name-generated')).toHaveText(/name it/);
 });
 
 test('the CPU engine offers its models to a browser with no WebGPU at all', async ({ page }) => {

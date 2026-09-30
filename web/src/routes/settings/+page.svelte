@@ -36,7 +36,7 @@
 	} from '$lib/naming';
 	import { ExportFormat } from '$lib/hub/generated/Yass.Core.Hub';
 	import { exportFormatLabels } from '$lib/format';
-	import { expandParts, expandTemplate, templateTokens, unknownTokens } from '$lib/template';
+	import { expandParts, expandTemplate, offeredTokens, unknownTokens } from '$lib/template';
 	import { SAMPLE_NAME, styleName, type NameStyle } from '$lib/naming/style';
 	import { colorModeLabels } from '$lib/review/edits';
 
@@ -226,8 +226,9 @@
 		dpi: $settings.Dpi ?? effective?.Dpi ?? 300,
 		color: colorModeLabels[$settings.Color ?? effective?.Color ?? 2] ?? 'Color',
 		// A sample rather than a blank, so the chip shows what it is for and the style shows
-		// what it does before anyone has scanned anything.
-		name: styleName(SAMPLE_NAME, $exportPrefs.nameStyle)
+		// what it does before anyone has scanned anything. Blank once Find name is off: the
+		// preview then shows what the file would really be called, which is without it.
+		name: $aiPrefs.findName ? styleName(SAMPLE_NAME, $exportPrefs.nameStyle) : ''
 	});
 	const templatePreview = $derived(
 		$exportPrefs.nameTemplate.trim()
@@ -247,10 +248,14 @@
 			'{YEAR}-{MONTH}-{DAY}',
 			'{YEAR}-{MONTH}-{DAY}_{HOUR}{MINUTE}',
 			'{PRESET}-{COUNTER}'
-		].map((template) => ({
-			template,
-			example: expandTemplate(template, new Date(), previewFacts)
-		}))
+		]
+			// Nothing can fill `{NAME}` with Find name off, and `{NAME}` alone would offer a
+			// template that expands to nothing at all.
+			.filter((template) => $aiPrefs.findName || !template.includes('{NAME}'))
+			.map((template) => ({
+				template,
+				example: expandTemplate(template, new Date(), previewFacts)
+			}))
 	);
 	const templateUnknown = $derived(unknownTokens($exportPrefs.nameTemplate));
 
@@ -715,35 +720,49 @@
 				<span class="text-[13px] font-bold text-ink-2">File name template</span>
 				<TemplateEditor
 					value={$exportPrefs.nameTemplate}
-					tokens={templateTokens}
+					tokens={offeredTokens($aiPrefs.findName)}
 					preview={templatePreview}
 					presets={templatePresets}
 					unknown={templateUnknown}
 					onchange={(v) => exportPrefs.set({ ...$exportPrefs, nameTemplate: v })}
 				/>
-				<span class="text-[11px] text-ink-faint">
-					<code class="font-mono">{'{NAME}'}</code> is what
-					<strong class="font-bold">Find name</strong> came back with, dropped in wherever you put it.
-					Without it, picking a suggestion replaces the whole name.
-				</span>
+				{#if $aiPrefs.findName}
+					<span class="text-[11px] text-ink-faint">
+						<code class="font-mono">{'{NAME}'}</code> is what
+						<strong class="font-bold">Find name</strong> came back with, dropped in wherever you put it.
+						Without it, picking a suggestion replaces the whole name.
+					</span>
+				{:else if $exportPrefs.nameTemplate.includes('{NAME}')}
+					<!-- The token is left in the template rather than rewritten out of it: it is theirs,
+					     and turning Find name back on should find it where they left it. -->
+					<span class="text-[11px] text-ink-faint" data-testid="name-token-inert">
+						This template still has <code class="font-mono">{'{NAME}'}</code> in it. With
+						<strong class="font-bold">Find name</strong> off nothing fills it, so it is dropped from the
+						saved name along with the separator beside it.
+					</span>
+				{/if}
 			</div>
 
-			<div class="col-span-full">
-				<Segmented
-					name="name-style"
-					label="Found names"
-					hint="how the words of a found name are joined"
-					options={nameStyles.map((n) => ({ value: n.value, label: n.label }))}
-					value={$exportPrefs.nameStyle}
-					onchange={(v) => exportPrefs.set({ ...$exportPrefs, nameStyle: v as NameStyle })}
-				/>
-			</div>
+			<!-- Shapes a found name and nothing else, so it keeps the toggle's company. -->
+			{#if $aiPrefs.findName}
+				<div class="col-span-full">
+					<Segmented
+						name="name-style"
+						label="Found names"
+						hint="how the words of a found name are joined"
+						options={nameStyles.map((n) => ({ value: n.value, label: n.label }))}
+						value={$exportPrefs.nameStyle}
+						onchange={(v) => exportPrefs.set({ ...$exportPrefs, nameStyle: v as NameStyle })}
+					/>
+				</div>
+			{/if}
 
 			<div class="col-span-full rounded-[16px] bg-app px-3.5 py-1.5">
 				<Toggle
 					name="find_name"
 					label="Find name"
-					hint="Suggest a file name from the words on the page"
+					badge="Experimental"
+					hint="Suggest a file name from the words on the page — may change or go away"
 					checked={$aiPrefs.findName}
 					onchange={(v) => aiPrefs.set({ ...$aiPrefs, findName: v })}
 				/>

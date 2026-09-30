@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	expandParts,
 	expandTemplate,
+	offeredTokens,
 	resolveName,
 	templateTokens,
 	unknownTokens
@@ -46,6 +47,24 @@ describe('expandTemplate', () => {
 		// Twelve the server knows, plus {NAME}, which only this browser can fill.
 		expect(templateTokens).toHaveLength(13);
 		expect(templateTokens).toContain('NAME');
+	});
+});
+
+describe('offeredTokens', () => {
+	it('keeps {NAME} only while Find name is there to fill it', () => {
+		expect(offeredTokens(true)).toEqual([...templateTokens]);
+
+		const off = offeredTokens(false);
+		expect(off).not.toContain('NAME');
+		expect(off).toEqual(templateTokens.filter((t) => t !== 'NAME'));
+	});
+
+	it('leaves a saved {NAME} a known token, not a typo', () => {
+		// The chip goes; the token does not. A template saved while the feature was on still
+		// works — resolveName drops {NAME} on the way to a file name — so flagging it red
+		// would be telling someone their template is broken when it is not.
+		expect(unknownTokens('{YEAR}-{MONTH}-{DAY}_{NAME}')).toEqual([]);
+		expect(resolveName('{YEAR}-{MONTH}-{DAY}_{NAME}', '')).toBe('{YEAR}-{MONTH}-{DAY}');
 	});
 });
 

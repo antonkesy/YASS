@@ -93,4 +93,38 @@ describe('NameField', () => {
 		});
 		expect(screen.queryByTestId('name-suggest-progress')).toBeNull();
 	});
+
+	it('shows the slot the template left, and asks for a name when it is clicked', async () => {
+		const onsuggest = vi.fn();
+		render(NameField, {
+			value: '2026-09-24',
+			placeholder: '10:00',
+			generated: { before: '2026-09-24_', generated: '', after: '', filled: false },
+			onrename: vi.fn(),
+			onsuggest
+		});
+
+		const slot = screen.getByTestId('name-generated');
+		expect(slot).toHaveTextContent('name it');
+
+		await fireEvent.click(slot);
+		expect(onsuggest).toHaveBeenCalled();
+	});
+
+	it('drops the slot along with the sparkle when a name cannot be asked for', () => {
+		// The chip and the sparkle are one feature in two places: both are the same click. A
+		// slot left behind where Find name is off would be an invitation nothing can honour.
+		render(NameField, {
+			value: '2026-09-24',
+			placeholder: '10:00',
+			generated: null,
+			canSuggest: false,
+			onrename: vi.fn(),
+			onsuggest: vi.fn()
+		});
+
+		expect(screen.queryByTestId('name-generated')).toBeNull();
+		expect(screen.queryByTestId('name-suggest')).toBeNull();
+		expect(screen.getByTestId('name-input')).toHaveValue('2026-09-24');
+	});
 });
