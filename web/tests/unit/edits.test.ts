@@ -4,7 +4,6 @@ import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 import { sessionOf } from './fixtures';
 import {
 	applyOptimistic,
-	documentNumbers,
 	deleteEdit,
 	reorderEdit,
 	restoreEdit,
@@ -12,7 +11,6 @@ import {
 	rotateEdit,
 	setCropEdit,
 	setFilterEdit,
-	setSplitEdit,
 	targetsOf
 } from '$lib/review/edits';
 
@@ -37,11 +35,6 @@ describe('edit builders', () => {
 			Targets: [1]
 		});
 		expect(setCropEdit(undefined, new Set([1])).Crop).toBeUndefined();
-		expect(setSplitEdit(true, new Set([2]))).toMatchObject({
-			Op: PageEditOp.SetSplit,
-			Split: true,
-			Targets: [2]
-		});
 		expect(reorderEdit([1, 0])).toMatchObject({ Op: PageEditOp.Reorder, Order: [1, 0] });
 	});
 
@@ -78,26 +71,5 @@ describe('applyOptimistic', () => {
 		expect(s.Pages.map((p) => p.Hash)).toEqual(['h2', 'h0', 'h1']);
 		expect(s.Pages.map((p) => p.Index)).toEqual([0, 1, 2]);
 		expect(applyOptimistic(session(3), reorderEdit([0, 1]))).toEqual(session(3));
-	});
-});
-
-describe('documentNumbers', () => {
-	it('numbers documents from one and skips deleted pages', () => {
-		const s = sessionOf('s', 5);
-		s.Pages[2].StartsDocument = true;
-		s.Pages[1].Deleted = true;
-		const numbers = documentNumbers(s.Pages);
-		expect([...numbers]).toEqual([
-			[0, 1],
-			[2, 2],
-			[3, 2],
-			[4, 2]
-		]);
-	});
-
-	it('opens a document on the first active page whatever its flag says', () => {
-		const s = sessionOf('s', 2);
-		s.Pages[0].StartsDocument = true;
-		expect(documentNumbers(s.Pages).get(1)).toBe(1);
 	});
 });

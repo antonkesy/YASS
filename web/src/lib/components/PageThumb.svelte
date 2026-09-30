@@ -10,7 +10,6 @@
 		selected = false,
 		current = false,
 		selectable = true,
-		document = null,
 		onshow,
 		ontoggle,
 		onopen
@@ -23,8 +22,6 @@
 		current?: boolean;
 		/** Whether the tick box is offered; the filmstrip leaves selecting to the overview. */
 		selectable?: boolean;
-		/** Document number to badge this page with, when it opens one past the first. */
-		document?: number | null;
 		onshow: (index: number) => void;
 		ontoggle: (index: number) => void;
 		/** Opens the page full screen. Left out where the toolbar offers that instead. */
@@ -55,14 +52,6 @@
 	data-current={current}
 	data-deleted={page.Deleted}
 >
-	{#if document !== null}
-		<span
-			class="absolute -top-1.5 left-1 z-1 animate-pop-in rounded-full bg-accent px-[7px] py-[3px] text-[10px] font-bold text-white"
-			data-testid="doc-badge"
-		>
-			Doc {document}
-		</span>
-	{/if}
 	<button
 		type="button"
 		class="relative flex w-full items-center justify-center overflow-hidden rounded-[6px] bg-surface shadow-page"

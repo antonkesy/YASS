@@ -104,7 +104,8 @@ describe('Toolbar', () => {
 		expect(screen.queryByTestId('toolbar-select-all')).toBeNull();
 		await fireEvent.click(screen.getByRole('button', { name: 'Rotate right' }));
 		expect(onrotate).toHaveBeenCalledWith(90);
-		expect(screen.getByTestId('restore-button')).toBeDisabled();
+		// Nothing is deleted, so there is nothing to restore and no button offering to.
+		expect(screen.queryByTestId('restore-button')).toBeNull();
 		await fireEvent.click(screen.getByTestId('filter-button'));
 		await fireEvent.click(screen.getByRole('menuitem', { name: 'Black & white' }));
 		expect(onfilter).toHaveBeenCalledWith(PageFilter.Bw);
@@ -125,14 +126,69 @@ describe('Toolbar', () => {
 		const { rerender } = render(Toolbar, props);
 		expect(screen.queryByTestId('expand-button')).toBeNull();
 
-		// Disabled here means "not editable", e.g. mid-scan; looking at a page still works.
+		// Disabled here means "not editable", e.g. mid-scan. The edits go, because none of
+		// them can be made; looking at a page is not an edit, so Expand stays.
 		await rerender({ ...props, onexpand, disabled: true });
 		expect(screen.getByTestId('expand-button')).toBeEnabled();
+		expect(screen.queryByRole('button', { name: 'Rotate right' })).toBeNull();
+		expect(screen.queryByTestId('filter-button')).toBeNull();
+		expect(screen.queryByTestId('delete-button')).toBeNull();
 		await fireEvent.click(screen.getByTestId('expand-button'));
 		expect(onexpand).toHaveBeenCalled();
 
+		// Nothing scanned yet: there is no page to open, so Expand goes too.
 		await rerender({ ...props, onexpand, total: 0 });
-		expect(screen.getByTestId('expand-button')).toBeDisabled();
+		expect(screen.queryByTestId('expand-button')).toBeNull();
+	});
+
+	it('shows Crop and Rescan for one page, and drops them for many or mid-scan', async () => {
+		const props = {
+			selectedCount: 0,
+			total: 3,
+			anyDeleted: false,
+			oncrop: vi.fn(),
+			onrescan: vi.fn(),
+			onrotate: vi.fn(),
+			ondelete: vi.fn(),
+			onrestore: vi.fn(),
+			onfilter: vi.fn(),
+			onclear: vi.fn()
+		};
+
+		// Nothing ticked is the page on the stage — one page, so both are on offer.
+		const { rerender } = render(Toolbar, props);
+		expect(screen.getByTestId('crop-button')).toBeInTheDocument();
+		expect(screen.getByTestId('rescan-button')).toBeInTheDocument();
+
+		await rerender({ ...props, selectedCount: 1 });
+		expect(screen.getByTestId('crop-button')).toBeInTheDocument();
+
+		// Neither means anything for a set of pages, nor while the feeder is still going.
+		await rerender({ ...props, selectedCount: 2 });
+		expect(screen.queryByTestId('crop-button')).toBeNull();
+		expect(screen.queryByTestId('rescan-button')).toBeNull();
+
+		await rerender({ ...props, scanning: true });
+		expect(screen.queryByTestId('crop-button')).toBeNull();
+		expect(screen.queryByTestId('rescan-button')).toBeNull();
+	});
+
+	it('offers Restore only once something is deleted', async () => {
+		const props = {
+			selectedCount: 0,
+			total: 3,
+			anyDeleted: false,
+			onrotate: vi.fn(),
+			ondelete: vi.fn(),
+			onrestore: vi.fn(),
+			onfilter: vi.fn(),
+			onclear: vi.fn()
+		};
+		const { rerender } = render(Toolbar, props);
+		expect(screen.queryByTestId('restore-button')).toBeNull();
+
+		await rerender({ ...props, anyDeleted: true });
+		expect(screen.getByTestId('restore-button')).toBeInTheDocument();
 	});
 
 	it('acts on the page on screen until asked for the whole scan, where it is scoped', async () => {

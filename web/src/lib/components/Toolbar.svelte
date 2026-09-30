@@ -16,9 +16,6 @@
 		onexpand,
 		oncrop,
 		onrescan,
-		onsplit,
-		splits = false,
-		firstPage = false,
 		scoped = false,
 		onclear,
 		onselectall
@@ -37,12 +34,6 @@
 		onexpand?: () => void;
 		oncrop?: () => void;
 		onrescan?: () => void;
-		/** Toggles whether the target page opens a document. */
-		onsplit?: (split: boolean) => void;
-		/** Whether the target page currently opens a document. */
-		splits?: boolean;
-		/** The target page is the first one, which always opens a document. */
-		firstPage?: boolean;
 		/**
 		 * Whether this toolbar manages a selection. Only the all-pages view does: the review
 		 * screen shows one page at a time, and a toolbar under it that could be acting on
@@ -62,10 +53,23 @@
 	 * of the page someone was looking at, with nothing on screen to tell them apart.
 	 */
 	const scope = $derived(selectedCount === 0 ? 'this page' : `${selectedCount} selected`);
-	const one = $derived(selectedCount === 1);
+
+	/**
+	 * Whether the edits point at exactly one page, which is what Crop and Rescan need. Nothing
+	 * ticked counts: that is the page on the stage, and it is the one they act on.
+	 */
+	const one = $derived(selectedCount <= 1);
+
+	/**
+	 * A button is here when pressing it would do something, and absent when it would not —
+	 * no shelf of grey buttons explaining what you cannot have. Editing stops altogether
+	 * while a scan runs, so the row empties down to Expand until the feeder does.
+	 */
+	const editing = $derived(!disabled);
+	const canAim = $derived(editing && !scanning && one);
 
 	const tool =
-		'flex h-[58px] min-w-[62px] flex-col items-center justify-center gap-1 rounded-[14px] px-2 text-[11px] font-bold transition-colors hover:bg-accent-hover50 disabled:pointer-events-none disabled:opacity-35';
+		'flex h-[58px] min-w-[62px] flex-col items-center justify-center gap-1 rounded-[14px] px-2 text-[11px] font-bold transition-colors hover:bg-accent-hover50';
 </script>
 
 <div
@@ -87,11 +91,10 @@
 			>
 				Clear
 			</button>
-		{:else if onselectall && total > 1}
+		{:else if onselectall && total > 1 && editing}
 			<button
 				type="button"
 				class="h-9 rounded-full px-3 text-[13px] font-bold text-accent transition-colors hover:bg-accent-wash"
-				{disabled}
 				onclick={onselectall}
 				data-testid="toolbar-select-all"
 			>
@@ -102,12 +105,11 @@
 		<span class="mx-1 h-8 w-px bg-line" aria-hidden="true"></span>
 	{/if}
 
-	{#if onexpand}
+	{#if onexpand && total > 0}
 		<!-- Looking at a page is not editing it, so this one stays on while a scan runs. -->
 		<button
 			type="button"
 			class="text-ink {tool}"
-			disabled={total === 0}
 			onclick={onexpand}
 			aria-label="Open this page full screen"
 			data-testid="expand-button"
@@ -117,32 +119,31 @@
 		</button>
 	{/if}
 
-	<button
-		type="button"
-		class="text-ink {tool}"
-		{disabled}
-		onclick={() => onrotate(-90)}
-		aria-label="Rotate left"
-	>
-		<Icon name="rotateLeft" />
-		Left
-	</button>
-	<button
-		type="button"
-		class="text-ink {tool}"
-		{disabled}
-		onclick={() => onrotate(90)}
-		aria-label="Rotate right"
-	>
-		<Icon name="rotateRight" />
-		Right
-	</button>
-
-	{#if oncrop}
+	{#if editing}
 		<button
 			type="button"
 			class="text-ink {tool}"
-			disabled={disabled || scanning || !one}
+			onclick={() => onrotate(-90)}
+			aria-label="Rotate left"
+		>
+			<Icon name="rotateLeft" />
+			Left
+		</button>
+		<button
+			type="button"
+			class="text-ink {tool}"
+			onclick={() => onrotate(90)}
+			aria-label="Rotate right"
+		>
+			<Icon name="rotateRight" />
+			Right
+		</button>
+	{/if}
+
+	{#if oncrop && canAim}
+		<button
+			type="button"
+			class="text-ink {tool}"
 			onclick={oncrop}
 			aria-label="Crop page"
 			data-testid="crop-button"
@@ -152,25 +153,25 @@
 		</button>
 	{/if}
 
-	<button
-		type="button"
-		class="{filterOpen ? 'bg-accent-50 text-accent' : 'text-ink'} {tool}"
-		{disabled}
-		onclick={() => (filterOpen = !filterOpen)}
-		aria-expanded={filterOpen}
-		aria-haspopup="menu"
-		aria-label="Filter"
-		data-testid="filter-button"
-	>
-		<Icon name="wand" />
-		Filter
-	</button>
+	{#if editing}
+		<button
+			type="button"
+			class="{filterOpen ? 'bg-accent-50 text-accent' : 'text-ink'} {tool}"
+			onclick={() => (filterOpen = !filterOpen)}
+			aria-expanded={filterOpen}
+			aria-haspopup="menu"
+			aria-label="Filter"
+			data-testid="filter-button"
+		>
+			<Icon name="wand" />
+			Filter
+		</button>
+	{/if}
 
-	{#if onrescan}
+	{#if onrescan && canAim}
 		<button
 			type="button"
 			class="text-ink {tool}"
-			disabled={disabled || scanning || !one}
 			onclick={onrescan}
 			aria-label="Rescan this page"
 			data-testid="rescan-button"
@@ -180,41 +181,23 @@
 		</button>
 	{/if}
 
-	{#if onsplit}
-		<button
-			type="button"
-			class="{splits ? 'bg-accent-50 text-accent' : 'text-ink'} {tool}"
-			disabled={disabled || firstPage}
-			onclick={() => onsplit(!splits)}
-			aria-pressed={splits}
-			aria-label={splits ? 'Join with previous page' : 'Split before this page'}
-			data-testid="split-button"
-		>
-			<Icon name="scissors" />
-			{splits ? 'Join' : 'Split'}
+	{#if editing && anyDeleted}
+		<button type="button" class="text-ink {tool}" onclick={onrestore} data-testid="restore-button">
+			<Icon name="layers" />
+			Restore
 		</button>
 	{/if}
-
-	<button
-		type="button"
-		class="text-ink {tool}"
-		disabled={disabled || !anyDeleted}
-		onclick={onrestore}
-		data-testid="restore-button"
-	>
-		<Icon name="layers" />
-		Restore
-	</button>
-	<button
-		type="button"
-		class="text-danger hover:bg-danger-bg! {tool}"
-		{disabled}
-		onclick={ondelete}
-		data-testid="delete-button"
-	>
-		<Icon name="trash" />
-		Delete
-	</button>
+	{#if editing}
+		<button
+			type="button"
+			class="text-danger hover:bg-danger-bg! {tool}"
+			onclick={ondelete}
+			data-testid="delete-button"
+		>
+			<Icon name="trash" />
+			Delete
+		</button>
+	{/if}
 
 	{#if filterOpen}
 		<button

@@ -13,7 +13,6 @@
 		current = -1,
 		reorderable = true,
 		scanning = false,
-		documents,
 		layout = 'strip',
 		tile = DEFAULT_TILE,
 		grid = $bindable(null),
@@ -32,8 +31,6 @@
 		reorderable?: boolean;
 		/** Shows a placeholder tile for the page currently coming off the feeder. */
 		scanning?: boolean;
-		/** Page index to document number, so a split shows where it falls. */
-		documents?: Map<number, number>;
 		/**
 		 * `strip` is the filmstrip beside the stage; `overview` is the same pages as a
 		 * wrapping grid, sized by `tile`, for the full-screen all-pages view.
@@ -285,9 +282,6 @@
 					selected={selection.has(page.Index)}
 					current={page.Index === current}
 					selectable={overview}
-					document={page.StartsDocument && (documents?.get(page.Index) ?? 0) > 1
-						? documents!.get(page.Index)!
-						: null}
 					onshow={show}
 					ontoggle={toggle}
 					onopen={overview ? onopen : undefined}
