@@ -761,45 +761,40 @@
 					Stop sits in a slot of its own rather than after the pills: the pills change
 					width as pages arrive, and a Stop button that slides around mid-scan is both
 					hard to hit and hard to test.
+
+					The row holds the state chip and Stop, and neither exists once a scan is in
+					review — so the row goes too, rather than leaving a gap above the page.
 				-->
-				<div
-					class="relative flex w-full flex-wrap items-center justify-center gap-2 {scanning
-						? 'pr-24'
-						: ''}"
-				>
-					<!--
-						Every state but this one says something the screen does not: pages are still
-						coming, the save is running, it failed, it is saved. "Ready to review" says
-						only that you are looking at a scan you can edit, which the pages under it
-						and the toolbar beneath them have already said.
-					-->
-					{#if session.State !== SessionState.Review}
+				{#if session.State !== SessionState.Review}
+					<div
+						class="relative flex w-full flex-wrap items-center justify-center gap-2 {scanning
+							? 'pr-24'
+							: ''}"
+					>
+						<!--
+							Every state but Review says something the screen does not: pages are still
+							coming, the save is running, it failed, it is saved. That is the same
+							condition the row itself is under, so the chip needs no test of its own.
+						-->
 						<span
 							class="rounded-full bg-surface px-3 py-1.5 text-[13px] font-bold shadow-chip"
 							data-testid="session-state"
 						>
 							{sessionStateLabel(session.State)}
 						</span>
-					{/if}
-					{#if session.Pages.length > 0}
-						<span
-							class="rounded-full bg-surface px-3 py-1.5 text-[13px] font-bold tabular-nums shadow-chip"
-						>
-							Page {current + 1} of {session.Pages.length}
-						</span>
-					{/if}
-					{#if scanning}
-						<button
-							type="button"
-							class="absolute top-1/2 right-0 flex h-[30px] -translate-y-1/2 items-center gap-1.5 rounded-full bg-surface px-3 text-[13px] font-bold text-ink shadow-chip transition-colors hover:bg-danger-bg hover:text-danger"
-							onclick={stop}
-							data-testid="stop-button"
-						>
-							<Icon name="stop" size={14} />
-							Stop
-						</button>
-					{/if}
-				</div>
+						{#if scanning}
+							<button
+								type="button"
+								class="absolute top-1/2 right-0 flex h-[30px] -translate-y-1/2 items-center gap-1.5 rounded-full bg-surface px-3 text-[13px] font-bold text-ink shadow-chip transition-colors hover:bg-danger-bg hover:text-danger"
+								onclick={stop}
+								data-testid="stop-button"
+							>
+								<Icon name="stop" size={14} />
+								Stop
+							</button>
+						{/if}
+					</div>
+				{/if}
 
 				{#if shown}
 					<div class="flex w-full items-center justify-center gap-2 lg:min-h-0 lg:flex-1">
@@ -848,6 +843,16 @@
 					>
 						{scanning ? 'Waiting for the first page…' : 'No pages'}
 					</div>
+				{/if}
+
+				{#if session.Pages.length > 0}
+					<!-- Under the page rather than over it, and as few characters as say it. -->
+					<p
+						class="text-[13px] font-semibold text-ink-muted tabular-nums"
+						data-testid="page-position"
+					>
+						{current + 1} / {session.Pages.length}
+					</p>
 				{/if}
 
 				{@render pageTools(false)}
