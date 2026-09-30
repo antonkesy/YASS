@@ -43,9 +43,9 @@ test('a scan is named by the template alone, with nothing to click', async ({ pa
 	await page.goto('/');
 	await page.getByTestId('scan-button').click();
 	await expect(page).toHaveURL(/\/session\/[A-Za-z0-9-]+$/);
-	await expect(page.getByTestId('session-state')).toHaveText('Ready to review', {
-		timeout: 20_000
-	});
+	// The scan is over once its edits are on offer: the toolbar carries them only while the
+	// session is editable, which it is not while the feeder is still going.
+	await expect(page.getByTestId('delete-button')).toBeVisible({ timeout: 20_000 });
 
 	// No sparkle, no slot: the name field is a field, and the name is the template.
 	await expect(page.getByTestId('name-suggest')).toHaveCount(0);
