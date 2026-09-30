@@ -152,6 +152,14 @@
 		session?.State === SessionState.Review || session?.State === SessionState.Done
 	);
 	const activePages = $derived(session ? activePageCount(session) : 0);
+	/** Why the sidebar's buttons are greyed while the scan is not in review, for their tooltips. */
+	const busyReason = $derived(
+		scanning
+			? 'Wait for the scan to finish'
+			: session?.State === SessionState.Exporting
+				? 'Wait for the save to finish'
+				: 'This scan can no longer be edited'
+	);
 	const shown = $derived(session?.Pages[current] ?? null);
 
 	/**
@@ -938,11 +946,13 @@
 
 				<div class="flex flex-col gap-0.5" data-testid="more-section">
 					{@render heading('More')}
+					<!-- A greyed button says why on hover: rule of thumb, no dead control without a reason. -->
 					<button
 						type="button"
 						class={ghost}
 						onclick={scanMore}
 						disabled={!editable}
+						title={editable ? undefined : busyReason}
 						data-testid="scan-more-button"
 					>
 						<Icon name="plus" />
@@ -953,6 +963,11 @@
 						class={ghost}
 						onclick={() => (merging = true)}
 						disabled={!editable || mergeable.length === 0}
+						title={!editable
+							? busyReason
+							: mergeable.length === 0
+								? 'No other scan has pages to add'
+								: undefined}
 						data-testid="merge-button"
 					>
 						<Icon name="layers" />
