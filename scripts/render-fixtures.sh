@@ -31,7 +31,21 @@ for markdown in "$source_dir"/*.md; do
   # A4 because that is what the scanner defaults to, and what the page size assertions in
   # Yass.Export.Tests read back out of the PDF. DejaVu because typst ships no fonts of its
   # own and an empty fallback list is a hard error.
-  pandoc "$markdown" --pdf-engine=typst -V papersize=a4 -V mainfont="DejaVu Sans" -o "$pdf"
+  #
+  # A page named *-landscape is turned on its side. It has to go in through the preamble:
+  # pandoc's typst template hands the body to conf(), which sets the page itself, so a set
+  # rule written in the document is overruled before it can do anything.
+  case "$name" in
+    *-landscape)
+      flip=$(mktemp)
+      printf '#set page(flipped: true)\n' > "$flip"
+      pandoc "$markdown" --pdf-engine=typst -H "$flip" -V papersize=a4 -V mainfont="DejaVu Sans" -o "$pdf"
+      rm -f "$flip"
+      ;;
+    *)
+      pandoc "$markdown" --pdf-engine=typst -V papersize=a4 -V mainfont="DejaVu Sans" -o "$pdf"
+      ;;
+  esac
 
   # Greyscale, like a document scanner's own output, and the one thing tesseract most wants —
   # except the page whose name says it is in colour, which is there so the review screen's
