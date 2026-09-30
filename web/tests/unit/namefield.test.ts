@@ -94,6 +94,27 @@ describe('NameField', () => {
 		expect(screen.queryByTestId('name-suggest-progress')).toBeNull();
 	});
 
+	it('ends the name in the extension the export format asks for', () => {
+		const { unmount } = render(NameField, {
+			value: 'Invoice',
+			placeholder: '10:00',
+			extension: '.png',
+			onrename: vi.fn(),
+			onsuggest: vi.fn()
+		});
+		expect(screen.getByTestId('document-name')).toHaveTextContent('.png');
+		unmount();
+
+		// PDF is only the default, not the assumption.
+		render(NameField, {
+			value: 'Invoice',
+			placeholder: '10:00',
+			onrename: vi.fn(),
+			onsuggest: vi.fn()
+		});
+		expect(screen.getByTestId('document-name')).toHaveTextContent('.pdf');
+	});
+
 	it('shows the slot the template left, and asks for a name when it is clicked', async () => {
 		const onsuggest = vi.fn();
 		render(NameField, {

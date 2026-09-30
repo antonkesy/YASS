@@ -8,6 +8,7 @@
 		preview,
 		presets = [],
 		unknown,
+		extension = '.pdf',
 		onchange
 	}: {
 		value: string;
@@ -19,6 +20,8 @@
 		presets?: readonly { template: string; example: string }[];
 		/** Tokens in the template the server does not know. */
 		unknown: readonly string[];
+		/** What the saved file will end in, which is the export format's and not always PDF. */
+		extension?: string;
 		onchange: (value: string) => void;
 	} = $props();
 
@@ -65,7 +68,7 @@
 			onclick={remember}
 			data-testid="template-input"
 		/>
-		<span class="font-mono text-[13px] font-semibold text-ink-faint">.pdf</span>
+		<span class="font-mono text-[13px] font-semibold text-ink-faint">{extension}</span>
 	</label>
 
 	{#if presets.length > 0}
@@ -105,7 +108,7 @@
 								open = false;
 							}}
 						>
-							<span class="font-mono text-[13px] font-bold">{preset.example}.pdf</span>
+							<span class="font-mono text-[13px] font-bold">{preset.example}{extension}</span>
 							<span class="font-mono text-[11px] text-ink-muted">{preset.template}</span>
 						</button>
 					{/each}
@@ -139,7 +142,7 @@
 						class="rounded-[5px] bg-ai-bg px-1 text-ai-ink"
 						title="Filled in by Find name"
 						data-testid="template-preview-name">{part.text}</span
-					>{:else}{part.text}{/if}{/each}.pdf
+					>{:else}{part.text}{/if}{/each}{extension}
 		</p>
 	{/if}
 

@@ -9,6 +9,7 @@
 		percent = null,
 		reason = '',
 		canSuggest = true,
+		extension = '.pdf',
 		onrename,
 		onsuggest
 	}: {
@@ -36,6 +37,8 @@
 		reason?: string;
 		/** Whether asking for a name is on offer at all. */
 		canSuggest?: boolean;
+		/** What the saved file will end in, which is the export format's and not always PDF. */
+		extension?: string;
 		onrename: (name: string) => void;
 		onsuggest: () => void;
 	} = $props();
@@ -167,5 +170,5 @@
 		</button>
 	{/if}
 
-	<span class="font-mono text-[13px] font-semibold text-ink-faint">.pdf</span>
+	<span class="font-mono text-[13px] font-semibold text-ink-faint">{extension}</span>
 </div>

@@ -838,6 +838,7 @@
 						value={displayName}
 						placeholder={formatTime(session.CreatedAt)}
 						generated={generatedPart}
+						extension={fileExtensions[$exportPrefs.format]}
 						busy={busySuggesting}
 						reason={suggestReason}
 						canSuggest={offerFindName}
