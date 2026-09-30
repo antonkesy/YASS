@@ -214,10 +214,14 @@
 
 	// The strip is its own panel beside the stage; the overview just fills the sheet
 	// its overlay has already drawn.
+	//
+	// Its width is kept close to the save card's on the review screen, because the stage
+	// sits between the two: the page on screen is only centred when the columns either
+	// side of it match. Change one and the other wants changing too.
 	const panel = $derived(
 		overview
 			? 'flex min-h-0 flex-1 flex-col'
-			: 'flex w-full flex-col gap-2 rounded-[22px] bg-surface p-3 shadow-panel lg:h-full lg:w-[clamp(140px,11vw,190px)]'
+			: 'flex w-full flex-col gap-2 rounded-[22px] bg-surface p-3 shadow-panel lg:h-full lg:w-[clamp(180px,14vw,260px)]'
 	);
 	const scroller = $derived(
 		overview

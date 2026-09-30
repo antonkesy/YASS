@@ -823,8 +823,14 @@
 				{@render pageTools(false)}
 			</main>
 
+			<!--
+				Width kept close to the filmstrip's: the stage sits between the two, so the page
+				on screen is only centred while the columns either side of it match. Neither can
+				be the other's exact width — thumbnails do not want 280px and this card does not
+				want 180 — so they meet in the middle and the page lands near enough to centre.
+			-->
 			<aside
-				class="order-3 flex w-full min-w-0 basis-full flex-col gap-3.5 rounded-[24px] bg-surface p-[22px] shadow-panel lg:min-h-0 lg:w-auto lg:basis-[clamp(300px,22vw,380px)] lg:overflow-y-auto"
+				class="order-3 flex w-full min-w-0 basis-full flex-col gap-3.5 rounded-[24px] bg-surface p-[22px] shadow-panel lg:min-h-0 lg:w-auto lg:basis-[clamp(250px,16vw,280px)] lg:overflow-y-auto"
 			>
 				<div class="flex items-center gap-2">
 					<p class="flex-1 text-xs font-bold tracking-[0.06em] text-ink-muted uppercase">
