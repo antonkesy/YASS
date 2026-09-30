@@ -5,7 +5,7 @@
 	import { getHub } from '$lib/hub/hub';
 	import { PageSize, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
 	import type { ScannerDeviceDto, ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
-	import { editableKeys, settings, type ScanOverrides } from '$lib/settings';
+	import { editableKeys, pickEditable, settings, type ScanOverrides } from '$lib/settings';
 	import Segmented from '$lib/components/Segmented.svelte';
 	import Toggle from '$lib/components/Toggle.svelte';
 	import ProgressBar from '$lib/components/ProgressBar.svelte';
@@ -218,7 +218,18 @@
 		...options
 	];
 
-	const chosen = $derived(activePreset($presets, $settings));
+	/**
+	 * What the next scan will do, over the keys this sheet can set: the server's defaults with
+	 * this browser's overrides on top. Presets are matched against it and saved from it — the
+	 * same thing the home screen matches. Matching the bare overrides had this sheet saying
+	 * "Unsaved changes" while the home screen, one click away, lit up Document: a browser with
+	 * nothing overridden still runs whichever preset yass.yaml defaults to. And a preset saved
+	 * from bare overrides could pin nothing at all, which is a preset that matches no scan.
+	 */
+	const planned = $derived<ScanOverrides>(
+		effective ? pickEditable({ ...effective, ...$settings }, effective.Editable) : $settings
+	);
+	const chosen = $derived(activePreset($presets, planned));
 	let drafting = $state(false);
 	let draftName = $state('');
 	let draftIcon = $state<PresetIconName>('star');
@@ -316,7 +327,7 @@
 			id: `${Date.now().toString(36)}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
 			name,
 			icon: draftIcon,
-			settings: withoutDevice($settings),
+			settings: withoutDevice(planned),
 			...(draftShared || !currentDevice ? {} : { device: currentDevice })
 		};
 		presets.set([...$presets, preset]);
@@ -328,7 +339,7 @@
 	function updatePreset() {
 		if (!chosen) return;
 		presets.set(
-			$presets.map((p) => (p.id === chosen.id ? { ...p, settings: withoutDevice($settings) } : p))
+			$presets.map((p) => (p.id === chosen.id ? { ...p, settings: withoutDevice(planned) } : p))
 		);
 	}
 
