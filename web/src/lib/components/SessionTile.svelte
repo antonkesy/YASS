@@ -2,7 +2,13 @@
 	import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { imageUrl } from '$lib/hub/hub';
 	import { resolve } from '$app/paths';
-	import { activePageCount, formatBytes, formatTime, sessionTitle } from '$lib/format';
+	import {
+		activePageCount,
+		documentName,
+		formatBytes,
+		formatTime,
+		sessionTitle
+	} from '$lib/format';
 	import SessionStatusPill from './SessionStatusPill.svelte';
 	import SelectCheckbox from './SelectCheckbox.svelte';
 
@@ -26,8 +32,16 @@
 
 	const first = $derived(session.Pages.find((p) => !p.Deleted && p.ThumbnailReady) ?? null);
 	const pages = $derived(activePageCount(session));
+	// The time goes on the line under the title only when the title is not already the time:
+	// an unnamed scan is titled by it, and saying it twice a line apart said nothing new.
 	const meta = $derived(
-		`${pages} p · ${formatBytes(session.SizeBytes)} · ${formatTime(session.CreatedAt)}`
+		[
+			`${pages} ${pages === 1 ? 'page' : 'pages'}`,
+			formatBytes(session.SizeBytes),
+			documentName(session, template) ? formatTime(session.CreatedAt) : null
+		]
+			.filter(Boolean)
+			.join(' · ')
 	);
 </script>
 
