@@ -689,11 +689,6 @@
 					{/if}
 				</form>
 
-				<p class="col-span-full text-[11px] text-ink-faint">
-					Editable keys: {[...editable].join(', ')} — set by
-					<code class="font-mono">scanner.ui_editable</code>.
-				</p>
-
 				{#if changed}
 					<p
 						class="col-span-full rounded-[12px] bg-success-bg px-3 py-2.5 text-xs font-bold text-success-ink"
