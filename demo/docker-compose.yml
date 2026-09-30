@@ -17,10 +17,6 @@ services:
     # --fake swaps in the scripted scanner: 5 pages, page 2 blank, 400 ms each. `devices`
     # invents two more so Settings has a scanner to choose between.
     # Other keys: pages, blank (a;b;c), error, delay, nodevice, device.
-    # Page 2 rather than page 3 on purpose: naming reads the first two pages that
-    # are still there, and of the bundled fixtures only page 3 onwards is readable
-    # by tesseract's automatic layout detection. Blanking page 2 puts a readable
-    # page in reach, so Find name has something to work from.
     command: ["--fake", "pages=5,blank=2,delay=400ms,device=YASS Demo ADF,devices=Epson DS-530 (USB);Canon LiDE 400 (flatbed)"]
     # Write ./output as you, not as the image's `yass` account. Override if
     # your uid is not 1000:  UID=$(id -u) GID=$(id -g) docker compose up --build

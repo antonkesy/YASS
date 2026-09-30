@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { Icon } from '$lib/icons';
-	import type { TemplatePart } from '$lib/template';
 
 	let {
 		value,
@@ -14,8 +13,8 @@
 		value: string;
 		/** Tokens offered as chips, without braces. */
 		tokens: readonly string[];
-		/** What the template expands to right now, cut around the part a found name fills. */
-		preview: readonly TemplatePart[];
+		/** What the template expands to right now. Empty when there is no template. */
+		preview: string;
 		/** Whole templates worth offering, each with what it would produce. */
 		presets?: readonly { template: string; example: string }[];
 		/** Tokens in the template the server does not know. */
@@ -133,24 +132,16 @@
 		<p class="text-xs font-semibold text-danger" role="alert" data-testid="template-error">
 			Unknown: {unknown.map((t) => `{${t}}`).join(', ')}
 		</p>
-	{:else if preview.length > 0}
+	{:else if preview}
 		<p
 			class="rounded-[10px] bg-success-bg px-3 py-1.5 font-mono text-[13px] font-semibold text-success-ink"
 			data-testid="template-preview"
 		>
-			{#each preview as part, i (i)}{#if part.name}<span
-						class="rounded-[5px] bg-ai-bg px-1 text-ai-ink"
-						title="Filled in by Find name"
-						data-testid="template-preview-name">{part.text}</span
-					>{:else}{part.text}{/if}{/each}{extension}
+			{preview}{extension}
 		</p>
 	{/if}
 
 	<p class="text-[11px] text-ink-faint">
 		Click a tag to add it at the cursor. Scans you have not named are saved with this.
-		{#if preview.some((p) => p.name)}
-			The <span class="rounded-[4px] bg-ai-bg px-1 text-ai-ink">highlighted</span> part is what Find name
-			puts there.
-		{/if}
 	</p>
 </div>

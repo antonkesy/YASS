@@ -12,16 +12,10 @@ public class FilenameTemplateTests
         Assert.Matches(@"^\d{4}-\d{2}-\d{2}_\d{4}_scan\.pdf$", name);
     }
 
-    /// <summary>
-    /// <c>{NAME}</c> is the browser's, not ours: it stands for what Find name came back with,
-    /// which may have been written by a model running in that browser. The browser fills it in
-    /// before anything is sent, and this side must keep not knowing it — a well-meaning
-    /// addition here would expand a token the browser had already resolved.
-    /// </summary>
+    /// <summary>A token this side does not know is reported, and left in place rather than guessed at.</summary>
     [Fact]
-    public void The_found_name_token_is_the_browsers_alone()
+    public void An_unknown_token_is_reported_and_left_alone()
     {
-        Assert.DoesNotContain("NAME", FilenameTemplate.Tokens, StringComparer.Ordinal);
         Assert.Contains("NAME", FilenameTemplate.UnknownTokens("{YEAR}_{NAME}"), StringComparer.Ordinal);
         Assert.Equal("2026_{NAME}.pdf", FilenameTemplate.Expand("{YEAR}_{NAME}", Stamp));
     }

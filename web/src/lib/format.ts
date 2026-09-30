@@ -173,9 +173,7 @@ export function documentName(
 		preset: 'Scan',
 		counter: 1,
 		dpi: session.OptionsUsed.Dpi ?? 300,
-		color: String(session.OptionsUsed.Color ?? ''),
-		// A named scan never reaches here, so there is no found name to put in.
-		name: ''
+		color: String(session.OptionsUsed.Color ?? '')
 	});
 	return expanded.trim() || null;
 }

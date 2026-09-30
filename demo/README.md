@@ -22,15 +22,9 @@ YASS_PORT=9000 docker compose up --build
 2. **Review** — rotate, crop, filter, reorder by dragging, delete and restore.
    Open a page and click it (or the zoom button, or `z`) to switch between
    fit-to-screen and full width; `Esc` backs out of zoom, then closes.
-3. **Name it** — the scan is already called what the file name template says. Put
-   `{NAME}` in that template and the slot shows up inside the document name as
-   **name it**; click it and the page is read with `tesseract` (in the image, and
-   on by default) and the slot filled. Clicking again offers another go, the other
-   candidates, or the whole name to type yourself. `{YEAR}-{MONTH}-{DAY}_{NAME}`
-   keeps the date; the **Ready-made** button offers whole templates, and **Found
-   names** picks `lower_snake` or `lower-kebab`. For a name written rather than
-   copied, point **Settings → Find name** at a model: **In-browser (CPU)** needs
-   no key and no account, and downloads its weights once.
+3. **Name it** — the scan is already called what the file name template says;
+   click the name to change it. The **Ready-made** button in Settings offers
+   whole templates.
 4. **Save** — the PDFs land in [`output/`](output) on your host, the demo's
    stand-in for a paperless-ngx consume folder.
    **Download** hands them to the browser instead.
@@ -50,12 +44,9 @@ live in the container's `/tmp`, so nothing survives except the PDFs you saved.
   [`src/Yass.Fake/Fixtures`](../src/Yass.Fake/Fixtures) and rendered to A4 by the
   build. Ordinary paper first — invoice, letter, payslip, colour report, bank
   statement, receipt, utility bill, insurance letter — then three pages of one
-  contract, so a scan has something continuous to review and name; then the
+  contract, so a scan has something continuous to review; then the
   awkward ones: a dense table, a sheet on its side, a form of blank rules and a
-  faded carbon copy. Last is a German invoice, which with the default
-  `naming.ocr_language: eng` comes back with its umlauts mangled and shows why
-  that setting exists. They are documents with titles on them, which is what
-  makes naming worth watching here. They cycle, so ask for more pages than there
+  faded carbon copy. Last is a German invoice. They cycle, so ask for more pages than there
   are and you see each more than once; to change what a page says, edit its
   Markdown and rebuild.
 - The saved PDF holds those pages as images, rotated and greyed the way your

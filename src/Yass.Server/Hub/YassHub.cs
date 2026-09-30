@@ -1,10 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
-using Yass.Core.Config;
 using Yass.Core.Domain;
 using Yass.Core.Hub;
-using Yass.Core.Naming;
 using Yass.Core.Scanning;
-using Yass.Export;
 using Yass.Server.Config;
 using Yass.Server.Export;
 using Yass.Server.Scanning;
@@ -24,7 +21,6 @@ public sealed class YassHub(
     EditService editor,
     ExportService exporter,
     IPageSink sinkFor,
-    INameSuggester namer,
     TimeProvider time,
     ILogger<YassHub> logger)
     : Hub<IYassClient>, IYassHub
@@ -243,33 +239,6 @@ public sealed class YassHub(
         }
     }
 
-    public async Task<NameSuggestionsDto> SuggestNames(string sessionId)
-    {
-        Session session = Find(sessionId);
-        NamingConfig naming = config.Current.Naming;
-
-        string[] pages = [.. session.ActivePages
-            .Take(naming.OcrPages)
-            .Select(p => SessionPaths.Source(sessions.Root, session, p))];
-
-        string fallback = FilenameTemplate.Expand(
-            config.Current.Output.FilenameTemplate,
-            session.CreatedAt,
-            session.Id,
-            new TemplateFacts(Dpi: session.OptionsUsed.Dpi, Color: session.OptionsUsed.Color.ToString()),
-            extension: "");
-
-        NameSuggestionSet found =
-            await namer.SuggestAsync(pages, fallback, Context.ConnectionAborted).ConfigureAwait(false);
-
-        return new NameSuggestionsDto(
-            [.. found.Suggestions],
-            namer.CanRead,
-            naming.Provider != NamingProvider.Anthropic,
-            found.Text,
-            found.Error);
-    }
-
     public Task<ScannerStatusDto> GetScannerStatus() => Task.FromResult(scanner.Current);
 
     public async Task<ScannerDeviceDto[]> ListDevices()
@@ -278,16 +247,7 @@ public sealed class YassHub(
         return [.. devices.Select(d => new ScannerDeviceDto(d.Id, d.Name))];
     }
 
-    /// <remarks>
-    /// The two naming capabilities are added here rather than in <see cref="EffectiveOptions"/>:
-    /// that shapes <c>session.OptionsUsed</c> too, where what the server can read today says
-    /// nothing about the scan that already happened.
-    /// </remarks>
-    public Task<ScanOptionsDto> GetEffectiveOptions() => Task.FromResult(options.Current() with
-    {
-        CanReadPageText = namer.CanRead,
-        PageTextPages = config.Current.Naming.OcrPages,
-    });
+    public Task<ScanOptionsDto> GetEffectiveOptions() => Task.FromResult(options.Current());
 
     public Task ReloadConfig()
     {

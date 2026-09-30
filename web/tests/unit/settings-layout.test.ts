@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 /**
  * The settings sheet hides its scanner controls behind `scanner.ui_editable`, and everything
- * that is this browser's own — where a document goes, what it is called, how a found name is
- * written, which model to ask — has to stay out of that branch. A server that lets the UI
+ * that is this browser's own — where a document goes, what it is called — has to stay out of
+ * that branch. A server that lets the UI
  * change no scan setting still has to let you name what comes off it.
  *
  * This is asserted against the source rather than a rendered page because the branch needs a

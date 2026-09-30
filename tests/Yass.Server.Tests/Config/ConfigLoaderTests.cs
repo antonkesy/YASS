@@ -27,19 +27,6 @@ public class ConfigLoaderTests
     public void Missing_file_yields_defaults() =>
         Assert.Equal(300, ConfigLoader.Load(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "nope.yaml"), Env()).Scanner.Defaults.Dpi);
 
-    /// <summary>
-    /// Reading a page is local and happens only when Find name asks for it, so it is on out of
-    /// the box; asking a model is what stays off, because that is the part that can leave.
-    /// </summary>
-    [Fact]
-    public void Reading_pages_is_on_by_default_and_asking_a_model_is_not()
-    {
-        NamingConfig naming = ConfigLoader.Parse("", Env()).Naming;
-
-        Assert.True(naming.Ocr);
-        Assert.Equal(NamingProvider.Off, naming.Provider);
-    }
-
     [Fact]
     public void Yaml_keys_map_to_records()
     {

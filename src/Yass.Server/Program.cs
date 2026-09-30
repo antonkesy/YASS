@@ -36,7 +36,6 @@ builder.Services.AddSingleton(startup);
 builder.Services.AddSingleton(sp => new ConfigStore(config, startup.ConfigPath, sp.GetRequiredService<ILogger<ConfigStore>>()));
 builder.Services.AddSingleton(TimeProvider.System);
 BackendRegistration.Add(builder.Services, startup);
-BackendRegistration.AddNaming(builder.Services);
 
 builder.Services.AddSingleton<EffectiveOptions>();
 builder.Services.AddSingleton<ScannerStatusMonitor>();

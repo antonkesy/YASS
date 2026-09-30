@@ -39,8 +39,6 @@
             contents = [
               yass
               pkgs.sane-backends
-              # naming.ocr shells out to this; harmless when the feature is off.
-              pkgs.tesseract
               pkgs.dockerTools.caCertificates
             ];
             extraCommands = "mkdir -p data/sessions data/consume etc/yass";
@@ -64,7 +62,6 @@
             nodejs_24
             pnpm
             sane-backends
-            tesseract
             pre-commit
             nixfmt
             git

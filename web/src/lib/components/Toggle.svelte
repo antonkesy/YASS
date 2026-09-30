@@ -3,19 +3,12 @@
 		name,
 		label,
 		hint = '',
-		badge = '',
 		checked,
 		onchange
 	}: {
 		name: string;
 		label: string;
 		hint?: string;
-		/**
-		 * A word beside the label — "Experimental" and the like. A plain span, never a control:
-		 * the checkbox covers the whole label, so anything clickable here would be swallowed.
-		 * It goes after the label so that the accessible name still starts with it.
-		 */
-		badge?: string;
 		checked: boolean;
 		onchange: (checked: boolean) => void;
 	} = $props();
@@ -26,15 +19,7 @@
 	data-testid="toggle-{name}"
 >
 	<span class="flex min-w-0 flex-col">
-		<span class="flex flex-wrap items-center gap-1.5">
-			<span class="text-sm font-bold">{label}</span>
-			{#if badge}
-				<span
-					class="flex h-[17px] flex-none items-center rounded-full bg-warning-bg px-1.5 text-[10px] font-extrabold tracking-[0.02em] text-warning-ink"
-					data-testid="toggle-badge-{name}">{badge}</span
-				>
-			{/if}
-		</span>
+		<span class="text-sm font-bold">{label}</span>
 		{#if hint}<span class="text-xs text-ink-muted">{hint}</span>{/if}
 	</span>
 	<input

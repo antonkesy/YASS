@@ -20,7 +20,6 @@
     <ProjectReference Include="../Yass.Core/Yass.Core.csproj" />
     <ProjectReference Include="../Yass.Export/Yass.Export.csproj" />
     <ProjectReference Include="../Yass.Fake/Yass.Fake.csproj" />
-    <ProjectReference Include="../Yass.Naming/Yass.Naming.csproj" />
     <ProjectReference Include="../Yass.Scanning/Yass.Scanning.csproj" />
   </ItemGroup>
 

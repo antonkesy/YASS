@@ -36,7 +36,6 @@
 	import NameField from '$lib/components/NameField.svelte';
 	import CropModal from '$lib/components/CropModal.svelte';
 	import MergeModal from '$lib/components/MergeModal.svelte';
-	import NameSuggestions from '$lib/components/NameSuggestions.svelte';
 	import {
 		cancelled,
 		exportBaseName,
@@ -47,20 +46,8 @@
 		savedLabel,
 		type SaveTarget
 	} from '$lib/review/download';
-	import { aiKeys, aiPrefs, exportPrefs, reviewPrefs } from '$lib/presets';
-	import {
-		aiSuggestion,
-		chosenModel,
-		merge as mergeSuggestions,
-		suggestName,
-		NamingError,
-		type NamingInput,
-		type Phase
-	} from '$lib/naming';
-	import { ExportMode, type NameSuggestionsDto } from '$lib/hub/generated/Yass.Core.Hub';
-	import { NameSource, type NameSuggestion } from '$lib/hub/generated/Yass.Core.Naming';
-	import { expandTemplate, findGenerated, resolveName } from '$lib/template';
-	import { styleName } from '$lib/naming/style';
+	import { exportPrefs, reviewPrefs } from '$lib/presets';
+	import { ExportMode } from '$lib/hub/generated/Yass.Core.Hub';
 
 	const client = getHub();
 	const sessions = client.sessions;
@@ -77,10 +64,6 @@
 	let allowDownload = $state(false);
 	/** Folders the server will accept, from output.allowed_roots. */
 	let exportRoots = $state<string[]>([]);
-	/** How many pages the server would read, which the popover's loading line repeats. */
-	let pageTextPages = $state(1);
-	/** Whether the server can read a page at all: `naming.ocr`, and tesseract being installed. */
-	let canReadPageText = $state(false);
 	/** Position in `pages` shown in the centre column. */
 	let current = $state(0);
 	/** Whether the filmstrip is expanded to the full-screen all-pages overview. */
@@ -93,8 +76,6 @@
 				.then((o) => {
 					allowDownload = o.AllowDownload ?? false;
 					exportRoots = o.ExportRoots ?? [];
-					pageTextPages = o.PageTextPages ?? 1;
-					canReadPageText = o.CanReadPageText ?? false;
 				})
 				.catch(() => undefined);
 		}
@@ -125,12 +106,6 @@
 	let merging = $state(false);
 	let confirmDiscard = $state(false);
 	let merged = $state(false);
-	let suggesting = $state<'reading' | 'thinking' | 'downloading' | 'ready' | null>(null);
-	let suggestions = $state<NameSuggestionsDto | null>(null);
-	/** Why the suggestions are thin, shown in the popover rather than over the whole screen. */
-	let suggestError = $state<string | null>(null);
-	/** How far the model's weights have got, for the bar. Null whenever nothing is downloading. */
-	let downloading = $state<number | null>(null);
 
 	$effect(() => {
 		if ($connection === 'connected' && !$sessions.has(id)) {
@@ -253,40 +228,8 @@
 		}
 	}
 
-	/**
-	 * The name field wins; the template is what an unnamed scan falls back to. The template
-	 * still has to go through `resolveName`, because the server expands it and would write
-	 * `{NAME}` out as five literal characters — nothing has been found, so it resolves away.
-	 */
-	const exportName = $derived(
-		storedName?.trim() || resolveName($exportPrefs.nameTemplate, '').trim() || undefined
-	);
-
-	/**
-	 * What a picked suggestion becomes. A Template row is already a file name, so it is taken
-	 * as it is; anything read off the page or written by a model is raw material, styled and
-	 * then dropped into the template wherever `{NAME}` says. With no `{NAME}` to drop it into,
-	 * it replaces the name outright, which is what picking one has always done.
-	 */
-	function pickedName(suggestion: NameSuggestion): string {
-		// A Template row is the server's own `output.filename_template`, already expanded —
-		// styling it would replace the separators the operator chose, and dropping it into
-		// `{NAME}` would nest one file name inside another. It is taken as written, less any
-		// `{NAME}` the operator put in yass.yaml, which the server leaves standing.
-		if (suggestion.Source === NameSource.Template) return resolveName(suggestion.Name, '');
-
-		const styled = styleName(suggestion.Name, $exportPrefs.nameStyle);
-		const template = $exportPrefs.nameTemplate.trim();
-		if (!template.includes('{NAME}')) return styled;
-
-		return expandTemplate(template, new Date(session?.CreatedAt ?? Date.now()), {
-			preset: 'Scan',
-			counter: 1,
-			dpi: session?.OptionsUsed.Dpi ?? 300,
-			color: String(session?.OptionsUsed.Color ?? ''),
-			name: styled
-		});
-	}
+	/** The name field wins; the template is what an unnamed scan falls back to. */
+	const exportName = $derived(storedName?.trim() || $exportPrefs.nameTemplate.trim() || undefined);
 
 	/** Export: the server writes the document into the folder settings point at. */
 	async function save() {
@@ -419,208 +362,15 @@
 	}
 
 	/**
-	 * What to hand a model: the text the server read. Nothing when it read none — which the
-	 * button being offered at all already rules out, bar a race with a config reload.
-	 */
-	function modelInput(read: NameSuggestionsDto): NamingInput | null {
-		const text = read.Text?.trim();
-		return text ? { kind: 'text', text, pages: Math.min(activePages, pageTextPages) } : null;
-	}
-
-	/**
-	 * Whether to offer Find name at all. It needs words off the page: without them there is no
-	 * heading to read and nothing to hand a model, and a model in this browser cannot see. So
-	 * it goes when the server reads nothing — `naming.ocr` off, or no tesseract — and when this
-	 * browser has turned the feature off, which also stops anything being read in the first
-	 * place, since the server only reads when this button asks.
-	 */
-	const offerFindName = $derived($aiPrefs.findName && canReadPageText);
-
-	/**
-	 * Names a scan as it finishes, from the heading the server read and your template. Only
-	 * ever what the server offers: a model costs money or seconds, and doing either without
-	 * being asked is what the Find name button is for. Runs once per scan, and never over a
-	 * name someone typed.
-	 */
-	let nameField = $state<{ edit: () => void } | null>(null);
-
-	/** The facts the template is expanded with here, which the scan itself supplies. */
-	const templateFacts = $derived({
-		preset: 'Scan',
-		counter: 1,
-		dpi: session?.OptionsUsed.Dpi ?? 300,
-		color: String(session?.OptionsUsed.Color ?? ''),
-		name: ''
-	});
-
-	/**
 	 * What the field shows, and the same thing the list of past scans shows for this scan: a
 	 * scan nobody has named reads as the template from settings, which is what it will be
-	 * saved as — not a name off the page, because reading one costs either money or seconds
-	 * and is worth asking for.
+	 * saved as.
 	 */
 	const displayName = $derived(
 		session
 			? documentName({ ...session, Name: storedName ?? undefined }, $exportPrefs.nameTemplate)
 			: null
 	);
-
-	/**
-	 * Where the found name goes, and whether anything is in it yet.
-	 *
-	 * Filled, it is worked out from the template rather than remembered — the name is the only
-	 * thing that survives a reload, and asking the template where `{NAME}` went beats keeping a
-	 * second copy of the answer in step with it. Empty, it is the slot the template describes,
-	 * shown so that a `{NAME}` nobody has filled is visible rather than merely absent.
-	 *
-	 * Gone entirely where Find name is not on offer: the slot is an invitation to click, and
-	 * there is nothing behind the click. It goes with the sparkle beside it, on the same
-	 * condition, so a template left over with a `{NAME}` in it reads as a plain name — which
-	 * is what it will be saved as, the token being dropped on the way out.
-	 */
-	const generatedPart = $derived.by(() => {
-		const template = $exportPrefs.nameTemplate.trim();
-		if (!offerFindName || !session || !template.includes('{NAME}')) return null;
-
-		const at = new Date(session.CreatedAt);
-		const name = storedName?.trim();
-		if (name) {
-			const found = findGenerated(name, template, at, templateFacts);
-			return found ? { ...found, filled: true } : null;
-		}
-
-		// Nothing named yet: expand around an empty name to find where the slot sits. The
-		// separator goes with it, so the parts are what a saved file would really be called.
-		const shape = expandTemplate(template, at, { ...templateFacts, name: '\u0000' });
-		const mark = shape.indexOf('\u0000');
-		if (mark < 0) return null;
-
-		return {
-			before: shape.slice(0, mark),
-			generated: '',
-			after: shape.slice(mark + 1),
-			filled: false
-		};
-	});
-
-	/**
-	 * One page read at a time. The hub runs one call per connection, so two reads would mean
-	 * waiting out OCR twice with the rest of the screen stuck behind it.
-	 */
-	let reading: Promise<NameSuggestionsDto> | null = null;
-
-	function readPage(): Promise<NameSuggestionsDto> {
-		if (!reading) {
-			const started = client.hub.suggestNames(id);
-			reading = started;
-			void started.catch(() => undefined).finally(() => (reading = null));
-		}
-
-		return reading;
-	}
-
-	/** Why Find name cannot run, for its tooltip. Empty means it can. */
-	const suggestReason = $derived(
-		scanning ? 'Wait for the scan to finish' : activePages === 0 ? 'No pages to read' : ''
-	);
-	const busySuggesting = $derived(suggesting !== null && suggesting !== 'ready');
-
-	function closeSuggestions() {
-		run++;
-		suggesting = null;
-		downloading = null;
-	}
-
-	/**
-	 * What a set of suggestions would be read from, so the cache below can tell when it no
-	 * longer applies. The server reads the source images of the active pages, so adding or
-	 * dropping one changes the answer and turning or cropping one does not; a different model
-	 * would answer differently even about the same paper.
-	 */
-	const readFrom = $derived(
-		[
-			...(session?.Pages ?? []).filter((page) => !page.Deleted).map((page) => page.Hash),
-			$aiPrefs.provider,
-			chosenModel($aiPrefs)
-		].join(',')
-	);
-
-	/** The value of {@link readFrom} the suggestions on hand belong to, or null for none. */
-	let suggestedFor = $state<string | null>(null);
-
-	/**
-	 * Opening the popover again shows what came back last time. Reading the pages costs OCR on
-	 * the server and a model costs money or a download, and neither is worth paying twice for
-	 * the same paper — the refresh button in the popover is there to say when it is.
-	 */
-	function openSuggestions() {
-		if (suggestions && suggestedFor === readFrom) {
-			suggesting = 'ready';
-			return;
-		}
-
-		void findName();
-	}
-
-	// The retry button can re-enter this while a call is in flight; only the latest one writes.
-	let run = 0;
-
-	async function findName() {
-		const mine = ++run;
-		suggesting = 'reading';
-		suggestions = null;
-		suggestedFor = null;
-		suggestError = null;
-		downloading = null;
-
-		try {
-			// Whatever the server can offer goes up first: a slow or broken model must never
-			// cost you the heading and the template, which are already paid for.
-			const read = await readPage();
-			if (run !== mine) return;
-			suggestions = read;
-			suggesting = 'ready';
-
-			const input = modelInput(read);
-			if (run !== mine) return;
-			if (!input) {
-				// The server could read, and read nothing: a photo, a blank page, handwriting.
-				// Without this the popover comes back holding only the template, and the reason
-				// it is thin is left to be guessed at. Not covered by the e2e suite — the fake
-				// scanner's fixtures do carry readable text — so this is checked by hand.
-				suggestError =
-					'No words were found on the pages that were read, so there was nothing to name this from.';
-				return;
-			}
-
-			suggesting = 'thinking';
-			const named = await suggestName(input, $aiPrefs, $aiKeys, {
-				onphase: (phase: Phase, percent?: number) => {
-					if (run !== mine) return;
-					suggesting = phase;
-					downloading = phase === 'downloading' ? (percent ?? null) : null;
-				}
-			});
-			if (run !== mine) return;
-
-			suggestions = mergeSuggestions(
-				read,
-				named ? aiSuggestion(named.name, named.model, named.local) : null,
-				named?.local ?? true
-			);
-		} catch (e) {
-			if (run !== mine) return;
-			suggestError = e instanceof NamingError ? e.message : hubError(e);
-		} finally {
-			if (run === mine) {
-				suggesting = 'ready';
-				downloading = null;
-				// Including a run that ended in an error: what did arrive is what reopening
-				// shows, error line and all, rather than quietly reading the pages again.
-				suggestedFor = readFrom;
-			}
-		}
-	}
 
 	async function merge(sourceId: string) {
 		merging = false;
@@ -881,45 +631,12 @@
 			>
 				{@render heading('Name')}
 
-				<div class="relative">
-					<NameField
-						bind:this={nameField}
-						value={displayName}
-						placeholder={exportBaseName(session, $exportPrefs.nameTemplate)}
-						generated={generatedPart}
-						extension={fileExtensions[$exportPrefs.format]}
-						busy={busySuggesting}
-						reason={suggestReason}
-						canSuggest={offerFindName}
-						percent={downloading}
-						onrename={rename}
-						onsuggest={() => (suggesting ? closeSuggestions() : openSuggestions())}
-					/>
-
-					{#if suggesting}
-						<NameSuggestions
-							state={suggesting}
-							percent={downloading}
-							result={suggestions}
-							error={suggestError ?? suggestions?.Error ?? null}
-							current={storedName?.trim() ?? null}
-							resolved={pickedName}
-							pages={Math.min(activePages, pageTextPages)}
-							onpick={(suggestion) => {
-								closeSuggestions();
-								const name = pickedName(suggestion);
-								rename(name);
-								toast.show(`Renamed to “${name}”`);
-							}}
-							onretry={findName}
-							onmine={() => {
-								closeSuggestions();
-								nameField?.edit();
-							}}
-							onclose={closeSuggestions}
-						/>
-					{/if}
-				</div>
+				<NameField
+					value={displayName}
+					placeholder={exportBaseName(session, $exportPrefs.nameTemplate)}
+					extension={fileExtensions[$exportPrefs.format]}
+					onrename={rename}
+				/>
 
 				{@render heading('Save')}
 

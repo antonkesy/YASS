@@ -28,8 +28,7 @@ RUN --mount=type=cache,target=/root/.nuget/packages \
 
 FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-alpine AS runtime
 # sane-backends provides libsane for USB scanners; sane-utils is handy for `scanimage -L` diagnostics.
-# tesseract-ocr backs naming.ocr, which is off unless configured.
-RUN apk add --no-cache sane-backends sane-utils libusb tini tesseract-ocr tesseract-ocr-data-eng \
+RUN apk add --no-cache sane-backends sane-utils libusb tini \
  # hpaio (HPLIP) aborts the whole process when no D-Bus is available; HP all-in-ones work over eSCL instead.
  && rm -f /etc/sane.d/dll.d/hpaio && sed -i 's/^hpaio/#hpaio/' /etc/sane.d/dll.conf \
  # camera/video backends are irrelevant for document scanning and make every probe take ~20 s
