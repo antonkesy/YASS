@@ -23,7 +23,11 @@ export default defineConfig({
 		// 400 ms a page, not 150: "stop a scan early" needs a scan that is still running
 		// when the review screen has finished sliding in, or the test races the feeder
 		// rather than exercising Stop.
-		command: `pnpm build && dotnet run --project ../src/Yass.Server --no-launch-profile -- --fake pages=3,blank=2,delay=400ms`,
+		// Two extra scanners beside the built-in one, so the home screen's picker has
+		// something to pick between and presets have scanners to belong to.
+		command:
+			`pnpm build && dotnet run --project ../src/Yass.Server --no-launch-profile -- ` +
+			`--fake 'pages=3,blank=2,delay=400ms,devices=Epson DS-530;Canon LiDE 400'`,
 		url: `http://127.0.0.1:${port}/healthz`,
 		timeout: 180_000,
 		reuseExistingServer: !process.env.CI,

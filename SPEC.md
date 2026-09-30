@@ -156,7 +156,9 @@ Scan loop: iterate `ScanController.Scan(options)` until the enumerable ends (fee
 
 ## 8. UI — DECIDED behaviour, OPEN styling
 
-Routes: `/` (scanner status pill, big Scan button, recent sessions), `/session/[id]` (review), `/settings` (only `ui_editable` keys, stored in `localStorage`).
+Routes: `/` (scanner status pill, scanner picker, presets, big Scan button, recent sessions), `/session/[id]` (review), `/settings` (only `ui_editable` keys, stored in `localStorage`).
+
+The scanner is chosen on `/`, not in `/settings`, and presets belong to whichever one is chosen unless saved as available for all scanners. `device` is an `ui_editable` key like any other: dropped from `scanner.ui_editable`, the config fixes the machine and the picker goes away.
 
 Review: page strip (a row above the page on a phone, a column beside it on desktop); tap a thumbnail = show that page on the stage, its checkbox = multi-select; drag = reorder; toolbar acts on selection or "all" when nothing selected: rotate ⟲ ⟳, delete/restore, color mode. Tap → full preview with swipe. Blank pages pre-marked deleted with badge. Sticky bottom bar: page count, **Save** (to `output.directory`), Download (if `allow_download`), Discard. Edits apply optimistically (CSS rotate) and reconcile on `PageUpdated`.
 

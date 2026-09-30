@@ -5,7 +5,7 @@
 	import { getHub } from '$lib/hub/hub';
 	import { PageSize, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
 	import type { ScannerDeviceDto, ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
-	import { editableKeys, settings } from '$lib/settings';
+	import { editableKeys, settings, type ScanOverrides } from '$lib/settings';
 	import Segmented from '$lib/components/Segmented.svelte';
 	import Toggle from '$lib/components/Toggle.svelte';
 	import ProgressBar from '$lib/components/ProgressBar.svelte';
@@ -223,14 +223,20 @@
 	let draftName = $state('');
 	let draftIcon = $state<PresetIconName>('star');
 	/**
-	 * Whether the preset should pin the scanner as well as the settings. Off by default: a
-	 * preset is about how to scan, and a "Receipts" that silently moved the machine would be
-	 * a surprise nobody asked for.
+	 * Whether the new preset should be offered on every scanner. Off by default: presets
+	 * follow the scanner picked on the home screen, and one saved for the flatbed rarely
+	 * makes sense on the feeder next to it.
 	 */
-	let draftDevice = $state(false);
+	let draftShared = $state(false);
 
 	/** A device id as its human name, falling back to the id for one the server no longer lists. */
 	const deviceLabel = (id: string) => devices?.find((d) => d.Id === id)?.Name ?? id;
+
+	/**
+	 * The scanner the next scan runs on, chosen on the home screen. Empty when none is —
+	 * and then a preset has nothing to belong to, so it is offered everywhere.
+	 */
+	const currentDevice = $derived($settings.Device || effective?.Device || '');
 
 	/** The shapes a found name can take, worded as the file name each one produces. */
 	const nameStyles: { value: NameStyle; label: string }[] = [
@@ -292,26 +298,50 @@
 		});
 	});
 
+	/**
+	 * A preset never carries the scanner in its settings: the scanner is picked on the home
+	 * screen and the presets follow it, so one that moved the machine when it was pressed
+	 * would be arguing with the control right above it.
+	 */
+	function withoutDevice(overrides: ScanOverrides): ScanOverrides {
+		const rest = { ...overrides };
+		delete rest.Device;
+		return rest;
+	}
+
 	function savePreset() {
 		const name = draftName.trim();
 		if (!name) return;
-		const { Device, ...rest } = $settings;
 		const preset: Preset = {
 			id: `${Date.now().toString(36)}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
 			name,
 			icon: draftIcon,
-			settings: draftDevice && Device ? { ...rest, Device } : rest
+			settings: withoutDevice($settings),
+			...(draftShared || !currentDevice ? {} : { device: currentDevice })
 		};
 		presets.set([...$presets, preset]);
 		drafting = false;
 		draftName = '';
-		draftDevice = false;
+		draftShared = false;
 	}
 
 	function updatePreset() {
 		if (!chosen) return;
 		presets.set(
-			$presets.map((p) => (p.id === chosen.id ? { ...p, settings: { ...$settings } } : p))
+			$presets.map((p) => (p.id === chosen.id ? { ...p, settings: withoutDevice($settings) } : p))
+		);
+	}
+
+	/** Move a saved preset between "every scanner" and "only the one chosen now". */
+	function sharePreset(id: string, shared: boolean) {
+		presets.set(
+			$presets.map((p) => {
+				if (p.id !== id) return p;
+				const next = { ...p };
+				if (shared) delete next.device;
+				else next.device = currentDevice;
+				return next;
+			})
 		);
 	}
 
@@ -417,6 +447,13 @@
 							>
 								<Icon name={preset.icon} />
 								{preset.name}
+								<!-- The home screen only offers this one on that scanner, so this sheet — the
+								     one place every preset is listed — has to say which. -->
+								{#if preset.device}
+									<span class="max-w-[110px] truncate text-[11px] font-semibold opacity-65"
+										>{deviceLabel(preset.device)}</span
+									>
+								{/if}
 							</button>
 						{/each}
 					</div>
@@ -448,16 +485,19 @@
 									Cancel
 								</button>
 							</div>
-							{#if $settings.Device}
-								<!-- Only worth asking when a scanner has actually been chosen. -->
-								<label class="flex items-center gap-2 text-xs font-semibold text-ink-2">
+							{#if currentDevice}
+								<!-- Only worth asking when there is a scanner for it to belong to. -->
+								<label class="flex flex-wrap items-center gap-2 text-xs font-semibold text-ink-2">
 									<input
 										type="checkbox"
 										class="h-4 w-4 accent-accent"
-										bind:checked={draftDevice}
-										data-testid="preset-device"
+										bind:checked={draftShared}
+										data-testid="preset-shared"
 									/>
-									Also pin the scanner ({deviceLabel($settings.Device)})
+									Available for all scanners
+									<span class="font-normal text-ink-muted"
+										>· otherwise only on {deviceLabel(currentDevice)}</span
+									>
 								</label>
 							{/if}
 							<div class="flex flex-wrap gap-1.5">
@@ -504,6 +544,21 @@
 								Save as new preset
 							</button>
 						</div>
+						{#if chosen && (currentDevice || chosen.device)}
+							<label class="flex flex-wrap items-center gap-2 text-xs font-semibold text-ink-2">
+								<input
+									type="checkbox"
+									class="h-4 w-4 accent-accent"
+									checked={!chosen.device}
+									onchange={(e) => sharePreset(chosen.id, e.currentTarget.checked)}
+									data-testid="preset-scope"
+								/>
+								“{chosen.name}” is available for all scanners
+								<span class="font-normal text-ink-muted"
+									>· otherwise only on {deviceLabel(chosen.device || currentDevice)}</span
+								>
+							</label>
+						{/if}
 					{/if}
 				</div>
 
@@ -512,43 +567,6 @@
 					onsubmit={(e) => e.preventDefault()}
 					data-testid="settings-form"
 				>
-					{#if editable.has('device') && devices}
-						<!--
-							Shown as soon as the list is in, however short it is: what the server can see is
-							worth knowing even when there is only one of it, and a control that vanishes is
-							a control nobody finds. A select rather than a segmented row — device names are
-							long and there is no telling how many.
-						-->
-						<label class="flex flex-col gap-1.5" data-testid="device-picker">
-							<span class="text-[13px] font-bold text-ink-2">
-								Scanner
-								<span class="font-semibold text-ink-muted">
-									· which machine the next scan runs on</span
-								>
-							</span>
-							<select
-								class="h-11 rounded-[12px] bg-ctl px-3 text-sm outline-none focus:ring-2 focus:ring-accent"
-								value={overrides.Device ?? ''}
-								onchange={(e) =>
-									settings.set({
-										...$settings,
-										Device: e.currentTarget.value === '' ? undefined : e.currentTarget.value
-									})}
-								data-testid="device-select"
-							>
-								<option value="">Whatever the server picks</option>
-								{#each devices as device (device.Id)}
-									<option value={device.Id}>{device.Name}</option>
-								{/each}
-							</select>
-							{#if devices.length === 0}
-								<span class="text-[11px] text-ink-faint">
-									The server found no scanner. The list fills in once one is attached and the status
-									above says Ready.
-								</span>
-							{/if}
-						</label>
-					{/if}
 					{#if editable.has('source')}
 						<Segmented
 							name="source"

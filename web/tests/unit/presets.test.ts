@@ -14,7 +14,9 @@ import {
 	defaultAiPrefs,
 	defaultExportPrefs,
 	defaultPresets,
-	matchesPreset
+	matchesPreset,
+	presetsFor,
+	type Preset
 } from '$lib/presets';
 import { get } from 'svelte/store';
 
@@ -28,11 +30,41 @@ describe('presets', () => {
 		expect(matchesPreset(document, {})).toBe(false);
 	});
 
+	it('matches nothing at all when it pins nothing', () => {
+		// Saving with no overrides but the scanner leaves this behind, and every() over an
+		// empty list would otherwise say yes to any settings whatsoever.
+		const empty: Preset = { id: 'empty', name: 'Empty', icon: 'star', settings: {} };
+		expect(matchesPreset(empty, { Dpi: 600 })).toBe(false);
+		expect(activePreset([empty], { Dpi: 600 })).toBeNull();
+	});
+
 	it('reports no active preset once the settings drift', () => {
 		expect(activePreset(defaultPresets, { ...document.settings })?.id).toBe('document');
 		expect(
 			activePreset(defaultPresets, { Source: ScanSource.Feeder, Color: ColorMode.Bw, Dpi: 1200 })
 		).toBeNull();
+	});
+});
+
+describe('presets scoped to a scanner', () => {
+	const scoped = (id: string, device?: string): Preset => ({
+		id,
+		name: id,
+		icon: 'star',
+		settings: { Dpi: 300 },
+		...(device ? { device } : {})
+	});
+	const all = [scoped('everywhere'), scoped('epson', 'epson:1'), scoped('canon', 'canon:2')];
+
+	it('offers a scanner its own presets plus the ones that belong to none', () => {
+		expect(presetsFor(all, 'epson:1').map((p) => p.id)).toEqual(['everywhere', 'epson']);
+		expect(presetsFor(all, 'canon:2').map((p) => p.id)).toEqual(['everywhere', 'canon']);
+	});
+
+	it('leaves only the unscoped ones when no scanner is chosen', () => {
+		expect(presetsFor(all, undefined).map((p) => p.id)).toEqual(['everywhere']);
+		// Which is every preset a browser that predates this feature has, and all the built-ins.
+		expect(presetsFor(defaultPresets, undefined)).toHaveLength(defaultPresets.length);
 	});
 });
 

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import StatusPill from '$lib/components/StatusPill.svelte';
 import Toolbar from '$lib/components/Toolbar.svelte';
@@ -18,7 +18,10 @@ import {
 	ScanSource,
 	SessionState
 } from '$lib/hub/generated/Yass.Core.Domain';
-import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
+import type { ScanOptionsDto, SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
+import { presets } from '$lib/presets';
+import { settings } from '$lib/settings';
+import { get } from 'svelte/store';
 import { page, session as build } from './fixtures';
 
 const session = (state = SessionState.Review, deleted = 0): SessionDto =>
@@ -81,6 +84,96 @@ describe('ScanStage', () => {
 		stage(null, 'connecting');
 		expect(screen.getByTestId('scan-button')).toBeDisabled();
 		expect(screen.getByTestId('scanner-trouble')).toHaveTextContent(/Connecting/);
+	});
+});
+
+describe('ScanStage scanner picker', () => {
+	const epson = { Id: 'epson:1', Name: 'Epson DS-530' };
+	const canon = { Id: 'canon:2', Name: 'Canon LiDE 400' };
+
+	const stage = (options: Partial<ScanOptionsDto> | null, devices = [epson, canon]) =>
+		render(ScanStage, {
+			status: { State: ScannerState.Ready, DeviceName: 'ADF', CheckedAt: '' },
+			connection: 'connected' as const,
+			options: options === null ? null : ({ Editable: ['device'], ...options } as ScanOptionsDto),
+			devices,
+			deviceName: 'Epson DS-530',
+			onscan: vi.fn(),
+			onsettings: vi.fn()
+		});
+
+	afterEach(() => {
+		settings.reset();
+		presets.reset();
+	});
+
+	it('lists what the server can see and shows which one the scan will use', () => {
+		stage({ Device: 'canon:2' });
+		const select = screen.getByTestId('device-select') as HTMLSelectElement;
+		expect(select).toHaveValue('canon:2');
+		expect([...select.options].map((o) => o.textContent?.trim())).toEqual([
+			'Automatic',
+			'Epson DS-530',
+			'Canon LiDE 400'
+		]);
+	});
+
+	it('keeps a scanner the server has stopped listing visible rather than reading as Automatic', () => {
+		stage({ Device: 'gone:9' });
+		const select = screen.getByTestId('device-select') as HTMLSelectElement;
+		expect(select).toHaveValue('gone:9');
+		expect(screen.getByRole('option', { name: 'gone:9 (not found)' })).toBeInTheDocument();
+	});
+
+	it("writes the pick into this browser's overrides, and Automatic clears it", async () => {
+		stage({ Device: '' });
+		const select = screen.getByTestId('device-select');
+		await fireEvent.change(select, { target: { value: 'epson:1' } });
+		expect(get(settings).Device).toBe('epson:1');
+		await fireEvent.change(select, { target: { value: '' } });
+		expect(get(settings).Device).toBeUndefined();
+	});
+
+	it('stays away when the config keeps the scanner to itself, or there is nothing to pick', () => {
+		const { unmount } = stage({ Device: 'epson:1', Editable: ['dpi'] });
+		expect(screen.queryByTestId('device-picker')).toBeNull();
+		unmount();
+
+		stage({ Device: 'epson:1' }, []);
+		expect(screen.queryByTestId('device-picker')).toBeNull();
+	});
+
+	it('names the scanner in the chips only when no picker is saying it already', () => {
+		const { unmount } = stage({ Device: 'epson:1' });
+		expect(screen.getByTestId('settings-chips')).not.toHaveTextContent('Epson DS-530');
+		unmount();
+
+		stage({ Device: 'epson:1' }, []);
+		expect(screen.getByTestId('settings-chips')).toHaveTextContent('Epson DS-530');
+	});
+
+	it("offers a scanner its own presets and the shared ones, never another machine's", () => {
+		presets.set([
+			{ id: 'shared', name: 'Everywhere', icon: 'star', settings: { Dpi: 300 } },
+			{ id: 'mine', name: 'Feeder run', icon: 'file', settings: { Dpi: 400 }, device: 'epson:1' },
+			{
+				id: 'theirs',
+				name: 'Flatbed run',
+				icon: 'image',
+				settings: { Dpi: 600 },
+				device: 'canon:2'
+			}
+		]);
+		const { unmount } = stage({ Device: 'epson:1' });
+		expect(screen.getByRole('button', { name: /Everywhere/ })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: /Feeder run/ })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: /Flatbed run/ })).toBeNull();
+		unmount();
+
+		// Nothing chosen: only the presets that belong to no scanner in particular.
+		stage({ Device: '' });
+		expect(screen.getByRole('button', { name: /Everywhere/ })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: /Feeder run/ })).toBeNull();
 	});
 });
 

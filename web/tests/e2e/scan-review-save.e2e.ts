@@ -247,6 +247,36 @@ test('settings only expose ui_editable keys and are applied to the next scan', a
 	await expect(dpi.getByRole('radio', { name: 'Default', exact: true })).toBeChecked();
 });
 
+test('the scanner is chosen on the home screen, and the presets follow it', async ({ page }) => {
+	await page.goto('/');
+	const picker = page.getByTestId('device-select');
+	await expect(picker).toHaveValue('');
+	await picker.selectOption({ label: 'Canon LiDE 400' });
+
+	// Saved with no "available for all scanners" tick, so it belongs to the Canon alone.
+	await page.goto('/settings');
+	await expect(page.getByTestId('device-picker')).toHaveCount(0);
+	await page.getByTestId('seg-dpi').getByRole('radio', { name: '150', exact: true }).check();
+	await page.getByTestId('preset-new').click();
+	await page.getByTestId('preset-name').fill('Canon only');
+	await expect(page.getByTestId('preset-shared')).not.toBeChecked();
+	await page.getByTestId('preset-save').click();
+
+	const stage = page.getByTestId('scan-stage');
+	await page.goto('/');
+	await expect(stage.getByRole('button', { name: 'Canon only' })).toBeVisible();
+	await page.getByTestId('device-select').selectOption({ label: 'Epson DS-530' });
+	await expect(stage.getByRole('button', { name: 'Canon only' })).toHaveCount(0);
+	// The built-in presets belong to no scanner, so they are still all there.
+	await expect(stage.getByRole('button', { name: 'Document' })).toBeVisible();
+
+	// Opened up to every scanner, it comes back on the Epson too.
+	await page.goto('/settings');
+	await page.getByTestId('preset-scope').check();
+	await page.goto('/');
+	await expect(stage.getByRole('button', { name: 'Canon only' })).toBeVisible();
+});
+
 test('discard keeps the scan listed as discarded', async ({ page }) => {
 	await scanToReview(page);
 	await page.getByTestId('discard-button').click();
