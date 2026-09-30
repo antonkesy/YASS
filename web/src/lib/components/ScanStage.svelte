@@ -99,7 +99,7 @@
 	style:flex="2 1 520px"
 	data-testid="scan-stage"
 >
-	<PaperStack {caption} sweeping={busy} />
+	<PaperStack {caption} />
 
 	<!-- Nothing when all is well: whatever the scanner has to say is a problem to show. -->
 	{#if !ready}

@@ -1,18 +1,16 @@
 <script lang="ts">
 	let {
-		caption = '',
-		sweeping = false
+		caption = ''
 	}: {
 		/** Shown along the bottom of the front sheet, e.g. "A4 · 300 dpi". */
 		caption?: string;
-		/** Runs the scan head down the page. */
-		sweeping?: boolean;
 	} = $props();
 </script>
 
 <!--
-	Three sheets, fanned. Offsets are the mockup's; the whole stack drifts up and down so
-	the hero has a pulse even when nothing is happening.
+	Three sheets, fanned. Offsets are the mockup's; the whole stack drifts up and down and
+	a scan head sweeps the front sheet, so the hero has a pulse even when nothing is
+	happening. The sweep is decoration, not progress: a real scan leaves this page at once.
 
 	The mockup sized this against width alone (18vw). A sheet is 1.414x taller than it is
 	wide, so on a short-but-wide window that made the stack the reason the home screen
@@ -40,8 +38,6 @@
 				{caption}
 			</span>
 		{/if}
-		{#if sweeping}
-			<div class="absolute inset-x-0 h-0.5 animate-sweep bg-accent-light shadow-sweep"></div>
-		{/if}
+		<div class="absolute inset-x-0 h-0.5 animate-sweep bg-accent-light shadow-sweep"></div>
 	</div>
 </div>
