@@ -32,7 +32,6 @@
 	import Toolbar from '$lib/components/Toolbar.svelte';
 	import Preview from '$lib/components/Preview.svelte';
 	import ExportBar from '$lib/components/ExportBar.svelte';
-	import PanelSection from '$lib/components/PanelSection.svelte';
 	import { Icon } from '$lib/icons';
 	import NameField from '$lib/components/NameField.svelte';
 	import CropModal from '$lib/components/CropModal.svelte';
@@ -654,6 +653,18 @@
 	<title>{session ? formatTime(session.CreatedAt) : 'Session'} · YASS</title>
 </svelte:head>
 
+{#snippet heading(title: string, value = '', testid = '')}
+	<div class="flex items-baseline gap-2">
+		<span class="text-xs font-bold tracking-[0.06em] text-ink-muted uppercase">{title}</span>
+		{#if value}
+			<span
+				class="ml-auto min-w-0 truncate text-[13px] font-semibold text-ink-muted"
+				data-testid={testid || undefined}>{value}</span
+			>
+		{/if}
+	</div>
+{/snippet}
+
 {#snippet fact(label: string, value: string)}
 	<!-- A row rather than a tile: two words and a figure do not need a card each, and a
 	     250px column has no room for the pair of them side by side. -->
@@ -851,7 +862,7 @@
 			<aside
 				class="order-3 flex w-full min-w-0 basis-full flex-col gap-3.5 rounded-[24px] bg-surface p-[22px] shadow-panel lg:min-h-0 lg:w-auto lg:basis-[clamp(250px,16vw,280px)] lg:overflow-y-auto"
 			>
-				<p class="text-xs font-bold tracking-[0.06em] text-ink-muted uppercase">Name</p>
+				{@render heading('Name')}
 
 				<div class="relative">
 					<NameField
@@ -893,7 +904,7 @@
 					{/if}
 				</div>
 
-				<p class="text-xs font-bold tracking-[0.06em] text-ink-muted uppercase">Save</p>
+				{@render heading('Save')}
 
 				<ExportBar
 					{session}
@@ -908,29 +919,16 @@
 					ondownload={saveAs}
 				/>
 
-				<!--
-					The facts about the scan. Shut by default, with the page count on the summary so
-					that closing it costs you nothing you were actually reading.
-				-->
-				<PanelSection
-					title="Scan"
-					summary={pageSummary}
-					summaryTestid="page-count"
-					testid="scan-section"
-					open={$reviewPrefs.scanPanel}
-					ontoggle={(scan) => reviewPrefs.set({ ...$reviewPrefs, scanPanel: scan })}
-				>
+				<!-- The facts about the scan, with the page count up on the heading beside them. -->
+				<div class="flex flex-col gap-1" data-testid="scan-section">
+					{@render heading('Scan', pageSummary, 'page-count')}
 					{@render fact('Filter', filterLabel)}
 					<!-- The scanned pages on disk, not an estimate of the PDF the mockup guesses at. -->
 					{@render fact('Size', formatBytes(session.SizeBytes))}
-				</PanelSection>
+				</div>
 
-				<PanelSection
-					title="More"
-					testid="more-section"
-					open={$reviewPrefs.morePanel}
-					ontoggle={(more) => reviewPrefs.set({ ...$reviewPrefs, morePanel: more })}
-				>
+				<div class="flex flex-col gap-0.5" data-testid="more-section">
+					{@render heading('More')}
 					<button
 						type="button"
 						class={ghost}
@@ -951,7 +949,7 @@
 						<Icon name="layers" />
 						Add pages from past scan
 					</button>
-				</PanelSection>
+				</div>
 
 				<!--
 					Alone at the foot, because it throws the scan away and has no business sitting

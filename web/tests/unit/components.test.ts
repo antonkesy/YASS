@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createRawSnippet } from 'svelte';
-import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
+import { render, screen, fireEvent } from '@testing-library/svelte';
 import StatusPill from '$lib/components/StatusPill.svelte';
 import Toolbar from '$lib/components/Toolbar.svelte';
 import ExportBar from '$lib/components/ExportBar.svelte';
@@ -10,7 +9,6 @@ import SettingsChips from '$lib/components/SettingsChips.svelte';
 import SortMenu from '$lib/components/SortMenu.svelte';
 import AppFooter from '$lib/components/AppFooter.svelte';
 import Toggle from '$lib/components/Toggle.svelte';
-import PanelSection from '$lib/components/PanelSection.svelte';
 import TemplateEditor from '$lib/components/TemplateEditor.svelte';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import {
@@ -572,50 +570,5 @@ describe('TemplateEditor', () => {
 			]
 		});
 		expect(screen.getByTestId('template-preview-name')).toHaveTextContent('quarterly-report');
-	});
-});
-
-describe('PanelSection', () => {
-	const body = createRawSnippet(() => ({ render: () => '<p data-testid="body">inside</p>' }));
-
-	it('says what it holds while it is shut, and opens on demand', async () => {
-		const { rerender } = render(PanelSection, {
-			title: 'Scan',
-			summary: '2 of 3 pages',
-			summaryTestid: 'page-count',
-			testid: 'scan-section',
-			children: body
-		});
-
-		const details = screen.getByTestId('scan-section') as HTMLDetailsElement;
-		expect(details.open).toBe(false);
-		// Shut is not gone: the summary is what you read without opening anything.
-		expect(screen.getByTestId('page-count')).toHaveTextContent('2 of 3 pages');
-
-		await rerender({
-			title: 'Scan',
-			summary: '2 of 3 pages',
-			summaryTestid: 'page-count',
-			testid: 'scan-section',
-			open: true,
-			children: body
-		});
-		expect((screen.getByTestId('scan-section') as HTMLDetailsElement).open).toBe(true);
-		expect(screen.getByTestId('body')).toBeInTheDocument();
-	});
-
-	it('reports which way it was turned, so the choice can be remembered', async () => {
-		const ontoggle = vi.fn();
-		render(PanelSection, { title: 'More', testid: 'more-section', ontoggle, children: body });
-
-		// The `open` property rather than a click on the summary: jsdom implements no summary
-		// activation behaviour, so clicking one opens nothing and the test would pass by
-		// asserting a toggle that never happened. jsdom does queue `toggle` off the attribute.
-		const details = screen.getByTestId('more-section') as HTMLDetailsElement;
-		details.open = true;
-		await waitFor(() => expect(ontoggle).toHaveBeenLastCalledWith(true));
-
-		details.open = false;
-		await waitFor(() => expect(ontoggle).toHaveBeenLastCalledWith(false));
 	});
 });
