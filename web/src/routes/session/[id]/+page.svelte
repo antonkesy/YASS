@@ -32,6 +32,7 @@
 	import Toolbar from '$lib/components/Toolbar.svelte';
 	import Preview from '$lib/components/Preview.svelte';
 	import ExportBar from '$lib/components/ExportBar.svelte';
+	import PanelSection from '$lib/components/PanelSection.svelte';
 	import { Icon } from '$lib/icons';
 	import NameField from '$lib/components/NameField.svelte';
 	import CropModal from '$lib/components/CropModal.svelte';
@@ -173,6 +174,15 @@
 	);
 	const filterLabel = $derived(
 		filters.size > 1 ? 'Mixed' : pageFilterLabels[[...filters][0] ?? PageFilter.Original]
+	);
+	/**
+	 * What the Scan section says while it is shut. Worded exactly as the line it replaces, which
+	 * sat under the export buttons: it is a fact about the paper, not about the saving.
+	 */
+	const pageSummary = $derived(
+		session
+			? `${activePages} of ${session.Pages.length} page${session.Pages.length === 1 ? '' : 's'}`
+			: ''
 	);
 
 	/** Other scans that still have pages, newest first, for the merge dialog. */
@@ -644,6 +654,15 @@
 	<title>{session ? formatTime(session.CreatedAt) : 'Session'} · YASS</title>
 </svelte:head>
 
+{#snippet fact(label: string, value: string)}
+	<!-- A row rather than a tile: two words and a figure do not need a card each, and a
+	     250px column has no room for the pair of them side by side. -->
+	<div class="flex items-baseline justify-between gap-2 py-0.5">
+		<span class="flex-none text-xs text-ink-muted">{label}</span>
+		<span class="truncate text-[13px] font-bold tracking-[-0.01em] tabular-nums">{value}</span>
+	</div>
+{/snippet}
+
 {#snippet pageTools(scoped: boolean)}
 	{#if session}
 		<Toolbar
@@ -832,11 +851,7 @@
 			<aside
 				class="order-3 flex w-full min-w-0 basis-full flex-col gap-3.5 rounded-[24px] bg-surface p-[22px] shadow-panel lg:min-h-0 lg:w-auto lg:basis-[clamp(250px,16vw,280px)] lg:overflow-y-auto"
 			>
-				<div class="flex items-center gap-2">
-					<p class="flex-1 text-xs font-bold tracking-[0.06em] text-ink-muted uppercase">
-						Document name
-					</p>
-				</div>
+				<p class="text-xs font-bold tracking-[0.06em] text-ink-muted uppercase">Name</p>
 
 				<div class="relative">
 					<NameField
@@ -878,26 +893,7 @@
 					{/if}
 				</div>
 
-				<p class="text-xs font-bold tracking-[0.06em] text-ink-muted uppercase">Document</p>
-				<div class="grid grid-cols-2 gap-2">
-					<div class="rounded-[14px] bg-app p-3">
-						<p class="text-xs text-ink-muted">Pages</p>
-						<p class="text-[18px] font-extrabold tracking-[-0.01em] tabular-nums">
-							{activePageCount(session)}
-						</p>
-					</div>
-					<div class="rounded-[14px] bg-app p-3">
-						<p class="text-xs text-ink-muted">Filter</p>
-						<p class="truncate text-[18px] font-extrabold tracking-[-0.01em]">{filterLabel}</p>
-					</div>
-					<div class="rounded-[14px] bg-app p-3">
-						<!-- The scanned pages on disk, not an estimate of the PDF the mockup guesses at. -->
-						<p class="text-xs text-ink-muted">Size</p>
-						<p class="text-[18px] font-extrabold tracking-[-0.01em] tabular-nums">
-							{formatBytes(session.SizeBytes)}
-						</p>
-					</div>
-				</div>
+				<p class="text-xs font-bold tracking-[0.06em] text-ink-muted uppercase">Save</p>
 
 				<ExportBar
 					{session}
@@ -912,7 +908,29 @@
 					ondownload={saveAs}
 				/>
 
-				<div class="flex flex-col gap-0.5 border-t border-line pt-2">
+				<!--
+					The facts about the scan. Shut by default, with the page count on the summary so
+					that closing it costs you nothing you were actually reading.
+				-->
+				<PanelSection
+					title="Scan"
+					summary={pageSummary}
+					summaryTestid="page-count"
+					testid="scan-section"
+					open={$reviewPrefs.scanPanel}
+					ontoggle={(scan) => reviewPrefs.set({ ...$reviewPrefs, scanPanel: scan })}
+				>
+					{@render fact('Filter', filterLabel)}
+					<!-- The scanned pages on disk, not an estimate of the PDF the mockup guesses at. -->
+					{@render fact('Size', formatBytes(session.SizeBytes))}
+				</PanelSection>
+
+				<PanelSection
+					title="More"
+					testid="more-section"
+					open={$reviewPrefs.morePanel}
+					ontoggle={(more) => reviewPrefs.set({ ...$reviewPrefs, morePanel: more })}
+				>
 					<button
 						type="button"
 						class={ghost}
@@ -933,9 +951,17 @@
 						<Icon name="layers" />
 						Add pages from past scan
 					</button>
+				</PanelSection>
+
+				<!--
+					Alone at the foot, because it throws the scan away and has no business sitting
+					where a hand goes looking for Scan more. mt-auto puts it on the bottom edge
+					while the panel has room to spare, and is simply inert once it has not.
+				-->
+				<div class="mt-auto border-t border-line pt-4 max-lg:mt-4">
 					<button
 						type="button"
-						class="{ghost} text-danger hover:bg-danger-bg"
+						class="{ghost} w-full text-danger hover:bg-danger-bg"
 						onclick={() => (confirmDiscard ? discard() : (confirmDiscard = true))}
 						data-testid="discard-button"
 					>
