@@ -131,7 +131,7 @@
 			aria-label="Rotate left"
 		>
 			<Icon name="rotateLeft" />
-			Left
+			Rotate left
 		</button>
 		<button
 			type="button"
@@ -140,7 +140,7 @@
 			aria-label="Rotate right"
 		>
 			<Icon name="rotateRight" />
-			Right
+			Rotate right
 		</button>
 	{/if}
 
