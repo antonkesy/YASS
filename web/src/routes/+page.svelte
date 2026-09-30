@@ -22,7 +22,7 @@
 	let working = $state(false);
 	let error = $state<string | null>(null);
 	let effective = $state<ScanOptionsDto | null>(null);
-	/** Scanners the server can see, only so a chosen one can be shown by name. */
+	/** Scanners the server can see: the stage's picker, and the name a chosen one goes by. */
 	let devices = $state<ScannerDeviceDto[]>([]);
 
 	// The stage shows what the next scan will use, so the options are loaded up front
@@ -157,6 +157,7 @@
 			status={$scanner}
 			connection={$connection}
 			options={planned}
+			{devices}
 			{deviceName}
 			busy={starting}
 			onscan={scan}

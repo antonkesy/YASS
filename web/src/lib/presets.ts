@@ -16,6 +16,13 @@ export type Preset = {
 	name: string;
 	icon: PresetIconName;
 	settings: ScanOverrides;
+	/**
+	 * The scanner this preset belongs to, and the only one it is offered for. Absent means
+	 * every scanner — which is what the built-in presets are, and what every preset saved
+	 * before a scanner could be chosen stays. The scanner itself is never in `settings`:
+	 * it is picked on the home screen and the presets follow it, not the other way round.
+	 */
+	device?: string;
 };
 
 export const PRESETS_KEY = 'yass.presets';
@@ -134,13 +141,25 @@ export const defaultReviewPrefs: ReviewPrefs = { overviewTile: 'fit' };
 
 /** True when `settings` matches every key the preset pins. */
 export function matchesPreset(preset: Preset, overrides: ScanOverrides): boolean {
-	return Object.entries(preset.settings).every(
-		([key, value]) => overrides[key as keyof ScanOverrides] === value
-	);
+	const pinned = Object.entries(preset.settings);
+	// A preset that pins nothing describes no scan in particular, so it matches none: every()
+	// over an empty list says yes to anything, and the stage would light it up whatever the
+	// settings were. Reachable since the scanner stopped counting as one of a preset's keys.
+	if (pinned.length === 0) return false;
+	return pinned.every(([key, value]) => overrides[key as keyof ScanOverrides] === value);
 }
 
 export function activePreset(presets: readonly Preset[], overrides: ScanOverrides): Preset | null {
 	return presets.find((p) => matchesPreset(p, overrides)) ?? null;
+}
+
+/**
+ * The presets worth offering for one scanner: the ones that belong to it, plus the ones
+ * that belong to none. With no scanner chosen only the latter are left, which for a browser
+ * that has never seen this feature is all of them.
+ */
+export function presetsFor(presets: readonly Preset[], device: string | undefined): Preset[] {
+	return presets.filter((p) => !p.device || p.device === device);
 }
 
 function load<T>(storage: Storage | undefined, key: string, fallback: T): T {

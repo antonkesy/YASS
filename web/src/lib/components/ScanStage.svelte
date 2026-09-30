@@ -1,9 +1,13 @@
 <script lang="ts">
-	import type { ScanOptionsDto, ScannerStatusDto } from '$lib/hub/generated/Yass.Core.Hub';
+	import type {
+		ScannerDeviceDto,
+		ScanOptionsDto,
+		ScannerStatusDto
+	} from '$lib/hub/generated/Yass.Core.Hub';
 	import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 	import type { ConnectionState } from '$lib/hub/client';
 	import { pageSizeLabel } from '$lib/format';
-	import { activePreset, exportPrefs, presets } from '$lib/presets';
+	import { activePreset, exportPrefs, presets, presetsFor } from '$lib/presets';
 	import { exportFormatLabels } from '$lib/format';
 	import { settings } from '$lib/settings';
 	import PaperStack from './PaperStack.svelte';
@@ -16,6 +20,7 @@
 		status,
 		connection,
 		options,
+		devices = [],
 		deviceName = null,
 		busy = false,
 		onscan,
@@ -24,16 +29,33 @@
 		status: ScannerStatusDto | null;
 		connection: ConnectionState;
 		options: ScanOptionsDto | null;
-		/** The chosen scanner's name, for the chips. */
+		/** Scanners the server can see, for the picker. */
+		devices?: ScannerDeviceDto[];
+		/** The chosen scanner's name, for the chips when there is no picker to say it. */
 		deviceName?: string | null;
 		busy?: boolean;
 		onscan: () => void;
 		onsettings: () => void;
 	} = $props();
 
+	/** The scanner the next scan will run on: this browser's pick, or the server's. */
+	const device = $derived(options?.Device || '');
+
+	/**
+	 * Only when the config opens the key up, and only once there is something to pick
+	 * between: a lone "Automatic" is not a choice, and the line above already says when
+	 * no scanner was found.
+	 */
+	const canPickDevice = $derived(
+		(options?.Editable?.includes('device') ?? false) && devices.length > 0
+	);
+
+	/** Presets follow the scanner, so a scanner-specific one is out of sight on the others. */
+	const offered = $derived(presetsFor($presets, device || undefined));
+
 	// Matched against what the scan will do, not against the stored overrides alone:
 	// a browser with no overrides still matches whichever preset the server defaults to.
-	const chosen = $derived(options ? activePreset($presets, options) : null);
+	const chosen = $derived(options ? activePreset(offered, options) : null);
 
 	// The configured folder stands in when nothing is typed, the same fallback the
 	// review screen and the settings sheet use.
@@ -89,12 +111,34 @@
 		</p>
 	{/if}
 
+	{#if canPickDevice}
+		<div class="flex flex-col items-center gap-2" data-testid="device-picker">
+			<span class="text-[11px] font-bold tracking-[0.08em] text-ink-faint uppercase">Scanner</span>
+			<select
+				class="h-[38px] max-w-[min(340px,80vw)] cursor-pointer truncate rounded-full bg-surface px-3.5 text-[13px] font-bold text-accent-deep shadow-chip outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+				value={device}
+				onchange={(e) => settings.set({ ...$settings, Device: e.currentTarget.value || undefined })}
+				data-testid="device-select"
+			>
+				<option value="">Automatic</option>
+				{#each devices as scanner (scanner.Id)}
+					<option value={scanner.Id}>{scanner.Name}</option>
+				{/each}
+				<!-- One the server has stopped listing still has to show, or the box would
+				     silently read as Automatic while the scan goes somewhere else. -->
+				{#if device && !devices.some((d) => d.Id === device)}
+					<option value={device}>{device} (not found)</option>
+				{/if}
+			</select>
+		</div>
+	{/if}
+
 	<PresetPills
-		presets={$presets}
+		presets={offered}
 		active={chosen?.id ?? null}
 		modified={chosen === null}
 		onpick={(id) => {
-			const preset = $presets.find((p) => p.id === id);
+			const preset = offered.find((p) => p.id === id);
 			if (preset) settings.set({ ...$settings, ...preset.settings });
 		}}
 		onsave={onsettings}
@@ -103,7 +147,7 @@
 	<SettingsChips
 		{options}
 		{destination}
-		{deviceName}
+		deviceName={canPickDevice ? null : deviceName}
 		format={exportFormatLabels[$exportPrefs.format]}
 		onclick={onsettings}
 	/>
