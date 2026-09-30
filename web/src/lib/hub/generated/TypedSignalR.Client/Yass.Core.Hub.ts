@@ -3,7 +3,7 @@
 /* tslint:disable */
 // @ts-nocheck
 import type { IStreamResult, Subject } from '@microsoft/signalr';
-import type { ScanOptionsDto, SessionDto, ExportRequest, ExportResult, NameSuggestionsDto, ScannerStatusDto, ScannerDeviceDto, PageDto } from '../Yass.Core.Hub';
+import type { ScanOptionsDto, SessionDto, ExportRequest, ExportResult, ScannerStatusDto, ScannerDeviceDto, PageDto } from '../Yass.Core.Hub';
 import type { PageEdit } from '../Yass.Core.Domain';
 
 /**
@@ -88,12 +88,6 @@ export type IYassHub = {
     * @returns Transpiled from System.Threading.Tasks.Task<Yass.Core.Hub.ExportResult>
     */
     export(sessionId: string, request: ExportRequest): Promise<ExportResult>;
-    /**
-    * Name suggestions for a session, best first. Empty when nothing can be read.
-    * @param sessionId Transpiled from string
-    * @returns Transpiled from System.Threading.Tasks.Task<Yass.Core.Hub.NameSuggestionsDto>
-    */
-    suggestNames(sessionId: string): Promise<NameSuggestionsDto>;
     /**
     * @returns Transpiled from System.Threading.Tasks.Task<Yass.Core.Hub.ScannerStatusDto>
     */

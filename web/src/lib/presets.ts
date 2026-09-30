@@ -2,8 +2,6 @@ import { writable } from 'svelte/store';
 import { ColorMode, PageSize, ScanSource } from './hub/generated/Yass.Core.Domain';
 import { ExportFormat } from './hub/generated/Yass.Core.Hub';
 import type { PresetIconName } from './icons';
-import type { NameStyle } from './naming/style';
-import type { AiProvider } from './naming/types';
 import type { ScanOverrides } from './settings';
 
 /**
@@ -66,12 +64,6 @@ export type ExportPrefs = {
 	format: ExportFormat;
 	directory: string;
 	nameTemplate: string;
-	/**
-	 * How a found name joins its words once it becomes a file name. Here rather than in
-	 * `AiPrefs` because it shapes a file name, and applies to the heading read off the page
-	 * as much as to anything a model wrote.
-	 */
-	nameStyle: NameStyle;
 	exportButton: boolean;
 };
 
@@ -81,48 +73,8 @@ export const defaultExportPrefs: ExportPrefs = {
 	format: ExportFormat.Pdf,
 	directory: '',
 	nameTemplate: '',
-	nameStyle: 'words',
 	exportButton: true
 };
-
-/**
- * How this browser asks a model for a document name (ADR-008). Settings only — the key is
- * kept apart in `AiKeys`, so spreading this object can never leak it into a prop or a log.
- */
-export type AiPrefs = {
-	/**
-	 * Whether Find name is offered at all, and with it everything `{NAME}` stands for: the
-	 * button on the review screen, the slot in the name, and the token in the template editor.
-	 * Off — which is how it arrives — nothing is ever read, because the server only reads a
-	 * page when that button asks it to, never during a scan.
-	 */
-	findName: boolean;
-	provider: AiProvider;
-	/** Base URL for the OpenAI-compatible shape. Empty falls back per provider. */
-	baseUrl: string;
-	/** Model per provider, so switching away and back does not lose the one you had. */
-	models: Partial<Record<AiProvider, string>>;
-};
-
-/** API keys, alone in their own blob. Never logged, never passed whole into a component. */
-export type AiKeys = {
-	anthropic: string;
-	openai: string;
-};
-
-export const AI_KEY = 'yass.ai';
-export const AI_KEYS_KEY = 'yass.ai.keys';
-
-export const defaultAiPrefs: AiPrefs = {
-	// Off to begin with: it is experimental, it costs OCR on the server, and the model behind
-	// it is either money or a download. All of that is worth asking for rather than assuming.
-	findName: false,
-	provider: 'off',
-	baseUrl: '',
-	models: {}
-};
-
-export const defaultAiKeys: AiKeys = { anthropic: '', openai: '' };
 
 /** Review-screen preferences, next to the export ones so they share the same storage helper. */
 export type ReviewPrefs = {
@@ -206,15 +158,7 @@ export const createExportPrefs = (storage: Storage | undefined) =>
 export const createReviewPrefs = (storage: Storage | undefined) =>
 	persisted<ReviewPrefs>(storage, REVIEW_KEY, defaultReviewPrefs);
 
-export const createAiPrefs = (storage: Storage | undefined) =>
-	persisted<AiPrefs>(storage, AI_KEY, defaultAiPrefs);
-
-export const createAiKeys = (storage: Storage | undefined) =>
-	persisted<AiKeys>(storage, AI_KEYS_KEY, defaultAiKeys);
-
 const storage = typeof localStorage === 'undefined' ? undefined : localStorage;
 export const presets = createPresets(storage);
 export const exportPrefs = createExportPrefs(storage);
 export const reviewPrefs = createReviewPrefs(storage);
-export const aiPrefs = createAiPrefs(storage);
-export const aiKeys = createAiKeys(storage);

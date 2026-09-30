@@ -36,10 +36,6 @@ export default defineConfig({
 			YASS__sessions__directory: `${process.env.TMPDIR ?? '/tmp'}/yass-e2e/sessions`,
 			YASS__output__directory: `${process.env.TMPDIR ?? '/tmp'}/yass-e2e/consume`,
 			YASS__logging__level: 'warning',
-			// Pinned rather than left to the default, so the suite does not quietly depend on
-			// whether the machine has tesseract. The flake ships it, so CI and a dev shell both
-			// read pages; a box without it would report CanReadPageText false and hide Find name.
-			YASS__naming__ocr: 'true',
 			YASS_WEBROOT: `${import.meta.dirname}/build`
 		}
 	}

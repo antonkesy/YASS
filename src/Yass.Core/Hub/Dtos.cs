@@ -1,6 +1,5 @@
 using Tapper;
 using Yass.Core.Domain;
-using Yass.Core.Naming;
 using Yass.Core.Scanning;
 
 namespace Yass.Core.Hub;
@@ -47,9 +46,8 @@ public sealed record PageDto(
 /// Scan options on the wire. Every field is optional: as a <c>StartScan</c> argument only the keys in
 /// <c>scanner.ui_editable</c> are honoured; as a <c>GetEffectiveOptions</c> result every field is filled in and
 /// <see cref="Editable"/> lists the keys the UI may change, <see cref="AllowDownload"/> mirrors
-/// <c>output.allow_download</c>, <see cref="ExportRoots"/> mirrors the directories the export
-/// folder may sit under so the settings sheet can offer them instead of only rejecting a typed path,
-/// and <see cref="CanReadPageText"/> says whether asking for a name is worth the round trip at all.
+/// <c>output.allow_download</c>, and <see cref="ExportRoots"/> mirrors the directories the export
+/// folder may sit under so the settings sheet can offer them instead of only rejecting a typed path.
 /// </summary>
 [TranspilationSource]
 public sealed record ScanOptionsDto(
@@ -65,22 +63,7 @@ public sealed record ScanOptionsDto(
     string[]? Editable = null,
     bool? AllowDownload = null,
     string[]? ExportRoots = null,
-    bool? CanReadPageText = null,
-    int? PageTextPages = null,
     string? Device = null);
-
-/// <param name="Suggestions">Best first.</param>
-/// <param name="CanRead">Whether page text could be read at all, which decides what the UI can offer.</param>
-/// <param name="Local">Whether the text stayed on the scanner server, which the UI says out loud.</param>
-/// <param name="Text">What was read off the pages, for a browser that wants to ask its own model.</param>
-/// <param name="Error">Why the server's own provider produced nothing, in words fit to show someone.</param>
-[TranspilationSource]
-public sealed record NameSuggestionsDto(
-    NameSuggestion[] Suggestions,
-    bool CanRead,
-    bool Local,
-    string? Text = null,
-    string? Error = null);
 
 [TranspilationSource]
 public sealed record ScannerStatusDto(ScannerState State, string? DeviceName, string? Message, string CheckedAt);

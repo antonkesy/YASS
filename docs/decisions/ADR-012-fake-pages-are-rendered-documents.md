@@ -9,9 +9,8 @@
 no hardware. Two things it produced were placeholders rather than stand-ins:
 
 - The pages were five hand-drawn PNGs: a big digit, one line of text, and grey bars where the
-  body should be. Tesseract read nothing from the first two of them under its automatic layout
-  detection, so **Find name in the demo always came back "No words were found"** — the one
-  feature the demo's own README tells you to try.
+  body should be. Nothing about them looked like paper anyone would scan, so the review
+  screen the demo's own README tells you to try had nothing worth reviewing.
 - The saved PDF held one line of text per page naming the source file and its rotation. It was
   a valid PDF and proved the save path ran, but it did not contain the scan, so nothing about
   it could be looked at.
@@ -23,7 +22,7 @@ A placeholder that cannot be read and cannot be looked at proves less than it ap
 The pages are **documents, written as Markdown and rendered by the build**: an invoice, a
 letter, a payslip, a report in colour and a near-blank sheet, in `src/Yass.Fake/Fixtures`.
 `scripts/render-fixtures.sh` runs pandoc through typst to PDF and poppler to a greyscale PNG,
-A4 at 150 dpi. Tesseract reads every one of them, titles and all.
+A4 at 150 dpi.
 
 - **Rendered, not committed.** The Markdown is the source; the images go to `obj/` and are
   embedded from there. What a page says and what it looks like cannot drift apart, and a diff
@@ -40,8 +39,7 @@ A4 at 150 dpi. Tesseract reads every one of them, titles and all.
 
 ## Consequences
 
-- The demo demonstrates naming, which was the point: scan, press Find name, and the heading
-  off the page is there to pick.
+- The demo shows real documents on the review screen and in the saved PDF, which was the point.
 - A build without pandoc, typst, poppler and a font now fails rather than producing an
   assembly with no pages in it. That is the deliberate trade for never committing a generated
   file: the alternative was a script someone has to remember to run.

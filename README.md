@@ -14,15 +14,11 @@ review the pages, and save a PDF straight into your
 > must **never be exposed to the internet**: bind it to a LAN address, keep it
 > behind your firewall, and do not put it behind a public reverse proxy.
 >
-> Two consequences worth knowing:
->
-> - The **export folder is set in the browser**. By default it is confined to
->   `output.directory` and its subfolders; `output.allowed_roots` widens that, and
->   `["/"]` removes the limit entirely. Whatever you allow, anyone who can reach
->   the port can write there, so run YASS as a user with no more filesystem reach
->   than it needs.
-> - `naming.provider: anthropic` **sends the text of your documents to a third
->   party**. It is off by default; `ollama` keeps the text on your own machine.
+> One consequence worth knowing: the **export folder is set in the browser**. By
+> default it is confined to `output.directory` and its subfolders;
+> `output.allowed_roots` widens that, and `["/"]` removes the limit entirely.
+> Whatever you allow, anyone who can reach the port can write there, so run YASS
+> as a user with no more filesystem reach than it needs.
 
 ## What it does
 
@@ -171,127 +167,13 @@ Files are written atomically: the PDF is streamed to a hidden `._yass-*.tmp`
 file in the consume directory (matched by paperless' default ignore pattern) and
 renamed into place once complete, so the consumer never sees a partial document.
 
-### Naming (optional)
-
-YASS can name a file from what is printed on the page. It is **experimental**, and
-**Settings → Find name** arrives switched off — turn it on and the rest of this
-section applies. Nothing is read until you ask for it, and what is read stays on
-this machine; `provider` decides whether a model is asked as well, and it is off
-until you set one. Turning **Find name** back off stops all of it, and takes the
-`{NAME}` token out of the template editor and the name field with it.
-
-| Key | Default | Meaning |
-|---|---|---|
-| `naming.ocr` | `true` | Read page text, when a name is asked for. Needs the `tesseract` binary on PATH (in the Docker image and the Nix package already); without it, nothing is read and the UI says so. |
-| `naming.ocr_language` | `eng` | Tesseract language code. |
-| `naming.ocr_pages` | `2` | How many pages to read; a title is almost always on the first. |
-| `naming.provider` | `off` | `off`, `ollama` or `anthropic`. |
-| `naming.endpoint` | `""` | Base URL; defaults to `http://127.0.0.1:11434` for `ollama`. |
-| `naming.model` | `llama3.2` | Model name to ask. |
-| `naming.api_key_file` | `""` | Path to a file holding the API key. Never the key itself. |
-| `naming.timeout_seconds` | `20` | Per-request timeout. |
-
-With **Find name** on and the server at its defaults — `ocr: true`,
-`provider: off` — you get a suggestion from the largest heading on the page plus
-one from your filename template, and nothing leaves the machine. Adding
-`provider: ollama` asks a local model to summarise the page instead; `anthropic`
-sends the page text to Anthropic's API. The suggestions popover says which of
-those is happening.
-
-### Setting up a model from the browser
-
-Everything above configures the **server**. **Settings → Find name** configures
-**this browser**, which needs no access to `yass.yaml` and no key file:
-
-- **Anthropic** or **OpenAI-style** — paste an API key and the page calls the
-  provider directly. The key is kept in this browser's `localStorage` and never
-  reaches the scanner server. Verified to answer a web page:
-  `api.anthropic.com`, `api.openai.com`, `openrouter.ai`, `api.groq.com`.
-  Anything else that speaks the OpenAI chat shape works too — point the base URL
-  at LM Studio, llama.cpp or Ollama. Ollama refuses requests from a page until
-  `OLLAMA_ORIGINS` names your YASS origin.
-- **In-browser (GPU)** — a model runs on your own machine through WebGPU, with
-  no key and no third party. It downloads a few hundred megabytes the first
-  time, then works offline. Needs WebGPU.
-- **In-browser (CPU)** — the same idea without a graphics card: llama.cpp
-  compiled to WebAssembly, decoding on the processor with the weights in
-  ordinary RAM. Works in any browser. Pick one of the models offered (145 MB to
-  800 MB) or paste the URL of any instruct-tuned GGUF. Budget roughly the
-  download size again in free RAM while it answers, and expect around a second
-  rather than a fraction of one. It decodes on half the machine's cores: YASS
-  serves itself cross-origin isolated (`Cross-Origin-Opener-Policy` and
-  `Cross-Origin-Embedder-Policy`) so that the browser allows the threads.
-
-The two in-browser options download their weights once. **Download model** in the
-settings sheet fetches them ahead of time and shows how far along it is; ask for a
-name before that and the same figure appears under the suggestions, with the
-sparkle filling up as it goes.
-
-Every option here needs `naming.ocr: true` on the server, because a name comes
-from the words on the page. Where the server reads nothing — `ocr: false`, or no
-`tesseract` — nothing is named from the page, and the settings sheet says why.
-Either way the browser's own **Find name** switch has to be on first: it starts
-off, and while it is off none of this is on screen.
-
 ### Naming a scan
 
-A finished scan is already called what your file name template says — no reading,
-no waiting, no cost. Where the template has a `{NAME}` in it, that part sits in
-the name as an empty slot marked **name it** — while **Find name** is on and the
-server reads pages. With either off the name field is an ordinary field, and the
-slot is simply not there, because nothing could fill it.
-
-Click the slot, or the sparkle beside the field, and the page is read and the slot
-filled by whatever **Settings → Find name** points at: the heading off the page
-when no model is set up, the model itself when one is. The same click afterwards
-offers another go, the other suggestions, or handing the whole name over to type
-yourself — and a name that no longer fits the template has no slot in it, because
-at that point it is yours.
-
-Opening it again shows what came back the first time. Reading the page costs OCR on
-the server, and a model costs money or a download, so neither is paid twice for the
-same paper: the refresh button at the top of the list is how you say the paper has
-changed.
-
-Saving without filling the slot drops it, and its separator with it: a template of
-`{YEAR}-{MONTH}-{DAY}_{NAME}` saves as `2026-09-29.pdf`. That is also what happens
-to a template left over from when **Find name** was on — the token is inert, never
-written into a file name, and waiting where you left it if you switch back.
-
-The list of past scans calls each scan the same thing the review screen does, and the
-search box and the A–Z sort go by that name too — so a scan nobody has named is listed
-under the file name it would be saved as, not under the time of day it happened. Open
-it and rename it whenever you like; the list follows.
-
-### Where the found name goes
-
-**Settings → File name template** takes a `{NAME}` token alongside `{YEAR}`, `{MONTH}`
-and the rest, and offers it as a chip while **Find name** is on. It stands for
-whatever **Find name** came back with, so
-
-```
-{YEAR}-{MONTH}-{DAY}_{NAME}    →   2026-09-29_quarterly-report-northwind.pdf
-```
-
-gives you a dated name *and* a written one. Without `{NAME}` in the template, picking a
-suggestion replaces the whole name, as it always has. With nothing found yet, `{NAME}`
-takes its neighbouring separator with it rather than leaving a name ending in `_`.
-
-`{NAME}` is the one token `yass.yaml` does not share: the name may have been written by a
-model running in your browser, which the server never sees. It is filled in before anything
-is sent, so `output.filename_template` has no use for it.
-
-**Settings → Found names** picks how those words are joined — as written, `lower_snake` or
-`lower-kebab`. The suggestions popover always shows the readable form, because that is what
-you are choosing between; the convention is applied on the way to the file name. It covers
-the heading read off the page as well as anything a model wrote, and leaves letters alone —
-`Gehaltsabrechnung Müller` becomes `gehaltsabrechnung-müller`, not `gehaltsabrechnung-mller`.
-
-One thing worth knowing: a key in `localStorage` can be read by anything running
-on that page and stays until you clear it, so think twice on a browser other
-people use. What goes to a model is only ever the few lines of text read off the
-page — never the page image — and the suggestions popover says which model saw
-them.
+A finished scan is already called what your file name template says. The list of
+past scans calls each scan the same thing the review screen does, and the search
+box and the A–Z sort go by that name too — so a scan nobody has named is listed
+under the file name it would be saved as, not under the time of day it happened.
+Open it and rename it whenever you like; the list follows.
 
 ## Scanner setup
 

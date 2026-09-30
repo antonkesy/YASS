@@ -47,9 +47,6 @@ public interface IYassHub
 
     Task<ExportResult> Export(string sessionId, ExportRequest request);
 
-    /// <summary>Name suggestions for a session, best first. Empty when nothing can be read.</summary>
-    Task<NameSuggestionsDto> SuggestNames(string sessionId);
-
     Task<ScannerStatusDto> GetScannerStatus();
 
     /// <summary>Every scanner the driver can see, so a browser can pick one to scan on.</summary>

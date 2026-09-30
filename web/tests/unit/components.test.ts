@@ -8,7 +8,6 @@ import ScanStage from '$lib/components/ScanStage.svelte';
 import SettingsChips from '$lib/components/SettingsChips.svelte';
 import SortMenu from '$lib/components/SortMenu.svelte';
 import AppFooter from '$lib/components/AppFooter.svelte';
-import Toggle from '$lib/components/Toggle.svelte';
 import TemplateEditor from '$lib/components/TemplateEditor.svelte';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import {
@@ -585,61 +584,21 @@ describe('AppFooter', () => {
 	});
 });
 
-describe('Toggle', () => {
-	it('wears a badge when given one, and goes without when not', () => {
-		const { unmount } = render(Toggle, {
-			name: 'find_name',
-			label: 'Find name',
-			hint: 'Suggest a file name from the words on the page',
-			badge: 'Experimental',
-			checked: false,
-			onchange: vi.fn()
-		});
-		expect(screen.getByTestId('toggle-badge-find_name')).toHaveTextContent('Experimental');
-		unmount();
-
-		// A fresh render rather than a rerender: rerender merges props, so leaving `badge`
-		// out of it would keep the one before rather than test the default.
-		render(Toggle, {
-			name: 'blank_pages',
-			label: 'Blank pages',
-			checked: true,
-			onchange: vi.fn()
-		});
-		expect(screen.queryByTestId('toggle-badge-blank_pages')).toBeNull();
-	});
-
-	it('leaves the label at the front of the accessible name', () => {
-		// The badge sits inside the label, so it is read out with it — which is the point,
-		// a colour being no warning at all to anyone who cannot see it. It goes after the
-		// label so that the name still starts with what the setting is called.
-		render(Toggle, {
-			name: 'find_name',
-			label: 'Find name',
-			badge: 'Experimental',
-			checked: false,
-			onchange: vi.fn()
-		});
-
-		expect(screen.getByRole('checkbox', { name: /^Find name/ })).toBeInTheDocument();
-	});
-});
-
 describe('TemplateEditor', () => {
 	const editor = (tokens: readonly string[]) => ({
 		value: '{YEAR}-{MONTH}-{DAY}',
 		tokens,
-		preview: [{ text: '2026-09-24', name: false }],
+		preview: '2026-09-24',
 		unknown: [],
 		onchange: vi.fn()
 	});
 
 	it('offers a chip per token it is handed, and none it is not', async () => {
-		const { rerender } = render(TemplateEditor, editor(['YEAR', 'MONTH', 'NAME']));
-		expect(screen.getByRole('button', { name: '{NAME}' })).toBeInTheDocument();
+		const { rerender } = render(TemplateEditor, editor(['YEAR', 'MONTH', 'DAY']));
+		expect(screen.getByRole('button', { name: '{DAY}' })).toBeInTheDocument();
 
 		await rerender(editor(['YEAR', 'MONTH']));
-		expect(screen.queryByRole('button', { name: '{NAME}' })).toBeNull();
+		expect(screen.queryByRole('button', { name: '{DAY}' })).toBeNull();
 		expect(screen.getByRole('button', { name: '{YEAR}' })).toBeInTheDocument();
 	});
 
@@ -659,19 +618,5 @@ describe('TemplateEditor', () => {
 
 		await rerender({ ...editor(['YEAR']), extension: '.pdf' });
 		expect(screen.getByTestId('template-preview')).toHaveTextContent('2026-09-24.pdf');
-	});
-
-	it('tints the found name only where the preview says there is one', async () => {
-		const { rerender } = render(TemplateEditor, editor(['YEAR']));
-		expect(screen.queryByTestId('template-preview-name')).toBeNull();
-
-		await rerender({
-			...editor(['YEAR', 'NAME']),
-			preview: [
-				{ text: '2026-09-24_', name: false },
-				{ text: 'quarterly-report', name: true }
-			]
-		});
-		expect(screen.getByTestId('template-preview-name')).toHaveTextContent('quarterly-report');
 	});
 });

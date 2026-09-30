@@ -47,7 +47,7 @@ for markdown in "$source_dir"/*.md; do
       ;;
   esac
 
-  # Greyscale, like a document scanner's own output, and the one thing tesseract most wants —
+  # Greyscale, like a document scanner's own output —
   # except the page whose name says it is in colour, which is there so the review screen's
   # colour handling has something to show.
   case "$name" in
