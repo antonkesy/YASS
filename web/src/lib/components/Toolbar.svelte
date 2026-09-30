@@ -7,6 +7,7 @@
 		selectedCount,
 		total,
 		anyDeleted,
+		anyActive = true,
 		disabled = false,
 		scanning = false,
 		onrotate,
@@ -22,7 +23,10 @@
 	}: {
 		selectedCount: number;
 		total: number;
+		/** At least one page in the frame is deleted, so there is something to restore. */
 		anyDeleted: boolean;
+		/** At least one page in the frame is not, so there is something to delete. */
+		anyActive?: boolean;
 		disabled?: boolean;
 		/** Crop and rescan need the scanner idle and a single page picked. */
 		scanning?: boolean;
@@ -181,13 +185,18 @@
 		</button>
 	{/if}
 
+	<!--
+		The two take the same place at the end of the row and trade it between them: a page
+		that is deleted offers Restore, one that is not offers Delete. Both appear only for a
+		selection that is some of each, where both of them mean something.
+	-->
 	{#if editing && anyDeleted}
 		<button type="button" class="text-ink {tool}" onclick={onrestore} data-testid="restore-button">
 			<Icon name="layers" />
 			Restore
 		</button>
 	{/if}
-	{#if editing}
+	{#if editing && anyActive}
 		<button
 			type="button"
 			class="text-danger hover:bg-danger-bg! {tool}"

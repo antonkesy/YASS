@@ -164,6 +164,10 @@
 	const anyDeleted = $derived(
 		session?.Pages.filter((p) => targets.has(p.Index)).some((p) => p.Deleted) ?? false
 	);
+	/** The other half of it: what Delete would still have to work on. */
+	const anyActive = $derived(
+		session?.Pages.filter((p) => targets.has(p.Index)).some((p) => !p.Deleted) ?? false
+	);
 	const filters = $derived(
 		new Set((session?.Pages ?? []).filter((p) => !p.Deleted).map((p) => p.Filter))
 	);
@@ -647,6 +651,7 @@
 			selectedCount={selection.size}
 			total={session.Pages.length}
 			{anyDeleted}
+			{anyActive}
 			disabled={!editable}
 			onrotate={(deg) => send(rotateEdit(deg, targets))}
 			ondelete={() => {

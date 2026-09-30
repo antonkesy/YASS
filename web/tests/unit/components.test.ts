@@ -173,22 +173,34 @@ describe('Toolbar', () => {
 		expect(screen.queryByTestId('rescan-button')).toBeNull();
 	});
 
-	it('offers Restore only once something is deleted', async () => {
+	it('trades Delete for Restore according to what the pages already are', async () => {
 		const props = {
 			selectedCount: 0,
 			total: 3,
 			anyDeleted: false,
+			anyActive: true,
 			onrotate: vi.fn(),
 			ondelete: vi.fn(),
 			onrestore: vi.fn(),
 			onfilter: vi.fn(),
 			onclear: vi.fn()
 		};
+
+		// A page that is still there can be deleted, and there is nothing to put back.
 		const { rerender } = render(Toolbar, props);
+		expect(screen.getByTestId('delete-button')).toBeInTheDocument();
 		expect(screen.queryByTestId('restore-button')).toBeNull();
 
-		await rerender({ ...props, anyDeleted: true });
+		// Deleted, and the offer is the other way round — no second Delete for a page that
+		// has already had one.
+		await rerender({ ...props, anyDeleted: true, anyActive: false });
 		expect(screen.getByTestId('restore-button')).toBeInTheDocument();
+		expect(screen.queryByTestId('delete-button')).toBeNull();
+
+		// Some of each: both mean something, so both are there.
+		await rerender({ ...props, anyDeleted: true, anyActive: true });
+		expect(screen.getByTestId('restore-button')).toBeInTheDocument();
+		expect(screen.getByTestId('delete-button')).toBeInTheDocument();
 	});
 
 	it('acts on the page on screen until asked for the whole scan, where it is scoped', async () => {
