@@ -6,12 +6,19 @@
 		options,
 		destination = null,
 		format = null,
+		deviceName = null,
 		onclick
 	}: {
 		options: ScanOptionsDto | null;
 		/** Where Export writes, shown first; null when the export button is off. */
 		destination?: string | null;
 		format?: string | null;
+		/**
+		 * The chosen scanner, by name rather than by the id the options carry: a SANE id reads
+		 * `epsonds:libusb:001:004` and means nothing on a chip. Null while none is chosen, which
+		 * is when the header's own status pill already names whatever the server picked.
+		 */
+		deviceName?: string | null;
 		onclick: () => void;
 	} = $props();
 
@@ -21,6 +28,7 @@
 		if (!options) return [];
 		const out: string[] = [];
 		if (destination) out.push(`→ ${destination}`);
+		if (deviceName) out.push(deviceName);
 		const source = sourceLabel(options.Source);
 		if (source) out.push(source);
 		if (options.Dpi) out.push(`${options.Dpi} dpi`);
