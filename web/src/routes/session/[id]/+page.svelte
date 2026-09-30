@@ -732,12 +732,20 @@
 						? 'pr-24'
 						: ''}"
 				>
-					<span
-						class="rounded-full bg-surface px-3 py-1.5 text-[13px] font-bold shadow-chip"
-						data-testid="session-state"
-					>
-						{sessionStateLabel(session.State)}
-					</span>
+					<!--
+						Every state but this one says something the screen does not: pages are still
+						coming, the save is running, it failed, it is saved. "Ready to review" says
+						only that you are looking at a scan you can edit, which the pages under it
+						and the toolbar beneath them have already said.
+					-->
+					{#if session.State !== SessionState.Review}
+						<span
+							class="rounded-full bg-surface px-3 py-1.5 text-[13px] font-bold shadow-chip"
+							data-testid="session-state"
+						>
+							{sessionStateLabel(session.State)}
+						</span>
+					{/if}
 					{#if session.Pages.length > 0}
 						<span
 							class="rounded-full bg-surface px-3 py-1.5 text-[13px] font-bold tabular-nums shadow-chip"

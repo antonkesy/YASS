@@ -97,9 +97,9 @@ async function scanToReview(page: Page) {
 	await page.goto('/');
 	await page.getByTestId('scan-button').click();
 	await expect(page).toHaveURL(/\/session\/[A-Za-z0-9-]+$/);
-	await expect(page.getByTestId('session-state')).toHaveText('Ready to review', {
-		timeout: 20_000
-	});
+	// The scan is over once its edits are on offer: the toolbar carries them only while the
+	// session is editable, which it is not while the feeder is still going.
+	await expect(page.getByTestId('delete-button')).toBeVisible({ timeout: 20_000 });
 }
 
 test('Find name is offered with no model set up at all', async ({ page }) => {
