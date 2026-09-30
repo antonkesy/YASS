@@ -1,20 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { ColorMode, PageSize, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
 import {
-	activePreset,
 	AI_KEY,
 	AI_KEYS_KEY,
+	EXPORT_KEY,
+	PRESETS_KEY,
+	REVIEW_KEY,
+	activePreset,
 	createAiKeys,
 	createAiPrefs,
 	createExportPrefs,
 	createPresets,
+	createReviewPrefs,
 	defaultAiKeys,
 	defaultAiPrefs,
 	defaultExportPrefs,
 	defaultPresets,
-	EXPORT_KEY,
-	matchesPreset,
-	PRESETS_KEY
+	defaultReviewPrefs,
+	matchesPreset
 } from '$lib/presets';
 import { get } from 'svelte/store';
 
@@ -112,6 +115,19 @@ describe('loading stored preferences', () => {
 			fake({ [EXPORT_KEY]: JSON.stringify({ exportButton: false }) })
 		);
 		expect(get(store).exportButton).toBe(false);
+	});
+
+	it('fills in the panel state for a browser that zoomed before sections existed', () => {
+		// The sidebar's sections arrived after the overview zoom did, so a blob holding only
+		// the tile width has to read as shut rather than undefined.
+		const store = createReviewPrefs(fake({ [REVIEW_KEY]: JSON.stringify({ overviewTile: 220 }) }));
+		const prefs = get(store);
+		expect(prefs.overviewTile).toBe(220);
+		expect(prefs.scanPanel).toBe(defaultReviewPrefs.scanPanel);
+		expect(prefs.morePanel).toBe(defaultReviewPrefs.morePanel);
+		// Shut is the default, so the older blob reads as shut rather than as undefined.
+		expect(prefs.scanPanel).toBe(false);
+		expect(prefs.morePanel).toBe(false);
 	});
 
 	it('fills in a name style stored before the setting existed', () => {

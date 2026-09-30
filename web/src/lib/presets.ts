@@ -126,11 +126,25 @@ export type ReviewPrefs = {
 	 * many pages the next scan will have.
 	 */
 	overviewTile: number | 'fit';
+	/**
+	 * Whether the review sidebar's two folding sections were left open. Flat rather than a
+	 * `panels` object: `load` merges stored blobs over the defaults one key deep, so a nested
+	 * object is replaced wholesale and the next key added to it would read as undefined for
+	 * everyone who had already stored one.
+	 */
+	scanPanel: boolean;
+	morePanel: boolean;
 };
 
 export const REVIEW_KEY = 'yass.review';
 
-export const defaultReviewPrefs: ReviewPrefs = { overviewTile: 'fit' };
+export const defaultReviewPrefs: ReviewPrefs = {
+	overviewTile: 'fit',
+	// Shut to begin with: the name and the Export button are what the panel is for, and the
+	// rest is there for when you go looking.
+	scanPanel: false,
+	morePanel: false
+};
 
 /** True when `settings` matches every key the preset pins. */
 export function matchesPreset(preset: Preset, overrides: ScanOverrides): boolean {
