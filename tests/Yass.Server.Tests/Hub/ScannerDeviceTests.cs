@@ -38,7 +38,8 @@ public sealed class ScannerDeviceTests
         await using var factory = new YassFactory(FakeScenario.Pages(1) with { ExtraDevices = ["Epson DS-530"] });
         await using HubClient hub = await HubClient.ConnectAsync(factory);
 
-        await hub.StartScan(new ScanOptionsDto(Device: "Epson DS-530"));
+        // Run to the end so the factory is not torn down under a scan still writing pages.
+        await hub.ScanToEnd(new ScanOptionsDto(Device: "Epson DS-530"));
 
         Assert.Equal("Epson DS-530", factory.Backend.LastOptions?.Device);
     }

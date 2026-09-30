@@ -129,7 +129,7 @@ public sealed class EditAndImageTests : IAsyncLifetime
 
         Assert.Equal(lastHash, edited.Pages[0].Hash);
         Assert.Equal([0, 1, 2], edited.Pages.Select(p => p.Index));
-        Assert.Contains(_hub.SessionChanges, s => s.Id == done.Id && s.Pages.Length == 3 && s.Pages[0].Hash == lastHash);
+        await _hub.WaitForPush(s => s.Id == done.Id && s.Pages.Length == 3 && s.Pages[0].Hash == lastHash);
     }
 
     [Fact]

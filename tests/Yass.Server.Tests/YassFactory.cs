@@ -67,9 +67,23 @@ public sealed class YassFactory : WebApplicationFactory<Program>
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        if (disposing && Directory.Exists(Root))
+        if (!disposing)
         {
-            Directory.Delete(Root, recursive: true);
+            return;
+        }
+
+        // A scan that was still running when the host stopped may write a page or two after
+        // the first delete has walked its directory; a second pass gets what it left behind.
+        for (int attempt = 0; Directory.Exists(Root); attempt++)
+        {
+            try
+            {
+                Directory.Delete(Root, recursive: true);
+            }
+            catch (IOException) when (attempt < 5)
+            {
+                Thread.Sleep(100);
+            }
         }
     }
 }

@@ -102,5 +102,29 @@ public sealed class HubClient : IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// Waits for a <see cref="IYassClient.SessionChanged"/> push matching <paramref name="predicate"/>.
+    /// A hub call returns before its push has crossed the wire, so a test that asserts on the
+    /// push straight after the call is racing it.
+    /// </summary>
+    public async Task<SessionDto> WaitForPush(Func<SessionDto, bool> predicate, TimeSpan? timeout = null)
+    {
+        DateTime deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(10));
+        while (true)
+        {
+            if (SessionChanges.FirstOrDefault(predicate) is { } pushed)
+            {
+                return pushed;
+            }
+
+            if (DateTime.UtcNow > deadline)
+            {
+                throw new TimeoutException($"No matching SessionChanged push arrived; saw {SessionChanges.Count}.");
+            }
+
+            await Task.Delay(25);
+        }
+    }
+
     public async ValueTask DisposeAsync() => await _connection.DisposeAsync();
 }
