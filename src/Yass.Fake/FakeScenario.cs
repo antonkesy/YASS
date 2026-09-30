@@ -25,6 +25,16 @@ public sealed record FakeScenario
 
     public string DeviceName { get; init; } = "YASS Fake ADF";
 
+    /// <summary>
+    /// Extra scanners the fake reports beside <see cref="DeviceName"/>, so the picker has more
+    /// than one thing to pick. They all feed the same pages: the point is exercising the choice,
+    /// not pretending each imaginary machine scans differently.
+    /// </summary>
+    public IReadOnlyList<string> ExtraDevices { get; init; } = [];
+
+    /// <summary>Every device this fake reports, the configured one first.</summary>
+    public IReadOnlyList<string> AllDevices => [DeviceName, .. ExtraDevices];
+
     public static FakeScenario Default { get; } = new();
 
     /// <summary>Instant, deterministic scenario for unit tests.</summary>
@@ -53,7 +63,8 @@ public sealed record FakeScenario
                 "delay" => scenario with { PageDelay = Duration(value) },
                 "nodevice" => scenario with { NoDevice = true },
                 "device" => scenario with { DeviceName = value },
-                _ => throw new FormatException($"Unknown fake scenario key '{key}'. Known: pages, blank, error, delay, nodevice, device."),
+                "devices" => scenario with { ExtraDevices = value.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) },
+                _ => throw new FormatException($"Unknown fake scenario key '{key}'. Known: pages, blank, error, delay, nodevice, device, devices."),
             };
         }
 

@@ -16,7 +16,8 @@ export const editableKeys: Record<string, keyof ScanOverrides> = {
 	contrast: 'Contrast',
 	blank_page_detection: 'BlankPageDetection',
 	blank_page_threshold: 'BlankPageThreshold',
-	auto_deskew: 'AutoDeskew'
+	auto_deskew: 'AutoDeskew',
+	device: 'Device'
 };
 
 export function parseOverrides(json: string | null): ScanOverrides {

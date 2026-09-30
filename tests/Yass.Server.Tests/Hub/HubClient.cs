@@ -41,6 +41,8 @@ public sealed class HubClient : IAsyncDisposable
 
     public Task StopScan(string id) => _connection.InvokeAsync(nameof(IYassHub.StopScan), id);
 
+    public Task<ScannerDeviceDto[]> ListDevices() => _connection.InvokeAsync<ScannerDeviceDto[]>(nameof(IYassHub.ListDevices));
+
     public Task<SessionDto> GetSession(string id) => _connection.InvokeAsync<SessionDto>(nameof(IYassHub.GetSession), id);
 
     public Task<SessionDto[]> ListSessions() => _connection.InvokeAsync<SessionDto[]>(nameof(IYassHub.ListSessions));

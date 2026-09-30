@@ -150,7 +150,8 @@ values stop startup and name the offending key.
 | `scanner.defaults.blank_page_detection` | `true` | Blank pages are skipped (real scanner) or pre-marked deleted (fake). |
 | `scanner.defaults.blank_page_threshold` | `0.02` | 0..1, scaled onto NAPS2's coverage threshold. |
 | `scanner.defaults.auto_deskew` | `false` | Straighten pages during the scan. |
-| `scanner.ui_editable` | `[source, dpi, color, page_size, blank_page_detection]` | Keys the Settings page may override (stored in the browser). |
+| `scanner.defaults.device` | `""` | Exact device id to scan on; empty = whatever `scanner.device` resolves to. Editable from the UI by default, which is what the scanner picker sets; drop `device` from `ui_editable` to pin it here. |
+| `scanner.ui_editable` | `[source, dpi, color, page_size, blank_page_detection, device]` | Keys the Settings page may override (stored in the browser). |
 | `output.directory` | `/data/consume` | Where PDFs are saved; point it at paperless' consume dir. |
 | `output.filename_template` | `{date:yyyy-MM-dd}_{time:HHmm}_scan.pdf` | `{date:FMT}`, `{time:FMT}` (.NET formats), `{session}`. Existing names get `-2`, `-3`, …. `{NAME}` is **not** a key here — it is a browser token, below. |
 | `output.pdf.compression` | `jpeg` | `jpeg` or `lossless`. |

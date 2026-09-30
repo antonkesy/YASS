@@ -44,7 +44,7 @@ public sealed class ScanFlowTests : IAsyncLifetime
 
         Assert.Equal(300, options.Dpi);
         Assert.Equal(ColorMode.Grayscale, options.Color);
-        Assert.Equal(["source", "dpi", "color", "page_size", "blank_page_detection"], options.Editable!);
+        Assert.Equal(["source", "dpi", "color", "page_size", "blank_page_detection", "device"], options.Editable!);
         Assert.True(options.AllowDownload);
     }
 

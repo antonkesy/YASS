@@ -4,7 +4,7 @@
 // @ts-nocheck
 import type { HubConnection, IStreamResult, Subject } from '@microsoft/signalr';
 import type { IYassHub, IYassClient } from './Yass.Core.Hub';
-import type { ScanOptionsDto, SessionDto, ExportRequest, ExportResult, NameSuggestionsDto, ScannerStatusDto, PageDto } from '../Yass.Core.Hub';
+import type { ScanOptionsDto, SessionDto, ExportRequest, ExportResult, NameSuggestionsDto, ScannerStatusDto, ScannerDeviceDto, PageDto } from '../Yass.Core.Hub';
 import type { PageEdit } from '../Yass.Core.Domain';
 
 
@@ -139,6 +139,10 @@ class IYassHub_HubProxy implements IYassHub {
 
     public readonly getScannerStatus = async (): Promise<ScannerStatusDto> => {
         return await this.connection.invoke("GetScannerStatus");
+    }
+
+    public readonly listDevices = async (): Promise<ScannerDeviceDto[]> => {
+        return await this.connection.invoke("ListDevices");
     }
 
     public readonly getEffectiveOptions = async (): Promise<ScanOptionsDto> => {

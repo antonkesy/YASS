@@ -4,7 +4,7 @@
 	import { hubError } from '$lib/hub/errors';
 	import { getHub } from '$lib/hub/hub';
 	import { PageSize, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
-	import type { ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
+	import type { ScannerDeviceDto, ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { editableKeys, settings } from '$lib/settings';
 	import Segmented from '$lib/components/Segmented.svelte';
 	import Toggle from '$lib/components/Toggle.svelte';
@@ -46,6 +46,8 @@
 
 	let effective = $state<ScanOptionsDto | null>(null);
 	let error = $state<string | null>(null);
+	/** Scanners the server can see. Null until asked; empty means it found none. */
+	let devices = $state<ScannerDeviceDto[] | null>(null);
 
 	$effect(() => {
 		if ($connection === 'connected' && !effective) {
@@ -53,6 +55,13 @@
 				.getEffectiveOptions()
 				.then((o) => (effective = o))
 				.catch((e) => (error = hubError(e)));
+			// Separately, and without failing the sheet: enumerating SANE takes seconds, and a
+			// settings page that will not open because a scanner is slow is worse than one with
+			// no picker on it.
+			client.hub
+				.listDevices()
+				.then((d) => (devices = d))
+				.catch(() => (devices = []));
 		}
 	});
 
@@ -480,6 +489,36 @@
 					onsubmit={(e) => e.preventDefault()}
 					data-testid="settings-form"
 				>
+					{#if editable.has('device') && devices && devices.length > 1}
+						<!--
+							Only worth a control when there is a choice: one scanner is not a decision, and
+							the status pill in the header already says which one that is. A select rather
+							than a segmented row — device names are long and there is no telling how many.
+						-->
+						<label class="flex flex-col gap-1.5" data-testid="device-picker">
+							<span class="text-[13px] font-bold text-ink-2">
+								Scanner
+								<span class="font-semibold text-ink-muted">
+									· which machine the next scan runs on</span
+								>
+							</span>
+							<select
+								class="h-11 rounded-[12px] bg-ctl px-3 text-sm outline-none focus:ring-2 focus:ring-accent"
+								value={overrides.Device ?? ''}
+								onchange={(e) =>
+									settings.set({
+										...$settings,
+										Device: e.currentTarget.value === '' ? undefined : e.currentTarget.value
+									})}
+								data-testid="device-select"
+							>
+								<option value="">Whatever the server picks</option>
+								{#each devices as device (device.Id)}
+									<option value={device.Id}>{device.Name}</option>
+								{/each}
+							</select>
+						</label>
+					{/if}
 					{#if editable.has('source')}
 						<Segmented
 							name="source"

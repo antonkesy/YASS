@@ -83,7 +83,8 @@ scanner:
     blank_page_detection: true
     blank_page_threshold: 0.02
     auto_deskew: false
-  ui_editable: [source, dpi, color, page_size, blank_page_detection]
+    device: ""                # exact device id; empty = whatever scanner.device resolves to
+  ui_editable: [source, dpi, color, page_size, blank_page_detection, device]
 output:
   directory: /data/consume    # paperless consume dir
   filename_template: "{date:yyyy-MM-dd}_{time:HHmm}_scan.pdf"
