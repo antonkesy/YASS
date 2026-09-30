@@ -5,7 +5,7 @@
 	import { toast } from '$lib/toast';
 	import { cameFrom } from '$lib/navigation';
 	import { getHub, sortedSessions } from '$lib/hub/hub';
-	import type { ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
+	import type { ScannerDeviceDto, ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import ScanStage from '$lib/components/ScanStage.svelte';
 	import PastScansPanel from '$lib/components/PastScansPanel.svelte';
 	import { pickEditable, settings } from '$lib/settings';
@@ -22,6 +22,8 @@
 	let working = $state(false);
 	let error = $state<string | null>(null);
 	let effective = $state<ScanOptionsDto | null>(null);
+	/** Scanners the server can see, only so a chosen one can be shown by name. */
+	let devices = $state<ScannerDeviceDto[]>([]);
 
 	// The stage shows what the next scan will use, so the options are loaded up front
 	// rather than only at the moment Scan is pressed.
@@ -30,6 +32,11 @@
 			client.hub
 				.getEffectiveOptions()
 				.then((o) => (effective = o))
+				.catch(() => undefined);
+			// Quietly: the stage is worth showing whether or not the driver felt like answering.
+			client.hub
+				.listDevices()
+				.then((d) => (devices = d))
 				.catch(() => undefined);
 		}
 	});
@@ -48,6 +55,15 @@
 	 */
 	const planned = $derived(
 		effective ? { ...effective, ...pickEditable($settings, effective.Editable) } : null
+	);
+
+	/**
+	 * The chosen scanner as a person reads it. Nothing when none is chosen — the status pill
+	 * already names whatever the server would pick — and the bare id for one the server has
+	 * stopped listing, which at least says something is wrong.
+	 */
+	const deviceName = $derived(
+		planned?.Device ? (devices.find((d) => d.Id === planned.Device)?.Name ?? planned.Device) : null
 	);
 
 	async function scan() {
@@ -141,6 +157,7 @@
 			status={$scanner}
 			connection={$connection}
 			options={planned}
+			{deviceName}
 			busy={starting}
 			onscan={scan}
 			onsettings={openSettings}

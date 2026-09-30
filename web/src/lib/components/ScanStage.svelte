@@ -16,6 +16,7 @@
 		status,
 		connection,
 		options,
+		deviceName = null,
 		busy = false,
 		onscan,
 		onsettings
@@ -23,6 +24,8 @@
 		status: ScannerStatusDto | null;
 		connection: ConnectionState;
 		options: ScanOptionsDto | null;
+		/** The chosen scanner's name, for the chips. */
+		deviceName?: string | null;
 		busy?: boolean;
 		onscan: () => void;
 		onsettings: () => void;
@@ -100,6 +103,7 @@
 	<SettingsChips
 		{options}
 		{destination}
+		{deviceName}
 		format={exportFormatLabels[$exportPrefs.format]}
 		onclick={onsettings}
 	/>
