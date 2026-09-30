@@ -4,6 +4,7 @@
 	import { resolve } from '$app/paths';
 	import {
 		activePageCount,
+		documentName,
 		formatBytes,
 		formatTime,
 		lastEventPath,
@@ -42,12 +43,16 @@
 	const path = $derived(lastEventPath(session));
 	const status = $derived(sessionStatus(session));
 
+	// Time first, but only when the title is not already the time: an unnamed scan is
+	// titled by it, and saying it twice a line apart said nothing new.
 	const meta = $derived(
 		[
-			formatTime(session.CreatedAt),
+			documentName(session, template) ? formatTime(session.CreatedAt) : null,
 			`${pages} ${pages === 1 ? 'page' : 'pages'}`,
 			formatBytes(session.SizeBytes)
-		].join(' · ')
+		]
+			.filter(Boolean)
+			.join(' · ')
 	);
 
 	// The mono line says where the document went, or why there is nowhere yet.
