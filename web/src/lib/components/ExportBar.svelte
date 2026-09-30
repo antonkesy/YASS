@@ -2,7 +2,7 @@
 	import { resolve } from '$app/paths';
 	import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
-	import { activePageCount } from '$lib/format';
+	import { activePageCount, folderName } from '$lib/format';
 	import { Icon } from '$lib/icons';
 	import ProgressBar from './ProgressBar.svelte';
 
@@ -107,11 +107,14 @@
 				<a
 					class="-mt-1.5 flex w-full min-w-0 items-center gap-2 rounded-[10px] px-2 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-accent-hover50 hover:text-accent"
 					href={resolve('/settings')}
-					title="Change export folder in settings"
+					title="{exportDirectory} — change it in settings"
 					data-testid="export-path"
 				>
 					<Icon name="folder" size={14} />
-					<span class="truncate font-mono">{exportDirectory}</span>
+					<!-- The folder's name; the whole path is on the tooltip, where it has the room. -->
+					<span class="truncate"
+						>to <span class="font-mono">{folderName(exportDirectory)}</span></span
+					>
 				</a>
 			{/if}
 		{/if}

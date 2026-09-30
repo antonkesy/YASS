@@ -355,7 +355,11 @@ describe('ExportBar', () => {
 			onsave,
 			ondownload: vi.fn()
 		});
-		expect(screen.getByTestId('export-path')).toHaveTextContent(/\/data\/consume/);
+		expect(screen.getByTestId('export-path')).toHaveTextContent(/consume/);
+		expect(screen.getByTestId('export-path')).toHaveAttribute(
+			'title',
+			expect.stringContaining('/data/consume')
+		);
 		expect(screen.getByTestId('autosave-strip')).toHaveTextContent(/Auto-saved to past scans/);
 		await fireEvent.click(screen.getByTestId('save-button'));
 		expect(onsave).toHaveBeenCalled();
@@ -530,7 +534,12 @@ describe('SettingsChips', () => {
 		const chips = [...screen.getByTestId('settings-chips').children].map((c) =>
 			c.textContent?.trim()
 		);
-		expect(chips[0]).toBe('→ /data/consume');
+		// The folder's name, with the whole path on the tooltip.
+		expect(chips[0]).toBe('consume');
+		expect(screen.getByTestId('settings-chips').children[0]).toHaveAttribute(
+			'title',
+			'/data/consume'
+		);
 		expect(chips.at(-1)).toBe('PDF');
 		expect(chips).toContain('300 dpi');
 	});
@@ -540,7 +549,8 @@ describe('SettingsChips', () => {
 		const chips = [...screen.getByTestId('settings-chips').children].map((c) =>
 			c.textContent?.trim()
 		);
-		expect(chips.some((c) => c?.startsWith('→'))).toBe(false);
+		expect(chips).not.toContain('consume');
+		expect(chips[0]).toBe('Feeder');
 	});
 });
 
