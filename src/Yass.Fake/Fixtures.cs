@@ -4,14 +4,38 @@ using SixLabors.ImageSharp.Processing;
 namespace Yass.Fake;
 
 /// <summary>
-/// Pages embedded in this assembly, rendered at build time from the Markdown in Fixtures/:
-/// an invoice, a letter, a payslip, a report in colour, and a near-blank page. They read as
-/// real documents on purpose — OCR and the naming that leans on it are only worth exercising
-/// against something that has a title on it.
+/// Pages embedded in this assembly, rendered at build time from the Markdown in Fixtures/.
+/// They read as real documents on purpose — OCR and the naming that leans on it are only
+/// worth exercising against something that has a title on it.
+///
+/// The order is the order a demo scan feeds them in, so it is chosen rather than alphabetical:
+/// ordinary paper first, then the three pages of one contract together so a scan has something
+/// continuous to review and name, then the pages that are awkward on purpose — a dense table,
+/// a landscape sheet, a form of blank rules, a faded carbon — and a German invoice, which
+/// with the default `naming.ocr_language: eng` comes back with its umlauts mangled, and is
+/// the demo of why that setting is there.
 /// </summary>
 public static class Fixtures
 {
-    public static IReadOnlyList<string> ContentPages { get; } = ["invoice.png", "letter.png", "payslip.png", "report-color.png"];
+    public static IReadOnlyList<string> ContentPages { get; } =
+    [
+        "invoice.png",
+        "letter.png",
+        "payslip.png",
+        "report-color.png",
+        "bank-statement.png",
+        "receipt.png",
+        "utility-bill.png",
+        "insurance-letter.png",
+        "contract-1.png",
+        "contract-2.png",
+        "contract-3.png",
+        "table-dense.png",
+        "schedule-landscape.png",
+        "form.png",
+        "faded.png",
+        "rechnung.png",
+    ];
 
     public const string BlankPage = "blank.png";
 

@@ -22,9 +22,7 @@ YASS_PORT=9000 docker compose up --build
 2. **Review** — rotate, crop, filter, reorder by dragging, delete and restore.
    Open a page and click it (or the zoom button, or `z`) to switch between
    fit-to-screen and full width; `Esc` backs out of zoom, then closes.
-3. **Split** — select a page and press **Split**: it opens a second document,
-   badged `Doc 2` in the filmstrip, and **Save** then writes one PDF per document.
-4. **Name it** — the scan is already called what the file name template says. Put
+3. **Name it** — the scan is already called what the file name template says. Put
    `{NAME}` in that template and the slot shows up inside the document name as
    **name it**; click it and the page is read with `tesseract` (in the image, and
    on by default) and the slot filled. Clicking again offers another go, the other
@@ -33,12 +31,12 @@ YASS_PORT=9000 docker compose up --build
    names** picks `lower_snake` or `lower-kebab`. For a name written rather than
    copied, point **Settings → Find name** at a model: **In-browser (CPU)** needs
    no key and no account, and downloads its weights once.
-5. **Save** — the PDFs land in [`output/`](output) on your host, the demo's
+4. **Save** — the PDFs land in [`output/`](output) on your host, the demo's
    stand-in for a paperless-ngx consume folder.
    **Download** hands them to the browser instead.
-6. **Past scans** — every scan is listed with its status, searchable and
+5. **Past scans** — every scan is listed with its status, searchable and
    sortable, with a select mode for bulk download and delete.
-7. **Settings** — presets, source, dpi, colour, page size, blank-page detection,
+6. **Settings** — presets, source, dpi, colour, page size, blank-page detection,
    file format and the name template. All stored in the browser, not on the server.
 
 `Ctrl-C` stops it; `docker compose down` removes the container. Scan sessions
@@ -48,12 +46,18 @@ live in the container's `/tmp`, so nothing survives except the PDFs you saved.
 
 `--fake` replaces the scanner and the PDF writer. Both produce real output:
 
-- The pages are an invoice, a letter, a payslip, a report in colour and a
-  near-blank sheet, written as Markdown in
-  [`src/Yass.Fake/Fixtures`](../src/Yass.Fake/Fixtures) and rendered to A4 at
-  150 dpi by the build. They are documents with titles on them, which is what
-  makes naming worth watching here. They cycle, so `pages=9` shows each
-  more than once; to change what a page says, edit its Markdown and rebuild.
+- The pages are sixteen documents and a near-blank sheet, written as Markdown in
+  [`src/Yass.Fake/Fixtures`](../src/Yass.Fake/Fixtures) and rendered to A4 by the
+  build. Ordinary paper first — invoice, letter, payslip, colour report, bank
+  statement, receipt, utility bill, insurance letter — then three pages of one
+  contract, so a scan has something continuous to review and name; then the
+  awkward ones: a dense table, a sheet on its side, a form of blank rules and a
+  faded carbon copy. Last is a German invoice, which with the default
+  `naming.ocr_language: eng` comes back with its umlauts mangled and shows why
+  that setting exists. They are documents with titles on them, which is what
+  makes naming worth watching here. They cycle, so ask for more pages than there
+  are and you see each more than once; to change what a page says, edit its
+  Markdown and rebuild.
 - The saved PDF holds those pages as images, rotated and greyed the way your
   edits ask. It opens in any reader and shows the document. A scan you have
   named uses that name; an unnamed one falls back to `fake_<timestamp>.pdf`
