@@ -189,6 +189,17 @@ export function sessionTitle(
 	return documentName(session, template, now) ?? formatTime(session.CreatedAt, now);
 }
 
+/**
+ * The last segment of a folder path — what a person calls the folder. A consume folder
+ * reads as `/srv/paperless/consume` on the server and as "consume" in conversation, and a
+ * chip has room for the latter. Empty and root paths come back as they are.
+ */
+export function folderName(path: string): string {
+	const trimmed = path.trim().replace(/[/\\]+$/, '');
+	const last = trimmed.split(/[/\\]/).pop();
+	return last || path.trim();
+}
+
 /** Where a session's document ended up, when its last event produced a file. */
 export function lastEventPath(session: SessionDto): string | null {
 	return session.Events.at(-1)?.Path ?? null;
