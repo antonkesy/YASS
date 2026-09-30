@@ -24,6 +24,14 @@ export const templateTokens = [
 	'NAME'
 ] as const;
 
+/**
+ * The tokens worth offering as chips. `{NAME}` is only one of them where Find name is on to
+ * fill it: offering a token nothing can write is offering an empty slot and a dead button.
+ */
+export function offeredTokens(findName: boolean): readonly string[] {
+	return findName ? templateTokens : templateTokens.filter((t) => t !== 'NAME');
+}
+
 export type TemplateFacts = {
 	preset: string;
 	counter: number;
@@ -154,7 +162,14 @@ export function findGenerated(
 	return generated ? { before, generated, after } : null;
 }
 
-/** Placeholders the server would not recognise, without braces. */
+/**
+ * Placeholders the server would not recognise, without braces.
+ *
+ * Deliberately `templateTokens` and not {@link offeredTokens}: a template saved while Find
+ * name was on keeps its `{NAME}`, and that is not a typo — `resolveName` still takes it out
+ * on the way to a file name. Flagging it red would be telling someone their template is
+ * broken when it works.
+ */
 export function unknownTokens(template: string): string[] {
 	const known = new Set<string>(templateTokens);
 	const found = [...template.matchAll(/\{([A-Za-z]+)\}/g)].map((m) => m[1]);

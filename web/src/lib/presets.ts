@@ -84,8 +84,10 @@ export const defaultExportPrefs: ExportPrefs = {
  */
 export type AiPrefs = {
 	/**
-	 * Whether Find name is offered at all. Off hides the button, and then nothing is ever read:
-	 * the server only reads a page when the button asks it to, never during a scan.
+	 * Whether Find name is offered at all, and with it everything `{NAME}` stands for: the
+	 * button on the review screen, the slot in the name, and the token in the template editor.
+	 * Off — which is how it arrives — nothing is ever read, because the server only reads a
+	 * page when that button asks it to, never during a scan.
 	 */
 	findName: boolean;
 	provider: AiProvider;
@@ -105,7 +107,9 @@ export const AI_KEY = 'yass.ai';
 export const AI_KEYS_KEY = 'yass.ai.keys';
 
 export const defaultAiPrefs: AiPrefs = {
-	findName: true,
+	// Off to begin with: it is experimental, it costs OCR on the server, and the model behind
+	// it is either money or a download. All of that is worth asking for rather than assuming.
+	findName: false,
 	provider: 'off',
 	baseUrl: '',
 	models: {}

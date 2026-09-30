@@ -457,10 +457,15 @@
 	 * thing that survives a reload, and asking the template where `{NAME}` went beats keeping a
 	 * second copy of the answer in step with it. Empty, it is the slot the template describes,
 	 * shown so that a `{NAME}` nobody has filled is visible rather than merely absent.
+	 *
+	 * Gone entirely where Find name is not on offer: the slot is an invitation to click, and
+	 * there is nothing behind the click. It goes with the sparkle beside it, on the same
+	 * condition, so a template left over with a `{NAME}` in it reads as a plain name — which
+	 * is what it will be saved as, the token being dropped on the way out.
 	 */
 	const generatedPart = $derived.by(() => {
 		const template = $exportPrefs.nameTemplate.trim();
-		if (!session || !template.includes('{NAME}')) return null;
+		if (!offerFindName || !session || !template.includes('{NAME}')) return null;
 
 		const at = new Date(session.CreatedAt);
 		const name = storedName?.trim();
