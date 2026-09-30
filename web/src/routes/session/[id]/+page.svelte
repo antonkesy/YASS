@@ -24,8 +24,6 @@
 		rotateEdit,
 		setCropEdit,
 		setFilterEdit,
-		setSplitEdit,
-		documentNumbers,
 		pageFilterLabels
 	} from '$lib/review/edits';
 	import { clear, prune, toggle } from '$lib/review/selection';
@@ -172,8 +170,6 @@
 	const filterLabel = $derived(
 		filters.size > 1 ? 'Mixed' : pageFilterLabels[[...filters][0] ?? PageFilter.Original]
 	);
-	const documents = $derived(documentNumbers(session?.Pages ?? []));
-	const documentCount = $derived(Math.max(1, ...[...documents.values()], 1));
 
 	/** Other scans that still have pages, newest first, for the merge dialog. */
 	const mergeable = $derived(
@@ -310,10 +306,8 @@
 
 		if (picker) {
 			try {
-				target =
-					documentCount > 1
-						? { directory: await picker.showDirectoryPicker({ mode: 'readwrite' }) }
-						: { file: await picker.showSaveFilePicker({ suggestedName: base + extension }) };
+				// One scan is one document, so this is always a file rather than a folder.
+				target = { file: await picker.showSaveFilePicker({ suggestedName: base + extension }) };
 			} catch (e) {
 				if (cancelled(e)) return;
 				// The dialog exists but would not open: the plain download still gets the file out.
@@ -669,12 +663,6 @@
 			onexpand={() => (previewIndex = targetPage())}
 			oncrop={() => (cropping = targetPage())}
 			onrescan={rescan}
-			onsplit={(split) => {
-				const page = session?.Pages[targetPage()];
-				if (page) send(setSplitEdit(split, new Set([page.Index])));
-			}}
-			splits={session.Pages[targetPage()]?.StartsDocument ?? false}
-			firstPage={targetPage() === 0}
 			{scanning}
 			onclear={() => (selection = clear())}
 			onselectall={selectAll}
@@ -724,7 +712,6 @@
 					onshow={show}
 					ontoggle={select}
 					onopen={(i) => (previewIndex = i)}
-					{documents}
 					onscanmore={editable ? scanMore : undefined}
 					reorderable={editable}
 					onreorder={reorder}
@@ -887,12 +874,6 @@
 						</p>
 					</div>
 					<div class="rounded-[14px] bg-app p-3">
-						<p class="text-xs text-ink-muted">Documents</p>
-						<p class="text-[18px] font-extrabold tracking-[-0.01em] tabular-nums">
-							{documentCount}
-						</p>
-					</div>
-					<div class="rounded-[14px] bg-app p-3">
 						<p class="text-xs text-ink-muted">Filter</p>
 						<p class="truncate text-[18px] font-extrabold tracking-[-0.01em]">{filterLabel}</p>
 					</div>
@@ -982,7 +963,6 @@
 		{selection}
 		current={session.Pages[current]?.Index ?? -1}
 		{scanning}
-		{documents}
 		reorderable={editable}
 		tile={$reviewPrefs.overviewTile}
 		onzoom={(overviewTile) => reviewPrefs.set({ ...$reviewPrefs, overviewTile })}

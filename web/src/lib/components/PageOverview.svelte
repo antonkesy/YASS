@@ -12,7 +12,6 @@
 		current = -1,
 		reorderable = true,
 		scanning = false,
-		documents,
 		tile,
 		onzoom,
 		onshow,
@@ -29,7 +28,6 @@
 		current?: number;
 		reorderable?: boolean;
 		scanning?: boolean;
-		documents?: Map<number, number>;
 		/**
 		 * Tile width in pixels, or `'fit'` for whatever puts every page on one screen. The
 		 * overlay owns the control, the caller owns the value.
@@ -217,7 +215,6 @@
 			{current}
 			{reorderable}
 			{scanning}
-			{documents}
 			{onshow}
 			{ontoggle}
 			{onopen}
