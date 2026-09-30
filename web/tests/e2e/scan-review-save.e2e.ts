@@ -361,44 +361,20 @@ test('the name a scan is shown under ends in the format that will be written', a
 	await expect(page.getByTestId('document-name')).toContainText('.jpg');
 });
 
-test('the sidebar opens on the name and the save, and keeps what you unfolded', async ({
-	page
-}) => {
+test('the sidebar names its groups, and hides none of them', async ({ page }) => {
 	await scanToReview(page);
 
-	const scan = page.getByTestId('scan-section');
-	const more = page.getByTestId('more-section');
+	// Four groups, all of them open: nothing in this panel is behind a fold.
+	const aside = page.locator('aside');
+	for (const title of ['Name', 'Save', 'Scan', 'More']) {
+		await expect(aside.getByText(title, { exact: true })).toBeVisible();
+	}
 
-	// Shut to begin with, but the page count rides on the summary rather than behind it.
-	await expect(scan).toHaveJSProperty('open', false);
-	await expect(more).toHaveJSProperty('open', false);
 	await expect(page.getByTestId('page-count')).toHaveText('2 of 3 pages');
-
-	// What is folded away is genuinely away, not merely faint. Asked of the browser rather
-	// than of Playwright: a shut <details> hides its contents with content-visibility, which
-	// leaves the box laid out and its size non-zero, so the usual visibility check says yes.
-	const shown = (testid: string) =>
-		page.getByTestId(testid).evaluate((el) => (el as HTMLElement).checkVisibility());
-	expect(await shown('scan-more-button')).toBe(false);
-	expect(await shown('merge-button')).toBe(false);
-	// Discarding is never behind a fold: it sits at the foot on its own.
-	await expect(page.getByTestId('discard-button')).toBeVisible();
-
-	// Opening Scan is how the rest of the facts are reached, now that they are rows and not
-	// a grid of tiles.
-	await scan.locator('summary').click();
-	await expect(scan).toContainText('Filter');
-	await expect(scan).toContainText('Size');
-	await scan.locator('summary').click();
-
-	await more.locator('summary').click();
-	await expect(more).toHaveJSProperty('open', true);
+	await expect(page.getByTestId('scan-section')).toContainText('Filter');
+	await expect(page.getByTestId('scan-section')).toContainText('Size');
 	await expect(page.getByTestId('scan-more-button')).toBeVisible();
 	await expect(page.getByTestId('merge-button')).toBeVisible();
-
-	// The choice outlives the page: it is a preference, not a mood.
-	await page.reload();
-	await expect(page.getByTestId('more-section')).toHaveJSProperty('open', true);
-	await expect(page.getByTestId('scan-more-button')).toBeVisible();
-	await expect(page.getByTestId('scan-section')).toHaveJSProperty('open', false);
+	// Discarding sits on its own at the foot, away from the routine actions above it.
+	await expect(page.getByTestId('discard-button')).toBeVisible();
 });
