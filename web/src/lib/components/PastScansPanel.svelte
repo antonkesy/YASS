@@ -80,11 +80,8 @@
 	data-testid="past-scans"
 >
 	<div class="flex items-center gap-2">
+		<!-- No count up here: the foot of the panel says how many, and the empty state says none. -->
 		<h2 class="text-[19px] font-extrabold tracking-[-0.01em]">Past scans</h2>
-		<span class="text-[13px] text-ink-muted">
-			{sessions.length}
-			{sessions.length === 1 ? 'scan' : 'scans'}
-		</span>
 		<div class="flex-1"></div>
 		<div class="flex gap-0 rounded-[12px] bg-ctl-track p-[3px]" role="group" aria-label="View">
 			{#each [{ key: 'grid', icon: 'grid', label: 'Grid' }, { key: 'list', icon: 'list', label: 'List' }] as const as option (option.key)}
