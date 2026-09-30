@@ -44,8 +44,10 @@ test('a scan is named by the template alone, with nothing to click', async ({ pa
 	await page.getByTestId('scan-button').click();
 	await expect(page).toHaveURL(/\/session\/[A-Za-z0-9-]+$/);
 	// The scan is over once its edits are on offer: the toolbar carries them only while the
-	// session is editable, which it is not while the feeder is still going.
-	await expect(page.getByTestId('delete-button')).toBeVisible({ timeout: 20_000 });
+	// session is editable, which it is not while the feeder is still going. Filter rather
+	// than Delete — Delete depends on whether the page on the stage is deleted, and a blank
+	// one starts that way.
+	await expect(page.getByTestId('filter-button')).toBeVisible({ timeout: 20_000 });
 
 	// No sparkle, no slot: the name field is a field, and the name is the template.
 	await expect(page.getByTestId('name-suggest')).toHaveCount(0);

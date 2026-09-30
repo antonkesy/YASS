@@ -8,8 +8,10 @@ async function scanToReview(page: Page) {
 	await page.getByTestId('scan-button').click();
 	await expect(page).toHaveURL(/\/session\/[A-Za-z0-9-]+$/);
 	// The scan is over once its edits are on offer: the toolbar carries them only while the
-	// session is editable, which it is not while the feeder is still going.
-	await expect(page.getByTestId('delete-button')).toBeVisible({ timeout: 20_000 });
+	// session is editable, which it is not while the feeder is still going. Filter rather
+	// than Delete — Delete depends on whether the page on the stage is deleted, and a blank
+	// one starts that way.
+	await expect(page.getByTestId('filter-button')).toBeVisible({ timeout: 20_000 });
 	await expect(page.getByTestId('page-thumb')).toHaveCount(3);
 }
 
@@ -264,7 +266,7 @@ test('stop ends a scan early', async ({ page }) => {
 	// half done, and waiting for the button to stop moving can outlast the scan itself.
 	await page.getByTestId('stop-button').click({ timeout: 5_000, force: true });
 	// Over once the edits are on offer again, as in scanToReview above.
-	await expect(page.getByTestId('delete-button')).toBeVisible({ timeout: 20_000 });
+	await expect(page.getByTestId('filter-button')).toBeVisible({ timeout: 20_000 });
 	await expect(page.getByTestId('stop-button')).toBeHidden();
 });
 
@@ -314,7 +316,7 @@ test('scan more appends pages and export writes to the configured folder', async
 	await page.getByTestId('scan-more-tile').click();
 	await expect(page.getByTestId('page-thumb')).toHaveCount(6, { timeout: 30_000 });
 	// Over once the edits are on offer again, as in scanToReview above.
-	await expect(page.getByTestId('delete-button')).toBeVisible({ timeout: 30_000 });
+	await expect(page.getByTestId('filter-button')).toBeVisible({ timeout: 30_000 });
 	// 4 of 6: page 2 of each run comes out blank and starts deleted.
 	await expect(page.getByTestId('page-count')).toHaveText('4 of 6 pages');
 
