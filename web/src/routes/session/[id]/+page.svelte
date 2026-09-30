@@ -877,7 +877,7 @@
 					<NameField
 						bind:this={nameField}
 						value={displayName}
-						placeholder={formatTime(session.CreatedAt)}
+						placeholder={exportBaseName(session, $exportPrefs.nameTemplate)}
 						generated={generatedPart}
 						extension={fileExtensions[$exportPrefs.format]}
 						busy={busySuggesting}
