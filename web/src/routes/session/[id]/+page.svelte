@@ -845,8 +845,14 @@
 					</div>
 				{/if}
 
+				{@render pageTools(false)}
+
 				{#if session.Pages.length > 0}
-					<!-- Under the page rather than over it, and as few characters as say it. -->
+					<!--
+						Last of all, under the tools: it is the quietest thing on the stage and has no
+						business between the page and the buttons that edit it. As few characters as
+						say it, too.
+					-->
 					<p
 						class="text-[13px] font-semibold text-ink-muted tabular-nums"
 						data-testid="page-position"
@@ -854,8 +860,6 @@
 						{current + 1} / {session.Pages.length}
 					</p>
 				{/if}
-
-				{@render pageTools(false)}
 			</main>
 
 			<!--
