@@ -554,6 +554,16 @@
 					</div>
 				{/if}
 
+				{#if session.Pages.length > 0}
+					<!-- Right above the page it counts, and as few characters as say it. -->
+					<p
+						class="-mb-2 text-[13px] font-semibold text-ink-muted tabular-nums"
+						data-testid="page-position"
+					>
+						{current + 1} / {session.Pages.length}
+					</p>
+				{/if}
+
 				{#if shown}
 					<div class="flex w-full items-center justify-center gap-2 lg:min-h-0 lg:flex-1">
 						<button
@@ -604,20 +614,6 @@
 				{/if}
 
 				{@render pageTools(false)}
-
-				{#if session.Pages.length > 0}
-					<!--
-						Last of all, under the tools: it is the quietest thing on the stage and has no
-						business between the page and the buttons that edit it. As few characters as
-						say it, too.
-					-->
-					<p
-						class="text-[13px] font-semibold text-ink-muted tabular-nums"
-						data-testid="page-position"
-					>
-						{current + 1} / {session.Pages.length}
-					</p>
-				{/if}
 			</main>
 
 			<!--
