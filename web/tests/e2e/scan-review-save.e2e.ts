@@ -397,11 +397,20 @@ test('the name a scan is shown under ends in the format that will be written', a
 test('the sidebar names its groups, and hides none of them', async ({ page }) => {
 	await scanToReview(page);
 
-	// Four groups, all of them open: nothing in this panel is behind a fold.
+	// Five groups, all of them open: nothing in this panel is behind a fold.
 	const aside = page.locator('aside');
-	for (const title of ['Name', 'Save', 'Scan', 'More']) {
+	for (const title of ['Name', 'Save', 'File', 'Scan', 'More']) {
 		await expect(aside.getByText(title, { exact: true })).toBeVisible();
 	}
+
+	// The file as Save will write it: its name, and the facts the PDF will carry.
+	await expect(page.getByTestId('file-name')).toHaveText(/\.pdf$/);
+	const file = page.getByTestId('file-section');
+	await expect(file).toContainText('PDF');
+	await expect(file).toContainText('300 dpi');
+	await expect(file).toContainText('YASS Fake ADF');
+	await expect(file).toContainText('Metadata');
+	await expect(file).toContainText('Author');
 
 	await expect(page.getByTestId('page-count')).toHaveText('2 of 3 pages');
 	await expect(page.getByTestId('scan-section')).toContainText('Filter');
