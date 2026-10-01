@@ -2,11 +2,11 @@ import { writable } from 'svelte/store';
 import type { ScanOptionsDto } from './hub/generated/Yass.Core.Hub';
 
 /** Per-browser scan overrides (SPEC §8: settings live in localStorage, never on the server). */
-export type ScanOverrides = Omit<ScanOptionsDto, 'Editable'>;
+export type ScanOverrides = ScanOptionsDto;
 
 export const STORAGE_KEY = 'yass.scanOverrides';
 
-/** snake_case config key → DTO property, i.e. what `scanner.ui_editable` refers to. */
+/** snake_case config key → DTO property: the scan options a browser may override. */
 export const editableKeys: Record<string, keyof ScanOverrides> = {
 	source: 'Source',
 	dpi: 'Dpi',
@@ -32,17 +32,6 @@ export function parseOverrides(json: string | null): ScanOverrides {
 	} catch {
 		return {};
 	}
-}
-
-/** Keeps only overrides the server will honour, so stale keys never leak into StartScan. */
-export function pickEditable(
-	overrides: ScanOverrides,
-	editable: string[] | undefined
-): ScanOverrides {
-	const allowed = new Set((editable ?? []).map((k) => editableKeys[k]).filter(Boolean));
-	return Object.fromEntries(
-		Object.entries(overrides).filter(([k]) => allowed.has(k as keyof ScanOverrides))
-	) as ScanOverrides;
 }
 
 function read(storage: Storage | undefined): ScanOverrides {

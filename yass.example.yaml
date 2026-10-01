@@ -22,12 +22,12 @@ scanner:
     blank_page_detection: true
     blank_page_threshold: 0.02 # 0..1, fraction of dark pixels
     auto_deskew: false
-    # Which scanner to run on, by the exact id the driver reports. Empty means whatever
-    # `scanner.device` above resolves to, which is the only behaviour there was before the
-    # browser could choose. Take `device` out of ui_editable below to pin it here.
+    # Which scanner to run on by default, by the exact id the driver reports. Empty means
+    # whatever `scanner.device` above resolves to. The home screen's picker overrides it.
     device: ""
-  # Keys of `defaults` the web UI may override (stored in the browser).
-  ui_editable: [source, dpi, color, page_size, blank_page_detection, device]
+  # Deprecated and ignored: every default above can be changed from the web UI (the choice
+  # is stored in the browser). Still accepted so older files keep loading.
+  # ui_editable: []
 
 output:
   directory: /data/consume # paperless-ngx consume dir

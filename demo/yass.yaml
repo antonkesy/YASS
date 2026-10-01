@@ -19,7 +19,6 @@ scanner:
     blank_page_detection: true # page 3 of the scripted scenario comes out blank
     blank_page_threshold: 0.02
     auto_deskew: false
-  ui_editable: [source, dpi, color, page_size, blank_page_detection]
 
 output:
   directory: /data/consume # -> demo/output on the host

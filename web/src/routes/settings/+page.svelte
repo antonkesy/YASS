@@ -5,7 +5,7 @@
 	import { getHub } from '$lib/hub/hub';
 	import { PageSize, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
 	import type { ScannerDeviceDto, ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
-	import { editableKeys, pickEditable, settings, type ScanOverrides } from '$lib/settings';
+	import { editableKeys, settings, type ScanOverrides } from '$lib/settings';
 	import Segmented from '$lib/components/Segmented.svelte';
 	import Toggle from '$lib/components/Toggle.svelte';
 	import SettingsSection from '$lib/components/SettingsSection.svelte';
@@ -43,8 +43,6 @@
 		}
 	});
 
-	const editable = $derived(new Set(effective?.Editable ?? []));
-
 	/**
 	 * The overview's zoom steps as a row of choices. Named rather than shown in pixels: the
 	 * number means nothing to anyone, and there are only ever a handful of steps.
@@ -58,11 +56,7 @@
 	];
 
 	const overrides = $derived($settings);
-	const changed = $derived(
-		Object.keys(editableKeys).some(
-			(k) => editable.has(k) && overrides[editableKeys[k]] !== undefined
-		)
-	);
+	const changed = $derived(Object.values(editableKeys).some((key) => overrides[key] !== undefined));
 
 	// "" is the segment that clears the override and falls back to yass.yaml.
 	const DEFAULT = '';
@@ -94,9 +88,7 @@
 	 * nothing overridden still runs whichever preset yass.yaml defaults to. And a preset saved
 	 * from bare overrides could pin nothing at all, which is a preset that matches no scan.
 	 */
-	const planned = $derived<ScanOverrides>(
-		effective ? pickEditable({ ...effective, ...$settings }, effective.Editable) : $settings
-	);
+	const planned = $derived<ScanOverrides>(effective ? { ...effective, ...$settings } : $settings);
 	const chosen = $derived(activePreset($presets, planned));
 	let drafting = $state(false);
 	let draftName = $state('');
@@ -260,13 +252,13 @@
 		</div>
 
 		<p class="col-span-full text-[13px] text-ink-muted">
-			Stored in this browser only. Keys not listed here are fixed in
+			Stored in this browser only. Anything left on Default comes from
 			<code class="font-mono">yass.yaml</code>.
 		</p>
 
 		<SettingsSection
 			title="Scanner"
-			hint="What the next scan asks the scanner for, kept in this browser. Only the keys scanner.ui_editable opens up can be set here."
+			hint="What the next scan asks the scanner for, kept in this browser. Default is whatever yass.yaml says."
 			testid="scanner-section"
 		>
 			{#if error}
@@ -278,10 +270,6 @@
 				</p>
 			{:else if !effective}
 				<p class="col-span-full text-ink-muted">Loading…</p>
-			{:else if editable.size === 0}
-				<p class="col-span-full text-ink-muted" data-testid="nothing-editable">
-					Nothing is editable from the UI.
-				</p>
 			{:else}
 				<div
 					class="col-span-full flex flex-col gap-2.5 rounded-[18px] bg-app p-3.5"
@@ -427,115 +415,97 @@
 					onsubmit={(e) => e.preventDefault()}
 					data-testid="settings-form"
 				>
-					{#if editable.has('source')}
-						<Segmented
-							name="source"
-							label="Source"
-							options={withDefault(sources)}
-							value={asSegment(overrides.Source)}
-							onchange={(v) => setNumber('Source', v)}
-						/>
-					{/if}
-					{#if editable.has('color')}
-						<Segmented
-							name="color"
-							label="Colour mode"
-							options={withDefault(colors)}
-							value={asSegment(overrides.Color)}
-							onchange={(v) => setNumber('Color', v)}
-						/>
-					{/if}
-					{#if editable.has('dpi')}
-						<Segmented
-							name="dpi"
-							label="Resolution"
-							hint="dpi"
-							options={withDefault(dpis)}
-							value={asSegment(overrides.Dpi)}
-							onchange={(v) => setNumber('Dpi', v)}
-						/>
-					{/if}
-					{#if editable.has('page_size')}
-						<Segmented
-							name="page_size"
-							label="Paper size"
-							options={withDefault(pageSizes)}
-							value={asSegment(overrides.PageSize)}
-							onchange={(v) => setNumber('PageSize', v)}
-						/>
-					{/if}
+					<Segmented
+						name="source"
+						label="Source"
+						options={withDefault(sources)}
+						value={asSegment(overrides.Source)}
+						onchange={(v) => setNumber('Source', v)}
+					/>
+					<Segmented
+						name="color"
+						label="Colour mode"
+						options={withDefault(colors)}
+						value={asSegment(overrides.Color)}
+						onchange={(v) => setNumber('Color', v)}
+					/>
+					<Segmented
+						name="dpi"
+						label="Resolution"
+						hint="dpi"
+						options={withDefault(dpis)}
+						value={asSegment(overrides.Dpi)}
+						onchange={(v) => setNumber('Dpi', v)}
+					/>
+					<Segmented
+						name="page_size"
+						label="Paper size"
+						options={withDefault(pageSizes)}
+						value={asSegment(overrides.PageSize)}
+						onchange={(v) => setNumber('PageSize', v)}
+					/>
 
-					{#if editable.has('blank_page_detection') || editable.has('auto_deskew')}
-						<div class="rounded-[16px] bg-app px-3.5 py-1.5">
-							{#if editable.has('blank_page_detection')}
-								<Toggle
-									name="blank_page_detection"
-									label="Skip blank pages"
-									hint="Pages that look empty start out deleted"
-									checked={overrides.BlankPageDetection ?? effective.BlankPageDetection ?? false}
-									onchange={(v) => settings.update('BlankPageDetection', v)}
-								/>
-							{/if}
-							{#if editable.has('auto_deskew')}
-								<Toggle
-									name="auto_deskew"
-									label="Auto-deskew"
-									hint="Straighten pages that went through crooked"
-									checked={overrides.AutoDeskew ?? effective.AutoDeskew ?? false}
-									onchange={(v) => settings.update('AutoDeskew', v)}
-								/>
-							{/if}
-						</div>
-					{/if}
+					<div class="rounded-[16px] bg-app px-3.5 py-1.5">
+						<Toggle
+							name="blank_page_detection"
+							label="Skip blank pages"
+							hint="Pages that look empty start out deleted"
+							checked={overrides.BlankPageDetection ?? effective.BlankPageDetection ?? false}
+							onchange={(v) => settings.update('BlankPageDetection', v)}
+						/>
+						<Toggle
+							name="auto_deskew"
+							label="Auto-deskew"
+							hint="Straighten pages that went through crooked"
+							checked={overrides.AutoDeskew ?? effective.AutoDeskew ?? false}
+							onchange={(v) => settings.update('AutoDeskew', v)}
+						/>
+					</div>
 
 					{#each [['brightness', 'Brightness', 'Brightness'], ['contrast', 'Contrast', 'Contrast']] as const as [key, label, prop] (key)}
-						{#if editable.has(key)}
-							<label class="flex flex-col gap-1.5">
-								<span class="flex justify-between text-[13px] font-bold text-ink-2">
-									{label}
-									<span class="text-ink-muted tabular-nums">
-										{overrides[prop] ?? effective[prop] ?? 0}
-									</span>
-								</span>
-								<input
-									class="h-11 accent-accent"
-									type="range"
-									name={key}
-									min="-100"
-									max="100"
-									step="5"
-									value={overrides[prop] ?? effective[prop] ?? 0}
-									oninput={(e) =>
-										settings.update(prop, Number((e.currentTarget as HTMLInputElement).value))}
-								/>
-							</label>
-						{/if}
-					{/each}
-
-					{#if editable.has('blank_page_threshold')}
 						<label class="flex flex-col gap-1.5">
-							<span class="text-[13px] font-bold text-ink-2">
-								Blank threshold
-								<span class="font-semibold text-ink-muted">
-									· default {effective.BlankPageThreshold}
+							<span class="flex justify-between text-[13px] font-bold text-ink-2">
+								{label}
+								<span class="text-ink-muted tabular-nums">
+									{overrides[prop] ?? effective[prop] ?? 0}
 								</span>
 							</span>
 							<input
-								class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm"
-								type="number"
-								name="blank_page_threshold"
-								min="0"
-								max="1"
-								step="0.01"
-								value={overrides.BlankPageThreshold ?? ''}
-								placeholder={String(effective.BlankPageThreshold)}
-								onchange={(e) => {
-									const v = (e.currentTarget as HTMLInputElement).value;
-									settings.update('BlankPageThreshold', v === '' ? undefined : Number(v));
-								}}
+								class="h-11 accent-accent"
+								type="range"
+								name={key}
+								min="-100"
+								max="100"
+								step="5"
+								value={overrides[prop] ?? effective[prop] ?? 0}
+								oninput={(e) =>
+									settings.update(prop, Number((e.currentTarget as HTMLInputElement).value))}
 							/>
 						</label>
-					{/if}
+					{/each}
+
+					<label class="flex flex-col gap-1.5">
+						<span class="text-[13px] font-bold text-ink-2">
+							Blank threshold
+							<span class="font-semibold text-ink-muted">
+								· default {effective.BlankPageThreshold}
+							</span>
+						</span>
+						<input
+							class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm"
+							type="number"
+							name="blank_page_threshold"
+							min="0"
+							max="1"
+							step="0.01"
+							value={overrides.BlankPageThreshold ?? ''}
+							placeholder={String(effective.BlankPageThreshold)}
+							onchange={(e) => {
+								const v = (e.currentTarget as HTMLInputElement).value;
+								settings.update('BlankPageThreshold', v === '' ? undefined : Number(v));
+							}}
+						/>
+					</label>
 				</form>
 
 				{#if changed}
@@ -651,8 +621,8 @@
 
 		<!--
 			Outside the scanner section above: these are preferences of this browser's, with
-			nothing to do with scanner.ui_editable, and they have to be reachable even on a
-			server that lets the UI change nothing.
+			nothing to do with how the scanner is driven, and they have to stay reachable
+			while that section is still loading or has failed.
 		-->
 		<SettingsSection
 			title="Naming"

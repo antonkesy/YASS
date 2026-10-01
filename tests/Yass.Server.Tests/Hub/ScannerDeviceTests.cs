@@ -61,15 +61,17 @@ public sealed class ScannerDeviceTests
     }
 
     [Fact]
-    public async Task Device_is_ignored_when_the_config_does_not_open_it_up()
+    public async Task Device_is_honoured_whatever_the_deprecated_ui_editable_says()
     {
+        // The key used to gate which overrides the server took. It is accepted so old files still
+        // load, and ignored: yass.yaml supplies defaults, the browser decides.
         await using var factory = new YassFactory(
             FakeScenario.Pages(1) with { ExtraDevices = ["Epson DS-530"] },
             config => config with { Scanner = config.Scanner with { UiEditable = ["dpi"] } });
         await using HubClient hub = await HubClient.ConnectAsync(factory);
 
-        await hub.StartScan(new ScanOptionsDto(Device: "Epson DS-530"));
+        await hub.ScanToEnd(new ScanOptionsDto(Device: "Epson DS-530"));
 
-        Assert.Equal("", factory.Backend.LastOptions?.Device);
+        Assert.Equal("Epson DS-530", factory.Backend.LastOptions?.Device);
     }
 }

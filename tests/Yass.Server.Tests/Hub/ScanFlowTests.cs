@@ -38,13 +38,12 @@ public sealed class ScanFlowTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Effective_options_expose_defaults_and_editable_keys()
+    public async Task Effective_options_expose_the_defaults()
     {
         ScanOptionsDto options = await _hub.GetEffectiveOptions();
 
         Assert.Equal(300, options.Dpi);
         Assert.Equal(ColorMode.Grayscale, options.Color);
-        Assert.Equal(["source", "dpi", "color", "page_size", "blank_page_detection", "device"], options.Editable!);
         Assert.True(options.AllowDownload);
     }
 
@@ -64,14 +63,16 @@ public sealed class ScanFlowTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Only_editable_overrides_are_honoured()
+    public async Task Every_override_is_honoured_and_the_rest_stays_at_the_defaults()
     {
         SessionDto session = await _hub.StartScan(new ScanOptionsDto(Dpi: 150, Brightness: 50, Color: ColorMode.Color));
         await _hub.WaitFor(session.Id, s => s.State != SessionState.Scanning);
 
         Assert.Equal(150, session.OptionsUsed.Dpi);
         Assert.Equal(ColorMode.Color, session.OptionsUsed.Color);
-        Assert.Equal(0, session.OptionsUsed.Brightness);
+        // Brightness is not in the default ui_editable list; the key no longer gates anything.
+        Assert.Equal(50, session.OptionsUsed.Brightness);
+        Assert.Equal(0, session.OptionsUsed.Contrast);
         Assert.Equal(150, _factory.Backend.LastOptions!.Dpi);
     }
 
