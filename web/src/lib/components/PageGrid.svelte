@@ -3,6 +3,8 @@
 	import { Icon } from '$lib/icons';
 	import { edgeScroll, isIdentity, moveIndex, slotAt } from '$lib/review/reorder';
 	import { measure, play, type Positions } from '$lib/review/flip';
+	import { imageUrl } from '$lib/hub/hub';
+	import { portal } from '$lib/review/portal';
 	import { DEFAULT_TILE } from '$lib/review/overview';
 	import PageThumb from './PageThumb.svelte';
 
@@ -57,28 +59,101 @@
 	const HOLD_MS = 250;
 	const MOVE_PX = 6;
 
-	let drag = $state<{ from: number; over: number | null } | null>(null);
+	/**
+	 * A drag in flight. `over` is the slot (a position in the grid, not a page) the page would
+	 * land in; `grab` is where inside the tile it was picked up, so the ghost stays under the
+	 * finger; `size` is the tile's, so the ghost is the tile and not a guess at it.
+	 */
+	let drag = $state<{
+		from: number;
+		over: number | null;
+		grab: { x: number; y: number };
+		size: { w: number; h: number };
+	} | null>(null);
+	/** The page a finger is holding down on, before the hold has become a drag. */
+	let pressing = $state<number | null>(null);
+	/**
+	 * The ghost after a drop, gliding into the slot the page landed in. Kept apart from
+	 * `drag` so the grid can already be in its final order while the ghost catches up.
+	 */
+	let settle = $state<{ page: PageDto; x: number; y: number; w: number; h: number } | null>(null);
+	/** Lifts the ghost a frame after it appears, so the lift is seen rather than just there. */
+	let lifted = $state(false);
 	let pressTimer: ReturnType<typeof setTimeout> | null = null;
 	let pressStart: { x: number; y: number; index: number; hold: boolean } | null = null;
 	let rects: DOMRectReadOnly[] = [];
-	let at = { x: 0, y: 0 };
+	let at = $state({ x: 0, y: 0 });
 	let scrolling: number | null = null;
+	let settleTimer: ReturnType<typeof setTimeout> | null = null;
+
+	const SETTLE_MS = 200;
+
+	/**
+	 * The pages in the order the grid shows them: while a drag is on, the order it would
+	 * leave behind, so the other pages make room where the held one is going to land. That
+	 * moving gap, more than any outline, is what says where a drop will put it.
+	 */
+	const shown = $derived(
+		drag && drag.over !== null
+			? moveIndex(pages.length, drag.from, drag.over).map((i) => pages[i])
+			: pages
+	);
+
+	/** The page under the pointer as a floating card, while held and while settling. */
+	const ghost = $derived(
+		drag
+			? {
+					page: pages[drag.from],
+					x: at.x - drag.grab.x,
+					y: at.y - drag.grab.y,
+					w: drag.size.w,
+					h: drag.size.h
+				}
+			: settle
+	);
 
 	function slots(): HTMLElement[] {
 		return grid ? [...grid.querySelectorAll<HTMLElement>('[data-index]')] : [];
 	}
 
-	function begin(index: number, pointerId: number) {
+	/**
+	 * Starts a drag of the page at `index`. `pressed` is where the tile was first pressed,
+	 * which is where the ghost is held by: a mouse only becomes a drag once it has moved,
+	 * and measured from there the ghost would jump by that first move.
+	 */
+	function begin(index: number, pointerId: number, pressed: { x: number; y: number }) {
+		pressing = null;
+		clearSettle();
 		rects = slots().map((el) => el.getBoundingClientRect());
+		const tile = rects[index] ?? new DOMRect(pressed.x, pressed.y, 0, 0);
 		// Straight from where the pointer already is: a quick flick and release would
 		// otherwise drop on the slot the drag started in.
-		drag = { from: index, over: slotAt(rects, at.x, at.y) ?? index };
+		drag = {
+			from: index,
+			over: slotAt(rects, at.x, at.y) ?? index,
+			grab: { x: pressed.x - tile.left, y: pressed.y - tile.top },
+			size: { w: tile.width, h: tile.height }
+		};
+		lifted = false;
+		requestAnimationFrame(() => (lifted = drag !== null));
 		try {
 			grid?.setPointerCapture(pointerId);
 		} catch {
 			// a synthetic pointer (tests) has no capture to take
 		}
 		scrolling ??= requestAnimationFrame(autoScroll);
+	}
+
+	/**
+	 * Moves the held page's gap to another slot, sliding the pages in between out of the
+	 * way. Measured before and played after, like a real reorder, so they travel rather
+	 * than jump.
+	 */
+	function hover(over: number | null) {
+		if (!drag || drag.over === over) return;
+		const from = measure(grid);
+		drag = { ...drag, over };
+		requestAnimationFrame(() => play(grid, from));
 	}
 
 	/**
@@ -90,10 +165,17 @@
 		if (!drag || !grid) return;
 		const { dx, dy } = edgeScroll(grid.getBoundingClientRect(), at.x, at.y);
 		if (dx || dy) {
+			const { scrollLeft, scrollTop } = grid;
 			grid.scrollBy?.({ left: dx, top: dy });
-			// The slots moved under the pointer, so where it now points has changed too.
-			rects = slots().map((el) => el.getBoundingClientRect());
-			drag = { ...drag, over: slotAt(rects, at.x, at.y) };
+			// The slots moved under the pointer by however far the scroller actually went.
+			// Shifted rather than re-measured: mid-slide, a tile's box is wherever its
+			// animation has it, not where its slot is.
+			const movedX = grid.scrollLeft - scrollLeft;
+			const movedY = grid.scrollTop - scrollTop;
+			if (movedX || movedY) {
+				rects = rects.map((r) => new DOMRect(r.x - movedX, r.y - movedY, r.width, r.height));
+				hover(slotAt(rects, at.x, at.y));
+			}
 		}
 		scrolling = requestAnimationFrame(autoScroll);
 	}
@@ -106,13 +188,19 @@
 		const hold = e.pointerType !== 'mouse';
 		pressStart = { x: e.clientX, y: e.clientY, index, hold };
 		at = { x: e.clientX, y: e.clientY };
-		if (hold) pressTimer = setTimeout(() => begin(index, e.pointerId), HOLD_MS);
+		if (hold) {
+			// The tile sinks under the finger while the hold counts down, then lifts: the
+			// press is seen to be doing something before it has become a drag.
+			pressing = index;
+			const pressed = { x: e.clientX, y: e.clientY };
+			pressTimer = setTimeout(() => begin(index, e.pointerId, pressed), HOLD_MS);
+		}
 	}
 
 	function pointermove(e: PointerEvent) {
 		at = { x: e.clientX, y: e.clientY };
 		if (drag) {
-			drag = { ...drag, over: slotAt(rects, e.clientX, e.clientY) };
+			hover(slotAt(rects, e.clientX, e.clientY));
 			e.preventDefault();
 			return;
 		}
@@ -121,9 +209,9 @@
 		// Past the slop: a held press has turned into a drag, an unheld touch into a scroll.
 		if (pressStart.hold) cancelPress();
 		else {
-			const { index } = pressStart;
+			const { index, x, y } = pressStart;
 			cancelPress();
-			begin(index, e.pointerId);
+			begin(index, e.pointerId, { x, y });
 			e.preventDefault();
 		}
 	}
@@ -134,7 +222,13 @@
 			// flick can end without one in between, and the drop should land where it looks.
 			if (e.type === 'pointerup') at = { x: e.clientX, y: e.clientY };
 			const from = drag.from;
-			const over = slotAt(rects, at.x, at.y) ?? drag.over;
+			const over = e.type === 'pointerup' ? (slotAt(rects, at.x, at.y) ?? drag.over) : from;
+			const page = pages[from];
+			const { w, h } = drag.size;
+			// The grid is already laid out the way the drop leaves it (or, when the drag is
+			// going nowhere, slides back), so the ghost glides into the gap and nothing else
+			// has to move.
+			const held = measure(grid);
 			drag = null;
 			stopScrolling();
 			try {
@@ -142,9 +236,17 @@
 			} catch {
 				// capture may already be gone
 			}
-			if (over !== null && over !== from) {
-				const order = moveIndex(pages.length, from, over);
-				if (!isIdentity(order)) reorderWithFlip(order);
+			const order = over !== null && over !== from ? moveIndex(pages.length, from, over) : null;
+			if (order && !isIdentity(order)) {
+				onreorder(order);
+			} else {
+				requestAnimationFrame(() => play(grid, held));
+			}
+			const slot = rects[over ?? from];
+			if (slot) {
+				settle = { page, x: slot.left, y: slot.top, w, h };
+				lifted = false;
+				settleTimer = setTimeout(clearSettle, SETTLE_MS);
 			}
 			// Suppress the click that follows the drag.
 			suppressClick = true;
@@ -157,6 +259,13 @@
 		if (pressTimer) clearTimeout(pressTimer);
 		pressTimer = null;
 		pressStart = null;
+		pressing = null;
+	}
+
+	function clearSettle() {
+		if (settleTimer) clearTimeout(settleTimer);
+		settleTimer = null;
+		settle = null;
 	}
 
 	function stopScrolling() {
@@ -184,7 +293,10 @@
 		requestAnimationFrame(() => play(grid, from));
 	});
 
-	$effect(() => stopScrolling);
+	$effect(() => () => {
+		stopScrolling();
+		clearSettle();
+	});
 
 	function show(index: number) {
 		if (!suppressClick) onshow(index);
@@ -263,29 +375,32 @@
 		data-layout={layout}
 		data-dragging={drag !== null}
 	>
-		{#each pages as page (page.Index)}
+		{#each shown as page (page.Index)}
+			{@const held = drag?.from === page.Index}
+			<!-- The held page's own tile is the gap it will drop into: a dashed slot that
+			     travels with the pointer while the page itself rides along as the ghost. -->
 			<div
-				class="{cell} animate-page-in transition-transform duration-500 ease-spring {drag?.from ===
-				page.Index
-					? 'opacity-35'
-					: ''} {drag && drag.over === page.Index && drag.from !== page.Index
-					? 'rounded-[14px] shadow-ring-outline'
-					: ''}"
+				class="{cell} animate-page-in transition-transform duration-200 ease-spring {held
+					? 'rounded-[14px] bg-accent-50 outline-[1.5px] -outline-offset-[1.5px] outline-accent-dash outline-dashed'
+					: ''} {pressing === page.Index ? 'scale-[0.95]' : ''}"
 				role="option"
 				aria-selected={overview ? selection.has(page.Index) : page.Index === current}
 				data-index={page.Index}
+				data-held={held}
 				style="animation-delay: {Math.min(page.Index, 10) * 45}ms"
 			>
-				<PageThumb
-					{sessionId}
-					{page}
-					selected={selection.has(page.Index)}
-					current={page.Index === current}
-					selectable={overview}
-					onshow={show}
-					ontoggle={toggle}
-					onopen={overview ? onopen : undefined}
-				/>
+				<div class={held ? 'invisible' : ''}>
+					<PageThumb
+						{sessionId}
+						{page}
+						selected={selection.has(page.Index)}
+						current={page.Index === current}
+						selectable={overview}
+						onshow={show}
+						ontoggle={toggle}
+						onopen={overview ? onopen : undefined}
+					/>
+				</div>
 			</div>
 		{/each}
 
@@ -311,3 +426,42 @@
 		{/if}
 	</div>
 </div>
+
+{#if ghost}
+	<!--
+		The page in hand. Fixed to the viewport and portalled out, because any transformed
+		ancestor (the overlay's slide-in, the page's fade) would otherwise pin it to itself.
+		Translate rides on the outer box with no easing, so it keeps up with the pointer;
+		the lift lives on the inner one and eases, so picking up and putting down are seen.
+	-->
+	<div
+		use:portal
+		class="pointer-events-none fixed top-0 left-0 z-[70] {settle
+			? 'transition-transform duration-200 ease-spring'
+			: ''}"
+		style="width: {ghost.w}px; height: {ghost.h}px; transform: translate({ghost.x}px, {ghost.y}px)"
+		aria-hidden="true"
+		data-testid="drag-ghost"
+		data-lifted={lifted}
+	>
+		<div
+			class="h-full w-full rounded-[14px] bg-surface p-1.5 transition-[transform,box-shadow] duration-200 ease-spring {lifted
+				? 'scale-[1.06] rotate-2 shadow-modal'
+				: 'shadow-panel'}"
+		>
+			<div
+				class="flex w-full items-center justify-center overflow-hidden rounded-[6px] bg-surface shadow-page"
+				style="aspect-ratio: 1 / 1.414"
+			>
+				{#if ghost.page.ThumbnailReady}
+					<img
+						src={imageUrl(sessionId, ghost.page.Index, ghost.page.Hash, 'thumb')}
+						alt=""
+						class="h-full w-full object-contain {ghost.page.Deleted ? 'opacity-50' : ''}"
+						draggable="false"
+					/>
+				{/if}
+			</div>
+		</div>
+	</div>
+{/if}

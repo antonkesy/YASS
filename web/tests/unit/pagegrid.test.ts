@@ -104,6 +104,63 @@ describe('PageGrid drag reorder', () => {
 		expect(onreorder).toHaveBeenCalledWith([1, 0, 2]);
 	});
 
+	it('shows the order a drop would leave, with the page in hand as a ghost, while dragging', async () => {
+		vi.useFakeTimers();
+		render(PageGrid, {
+			sessionId: 's1',
+			pages,
+			selection: new Set<number>(),
+			onshow: vi.fn(),
+			ontoggle: vi.fn(),
+			onopen: vi.fn(),
+			onreorder: vi.fn()
+		});
+		layOut(tiles());
+
+		await fireEvent.pointerDown(tiles()[0], { ...mouse, clientX: 10, clientY: 10 });
+		await fireEvent.pointerMove(grid(), { ...mouse, clientX: 10, clientY: 220 });
+
+		// The other pages have already made room: the held page's gap sits where it will land.
+		expect([...tiles()].map((t) => t.dataset.index)).toEqual(['1', '2', '0']);
+		expect(tiles()[2]).toHaveAttribute('data-held', 'true');
+		// Picked up 10px in from the tile's corner, so it rides 10px behind the pointer.
+		const ghost = () => screen.getByTestId('drag-ghost').getAttribute('style') ?? '';
+		expect(ghost()).toContain('width: 80px');
+		expect(ghost()).toContain('translate(0px, 210px)');
+
+		// Dropped, the ghost glides into the gap and then goes.
+		await fireEvent.pointerUp(grid(), { ...mouse, clientX: 10, clientY: 220 });
+		expect(ghost()).toContain('translate(0px, 200px)');
+		vi.advanceTimersByTime(250);
+		await tick();
+		expect(screen.queryByTestId('drag-ghost')).toBeNull();
+	});
+
+	it('sinks the tile a finger is holding, until the hold becomes a drag', async () => {
+		vi.useFakeTimers();
+		render(PageGrid, {
+			sessionId: 's1',
+			pages,
+			selection: new Set<number>(),
+			onshow: vi.fn(),
+			ontoggle: vi.fn(),
+			onopen: vi.fn(),
+			onreorder: vi.fn()
+		});
+		layOut(tiles());
+
+		await fireEvent.pointerDown(tiles()[1], { ...touch, clientX: 10, clientY: 110 });
+		expect(tiles()[1].className).toContain('scale-[0.95]');
+
+		vi.advanceTimersByTime(300);
+		await tick();
+		expect(tiles()[1].className).not.toContain('scale-[0.95]');
+		expect(tiles()[1]).toHaveAttribute('data-held', 'true');
+		expect(screen.getByTestId('drag-ghost')).toBeInTheDocument();
+
+		await fireEvent.pointerUp(grid(), { ...touch, clientX: 10, clientY: 110 });
+	});
+
 	it('leaves ticking pages to the overview, which the strip only links to', () => {
 		render(PageGrid, {
 			sessionId: 's1',
