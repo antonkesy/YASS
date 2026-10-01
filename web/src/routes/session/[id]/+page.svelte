@@ -606,10 +606,22 @@
 					</div>
 				{:else}
 					<div
-						class="flex w-full max-w-[280px] items-center justify-center rounded-[10px] border-[1.5px] border-dashed border-accent-dash text-sm text-ink-muted"
+						class="flex w-full max-w-[280px] flex-col items-center justify-center gap-3 rounded-[10px] border-[1.5px] border-dashed border-accent-dash text-sm text-ink-muted"
 						style="aspect-ratio: 1 / 1.414"
+						role={scanning ? 'status' : undefined}
+						data-testid="stage-empty"
 					>
-						{scanning ? 'Waiting for the first page…' : 'No pages'}
+						{#if scanning}
+							<!-- The same spinner a thumbnail shows while its image is on the way. -->
+							<span
+								class="h-9 w-9 animate-spin rounded-full border-[3px] border-accent-100 border-t-accent"
+								aria-hidden="true"
+								data-testid="stage-spinner"
+							></span>
+							Waiting for the first page…
+						{:else}
+							No pages
+						{/if}
 					</div>
 				{/if}
 
