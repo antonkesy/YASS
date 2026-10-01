@@ -11,15 +11,10 @@
 	import type { CropBox, PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
 	import {
 		activePageCount,
-		colorLabel,
 		documentName,
-		exportFormatLabels,
-		folderName,
 		formatBytes,
 		formatTime,
-		pageSizeLabel,
-		sessionStateLabel,
-		sourceLabel
+		sessionStateLabel
 	} from '$lib/format';
 	import {
 		applyOptimistic,
@@ -44,7 +39,6 @@
 	import {
 		cancelled,
 		exportBaseName,
-		exportFileName,
 		fileExtensions,
 		savePicker,
 		saveToBrowser,
@@ -53,14 +47,12 @@
 		type SaveTarget
 	} from '$lib/review/download';
 	import { exportPrefs, reviewPrefs } from '$lib/presets';
-	import { ExportFormat, ExportMode } from '$lib/hub/generated/Yass.Core.Hub';
-	import type { ScannerDeviceDto } from '$lib/hub/generated/Yass.Core.Hub';
+	import { ExportMode } from '$lib/hub/generated/Yass.Core.Hub';
 
 	const client = getHub();
 	const sessions = client.sessions;
 	const connection = client.connection;
 	const exportProgress = client.exportProgress;
-	const scanner = client.scanner;
 
 	const id = $derived(route.params.id ?? '');
 	const session = $derived($sessions.get(id) ?? null);
@@ -72,8 +64,6 @@
 	let allowDownload = $state(false);
 	/** Folders the server will accept, from output.allowed_roots. */
 	let exportRoots = $state<string[]>([]);
-	/** Scanners the server can see, to name the one this scan ran on. */
-	let devices = $state<ScannerDeviceDto[]>([]);
 	/** Position in `pages` shown in the centre column. */
 	let current = $state(0);
 	/** Whether the filmstrip is expanded to the full-screen all-pages overview. */
@@ -87,10 +77,6 @@
 					allowDownload = o.AllowDownload ?? false;
 					exportRoots = o.ExportRoots ?? [];
 				})
-				.catch(() => undefined);
-			client.hub
-				.listDevices()
-				.then((d) => (devices = d))
 				.catch(() => undefined);
 		}
 	});
@@ -386,69 +372,6 @@
 			: null
 	);
 
-	/**
-	 * The document about to be written, as the save buttons will write it: name, where, what
-	 * kind, how many files. Every value here comes from the same places the export itself
-	 * reads, so what the card promises is what lands on disk.
-	 */
-	const fileName = $derived(
-		session
-			? exportFileName(
-					{ ...session, Name: storedName ?? undefined },
-					$exportPrefs.nameTemplate,
-					$exportPrefs.format
-				)
-			: ''
-	);
-	const exportDirectory = $derived($exportPrefs.directory.trim() || exportRoots[0] || '');
-	/** A new file starts at the first kept page and at every kept page marked as a start. */
-	const documentCount = $derived(
-		session
-			? Math.max(
-					1,
-					session.Pages.filter((p) => !p.Deleted).filter((p, i) => i === 0 || p.StartsDocument)
-						.length
-				)
-			: 1
-	);
-	/**
-	 * The scanner this ran on: the one the browser picked, by name when the server still
-	 * lists it, else the server's own scanner — an empty device means it took the default.
-	 */
-	const scannerName = $derived.by(() => {
-		const used = session?.OptionsUsed.Device;
-		if (!used) return $scanner?.DeviceName ?? '';
-		return devices.find((d) => d.Id === used)?.Name ?? used;
-	});
-	const fileFacts = $derived(
-		session
-			? (
-					[
-						['Format', exportFormatLabels[$exportPrefs.format]],
-						['Files', documentCount === 1 ? '1' : `${documentCount}, one per section`],
-						['Pages', `${activePages} of ${session.Pages.length}`],
-						['Paper', pageSizeLabel(session.OptionsUsed.PageSize)],
-						['Resolution', session.OptionsUsed.Dpi ? `${session.OptionsUsed.Dpi} dpi` : ''],
-						['Colour', colorLabel(session.OptionsUsed.Color)],
-						['Source', sourceLabel(session.OptionsUsed.Source)],
-						['Scanner', scannerName],
-						['Scanned', formatTime(session.CreatedAt)]
-					] as [string, string][]
-				).filter(([, value]) => value)
-			: []
-	);
-	/** What the PDF itself carries, as the writer stamps it. Images carry none of this. */
-	const metadata = $derived(
-		session && $exportPrefs.format === ExportFormat.Pdf
-			? ([
-					['Title', displayName ?? exportBaseName(session, $exportPrefs.nameTemplate)],
-					['Author', 'YASS'],
-					['Creator', 'YASS'],
-					['Created', formatTime(session.CreatedAt)]
-				] as [string, string][])
-			: []
-	);
-
 	async function merge(sourceId: string) {
 		merging = false;
 		merged = true;
@@ -731,43 +654,12 @@
 					{allowDownload}
 					busy={exporting}
 					{savedPath}
-					{exportDirectory}
+					exportDirectory={$exportPrefs.directory.trim() || exportRoots[0] || ''}
 					exportEnabled={$exportPrefs.exportButton}
 					picker={savePicker() !== null}
 					onsave={save}
 					ondownload={saveAs}
 				/>
-
-				<!-- What Save is going to write, before it is written. -->
-				<div class="flex flex-col gap-1" data-testid="file-section">
-					{@render heading('File')}
-					<div class="flex flex-col gap-0.5 py-0.5">
-						<span
-							class="truncate font-mono text-[12px] font-bold text-ink"
-							title={fileName}
-							data-testid="file-name">{fileName}</span
-						>
-						{#if $exportPrefs.exportButton && exportDirectory}
-							<span class="truncate text-xs text-ink-muted" title={exportDirectory}>
-								into {folderName(exportDirectory)}
-							</span>
-						{:else}
-							<span class="text-xs text-ink-muted">downloaded by this browser</span>
-						{/if}
-					</div>
-					{#each fileFacts as [label, value] (label)}
-						{@render fact(label, value)}
-					{/each}
-					{#if metadata.length > 0}
-						<span
-							class="pt-2 text-[11px] font-bold tracking-[0.06em] text-ink-faint uppercase"
-							data-testid="metadata-heading">Metadata</span
-						>
-						{#each metadata as [label, value] (label)}
-							{@render fact(label, value)}
-						{/each}
-					{/if}
-				</div>
 
 				<!-- The facts about the scan, with the page count up on the heading beside them. -->
 				<div class="flex flex-col gap-1" data-testid="scan-section">
