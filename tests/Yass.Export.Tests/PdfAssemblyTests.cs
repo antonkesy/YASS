@@ -37,7 +37,7 @@ public sealed class PdfAssemblyTests : IDisposable
     }
 
     [Fact]
-    public async Task Metadata_is_stamped_into_the_pdf_and_the_author_falls_back_to_yass()
+    public async Task Metadata_is_stamped_into_the_pdf_and_what_is_left_empty_stays_empty()
     {
         ExportPage[] page = [new ExportPage(_fixtures[0], Rotation.R0, PageFilter.Original, ColorMode.Grayscale, null, 300)];
 
@@ -49,9 +49,11 @@ public sealed class PdfAssemblyTests : IDisposable
         Assert.Matches(@"/Creator\s*\(YASS\)", stamped);
 
         string bare = await WriteAsync(page);
-        Assert.Matches(@"/Author\s*\(YASS\)", bare);
-        // PdfSharp may write the key with nothing in it; what must not appear is a subject.
+        // PdfSharp may write a key with nothing in it; what must not appear is a value, YASS included.
+        Assert.DoesNotMatch(@"/Author\s*\(.+?\)", bare);
         Assert.DoesNotMatch(@"/Subject\s*\(.+?\)", bare);
+        Assert.DoesNotMatch(@"/Keywords\s*\(.+?\)", bare);
+        Assert.Matches(@"/Creator\s*\(YASS\)", bare);
     }
 
     [Fact]

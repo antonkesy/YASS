@@ -654,7 +654,7 @@
 			hint="Written into every PDF's properties. The title is always the document's name."
 			testid="metadata-section"
 		>
-			{#each [['author', 'Author', 'Who the documents belong to. Left empty, the PDF says YASS.'], ['subject', 'Subject', 'What they are about, if every scan from here is about the same thing.'], ['keywords', 'Keywords', 'Comma-separated, for whatever indexes them.']] as const as [key, label, hint] (key)}
+			{#each [['author', 'Author', 'Who the documents belong to. Left empty, the PDF names nobody.'], ['subject', 'Subject', 'What they are about, if every scan from here is about the same thing.'], ['keywords', 'Keywords', 'Comma-separated, for whatever indexes them.']] as const as [key, label, hint] (key)}
 				<label class="flex flex-col gap-1.5">
 					<span class="text-[13px] font-bold text-ink-2">{label}</span>
 					<input

@@ -131,7 +131,11 @@ public sealed class FakeDocumentWriter : IDocumentWriter
         // The same fields the real writer stamps, so a demo PDF's properties read the same.
         string title = metadata.Title ?? (pages.Count > 0 ? PageLabel(pages[0]) : "YASS fake scan");
         var info = new StringBuilder($"<< /Title ({Escape(title)}) /Producer (YASS fake writer) /Creator (YASS)");
-        info.Append($" /Author ({Escape(string.IsNullOrWhiteSpace(metadata.Author) ? "YASS" : metadata.Author.Trim())})");
+        if (!string.IsNullOrWhiteSpace(metadata.Author))
+        {
+            info.Append($" /Author ({Escape(metadata.Author.Trim())})");
+        }
+
         if (!string.IsNullOrWhiteSpace(metadata.Subject))
         {
             info.Append($" /Subject ({Escape(metadata.Subject.Trim())})");
