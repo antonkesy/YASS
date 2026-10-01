@@ -30,10 +30,11 @@ public sealed class Naps2PdfWriter : IDocumentWriter, IDisposable
         await PageRenderer.RenderToStreamAsync(page, format, quality, destination, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task WritePdfAsync(IReadOnlyList<ExportPage> pages, PdfConfig pdf, Stream destination, IProgress<int>? progress, CancellationToken cancellationToken)
+    public async Task WritePdfAsync(IReadOnlyList<ExportPage> pages, PdfConfig pdf, DocumentMetadata metadata, Stream destination, IProgress<int>? progress, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(pages);
         ArgumentNullException.ThrowIfNull(pdf);
+        ArgumentNullException.ThrowIfNull(metadata);
         ArgumentNullException.ThrowIfNull(destination);
         if (pages.Count == 0)
         {
@@ -60,7 +61,19 @@ public sealed class Naps2PdfWriter : IDocumentWriter, IDisposable
             }
 
             var exporter = new PdfExporter(_context);
-            var parameters = new PdfExportParams { Metadata = new PdfMetadata { Creator = "YASS", Author = "YASS" } };
+            // Creator is the software, so it stays ours; the rest is what the request says,
+            // with the author falling back to the software too so a PDF never claims nobody.
+            var parameters = new PdfExportParams
+            {
+                Metadata = new PdfMetadata
+                {
+                    Creator = "YASS",
+                    Title = metadata.Title?.Trim() ?? "",
+                    Author = string.IsNullOrWhiteSpace(metadata.Author) ? "YASS" : metadata.Author.Trim(),
+                    Subject = metadata.Subject?.Trim() ?? "",
+                    Keywords = metadata.Keywords?.Trim() ?? "",
+                },
+            };
             bool ok = await exporter.Export(destination, images, parameters).WaitAsync(cancellationToken).ConfigureAwait(false);
             if (!ok)
             {

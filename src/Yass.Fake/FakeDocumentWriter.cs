@@ -22,12 +22,14 @@ public sealed class FakeDocumentWriter : IDocumentWriter
     public async Task WritePdfAsync(
         IReadOnlyList<ExportPage> pages,
         PdfConfig pdf,
+        DocumentMetadata metadata,
         Stream destination,
         IProgress<int>? progress,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(pages);
         ArgumentNullException.ThrowIfNull(pdf);
+        ArgumentNullException.ThrowIfNull(metadata);
         ArgumentNullException.ThrowIfNull(destination);
 
         var rendered = new List<Rendered>(pages.Count);
@@ -37,7 +39,7 @@ public sealed class FakeDocumentWriter : IDocumentWriter
             progress?.Report((i + 1) * 90 / Math.Max(pages.Count, 1));
         }
 
-        byte[] bytes = Build(pages, rendered);
+        byte[] bytes = Build(pages, rendered, metadata);
         await destination.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
         progress?.Report(100);
     }
@@ -120,17 +122,31 @@ public sealed class FakeDocumentWriter : IDocumentWriter
             Math.Round(image.Height * 72.0 / dpi, 2));
     }
 
-    private static byte[] Build(IReadOnlyList<ExportPage> pages, IReadOnlyList<Rendered> rendered)
+    private static byte[] Build(IReadOnlyList<ExportPage> pages, IReadOnlyList<Rendered> rendered, DocumentMetadata metadata)
     {
         // Object layout: 1 catalog, 2 pages, 3 info, then per page: page, content, image.
         var body = new List<byte[]>();
         int first = 4;
         string kids = string.Join(" ", Enumerable.Range(0, rendered.Count).Select(i => $"{first + i * 3} 0 R"));
-        string title = pages.Count > 0 ? Escape(PageLabel(pages[0])) : "YASS fake scan";
+        // The same fields the real writer stamps, so a demo PDF's properties read the same.
+        string title = metadata.Title ?? (pages.Count > 0 ? PageLabel(pages[0]) : "YASS fake scan");
+        var info = new StringBuilder($"<< /Title ({Escape(title)}) /Producer (YASS fake writer) /Creator (YASS)");
+        info.Append($" /Author ({Escape(string.IsNullOrWhiteSpace(metadata.Author) ? "YASS" : metadata.Author.Trim())})");
+        if (!string.IsNullOrWhiteSpace(metadata.Subject))
+        {
+            info.Append($" /Subject ({Escape(metadata.Subject.Trim())})");
+        }
+
+        if (!string.IsNullOrWhiteSpace(metadata.Keywords))
+        {
+            info.Append($" /Keywords ({Escape(metadata.Keywords.Trim())})");
+        }
+
+        info.Append(" >>");
 
         body.Add(Ascii("<< /Type /Catalog /Pages 2 0 R >>"));
         body.Add(Ascii($"<< /Type /Pages /Kids [{kids}] /Count {rendered.Count} >>"));
-        body.Add(Ascii($"<< /Title ({title}) /Producer (YASS fake writer) >>"));
+        body.Add(Ascii(info.ToString()));
 
         for (int i = 0; i < rendered.Count; i++)
         {

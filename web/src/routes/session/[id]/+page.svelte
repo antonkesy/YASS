@@ -46,7 +46,7 @@
 		savedLabel,
 		type SaveTarget
 	} from '$lib/review/download';
-	import { exportPrefs, reviewPrefs } from '$lib/presets';
+	import { documentMetadata, exportPrefs, reviewPrefs } from '$lib/presets';
 	import { ExportMode } from '$lib/hub/generated/Yass.Core.Hub';
 
 	const client = getHub();
@@ -240,7 +240,8 @@
 				Mode: ExportMode.Save,
 				Format: $exportPrefs.format,
 				Name: exportName,
-				Directory: $exportPrefs.directory.trim() || undefined
+				Directory: $exportPrefs.directory.trim() || undefined,
+				Metadata: documentMetadata($exportPrefs)
 			});
 			savedPath = savedLabel(result);
 			const count = result.Documents.length;
@@ -285,7 +286,8 @@
 			const result = await client.hub.export(id, {
 				Mode: ExportMode.Download,
 				Format: $exportPrefs.format,
-				Name: exportName
+				Name: exportName,
+				Metadata: documentMetadata($exportPrefs)
 			});
 			const count = target
 				? await saveToDisk(result, target, base, extension)

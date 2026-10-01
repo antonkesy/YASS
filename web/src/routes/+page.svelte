@@ -16,7 +16,7 @@
 	import { settings } from '$lib/settings';
 	import { ExportMode } from '$lib/hub/generated/Yass.Core.Hub';
 	import { saveToBrowser } from '$lib/review/download';
-	import { exportPrefs } from '$lib/presets';
+	import { documentMetadata, exportPrefs } from '$lib/presets';
 
 	const client = getHub();
 	const scanner = client.scanner;
@@ -110,7 +110,11 @@
 			let files = 0;
 			for (const id of ids) {
 				files += saveToBrowser(
-					await client.hub.export(id, { Mode: ExportMode.Download, Format: $exportPrefs.format })
+					await client.hub.export(id, {
+						Mode: ExportMode.Download,
+						Format: $exportPrefs.format,
+						Metadata: documentMetadata($exportPrefs)
+					})
 				);
 			}
 			toast.show(files === 1 ? 'Downloaded' : `Downloaded ${files} files`);

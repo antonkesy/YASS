@@ -26,10 +26,11 @@ describe('how the settings sheet is laid out', () => {
 		expect(scanner).toBeGreaterThan(-1);
 		expect(at('export-section')).toBeGreaterThan(scanner);
 		expect(at('naming-section')).toBeGreaterThan(at('export-section'));
-		expect(at('editing-section')).toBeGreaterThan(at('naming-section'));
+		expect(at('metadata-section')).toBeGreaterThan(at('naming-section'));
+		expect(at('editing-section')).toBeGreaterThan(at('metadata-section'));
 	});
 
-	it.each(['export-section', 'naming-section', 'editing-section'])(
+	it.each(['export-section', 'naming-section', 'metadata-section', 'editing-section'])(
 		'keeps %s reachable while the scanner section is loading or has failed',
 		(section) => {
 			expect(at(section)).toBeGreaterThan(scannerEnds);

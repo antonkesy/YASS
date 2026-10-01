@@ -129,6 +129,18 @@ export type ExportRequest = {
     Name?: string;
     /** Transpiled from string? */
     Directory?: string;
+    /** Transpiled from Yass.Core.Hub.DocumentMetadataDto? */
+    Metadata?: DocumentMetadataDto;
+}
+
+/** Transpiled from Yass.Core.Hub.DocumentMetadataDto */
+export type DocumentMetadataDto = {
+    /** Transpiled from string? */
+    Author?: string;
+    /** Transpiled from string? */
+    Subject?: string;
+    /** Transpiled from string? */
+    Keywords?: string;
 }
 
 /** Transpiled from Yass.Core.Hub.ExportResult */

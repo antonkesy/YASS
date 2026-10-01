@@ -76,6 +76,10 @@ public sealed class ExportService(
     }
 
     /// <summary>The file name for one document, or <c>null</c> to fall back to the configured template.</summary>
+    /// <summary>The PDF's own properties: its name as the title, and whatever the browser's settings say for the rest.</summary>
+    private static DocumentMetadata MetadataFor(ExportRequest request, string? name) =>
+        new(name, request.Metadata?.Author, request.Metadata?.Subject, request.Metadata?.Keywords);
+
     private static string? NameFor(string? requested, Session session, TemplateFacts facts, int documentCount, int index)
     {
         string? stem = !string.IsNullOrWhiteSpace(requested) ? requested!.Trim()
@@ -158,15 +162,17 @@ public sealed class ExportService(
                 string dir = SessionPaths.Export(store.Root, sessionId);
                 Directory.CreateDirectory(dir);
                 var produced = new List<ExportedDocumentDto>();
-                foreach (ExportPage[] document in documentPages)
+                for (int d = 0; d < documentPages.Length; d++)
                 {
+                    ExportPage[] document = documentPages[d];
                     string token = tokens.Issue(sessionId, Path.Combine(dir, $"{Guid.NewGuid():N}{extension}"));
                     tokens.TryPeekPath(token, out string path);
                     await using (FileStream output = File.Create(path))
                     {
                         if (request.Format == ExportFormat.Pdf)
                         {
-                            await writer.WritePdfAsync(document, pdf, output, progress, cancellationToken).ConfigureAwait(false);
+                            DocumentMetadata metadata = MetadataFor(request, NameFor(request.Name, session, facts, documentPages.Length, d));
+                            await writer.WritePdfAsync(document, pdf, metadata, output, progress, cancellationToken).ConfigureAwait(false);
                         }
                         else
                         {
@@ -193,8 +199,9 @@ public sealed class ExportService(
 
                     if (request.Format == ExportFormat.Pdf)
                     {
+                        DocumentMetadata metadata = MetadataFor(request, baseName);
                         string saved = await documents.SaveAsync(
-                            (stream, ct) => writer.WritePdfAsync(document, pdf, stream, progress, ct),
+                            (stream, ct) => writer.WritePdfAsync(document, pdf, metadata, stream, progress, ct),
                             new DocumentTarget(session.CreatedAt, baseName, directory, extension),
                             cancellationToken).ConfigureAwait(false);
                         written.Add(new ExportedDocumentDto(document.Length, saved, null));

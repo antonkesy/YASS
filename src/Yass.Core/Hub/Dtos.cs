@@ -94,8 +94,16 @@ public enum ExportFormat
 /// <param name="Format">File type to produce.</param>
 /// <param name="Name">Base file name, without extension; empty falls back to the configured template.</param>
 /// <param name="Directory">Where to write, for <see cref="ExportMode.Save"/>; empty means <c>output.directory</c>.</param>
+/// <param name="Metadata">What to stamp into a PDF besides its pages; null means the writer's defaults.</param>
 [TranspilationSource]
-public sealed record ExportRequest(ExportMode Mode, ExportFormat Format = ExportFormat.Pdf, string? Name = null, string? Directory = null);
+public sealed record ExportRequest(ExportMode Mode, ExportFormat Format = ExportFormat.Pdf, string? Name = null, string? Directory = null, DocumentMetadataDto? Metadata = null);
+
+/// <summary>
+/// What to stamp into a PDF besides its pages, as the browser keeps it in its settings. The
+/// title is not here: it is the document's name, which the export already knows.
+/// </summary>
+[TranspilationSource]
+public sealed record DocumentMetadataDto(string? Author = null, string? Subject = null, string? Keywords = null);
 
 /// <param name="Mode">Echo of the request.</param>
 /// <param name="PageCount">Pages across every produced document.</param>

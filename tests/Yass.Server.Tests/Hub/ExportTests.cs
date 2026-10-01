@@ -112,6 +112,24 @@ public sealed class ExportTests
         Assert.Matches(@"^Tax return \d{4}\.pdf$", Path.GetFileName(saved));
     }
 
+    [Fact]
+    public async Task Metadata_from_the_request_lands_in_the_saved_pdf_under_the_document_name()
+    {
+        await using var factory = new YassFactory(FakeScenario.Pages(1));
+        await using HubClient hub = await HubClient.ConnectAsync(factory);
+        SessionDto scanned = await hub.ScanToEnd();
+
+        ExportResult result = await hub.Export(
+            scanned.Id,
+            new ExportRequest(ExportMode.Save, ExportFormat.Pdf, "Invoice", null, new DocumentMetadataDto("Jane Doe", "Invoices", "invoice, 2026")));
+
+        string pdf = await File.ReadAllTextAsync(Assert.Single(result.Documents).SavedPath!);
+        Assert.Matches(@"/Title\s*\(Invoice\)", pdf);
+        Assert.Matches(@"/Author\s*\(Jane Doe\)", pdf);
+        Assert.Matches(@"/Subject\s*\(Invoices\)", pdf);
+        Assert.Matches(@"/Keywords\s*\(invoice, 2026\)", pdf);
+    }
+
     [Theory]
     [InlineData("relative/path")]
     [InlineData("/does/not/exist/anywhere")]

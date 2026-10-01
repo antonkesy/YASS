@@ -29,11 +29,29 @@ public sealed class PdfAssemblyTests : IDisposable
             .Select(m => (double.Parse(m.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture), double.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture)))
             .ToArray();
 
-    private async Task<string> WriteAsync(IReadOnlyList<ExportPage> pages, PdfConfig? pdf = null, IProgress<int>? progress = null)
+    private async Task<string> WriteAsync(IReadOnlyList<ExportPage> pages, PdfConfig? pdf = null, IProgress<int>? progress = null, DocumentMetadata? metadata = null)
     {
         using var ms = new MemoryStream();
-        await _writer.WritePdfAsync(pages, pdf ?? new PdfConfig(), ms, progress, CancellationToken.None);
+        await _writer.WritePdfAsync(pages, pdf ?? new PdfConfig(), metadata ?? DocumentMetadata.None, ms, progress, CancellationToken.None);
         return Encoding.Latin1.GetString(ms.ToArray());
+    }
+
+    [Fact]
+    public async Task Metadata_is_stamped_into_the_pdf_and_the_author_falls_back_to_yass()
+    {
+        ExportPage[] page = [new ExportPage(_fixtures[0], Rotation.R0, PageFilter.Original, ColorMode.Grayscale, null, 300)];
+
+        string stamped = await WriteAsync(page, metadata: new DocumentMetadata("Tax return", "Jane Doe", "Taxes 2026", "tax, receipt"));
+        Assert.Matches(@"/Title\s*\(Tax return\)", stamped);
+        Assert.Matches(@"/Author\s*\(Jane Doe\)", stamped);
+        Assert.Matches(@"/Subject\s*\(Taxes 2026\)", stamped);
+        Assert.Matches(@"/Keywords\s*\(tax, receipt\)", stamped);
+        Assert.Matches(@"/Creator\s*\(YASS\)", stamped);
+
+        string bare = await WriteAsync(page);
+        Assert.Matches(@"/Author\s*\(YASS\)", bare);
+        // PdfSharp may write the key with nothing in it; what must not appear is a subject.
+        Assert.DoesNotMatch(@"/Subject\s*\(.+?\)", bare);
     }
 
     [Fact]

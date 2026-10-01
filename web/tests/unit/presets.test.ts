@@ -7,6 +7,7 @@ import {
 	createExportPrefs,
 	createPresets,
 	defaultExportPrefs,
+	documentMetadata,
 	defaultPresets,
 	matchesPreset,
 	presetsFor,
@@ -121,5 +122,27 @@ describe('loading stored preferences', () => {
 		expect(get(createExportPrefs(fake({})))).toEqual(defaultExportPrefs);
 		expect(get(createExportPrefs(fake({ [EXPORT_KEY]: 'not json' })))).toEqual(defaultExportPrefs);
 		expect(get(createPresets(fake({ [PRESETS_KEY]: '7' })))).toEqual(defaultPresets);
+	});
+});
+
+describe('documentMetadata', () => {
+	it('sends nothing when nothing is set, and only what is set otherwise', () => {
+		expect(documentMetadata(defaultExportPrefs)).toBeUndefined();
+		expect(documentMetadata({ ...defaultExportPrefs, author: '  ' })).toBeUndefined();
+		expect(documentMetadata({ ...defaultExportPrefs, author: ' Jane ', keywords: 'tax' })).toEqual({
+			Author: 'Jane',
+			Subject: undefined,
+			Keywords: 'tax'
+		});
+	});
+
+	it('is absent from a browser that stored its preferences before it existed', () => {
+		const stored: Record<string, string> = {
+			[EXPORT_KEY]: JSON.stringify({ format: 0, directory: '/x' })
+		};
+		const storage = { getItem: (k: string) => stored[k] ?? null, setItem: () => undefined };
+		const prefs = get(createExportPrefs(storage as unknown as Storage));
+		expect(prefs.author).toBe('');
+		expect(documentMetadata(prefs)).toBeUndefined();
 	});
 });
