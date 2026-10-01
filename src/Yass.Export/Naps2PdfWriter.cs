@@ -61,15 +61,15 @@ public sealed class Naps2PdfWriter : IDocumentWriter, IDisposable
             }
 
             var exporter = new PdfExporter(_context);
-            // Creator is the software, so it stays ours; the rest is what the request says,
-            // with the author falling back to the software too so a PDF never claims nobody.
+            // Creator is the software, so it stays ours; the rest is exactly what the request
+            // says, and what it leaves empty stays empty rather than claiming YASS.
             var parameters = new PdfExportParams
             {
                 Metadata = new PdfMetadata
                 {
                     Creator = "YASS",
                     Title = metadata.Title?.Trim() ?? "",
-                    Author = string.IsNullOrWhiteSpace(metadata.Author) ? "YASS" : metadata.Author.Trim(),
+                    Author = metadata.Author?.Trim() ?? "",
                     Subject = metadata.Subject?.Trim() ?? "",
                     Keywords = metadata.Keywords?.Trim() ?? "",
                 },
