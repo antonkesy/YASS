@@ -646,6 +646,32 @@
 		</SettingsSection>
 
 		<!--
+			What a PDF says about itself in its properties. Kept in this browser like the rest
+			of the export preferences: it is about whose documents these are, not how they scan.
+		-->
+		<SettingsSection
+			title="Metadata"
+			hint="Written into every PDF's properties. The title is always the document's name."
+			testid="metadata-section"
+		>
+			{#each [['author', 'Author', 'Who the documents belong to. Left empty, the PDF says YASS.'], ['subject', 'Subject', 'What they are about, if every scan from here is about the same thing.'], ['keywords', 'Keywords', 'Comma-separated, for whatever indexes them.']] as const as [key, label, hint] (key)}
+				<label class="flex flex-col gap-1.5">
+					<span class="text-[13px] font-bold text-ink-2">{label}</span>
+					<input
+						class="h-11 rounded-[12px] bg-ctl px-3 text-sm font-medium outline-none"
+						type="text"
+						name="metadata-{key}"
+						autocomplete="off"
+						value={$exportPrefs[key]}
+						oninput={(e) => exportPrefs.set({ ...$exportPrefs, [key]: e.currentTarget.value })}
+						data-testid="metadata-{key}"
+					/>
+					<span class="text-[11px] text-ink-faint">{hint}</span>
+				</label>
+			{/each}
+		</SettingsSection>
+
+		<!--
 			The one preference the review screen keeps, and it had nowhere to be said out loud:
 			the overview's own zoom buttons set it, which you only find by opening the overview.
 		-->

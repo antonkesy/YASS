@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store';
 import { ColorMode, PageSize, ScanSource } from './hub/generated/Yass.Core.Domain';
-import { ExportFormat } from './hub/generated/Yass.Core.Hub';
+import { ExportFormat, type DocumentMetadataDto } from './hub/generated/Yass.Core.Hub';
 import type { PresetIconName } from './icons';
 import type { ScanOverrides } from './settings';
 
@@ -65,6 +65,10 @@ export type ExportPrefs = {
 	directory: string;
 	nameTemplate: string;
 	exportButton: boolean;
+	/** Stamped into every PDF saved from this browser. The title is the document's name. */
+	author: string;
+	subject: string;
+	keywords: string;
 };
 
 export const EXPORT_KEY = 'yass.export';
@@ -73,8 +77,27 @@ export const defaultExportPrefs: ExportPrefs = {
 	format: ExportFormat.Pdf,
 	directory: '',
 	nameTemplate: '',
-	exportButton: true
+	exportButton: true,
+	author: '',
+	subject: '',
+	keywords: ''
 };
+
+/**
+ * The metadata an export request carries, from the preferences. Nothing at all when none is
+ * set, so the server's own defaults apply rather than three empty strings.
+ */
+export function documentMetadata(prefs: ExportPrefs): DocumentMetadataDto | undefined {
+	const author = prefs.author.trim();
+	const subject = prefs.subject.trim();
+	const keywords = prefs.keywords.trim();
+	if (!author && !subject && !keywords) return undefined;
+	return {
+		Author: author || undefined,
+		Subject: subject || undefined,
+		Keywords: keywords || undefined
+	};
+}
 
 /** Review-screen preferences, next to the export ones so they share the same storage helper. */
 export type ReviewPrefs = {
