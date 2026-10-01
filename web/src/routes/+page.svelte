@@ -5,7 +5,12 @@
 	import { toast } from '$lib/toast';
 	import { cameFrom } from '$lib/navigation';
 	import { getHub, sortedSessions } from '$lib/hub/hub';
-	import type { ScannerDeviceDto, ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
+	import { devicesStale } from '$lib/hub/state';
+	import type {
+		ScannerDeviceDto,
+		ScannerStatusDto,
+		ScanOptionsDto
+	} from '$lib/hub/generated/Yass.Core.Hub';
 	import ScanStage from '$lib/components/ScanStage.svelte';
 	import PastScansPanel from '$lib/components/PastScansPanel.svelte';
 	import { settings } from '$lib/settings';
@@ -33,12 +38,29 @@
 				.getEffectiveOptions()
 				.then((o) => (effective = o))
 				.catch(() => undefined);
-			// Quietly: the stage is worth showing whether or not the driver felt like answering.
-			client.hub
-				.listDevices()
-				.then((d) => (devices = d))
-				.catch(() => undefined);
 		}
+	});
+
+	/**
+	 * The scanner list is asked for on every (re)connect and again whenever the scanner status
+	 * changes: a scanner plugged in after the page loaded, or one the driver was still
+	 * enumerating the first time, shows up in the picker without a reload. Quietly: the stage
+	 * is worth showing whether or not the driver felt like answering.
+	 */
+	let seenStatus: ScannerStatusDto | null = null;
+	let lastConnected = false;
+	$effect(() => {
+		const connected = $connection === 'connected';
+		const status = $scanner;
+		const reconnected = connected && !lastConnected;
+		const changed = devicesStale(seenStatus, status);
+		lastConnected = connected;
+		seenStatus = status;
+		if (!connected || !(reconnected || changed)) return;
+		client.hub
+			.listDevices()
+			.then((d) => (devices = d))
+			.catch(() => undefined);
 	});
 
 	const recent = $derived(sortedSessions($sessions));
