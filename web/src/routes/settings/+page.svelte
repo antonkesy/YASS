@@ -5,7 +5,7 @@
 	import { getHub } from '$lib/hub/hub';
 	import { PageSize, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
 	import type { ScannerDeviceDto, ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
-	import { editableKeys, settings, type ScanOverrides } from '$lib/settings';
+	import { editableKeys, scanOverrides, settings, type ScanOverrides } from '$lib/settings';
 	import Segmented from '$lib/components/Segmented.svelte';
 	import Toggle from '$lib/components/Toggle.svelte';
 	import SettingsSection from '$lib/components/SettingsSection.svelte';
@@ -88,7 +88,9 @@
 	 * nothing overridden still runs whichever preset yass.yaml defaults to. And a preset saved
 	 * from bare overrides could pin nothing at all, which is a preset that matches no scan.
 	 */
-	const planned = $derived<ScanOverrides>(effective ? { ...effective, ...$settings } : $settings);
+	const planned = $derived<ScanOverrides>(
+		effective ? { ...scanOverrides(effective), ...$settings } : $settings
+	);
 	const chosen = $derived(activePreset($presets, planned));
 	let drafting = $state(false);
 	let draftName = $state('');

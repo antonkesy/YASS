@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { get } from 'svelte/store';
-import { createSettings, parseOverrides, STORAGE_KEY } from '$lib/settings';
+import { createSettings, parseOverrides, scanOverrides, STORAGE_KEY } from '$lib/settings';
 
 function fakeStorage(initial: Record<string, string> = {}): Storage {
 	const data = new Map(Object.entries(initial));
@@ -21,6 +21,12 @@ describe('settings', () => {
 		expect(parseOverrides(null)).toEqual({});
 		expect(parseOverrides('{not json')).toEqual({});
 		expect(parseOverrides('{"Dpi":600,"Bogus":1,"Color":null}')).toEqual({ Dpi: 600 });
+	});
+
+	it('keeps only the scan options out of the effective options', () => {
+		expect(
+			scanOverrides({ Dpi: 300, Device: 'epson:1', AllowDownload: true, ExportRoots: ['/data'] })
+		).toEqual({ Dpi: 300, Device: 'epson:1' });
 	});
 
 	it('round-trips through storage and clears on reset', () => {
