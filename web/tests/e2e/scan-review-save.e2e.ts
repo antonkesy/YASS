@@ -252,7 +252,8 @@ test('every scan setting can be set, and is applied to the next scan', async ({ 
 test('the scanner is chosen on the home screen, and the presets follow it', async ({ page }) => {
 	await page.goto('/');
 	const picker = page.getByTestId('device-select');
-	await expect(picker).toHaveValue('');
+	// No "Automatic": with nothing picked, the box names the scanner the server is on.
+	await expect(picker).toHaveValue('YASS Fake ADF');
 	await picker.selectOption({ label: 'Canon LiDE 400' });
 
 	// Saved with no "available for all scanners" tick, so it belongs to the Canon alone.
