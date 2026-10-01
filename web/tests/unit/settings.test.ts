@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { get } from 'svelte/store';
-import { createSettings, parseOverrides, pickEditable, STORAGE_KEY } from '$lib/settings';
+import { createSettings, parseOverrides, STORAGE_KEY } from '$lib/settings';
 
 function fakeStorage(initial: Record<string, string> = {}): Storage {
 	const data = new Map(Object.entries(initial));
@@ -21,14 +21,6 @@ describe('settings', () => {
 		expect(parseOverrides(null)).toEqual({});
 		expect(parseOverrides('{not json')).toEqual({});
 		expect(parseOverrides('{"Dpi":600,"Bogus":1,"Color":null}')).toEqual({ Dpi: 600 });
-	});
-
-	it('picks only keys the server marks editable', () => {
-		expect(pickEditable({ Dpi: 600, Source: 2, Brightness: 5 }, ['dpi', 'source'])).toEqual({
-			Dpi: 600,
-			Source: 2
-		});
-		expect(pickEditable({ Dpi: 600 }, undefined)).toEqual({});
 	});
 
 	it('round-trips through storage and clears on reset', () => {

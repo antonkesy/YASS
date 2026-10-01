@@ -24,7 +24,10 @@ public sealed record ScannerConfig
     [Required]
     public ScanOptions Defaults { get; init; } = new();
 
-    /// <summary>Keys of <see cref="ScanOptions"/> the UI may override, in snake_case.</summary>
+    /// <summary>
+    /// Deprecated and ignored: every scan option can be changed from the UI, and this file only
+    /// supplies the defaults. Still accepted so a yass.yaml written when it mattered keeps loading.
+    /// </summary>
     [ScanOptionKeys]
     public string[] UiEditable { get; init; } =
         ["source", "dpi", "color", "page_size", "blank_page_detection", "device"];

@@ -71,8 +71,7 @@ describe('preset matching against planned options', () => {
 			Color: ColorMode.Color,
 			Dpi: 300,
 			PageSize: PageSize.A4,
-			BlankPageDetection: true,
-			Editable: ['source', 'dpi']
+			BlankPageDetection: true
 		};
 		expect(activePreset(defaultPresets, planned)?.id).toBe('document');
 	});

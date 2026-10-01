@@ -42,13 +42,11 @@
 	const device = $derived(options?.Device || '');
 
 	/**
-	 * Only when the config opens the key up, and only once there is something to pick
-	 * between: a lone "Automatic" is not a choice, and the line above already says when
-	 * no scanner was found.
+	 * Only once there is something to pick between: a lone "Automatic" is not a choice, and
+	 * the line above already says when no scanner was found. yass.yaml has no say in it —
+	 * the file supplies the default scanner, the person at the screen chooses.
 	 */
-	const canPickDevice = $derived(
-		(options?.Editable?.includes('device') ?? false) && devices.length > 0
-	);
+	const canPickDevice = $derived(devices.length > 0);
 
 	/** Presets follow the scanner, so a scanner-specific one is out of sight on the others. */
 	const offered = $derived(presetsFor($presets, device || undefined));

@@ -94,7 +94,7 @@ describe('ScanStage scanner picker', () => {
 		render(ScanStage, {
 			status: { State: ScannerState.Ready, DeviceName: 'ADF', CheckedAt: '' },
 			connection: 'connected' as const,
-			options: options === null ? null : ({ Editable: ['device'], ...options } as ScanOptionsDto),
+			options: options === null ? null : (options as ScanOptionsDto),
 			devices,
 			deviceName: 'Epson DS-530',
 			onscan: vi.fn(),
@@ -133,11 +133,7 @@ describe('ScanStage scanner picker', () => {
 		expect(get(settings).Device).toBeUndefined();
 	});
 
-	it('stays away when the config keeps the scanner to itself, or there is nothing to pick', () => {
-		const { unmount } = stage({ Device: 'epson:1', Editable: ['dpi'] });
-		expect(screen.queryByTestId('device-picker')).toBeNull();
-		unmount();
-
+	it('stays away when there is nothing to pick', () => {
 		stage({ Device: 'epson:1' }, []);
 		expect(screen.queryByTestId('device-picker')).toBeNull();
 	});

@@ -78,8 +78,6 @@ export type ScanOptionsDto = {
     BlankPageThreshold?: number;
     /** Transpiled from bool */
     AutoDeskew?: boolean;
-    /** Transpiled from string[]? */
-    Editable?: string[];
     /** Transpiled from bool */
     AllowDownload?: boolean;
     /** Transpiled from string[]? */

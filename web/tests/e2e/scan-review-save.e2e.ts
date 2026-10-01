@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// The server runs `--fake pages=3,blank=2,delay=150ms` (see playwright.config.ts).
+// The server runs `--fake pages=3,blank=2,delay=400ms,devices=…` (see playwright.config.ts).
 
 async function scanToReview(page: Page) {
 	await page.goto('/');
@@ -231,12 +231,14 @@ test('the all-pages overview zooms, reorders by drag and hands the order back', 
 	await expect(page.getByTestId('page-thumb').nth(0)).toHaveAttribute('data-deleted', 'true');
 });
 
-test('settings only expose ui_editable keys and are applied to the next scan', async ({ page }) => {
+test('every scan setting can be set, and is applied to the next scan', async ({ page }) => {
 	await page.goto('/settings');
 	const form = page.getByTestId('settings-form');
 	const dpi = form.getByTestId('seg-dpi');
 	await expect(dpi).toBeVisible();
-	await expect(form.getByTestId('seg-brightness')).toHaveCount(0);
+	// Nothing in yass.yaml hides a control: the file supplies defaults, the sheet sets the rest.
+	await expect(form.locator('input[name="brightness"]')).toBeVisible();
+	await expect(form.locator('input[name="blank_page_threshold"]')).toBeVisible();
 	await dpi.getByRole('radio', { name: '150', exact: true }).check();
 	await expect(page.getByTestId('overrides-active')).toBeVisible();
 

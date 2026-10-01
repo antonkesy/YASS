@@ -8,7 +8,7 @@
 	import type { ScannerDeviceDto, ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import ScanStage from '$lib/components/ScanStage.svelte';
 	import PastScansPanel from '$lib/components/PastScansPanel.svelte';
-	import { pickEditable, settings } from '$lib/settings';
+	import { settings } from '$lib/settings';
 	import { ExportMode } from '$lib/hub/generated/Yass.Core.Hub';
 	import { saveToBrowser } from '$lib/review/download';
 	import { exportPrefs } from '$lib/presets';
@@ -53,9 +53,7 @@
 	 * overrides applied. The stage shows this rather than the bare defaults, which would
 	 * advertise settings the scan is not going to run with.
 	 */
-	const planned = $derived(
-		effective ? { ...effective, ...pickEditable($settings, effective.Editable) } : null
-	);
+	const planned = $derived(effective ? { ...effective, ...$settings } : null);
 
 	/**
 	 * The chosen scanner as a person reads it. Nothing when none is chosen — the status pill
@@ -70,9 +68,7 @@
 		starting = true;
 		error = null;
 		try {
-			const options = effective ?? (await client.hub.getEffectiveOptions());
-			effective = options;
-			const session = await client.hub.startScan(pickEditable($settings, options.Editable));
+			const session = await client.hub.startScan($settings);
 			await goto(resolve('/session/[id]', { id: session.Id }));
 		} catch (e) {
 			error = hubError(e);

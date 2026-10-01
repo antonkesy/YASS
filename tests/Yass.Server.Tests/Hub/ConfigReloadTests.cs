@@ -18,7 +18,7 @@ public sealed class ConfigReloadTests
             scanner:
               defaults:
                 dpi: 600
-              ui_editable: [dpi]
+              ui_editable: [dpi] # deprecated, still accepted
             sessions:
               directory: {factory.Config.Sessions.Directory}
             """);
@@ -27,7 +27,6 @@ public sealed class ConfigReloadTests
 
         ScanOptionsDto options = await hub.GetEffectiveOptions();
         Assert.Equal(600, options.Dpi);
-        Assert.Equal(["dpi"], options.Editable!);
     }
 
     [Fact]

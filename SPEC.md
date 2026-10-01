@@ -84,7 +84,7 @@ scanner:
     blank_page_threshold: 0.02
     auto_deskew: false
     device: ""                # exact device id; empty = whatever scanner.device resolves to
-  ui_editable: [source, dpi, color, page_size, blank_page_detection, device]
+  ui_editable: []             # deprecated, ignored: every default above can be changed from the UI
 output:
   directory: /data/consume    # paperless consume dir
   filename_template: "{date:yyyy-MM-dd}_{time:HHmm}_scan.pdf"
@@ -156,9 +156,9 @@ Scan loop: iterate `ScanController.Scan(options)` until the enumerable ends (fee
 
 ## 8. UI — DECIDED behaviour, OPEN styling
 
-Routes: `/` (scanner status pill, scanner picker, presets, big Scan button, recent sessions), `/session/[id]` (review), `/settings` (only `ui_editable` keys, stored in `localStorage`).
+Routes: `/` (scanner status pill, scanner picker, presets, big Scan button, recent sessions), `/session/[id]` (review), `/settings` (every scan option, stored in `localStorage`).
 
-The scanner is chosen on `/`, not in `/settings`, and presets belong to whichever one is chosen unless saved as available for all scanners. `device` is an `ui_editable` key like any other: dropped from `scanner.ui_editable`, the config fixes the machine and the picker goes away.
+The UI comes first: it can change every scan option, and `yass.yaml` only supplies the defaults (`scanner.defaults`). Nothing in the config hides a control; `scanner.ui_editable` is accepted for old files and ignored. The scanner is chosen on `/`, not in `/settings`: the picker shows whenever the server lists at least one scanner, with `scanner.defaults.device` as the default, and presets belong to whichever scanner is chosen unless saved as available for all scanners.
 
 Review: page strip (a row above the page on a phone, a column beside it on desktop); tap a thumbnail = show that page on the stage, its checkbox = multi-select; drag = reorder; toolbar acts on selection or "all" when nothing selected: rotate ⟲ ⟳, delete/restore, color mode. Tap → full preview with swipe. Blank pages pre-marked deleted with badge. Sticky bottom bar: page count, **Save** (to `output.directory`), Download (if `allow_download`), Discard. Edits apply optimistically (CSS rotate) and reconcile on `PageUpdated`.
 
