@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
-import type { PageDto, SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
+import type { PageDto, ScannerStatusDto, SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
+import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import {
 	applyPageAdded,
 	applyPageUpdated,
 	applySessionChanged,
+	devicesStale,
 	isRemoval,
 	replaceAll,
 	sortedSessions
@@ -55,5 +57,33 @@ describe('session reducers', () => {
 	it('sorts newest first', () => {
 		const m = replaceAll([session('a'), session('bb'), session('ccc')]);
 		expect(sortedSessions(m).map((s) => s.Id)).toEqual(['ccc', 'bb', 'a']);
+	});
+});
+
+describe('devicesStale', () => {
+	const status = (
+		State: ScannerState,
+		DeviceName: string | undefined,
+		CheckedAt = '2026-10-01T10:00:00Z'
+	): ScannerStatusDto => ({ State, DeviceName, CheckedAt });
+
+	it('asks once the first status arrives, and not before', () => {
+		expect(devicesStale(null, null)).toBe(false);
+		expect(devicesStale(null, status(ScannerState.Ready, 'ADF'))).toBe(true);
+	});
+
+	it('asks again when a scanner appears, goes away or changes name', () => {
+		const none = status(ScannerState.NoDevice, undefined);
+		const ready = status(ScannerState.Ready, 'ADF');
+		expect(devicesStale(none, ready)).toBe(true);
+		expect(devicesStale(ready, none)).toBe(true);
+		expect(devicesStale(ready, status(ScannerState.Ready, 'Flatbed'))).toBe(true);
+	});
+
+	it('leaves the list alone when only the timestamp moved', () => {
+		const ready = status(ScannerState.Ready, 'ADF');
+		expect(devicesStale(ready, status(ScannerState.Ready, 'ADF', '2026-10-01T10:00:05Z'))).toBe(
+			false
+		);
 	});
 });
