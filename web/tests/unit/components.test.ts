@@ -111,26 +111,33 @@ describe('ScanStage scanner picker', () => {
 		const select = screen.getByTestId('device-select') as HTMLSelectElement;
 		expect(select).toHaveValue('canon:2');
 		expect([...select.options].map((o) => o.textContent?.trim())).toEqual([
-			'Automatic',
 			'Epson DS-530',
 			'Canon LiDE 400'
 		]);
 	});
 
-	it('keeps a scanner the server has stopped listing visible rather than reading as Automatic', () => {
+	it("names the server's scanner when this browser has not picked one", () => {
+		const { unmount } = stage({ Device: '' }, [epson, { Id: 'adf:3', Name: 'ADF' }]);
+		expect(screen.getByTestId('device-select')).toHaveValue('adf:3');
+		unmount();
+
+		// The server's name matches nothing listed: the first one stands in rather than a blank.
+		stage({ Device: '' });
+		expect(screen.getByTestId('device-select')).toHaveValue('epson:1');
+	});
+
+	it('keeps a scanner the server has stopped listing visible rather than naming another', () => {
 		stage({ Device: 'gone:9' });
 		const select = screen.getByTestId('device-select') as HTMLSelectElement;
 		expect(select).toHaveValue('gone:9');
 		expect(screen.getByRole('option', { name: 'gone:9 (not found)' })).toBeInTheDocument();
 	});
 
-	it("writes the pick into this browser's overrides, and Automatic clears it", async () => {
+	it("writes the pick into this browser's overrides", async () => {
 		stage({ Device: '' });
 		const select = screen.getByTestId('device-select');
-		await fireEvent.change(select, { target: { value: 'epson:1' } });
-		expect(get(settings).Device).toBe('epson:1');
-		await fireEvent.change(select, { target: { value: '' } });
-		expect(get(settings).Device).toBeUndefined();
+		await fireEvent.change(select, { target: { value: 'canon:2' } });
+		expect(get(settings).Device).toBe('canon:2');
 	});
 
 	it('stays away when there is nothing to pick', () => {

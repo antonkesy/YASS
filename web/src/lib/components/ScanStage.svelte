@@ -42,11 +42,21 @@
 	const device = $derived(options?.Device || '');
 
 	/**
-	 * Only once there is something to pick between: a lone "Automatic" is not a choice, and
-	 * the line above already says when no scanner was found. yass.yaml has no say in it —
-	 * the file supplies the default scanner, the person at the screen chooses.
+	 * Only once there is something to show: the line above already says when no scanner was
+	 * found. yass.yaml has no say in it — the file supplies the default scanner, the person
+	 * at the screen chooses.
 	 */
 	const canPickDevice = $derived(devices.length > 0);
+
+	/**
+	 * What the box shows. There is no "Automatic" entry: a scanner is always named, which
+	 * is this browser's pick when it has one, otherwise the scanner the server says it is
+	 * on, and failing that the first one listed. The server's status names it rather than
+	 * identifying it, so the match is by name.
+	 */
+	const shown = $derived(
+		device || devices.find((d) => d.Name === status?.DeviceName)?.Id || devices[0]?.Id || ''
+	);
 
 	/** Presets follow the scanner, so a scanner-specific one is out of sight on the others. */
 	const offered = $derived(presetsFor($presets, device || undefined));
@@ -114,16 +124,15 @@
 			<span class="text-[11px] font-bold tracking-[0.08em] text-ink-faint uppercase">Scanner</span>
 			<select
 				class="h-[38px] max-w-[min(340px,80vw)] cursor-pointer truncate rounded-full bg-surface px-3.5 text-[13px] font-bold text-accent-deep shadow-chip outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-				value={device}
-				onchange={(e) => settings.set({ ...$settings, Device: e.currentTarget.value || undefined })}
+				value={shown}
+				onchange={(e) => settings.set({ ...$settings, Device: e.currentTarget.value })}
 				data-testid="device-select"
 			>
-				<option value="">Automatic</option>
 				{#each devices as scanner (scanner.Id)}
 					<option value={scanner.Id}>{scanner.Name}</option>
 				{/each}
 				<!-- One the server has stopped listing still has to show, or the box would
-				     silently read as Automatic while the scan goes somewhere else. -->
+				     silently name another scanner while the scan goes somewhere else. -->
 				{#if device && !devices.some((d) => d.Id === device)}
 					<option value={device}>{device} (not found)</option>
 				{/if}
