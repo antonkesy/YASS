@@ -123,7 +123,7 @@
 		<div class="flex flex-col items-center gap-2" data-testid="device-picker">
 			<span class="text-[11px] font-bold tracking-[0.08em] text-ink-faint uppercase">Scanner</span>
 			<select
-				class="h-[38px] max-w-[min(340px,80vw)] cursor-pointer truncate rounded-full bg-surface px-3.5 text-[13px] font-bold text-accent-deep shadow-chip outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+				class="h-[38px] max-w-[min(340px,80vw)] cursor-pointer truncate rounded-full bg-surface px-3.5 text-center text-[13px] font-bold text-accent-deep shadow-chip outline-none [text-align-last:center] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
 				value={shown}
 				onchange={(e) => settings.set({ ...$settings, Device: e.currentTarget.value })}
 				data-testid="device-select"
