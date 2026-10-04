@@ -220,17 +220,24 @@
 -->
 <div class="fixed inset-0 z-40 bg-[rgb(19_26_43_/_0.35)] backdrop-blur-[3px]"></div>
 
+<!--
+	The card only clips; the wrapper inside it scrolls. Scrolling the card itself ran the
+	browser's scrollbar through the rounded corners and the padding, so here it sits
+	inside the vertical padding, a little in from the edge, and drawn thin.
+-->
 <div
-	class="fixed inset-x-0 bottom-0 z-41 max-h-[92%] animate-pop-in overflow-y-auto rounded-t-[28px] bg-surface px-[22px] pt-[22px] pb-6 shadow-modal sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:max-h-[calc(100%-32px)] sm:w-[min(1180px,calc(100%-40px))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[26px] sm:px-[34px] sm:py-[30px]"
+	class="fixed inset-x-0 bottom-0 z-41 flex max-h-[92%] animate-pop-in flex-col overflow-hidden rounded-t-[28px] bg-surface pt-[22px] pb-6 shadow-modal sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:max-h-[calc(100%-32px)] sm:w-[min(1180px,calc(100%-40px))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[26px] sm:py-[30px]"
 	role="dialog"
 	aria-modal="true"
 	aria-label="Scan settings"
 >
-	<span class="mx-auto mb-3 block h-1 w-10 rounded-full bg-handle sm:hidden" aria-hidden="true"
+	<span
+		class="mx-auto mb-3 block h-1 w-10 flex-none rounded-full bg-handle sm:hidden"
+		aria-hidden="true"
 	></span>
 
 	<div
-		class="grid items-start gap-x-7 gap-y-[18px] sm:grid-cols-[repeat(auto-fit,minmax(320px,1fr))]"
+		class="grid min-h-0 scrollbar-thin items-start gap-x-7 gap-y-[18px] overflow-y-auto overscroll-contain px-[22px] sm:mr-2.5 sm:grid-cols-[repeat(auto-fit,minmax(320px,1fr))] sm:pr-[24px] sm:pl-[34px]"
 	>
 		<div class="col-span-full flex items-center gap-2">
 			<h1 class="text-[20px] font-extrabold tracking-[-0.01em] sm:text-[26px]">Scan settings</h1>
