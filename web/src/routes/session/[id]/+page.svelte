@@ -186,10 +186,6 @@
 		}
 	}
 
-	async function stop() {
-		await client.hub.stopScan(id);
-	}
-
 	/** Discard throws the scan away entirely: it leaves no row behind in past scans. */
 	async function discard() {
 		try {
@@ -517,35 +513,19 @@
 				class="order-1 flex w-full flex-1 basis-full flex-col items-center gap-[18px] lg:order-2 lg:min-h-0 lg:basis-[380px]"
 			>
 				<!--
-					The row holds Stop while pages are coming and the state chip after a save
-					has started; neither exists once a scan is in review, so the row goes too
-					rather than leaving a gap above the page. Scanning itself gets no chip: the
-					header's scanner status already says so, with the page count.
+					The row holds the state chip once a save has started: the save is running, it
+					failed, it is saved — things the screen does not otherwise say. Scanning gets
+					no chip and no Stop: the header's scanner pill already says so, with the page
+					count, and in review the row goes too rather than leaving a gap above the page.
 				-->
-				{#if session.State !== SessionState.Review}
+				{#if session.State !== SessionState.Review && !scanning}
 					<div class="flex w-full flex-wrap items-center justify-center gap-2">
-						{#if scanning}
-							<button
-								type="button"
-								class="flex h-[30px] items-center gap-1.5 rounded-full bg-surface px-3 text-[13px] font-bold text-ink shadow-chip transition-colors hover:bg-danger-bg hover:text-danger"
-								onclick={stop}
-								data-testid="stop-button"
-							>
-								<Icon name="stop" size={14} />
-								Stop
-							</button>
-						{:else}
-							<!--
-								The save is running, it failed, it is saved: things the screen does not
-								otherwise say. Same condition as the row, so the chip needs no test of its own.
-							-->
-							<span
-								class="rounded-full bg-surface px-3 py-1.5 text-[13px] font-bold shadow-chip"
-								data-testid="session-state"
-							>
-								{sessionStateLabel(session.State)}
-							</span>
-						{/if}
+						<span
+							class="rounded-full bg-surface px-3 py-1.5 text-[13px] font-bold shadow-chip"
+							data-testid="session-state"
+						>
+							{sessionStateLabel(session.State)}
+						</span>
 					</div>
 				{/if}
 

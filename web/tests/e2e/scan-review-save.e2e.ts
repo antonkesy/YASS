@@ -293,17 +293,6 @@ test('discard removes the scan from past scans', async ({ page }) => {
 	await expect(page.locator(`a[href$="/session/${id}"]`)).toHaveCount(0);
 });
 
-test('stop ends a scan early', async ({ page }) => {
-	await page.goto('/');
-	await page.getByTestId('scan-button').click();
-	// Forced: the review screen is still sliding in while the fake feeder is already
-	// half done, and waiting for the button to stop moving can outlast the scan itself.
-	await page.getByTestId('stop-button').click({ timeout: 5_000, force: true });
-	// Over once the edits are on offer again, as in scanToReview above.
-	await expect(page.getByTestId('filter-button')).toBeVisible({ timeout: 20_000 });
-	await expect(page.getByTestId('stop-button')).toBeHidden();
-});
-
 test('save as… writes the document where the save dialog points', async ({ page }) => {
 	type Saved = { name: string | null; bytes: number };
 	await page.addInitScript(() => {
