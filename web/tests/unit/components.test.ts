@@ -179,6 +179,16 @@ describe('ScanStage scanner picker', () => {
 		);
 	});
 
+	it("shows the lit scanner's details while hovered, without a click-catcher", async () => {
+		stage({ Device: 'epson:1' });
+		const pill = screen.getByRole('radio', { name: 'Epson DS-530' });
+		await fireEvent.mouseEnter(pill.parentElement!);
+		expect(screen.getByRole('dialog', { name: 'Scanner details' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Close scanner details' })).toBeNull();
+		await fireEvent.mouseLeave(pill.parentElement!);
+		expect(screen.queryByRole('dialog')).toBeNull();
+	});
+
 	it('stays away when there is nothing to pick', () => {
 		stage({ Device: 'epson:1' }, []);
 		expect(screen.queryByTestId('device-picker')).toBeNull();
