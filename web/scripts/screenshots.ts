@@ -92,14 +92,24 @@ async function main() {
 			colorScheme: 'light',
 			reducedMotion: 'reduce'
 		});
+		// Headless Chromium offers the save dialog even on 127.0.0.1, and a native dialog
+		// cannot be driven from here: without the API the button is a plain download,
+		// which is also what a real phone gets.
+		await phone.addInitScript(() => {
+			Object.defineProperty(window, 'showSaveFilePicker', { value: undefined });
+		});
 		const page = await phone.newPage();
 
 		// One finished, named scan so the home screen has a past scan to list.
 		await scanToReview(page);
 		await page.getByTestId('name-input').fill('Insurance letter');
 		await page.getByTestId('name-input').press('Enter');
-		await page.getByTestId('save-button').click();
-		await page.getByTestId('saved-message').waitFor({ timeout: 20_000 });
+		// Downloading it finishes the scan, which is what the list shows as its status.
+		await page.getByTestId('download-button').click();
+		await page
+			.getByTestId('session-state')
+			.filter({ hasText: 'Downloaded' })
+			.waitFor({ timeout: 20_000 });
 
 		await page.goto('/');
 		await page.getByTestId('session-list').waitFor();
