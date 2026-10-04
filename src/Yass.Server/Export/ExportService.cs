@@ -12,74 +12,25 @@ using Yass.Server.Sessions;
 namespace Yass.Server.Export;
 
 /// <summary>
-/// Exports a session's active pages. <see cref="ExportMode.Save"/> writes into the consume directory through
-/// <see cref="IDocumentStore"/>; <see cref="ExportMode.Download"/> writes into the session's <c>export/</c>
-/// folder and hands out a one-shot URL. Progress is pushed as <c>ExportProgress</c>.
+/// Exports a session's active pages into the session's <c>export/</c> folder and hands out a
+/// one-shot download URL per document. The server never writes a document anywhere else:
+/// where it ends up is the browser's choice. Progress is pushed as <c>ExportProgress</c>.
 /// </summary>
 public sealed class ExportService(
     SessionStore store,
     SessionMapper mapper,
     IDocumentWriter writer,
-    IDocumentStore documents,
     DownloadTokens tokens,
     ConfigStore config,
     TimeProvider time,
     IHubContext<YassHub, IYassClient> hub,
     ILogger<ExportService> logger)
 {
-    /// <summary>
-    /// Checks a user-supplied target directory. The service has no authentication, so this is
-    /// the only gate between a LAN client and an arbitrary write path: the directory must be
-    /// absolute, inside <c>output.allowed_roots</c>, existing and writable, and the error says
-    /// which of those failed.
-    /// </summary>
-    /// <exception cref="InvalidOperationException">The directory is unusable or out of bounds.</exception>
-    private string? ResolveDirectory(string? requested)
-    {
-        if (string.IsNullOrWhiteSpace(requested))
-        {
-            return null;
-        }
-
-        string path = requested.Trim();
-        if (!Path.IsPathFullyQualified(path))
-        {
-            throw new InvalidOperationException($"Export folder must be an absolute path; got \"{path}\".");
-        }
-
-        OutputConfig output = config.Current.Output;
-        IReadOnlyList<string> roots = ExportRoots.Effective(output.AllowedRoots, output.Directory);
-        if (!ExportRoots.Allows(roots, path))
-        {
-            throw new InvalidOperationException(
-                $"Export folder \"{path}\" is outside the allowed roots ({string.Join(", ", roots)}). " +
-                "Add it to output.allowed_roots to permit it.");
-        }
-
-        if (!Directory.Exists(path))
-        {
-            throw new InvalidOperationException($"Export folder \"{path}\" does not exist.");
-        }
-
-        try
-        {
-            string probe = Path.Combine(path, "._yass-write-test-" + Guid.NewGuid().ToString("N"));
-            File.WriteAllBytes(probe, []);
-            File.Delete(probe);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            throw new InvalidOperationException($"Export folder \"{path}\" is not writable.");
-        }
-
-        return path;
-    }
-
-    /// <summary>The file name for one document, or <c>null</c> to fall back to the configured template.</summary>
     /// <summary>The PDF's own properties: its name as the title, and whatever the browser's settings say for the rest.</summary>
     private static DocumentMetadata MetadataFor(ExportRequest request, string? name) =>
         new(name, request.Metadata?.Author, request.Metadata?.Subject, request.Metadata?.Keywords);
 
+    /// <summary>The file name for one document, or <c>null</c> when neither the request nor the session names it.</summary>
     private static string? NameFor(string? requested, Session session, TemplateFacts facts, int documentCount, int index)
     {
         string? stem = !string.IsNullOrWhiteSpace(requested) ? requested!.Trim()
@@ -99,10 +50,6 @@ public sealed class ExportService(
     public async Task<ExportResult> ExportAsync(string sessionId, ExportRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
-
-        // Checked before the session moves to Exporting: a refused folder must leave the
-        // session exactly as it was, not stuck mid-export with no way back.
-        string? directory = ResolveDirectory(request.Directory);
 
         Session session = store.Update(sessionId, s =>
         {
@@ -150,108 +97,44 @@ public sealed class ExportService(
 
         try
         {
-            ExportResult result;
-            SessionEvent recorded;
-            if (request.Mode == ExportMode.Download)
+            string dir = SessionPaths.Export(store.Root, sessionId);
+            Directory.CreateDirectory(dir);
+            var produced = new List<ExportedDocumentDto>();
+            for (int d = 0; d < documentPages.Length; d++)
             {
-                if (!config.Current.Output.AllowDownload)
+                ExportPage[] document = documentPages[d];
+                string token = tokens.Issue(sessionId, Path.Combine(dir, $"{Guid.NewGuid():N}{extension}"));
+                tokens.TryPeekPath(token, out string path);
+                await using (FileStream output = File.Create(path))
                 {
-                    throw new InvalidOperationException("Downloads are disabled (output.allow_download).");
-                }
-
-                string dir = SessionPaths.Export(store.Root, sessionId);
-                Directory.CreateDirectory(dir);
-                var produced = new List<ExportedDocumentDto>();
-                for (int d = 0; d < documentPages.Length; d++)
-                {
-                    ExportPage[] document = documentPages[d];
-                    string token = tokens.Issue(sessionId, Path.Combine(dir, $"{Guid.NewGuid():N}{extension}"));
-                    tokens.TryPeekPath(token, out string path);
-                    await using (FileStream output = File.Create(path))
-                    {
-                        if (request.Format == ExportFormat.Pdf)
-                        {
-                            DocumentMetadata metadata = MetadataFor(request, NameFor(request.Name, session, facts, documentPages.Length, d));
-                            await writer.WritePdfAsync(document, pdf, metadata, output, progress, cancellationToken).ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            // A browser download is one file, so an image download is the first
-                            // page of the document rather than a silent partial archive.
-                            await writer.WriteImageAsync(document[0], request.Format, pdf, output, cancellationToken).ConfigureAwait(false);
-                        }
-                    }
-
-                    produced.Add(new ExportedDocumentDto(document.Length, null, $"/export/{sessionId}/{token}{extension}"));
-                    finished++;
-                }
-
-                result = new ExportResult(ExportMode.Download, totalPages, [.. produced]);
-                recorded = new SessionEvent(SessionEventKind.Downloaded, time.GetUtcNow());
-            }
-            else
-            {
-                var written = new List<ExportedDocumentDto>();
-                for (int d = 0; d < documentPages.Length; d++)
-                {
-                    ExportPage[] document = documentPages[d];
-                    string? baseName = NameFor(request.Name, session, facts, documentPages.Length, d);
-
                     if (request.Format == ExportFormat.Pdf)
                     {
-                        DocumentMetadata metadata = MetadataFor(request, baseName);
-                        string saved = await documents.SaveAsync(
-                            (stream, ct) => writer.WritePdfAsync(document, pdf, metadata, stream, progress, ct),
-                            new DocumentTarget(session.CreatedAt, baseName, directory, extension),
-                            cancellationToken).ConfigureAwait(false);
-                        written.Add(new ExportedDocumentDto(document.Length, saved, null));
+                        DocumentMetadata metadata = MetadataFor(request, NameFor(request.Name, session, facts, documentPages.Length, d));
+                        await writer.WritePdfAsync(document, pdf, metadata, output, progress, cancellationToken).ConfigureAwait(false);
                     }
                     else
                     {
-                        // Images are one file per page, so the document's pages are numbered.
-                        string? firstPath = null;
-                        for (int p = 0; p < document.Length; p++)
-                        {
-                            ExportPage page = document[p];
-                            string pageName = document.Length == 1
-                                ? baseName ?? ""
-                                : $"{baseName}-{(p + 1).ToString("D2", CultureInfo.InvariantCulture)}";
-                            string saved = await documents.SaveAsync(
-                                (stream, ct) => writer.WriteImageAsync(page, request.Format, pdf, stream, ct),
-                                new DocumentTarget(session.CreatedAt, string.IsNullOrEmpty(pageName) ? null : pageName, directory, extension),
-                                cancellationToken).ConfigureAwait(false);
-                            firstPath ??= saved;
-                            ((IProgress<int>)progress).Report((p + 1) * 100 / document.Length);
-                        }
-
-                        written.Add(new ExportedDocumentDto(document.Length, firstPath, null));
+                        // A browser download is one file, so an image download is the first
+                        // page of the document rather than a silent partial archive.
+                        await writer.WriteImageAsync(document[0], request.Format, pdf, output, cancellationToken).ConfigureAwait(false);
                     }
-
-                    finished++;
                 }
 
-                result = new ExportResult(ExportMode.Save, totalPages, [.. written]);
-                recorded = new SessionEvent(SessionEventKind.Exported, time.GetUtcNow(), written[0].SavedPath);
-                logger.LogInformation(
-                    "Session {Session} saved as {Documents} document(s), {Pages} page(s) total",
-                    sessionId,
-                    written.Count,
-                    totalPages);
+                produced.Add(new ExportedDocumentDto(document.Length, $"/export/{sessionId}/{token}{extension}"));
+                finished++;
             }
+
+            var result = new ExportResult(totalPages, [.. produced]);
+            var recorded = new SessionEvent(SessionEventKind.Downloaded, time.GetUtcNow());
+            logger.LogInformation(
+                "Session {Session} exported as {Documents} document(s), {Pages} page(s) total",
+                sessionId,
+                produced.Count,
+                totalPages);
 
             await hub.Clients.All.ExportProgress(sessionId, 100).ConfigureAwait(false);
-
-            if (result.Mode == ExportMode.Save && config.Current.Output.OnSuccess == OnSuccessAction.DeleteSession)
-            {
-                store.Delete(sessionId);
-                await hub.Clients.All.SessionChanged(mapper.ToDto((session with { State = SessionState.Done, Pages = [], Error = "deleted" }).With(recorded))).ConfigureAwait(false);
-            }
-            else
-            {
-                Session done = store.Update(sessionId, s => (s with { State = SessionState.Done }).With(recorded));
-                await hub.Clients.All.SessionChanged(mapper.ToDto(done)).ConfigureAwait(false);
-            }
-
+            Session done = store.Update(sessionId, s => (s with { State = SessionState.Done }).With(recorded));
+            await hub.Clients.All.SessionChanged(mapper.ToDto(done)).ConfigureAwait(false);
             return result;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)

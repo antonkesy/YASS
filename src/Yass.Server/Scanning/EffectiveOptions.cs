@@ -1,6 +1,5 @@
 using Yass.Core.Config;
 using Yass.Core.Domain;
-using Yass.Core.Export;
 using Yass.Core.Hub;
 using Yass.Server.Config;
 
@@ -12,13 +11,7 @@ public sealed class EffectiveOptions(ConfigStore config)
     /// <summary>The defaults, for the settings UI.</summary>
     public ScanOptionsDto Current()
     {
-        ScannerConfig scanner = config.Current.Scanner;
-        OutputConfig output = config.Current.Output;
-        return ToDto(scanner.Defaults) with
-        {
-            AllowDownload = output.AllowDownload,
-            ExportRoots = [.. ExportRoots.Effective(output.AllowedRoots, output.Directory)],
-        };
+        return ToDto(config.Current.Scanner.Defaults);
     }
 
     /// <summary>Applies <paramref name="requested"/> on top of the defaults.</summary>

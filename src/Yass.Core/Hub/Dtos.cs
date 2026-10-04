@@ -45,9 +45,7 @@ public sealed record PageDto(
 /// <summary>
 /// Scan options on the wire. Every field is optional: as a <c>StartScan</c> argument each field sent
 /// overrides the matching <c>scanner.defaults</c> value; as a <c>GetEffectiveOptions</c> result every field
-/// is filled in, <see cref="AllowDownload"/> mirrors <c>output.allow_download</c>, and
-/// <see cref="ExportRoots"/> mirrors the directories the export folder may sit under so the settings
-/// sheet can offer them instead of only rejecting a typed path.
+/// is filled in.
 /// </summary>
 [TranspilationSource]
 public sealed record ScanOptionsDto(
@@ -60,8 +58,6 @@ public sealed record ScanOptionsDto(
     bool? BlankPageDetection = null,
     double? BlankPageThreshold = null,
     bool? AutoDeskew = null,
-    bool? AllowDownload = null,
-    string[]? ExportRoots = null,
     string? Device = null);
 
 [TranspilationSource]
@@ -70,16 +66,6 @@ public sealed record ScannerStatusDto(ScannerState State, string? DeviceName, st
 /// <summary>One scanner to choose between. <see cref="Id"/> is what a scan asks for.</summary>
 [TranspilationSource]
 public sealed record ScannerDeviceDto(string Id, string Name);
-
-[TranspilationSource]
-public enum ExportMode
-{
-    /// <summary>Write the PDF into <c>output.directory</c>.</summary>
-    Save = 0,
-
-    /// <summary>Produce a one-shot download URL for the browser.</summary>
-    Download,
-}
 
 /// <summary>File type a session is exported as. Images write one file per page.</summary>
 [TranspilationSource]
@@ -90,13 +76,12 @@ public enum ExportFormat
     Png,
 }
 
-/// <param name="Mode">Save to a folder, or hand the browser a download.</param>
+/// <summary>What to produce for the browser to download. Every export is a one-shot download URL.</summary>
 /// <param name="Format">File type to produce.</param>
-/// <param name="Name">Base file name, without extension; empty falls back to the configured template.</param>
-/// <param name="Directory">Where to write, for <see cref="ExportMode.Save"/>; empty means <c>output.directory</c>.</param>
+/// <param name="Name">Base file name, without extension; empty falls back to the session's name or a generated one.</param>
 /// <param name="Metadata">What to stamp into a PDF besides its pages; null means the writer's defaults.</param>
 [TranspilationSource]
-public sealed record ExportRequest(ExportMode Mode, ExportFormat Format = ExportFormat.Pdf, string? Name = null, string? Directory = null, DocumentMetadataDto? Metadata = null);
+public sealed record ExportRequest(ExportFormat Format = ExportFormat.Pdf, string? Name = null, DocumentMetadataDto? Metadata = null);
 
 /// <summary>
 /// What to stamp into a PDF besides its pages, as the browser keeps it in its settings. The
@@ -105,14 +90,12 @@ public sealed record ExportRequest(ExportMode Mode, ExportFormat Format = Export
 [TranspilationSource]
 public sealed record DocumentMetadataDto(string? Author = null, string? Subject = null, string? Keywords = null);
 
-/// <param name="Mode">Echo of the request.</param>
 /// <param name="PageCount">Pages across every produced document.</param>
 /// <param name="Documents">One entry per document in the session, in order.</param>
 [TranspilationSource]
-public sealed record ExportResult(ExportMode Mode, int PageCount, ExportedDocumentDto[] Documents);
+public sealed record ExportResult(int PageCount, ExportedDocumentDto[] Documents);
 
 /// <param name="PageCount">Pages in this document.</param>
-/// <param name="SavedPath">Where it was written, for <see cref="ExportMode.Save"/>.</param>
-/// <param name="DownloadPath">One-shot relative URL, for <see cref="ExportMode.Download"/>.</param>
+/// <param name="DownloadPath">One-shot relative URL the browser fetches the file from.</param>
 [TranspilationSource]
-public sealed record ExportedDocumentDto(int PageCount, string? SavedPath, string? DownloadPath);
+public sealed record ExportedDocumentDto(int PageCount, string DownloadPath);

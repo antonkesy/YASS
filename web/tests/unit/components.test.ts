@@ -410,105 +410,35 @@ describe('Toolbar', () => {
 });
 
 describe('ExportBar', () => {
-	it('exports to the configured folder and names it under the button', async () => {
-		const onsave = vi.fn();
-		render(ExportBar, {
-			session: session(),
-			allowDownload: true,
-			exportDirectory: '/data/consume',
-			onsave,
-			ondownload: vi.fn()
-		});
-		expect(screen.getByTestId('export-path')).toHaveTextContent(/consume/);
-		expect(screen.getByTestId('export-path')).toHaveAttribute(
-			'title',
-			expect.stringContaining('/data/consume')
-		);
-		await fireEvent.click(screen.getByTestId('save-button'));
-		expect(onsave).toHaveBeenCalled();
-	});
-
 	it('says what the one download button will do, and asks for a place when it can', async () => {
 		const ondownload = vi.fn();
-		const { rerender } = render(ExportBar, {
-			session: session(),
-			allowDownload: true,
-			onsave: vi.fn(),
-			ondownload
-		});
+		const { rerender } = render(ExportBar, { session: session(), ondownload });
 		expect(screen.getByTestId('download-button')).toHaveTextContent('Download');
 
-		await rerender({
-			session: session(),
-			allowDownload: true,
-			picker: true,
-			onsave: vi.fn(),
-			ondownload
-		});
+		await rerender({ session: session(), picker: true, ondownload });
 		expect(screen.getByTestId('download-button')).toHaveTextContent('Save as…');
 		await fireEvent.click(screen.getByTestId('download-button'));
 		expect(ondownload).toHaveBeenCalled();
 	});
 
-	it('promotes the download button when the export button is off, and keeps one either way', () => {
-		const { rerender } = render(ExportBar, {
-			session: session(),
-			allowDownload: true,
-			exportEnabled: false,
-			exportDirectory: '/data/consume',
-			onsave: vi.fn(),
-			ondownload: vi.fn()
-		});
-		expect(screen.queryByTestId('save-button')).toBeNull();
-		expect(screen.queryByTestId('export-path')).toBeNull();
-		expect(screen.getByTestId('download-button')).toBeInTheDocument();
-
-		// Nothing left to promote: with downloads off, Export comes back whatever the preference says.
-		rerender({
-			session: session(),
-			allowDownload: false,
-			exportEnabled: false,
-			onsave: vi.fn(),
-			ondownload: vi.fn()
-		});
-		expect(screen.getByTestId('save-button')).toBeInTheDocument();
-		expect(screen.queryByTestId('download-button')).toBeNull();
-	});
-
-	it('disables export while scanning, with everything deleted, or when downloads are off', () => {
+	it('disables the download while scanning or with everything deleted', () => {
 		const { rerender } = render(ExportBar, {
 			session: session(SessionState.Scanning),
-			allowDownload: false,
-			onsave: vi.fn(),
 			ondownload: vi.fn()
 		});
-		expect(screen.getByTestId('save-button')).toBeDisabled();
-		expect(screen.queryByTestId('download-button')).toBeNull();
-		rerender({
-			session: session(SessionState.Review, 3),
-			allowDownload: true,
-			onsave: vi.fn(),
-			ondownload: vi.fn()
-		});
-		expect(screen.getByTestId('save-button')).toBeDisabled();
+		expect(screen.getByTestId('download-button')).toBeDisabled();
+		rerender({ session: session(SessionState.Review, 3), ondownload: vi.fn() });
 		expect(screen.getByTestId('download-button')).toBeDisabled();
 	});
 
-	it('shows progress while exporting and the saved message afterwards', () => {
-		const { rerender } = render(ExportBar, {
+	it('shows progress while the document is being prepared', () => {
+		render(ExportBar, {
 			session: session(SessionState.Exporting),
 			progress: 40,
-			onsave: vi.fn(),
 			ondownload: vi.fn()
 		});
 		expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '40');
-		rerender({
-			session: session(SessionState.Done),
-			savedPath: '/data/consume/x.pdf',
-			onsave: vi.fn(),
-			ondownload: vi.fn()
-		});
-		expect(screen.getByTestId('saved-message')).toBeInTheDocument();
+		expect(screen.queryByTestId('download-button')).toBeNull();
 	});
 });
 
@@ -571,33 +501,14 @@ describe('SettingsChips', () => {
 		BlankPageDetection: true
 	};
 
-	it('leads with the export destination and ends with the format', () => {
-		render(SettingsChips, {
-			options,
-			destination: '/data/consume',
-			format: 'PDF',
-			onclick: vi.fn()
-		});
+	it('leads with the source and ends with the format', () => {
+		render(SettingsChips, { options, format: 'PDF', onclick: vi.fn() });
 		const chips = [...screen.getByTestId('settings-chips').children].map((c) =>
 			c.textContent?.trim()
 		);
-		// The folder's name, with the whole path on the tooltip.
-		expect(chips[0]).toBe('consume');
-		expect(screen.getByTestId('settings-chips').children[0]).toHaveAttribute(
-			'title',
-			'/data/consume'
-		);
+		expect(chips[0]).toBe('Feeder');
 		expect(chips.at(-1)).toBe('PDF');
 		expect(chips).toContain('300 dpi');
-	});
-
-	it('leaves the destination out when there is none to show', () => {
-		render(SettingsChips, { options, onclick: vi.fn() });
-		const chips = [...screen.getByTestId('settings-chips').children].map((c) =>
-			c.textContent?.trim()
-		);
-		expect(chips).not.toContain('consume');
-		expect(chips[0]).toBe('Feeder');
 	});
 });
 

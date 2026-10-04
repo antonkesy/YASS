@@ -82,14 +82,6 @@
 	// a browser with no overrides still matches whichever preset the server defaults to.
 	const chosen = $derived(options ? activePreset(offered, options) : null);
 
-	// The configured folder stands in when nothing is typed, the same fallback the
-	// review screen and the settings sheet use.
-	const destination = $derived(
-		$exportPrefs.exportButton
-			? $exportPrefs.directory.trim() || options?.ExportRoots?.[0] || null
-			: null
-	);
-
 	const offline = $derived(connection !== 'connected');
 	const ready = $derived(!offline && status?.State === ScannerState.Ready);
 
@@ -202,7 +194,6 @@
 
 	<SettingsChips
 		{options}
-		{destination}
 		deviceName={canPickDevice ? null : deviceName}
 		format={exportFormatLabels[$exportPrefs.format]}
 		onclick={onsettings}

@@ -4,8 +4,7 @@
 
 Headless scanning service for a home server. Attach a scanner (USB/SANE or
 network/eSCL), open the mobile-first web UI, scan until the feeder is empty,
-review the pages, and save a PDF straight into your
-[paperless-ngx](https://docs.paperless-ngx.com/) consume folder.
+review the pages, and download the PDF to whatever device you are holding.
 
 > ## ⚠️ No authentication — LAN only
 >
@@ -14,11 +13,9 @@ review the pages, and save a PDF straight into your
 > must **never be exposed to the internet**: bind it to a LAN address, keep it
 > behind your firewall, and do not put it behind a public reverse proxy.
 >
-> One consequence worth knowing: the **export folder is set in the browser**. By
-> default it is confined to `output.directory` and its subfolders;
-> `output.allowed_roots` widens that, and `["/"]` removes the limit entirely.
-> Whatever you allow, anyone who can reach the port can write there, so run YASS
-> as a user with no more filesystem reach than it needs.
+> The server writes documents nowhere but its own session directory: a finished
+> scan leaves the machine as a browser download, never into a folder someone
+> typed into the UI.
 
 ## Screenshots
 
@@ -30,7 +27,7 @@ review the pages, and save a PDF straight into your
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/review-desktop.png" alt="Review screen on a desktop browser: page strip, stage, and the export panel" width="98%">
+  <img src="assets/screenshots/review-desktop.png" alt="Review screen on a desktop browser: page strip, stage, and the save panel" width="98%">
 </p>
 
 Taken against the simulated scanner (`--fake`); regenerate them with
@@ -46,12 +43,12 @@ Taken against the simulated scanner (`--fake`); regenerate them with
   to reorder. **All pages** opens the scan sized to fit the screen, and that is
   where you tick several pages to edit them at once. Blank pages are detected and
   pre-marked deleted.
-- **Export** writes the PDF atomically into `output.directory` under a templated
-  name — point that at your paperless-ngx consume folder, or anywhere else.
-  **Save as…** puts a copy on the machine you are browsing from: it opens the
-  browser's own save dialog over https or on localhost, and is a plain download
-  anywhere else (the button then says *Download*, and your browser's "ask where
-  to save each file" setting is what brings the dialog back).
+- **Save as…** puts the document on the machine you are browsing from, as a
+  PDF or as one image per page: it opens the browser's own save dialog over
+  https or on localhost, and is a plain download anywhere else (the button then
+  says *Download*, and your browser's "ask where to save each file" setting is
+  what brings the dialog back). Drop it into a paperless-ngx consume folder from
+  there if that is where it is going.
 - **Installable PWA**, works without a service worker, everything reachable by
   keyboard, touch targets ≥ 44 px.
 - **Single config file** (`yass.yaml`), every key overridable through the
@@ -86,7 +83,6 @@ services:
     volumes:
       - ./yass.yaml:/etc/yass/yass.yaml:ro
       - yass-sessions:/data/sessions
-      - /srv/paperless/consume:/data/consume
     devices:
       - /dev/bus/usb:/dev/bus/usb       # USB/SANE scanners
 volumes:
@@ -95,8 +91,8 @@ volumes:
 
 See [`docker-compose.example.yml`](docker-compose.example.yml) for the
 commented version (eSCL scanners want `network_mode: host` for mDNS discovery).
-Copy [`yass.example.yaml`](yass.example.yaml) to `yass.yaml`, set
-`output.directory` to `/data/consume`, and start:
+Copy [`yass.example.yaml`](yass.example.yaml) to `yass.yaml`, adjust it, and
+start:
 
 ```sh
 docker compose up -d
@@ -124,7 +120,6 @@ docker run --rm -p 8080:8080 yass --fake
     settings = {
       server.listen = "192.168.1.10:8080";
       scanner.device = "epsonds";
-      output.directory = "/var/lib/paperless/consume";
     };
   };
 }
@@ -144,7 +139,7 @@ YASS_WEBROOT=$PWD/web/build dotnet run --project src/Yass.Server -- --fake
 
 Everything lives in one YAML file (`--config PATH`, or `YASS_CONFIG`; missing
 file = defaults). Any key can be overridden with an environment variable:
-`YASS__section__key`, e.g. `YASS__output__directory=/mnt/consume`. Invalid
+`YASS__section__key`, e.g. `YASS__sessions__directory=/mnt/yass`. Invalid
 values stop startup and name the offending key.
 
 | Key | Default | Meaning |
@@ -164,13 +159,8 @@ values stop startup and name the offending key.
 | `scanner.defaults.auto_deskew` | `false` | Straighten pages during the scan. |
 | `scanner.defaults.device` | `""` | Default scanner, by exact device id; empty = whatever `scanner.device` resolves to. The picker on the home screen overrides it per browser. |
 | `scanner.ui_editable` | `[]` | Deprecated and ignored: every scan setting can be changed from the UI (stored in the browser), and `scanner.defaults` only supplies the defaults. Still accepted so older files load. |
-| `output.directory` | `/data/consume` | Where PDFs are saved; point it at paperless' consume dir. |
-| `output.filename_template` | `{date:yyyy-MM-dd}_{time:HHmm}_scan.pdf` | `{date:FMT}`, `{time:FMT}` (.NET formats), `{session}`. Existing names get `-2`, `-3`, …. `{NAME}` is **not** a key here — it is a browser token, below. |
 | `output.pdf.compression` | `jpeg` | `jpeg` or `lossless`. |
 | `output.pdf.jpeg_quality` | `75` | 1–100. |
-| `output.allowed_roots` | `[]` | Folders the UI may export into, each including everything beneath it. Empty = `output.directory` only. `["/"]` = anywhere. |
-| `output.allow_download` | `true` | Show the Save as… button, which copies the document to the browsing machine. |
-| `output.on_success` | `keep_session` | `keep_session` or `delete_session` after a successful save. |
 | `processing.max_concurrent_renders` | `2` | Upper bound on decoded bitmaps in memory. |
 | `processing.thumbnail_width` | `320` | px |
 | `processing.preview_max_width` | `1600` | px |
@@ -179,16 +169,12 @@ values stop startup and name the offending key.
 | `logging.level` | `info` | `trace` … `critical`. |
 | `logging.format` | `text` | `text` or `json`. |
 
-Files are written atomically: the PDF is streamed to a hidden `._yass-*.tmp`
-file in the consume directory (matched by paperless' default ignore pattern) and
-renamed into place once complete, so the consumer never sees a partial document.
-
 ### Naming a scan
 
 A finished scan is already called what your file name template says. The list of
 past scans calls each scan the same thing the review screen does, and the search
 box and the A–Z sort go by that name too — so a scan nobody has named is listed
-under the file name it would be saved as, not under the time of day it happened.
+under the file name it would be downloaded as, not under the time of day it happened.
 Open it and rename it whenever you like; the list follows.
 
 ## Scanner setup
@@ -227,7 +213,7 @@ deviations are recorded in [`docs/decisions/`](docs/decisions/). Commits follow
 Conventional Commits; releases are cut by release-please.
 
 Layout: `src/Yass.Core` (domain, config, hub contract), `Yass.Scanning`
-(NAPS2 adapter), `Yass.Export` (PDF, templating, atomic write),
+(NAPS2 adapter), `Yass.Export` (PDF and image writing, name templating),
 `Yass.Server` (host, hub, image endpoints), `Yass.Fake` (simulated scanner),
 `web/` (SvelteKit PWA), `nix/` (package, NixOS module).
 

@@ -34,7 +34,6 @@ export default defineConfig({
 		env: {
 			YASS__server__listen: `127.0.0.1:${port}`,
 			YASS__sessions__directory: `${process.env.TMPDIR ?? '/tmp'}/yass-e2e/sessions`,
-			YASS__output__directory: `${process.env.TMPDIR ?? '/tmp'}/yass-e2e/consume`,
 			YASS__logging__level: 'warning',
 			YASS_WEBROOT: `${import.meta.dirname}/build`
 		}

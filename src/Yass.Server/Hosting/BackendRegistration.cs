@@ -19,7 +19,6 @@ public static class BackendRegistration
         {
             services.AddSingleton<IScannerBackend>(_ => new FakeScannerBackend(FakeScenario.Parse(startup.FakeScenario)));
             services.AddSingleton<IDocumentWriter, FakeDocumentWriter>();
-            services.AddSingleton<IDocumentStore>(sp => new FakeDocumentStore(sp.GetRequiredService<ConfigStore>().Current.Output.Directory));
             return;
         }
 
@@ -30,10 +29,5 @@ public static class BackendRegistration
         });
 
         services.AddSingleton<IDocumentWriter, Naps2PdfWriter>();
-        services.AddSingleton<IDocumentStore>(sp =>
-        {
-            ConfigStore config = sp.GetRequiredService<ConfigStore>();
-            return new ConsumeDirectoryStore(() => config.Current.Output, sp.GetRequiredService<ILogger<ConsumeDirectoryStore>>());
-        });
     }
 }

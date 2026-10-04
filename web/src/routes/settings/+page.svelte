@@ -147,20 +147,6 @@
 	);
 	const templateUnknown = $derived(unknownTokens($exportPrefs.nameTemplate));
 
-	const exportRoots = $derived(effective?.ExportRoots ?? []);
-	/**
-	 * Mirrors the server's containment rule closely enough to warn early. The server is
-	 * still the authority — it resolves symlinks, which the browser cannot see.
-	 */
-	const outsideRoots = $derived.by(() => {
-		const typed = $exportPrefs.directory.trim().replace(/\/+$/, '');
-		if (typed === '' || exportRoots.length === 0) return false;
-		return !exportRoots.some((root) => {
-			const r = root.replace(/\/+$/, '');
-			return typed === r || typed.startsWith(r + '/');
-		});
-	});
-
 	/**
 	 * A preset never carries the scanner in its settings: the scanner is picked on the home
 	 * screen and the presets follow it, so one that moved the machine when it was pressed
@@ -538,13 +524,13 @@
 		</SettingsSection>
 
 		<!--
-			Outside the scanner section above, and for the same reason: where a document goes,
-			what it is called and how it is written are this browser's business. A server that
-			lets the UI change no scan setting still has to let you name what comes off it.
+			Outside the scanner section above, and for the same reason: what kind of file a
+			document is and what it is called are this browser's business. A server that lets
+			the UI change no scan setting still has to let you name what comes off it.
 		-->
 		<SettingsSection
 			title="Export"
-			hint="Where a saved document goes and what kind of file it is."
+			hint="What kind of file a document is downloaded as."
 			testid="export-section"
 		>
 			<Segmented
@@ -561,80 +547,6 @@
 				value={String($exportPrefs.format)}
 				onchange={(v) => exportPrefs.set({ ...$exportPrefs, format: Number(v) as ExportFormat })}
 			/>
-
-			<Toggle
-				name="export-button"
-				label="Export button"
-				hint="One-click export to a fixed folder. When off, Save as… is the way out."
-				checked={$exportPrefs.exportButton}
-				onchange={(v) => exportPrefs.set({ ...$exportPrefs, exportButton: v })}
-			/>
-
-			<!-- Dimmed rather than hidden: it is still where Export will go once it is back on. -->
-			<label
-				class="col-span-full flex flex-col gap-1.5 transition-opacity duration-200 {$exportPrefs.exportButton
-					? ''
-					: 'opacity-45'}"
-			>
-				<span class="text-[13px] font-bold text-ink-2">Export folder</span>
-				<span class="flex h-11 items-center gap-2 rounded-[12px] bg-ctl px-3">
-					<span class="text-ink-faint"><Icon name="folder" /></span>
-					<input
-						class="min-w-0 flex-1 bg-transparent font-mono text-sm font-medium outline-none"
-						type="text"
-						placeholder={exportRoots[0] ?? 'Leave empty for the configured folder'}
-						value={$exportPrefs.directory}
-						oninput={(e) => exportPrefs.set({ ...$exportPrefs, directory: e.currentTarget.value })}
-						data-testid="export-folder"
-					/>
-				</span>
-
-				{#if outsideRoots}
-					<span
-						class="text-xs font-bold text-danger"
-						role="alert"
-						data-testid="export-folder-error"
-					>
-						Outside the allowed folders. The server will refuse this.
-					</span>
-				{/if}
-
-				<!--
-					The roots are shown, not just enforced: a path that is going to be rejected should
-					be visibly wrong here rather than at the moment someone presses Save.
-				-->
-				{#if exportRoots.length > 0}
-					<span class="flex flex-wrap items-center gap-1.5">
-						<span class="text-[11px] text-ink-faint">Allowed:</span>
-						{#each exportRoots as root (root)}
-							<button
-								type="button"
-								class="flex h-7 items-center rounded-[8px] bg-accent-50 px-2 font-mono text-[11px] font-semibold text-accent-deep transition-colors hover:bg-accent-100"
-								onclick={() => exportPrefs.set({ ...$exportPrefs, directory: root })}
-							>
-								{root}
-							</button>
-						{/each}
-					</span>
-				{/if}
-
-				<!--
-					Says what the field is for, not just what it will accept: pointing it at a consume
-					folder is the whole reason Export exists, and nothing else in the UI says so.
-				-->
-				<span class="text-[11px] text-ink-faint">
-					Point this at a document manager's consume folder — paperless-ngx and the like watch
-					theirs and file whatever lands in it, so an exported scan needs no upload.
-				</span>
-
-				<span class="text-[11px] text-ink-faint">
-					An absolute path on the scanner server, inside one of the folders above. Widen them with <code
-						class="font-mono">output.allowed_roots</code
-					>
-					in
-					<code class="font-mono">yass.yaml</code>.
-				</span>
-			</label>
 		</SettingsSection>
 
 		<!--

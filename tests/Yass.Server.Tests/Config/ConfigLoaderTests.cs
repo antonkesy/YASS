@@ -37,16 +37,16 @@ public class ConfigLoaderTests
                 color: bw
                 page_size: letter
             output:
-              on_success: delete_session
               pdf:
                 compression: lossless
+                jpeg_quality: 60
             """, Env());
 
         Assert.Equal(ScannerDriver.Escl, config.Scanner.Driver);
         Assert.Equal(ColorMode.Bw, config.Scanner.Defaults.Color);
         Assert.Equal(PageSize.Letter, config.Scanner.Defaults.PageSize);
-        Assert.Equal(OnSuccessAction.DeleteSession, config.Output.OnSuccess);
         Assert.Equal(PdfCompression.Lossless, config.Output.Pdf.Compression);
+        Assert.Equal(60, config.Output.Pdf.JpegQuality);
     }
 
     [Fact]
@@ -54,12 +54,12 @@ public class ConfigLoaderTests
     {
         YassConfig config = ConfigLoader.Parse(
             "scanner:\n  poll_interval_seconds: 5\n  defaults:\n    dpi: 300\n",
-            Env(("YASS__scanner__poll_interval_seconds", "9"), ("YASS__scanner__defaults__color", "color"), ("YASS__output__directory", "/mnt/x"), ("UNRELATED", "1")));
+            Env(("YASS__scanner__poll_interval_seconds", "9"), ("YASS__scanner__defaults__color", "color"), ("YASS__sessions__directory", "/mnt/x"), ("UNRELATED", "1")));
 
         Assert.Equal(9, config.Scanner.PollIntervalSeconds);
         Assert.Equal(300, config.Scanner.Defaults.Dpi);
         Assert.Equal(ColorMode.Color, config.Scanner.Defaults.Color);
-        Assert.Equal("/mnt/x", config.Output.Directory);
+        Assert.Equal("/mnt/x", config.Sessions.Directory);
     }
 
     [Fact]

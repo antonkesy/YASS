@@ -43,11 +43,9 @@
 		savePicker,
 		saveToBrowser,
 		saveToDisk,
-		savedLabel,
 		type SaveTarget
 	} from '$lib/review/download';
 	import { documentMetadata, exportPrefs, reviewPrefs } from '$lib/presets';
-	import { ExportMode } from '$lib/hub/generated/Yass.Core.Hub';
 
 	const client = getHub();
 	const sessions = client.sessions;
@@ -60,26 +58,11 @@
 	let error = $state<string | null>(null);
 	let selection = $state<Set<number>>(clear());
 	let exporting = $state(false);
-	let savedPath = $state<string | null>(null);
-	let allowDownload = $state(false);
-	/** Folders the server will accept, from output.allowed_roots. */
-	let exportRoots = $state<string[]>([]);
 	/** Position in `pages` shown in the centre column. */
 	let current = $state(0);
 	/** Whether the filmstrip is expanded to the full-screen all-pages overview. */
 	let overview = $state(false);
 
-	$effect(() => {
-		if ($connection === 'connected') {
-			client.hub
-				.getEffectiveOptions()
-				.then((o) => {
-					allowDownload = o.AllowDownload ?? false;
-					exportRoots = o.ExportRoots ?? [];
-				})
-				.catch(() => undefined);
-		}
-	});
 	let previewIndex = $state<number | null>(null);
 	/** The big preview slides in from whichever side the new page came from. */
 	let stage = $state<HTMLElement | null>(null);
@@ -161,7 +144,7 @@
 	);
 	/**
 	 * What the Scan section says while it is shut. Worded exactly as the line it replaces, which
-	 * sat under the export buttons: it is a fact about the paper, not about the saving.
+	 * sat under the download button: it is a fact about the paper, not about the saving.
 	 */
 	const pageSummary = $derived(
 		session
@@ -226,28 +209,6 @@
 	/** The name field wins; the template is what an unnamed scan falls back to. */
 	const exportName = $derived(storedName?.trim() || $exportPrefs.nameTemplate.trim() || undefined);
 
-	/** Export: the server writes the document into the folder settings point at. */
-	async function save() {
-		error = null;
-		exporting = true;
-		try {
-			const result = await client.hub.export(id, {
-				Mode: ExportMode.Save,
-				Format: $exportPrefs.format,
-				Name: exportName,
-				Directory: $exportPrefs.directory.trim() || undefined,
-				Metadata: documentMetadata($exportPrefs)
-			});
-			savedPath = savedLabel(result);
-			const count = result.Documents.length;
-			toast.show(count === 1 ? 'Saved' : `Saved ${count} documents`);
-		} catch (e) {
-			error = hubError(e);
-		} finally {
-			exporting = false;
-		}
-	}
-
 	/**
 	 * Save as…: asks where the file goes first, while the click is still a user gesture —
 	 * the export itself takes long enough that a browser would refuse to open a dialog
@@ -279,7 +240,6 @@
 		exporting = true;
 		try {
 			const result = await client.hub.export(id, {
-				Mode: ExportMode.Download,
 				Format: $exportPrefs.format,
 				Name: exportName,
 				Metadata: documentMetadata($exportPrefs)
@@ -648,13 +608,8 @@
 				<ExportBar
 					{session}
 					progress={$exportProgress[id] ?? null}
-					{allowDownload}
 					busy={exporting}
-					{savedPath}
-					exportDirectory={$exportPrefs.directory.trim() || exportRoots[0] || ''}
-					exportEnabled={$exportPrefs.exportButton}
 					picker={savePicker() !== null}
-					onsave={save}
 					ondownload={saveAs}
 				/>
 

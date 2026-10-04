@@ -1,4 +1,4 @@
-# Example deployment next to paperless-ngx. Copy to docker-compose.yml and adjust paths.
+# Example deployment. Copy to docker-compose.yml and adjust paths.
 # YASS has NO authentication: bind to a LAN address and never publish it to the internet.
 services:
   yass:
@@ -10,7 +10,6 @@ services:
     volumes:
       - ./yass.yaml:/etc/yass/yass.yaml:ro
       - yass-sessions:/data/sessions
-      - /srv/paperless/consume:/data/consume # paperless-ngx PAPERLESS_CONSUMPTION_DIR
     devices:
       - /dev/bus/usb:/dev/bus/usb # USB/SANE scanners; not needed for network (eSCL) scanners
     # eSCL discovery uses mDNS; host networking makes that work out of the box:

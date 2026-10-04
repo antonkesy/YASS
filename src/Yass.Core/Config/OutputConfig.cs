@@ -8,38 +8,11 @@ public enum PdfCompression
     Lossless,
 }
 
-public enum OnSuccessAction
-{
-    KeepSession = 0,
-    DeleteSession,
-}
-
-/// <summary><c>output:</c> section.</summary>
+/// <summary><c>output:</c> section: how a document is written. Where it goes is the browser's business, as a download.</summary>
 public sealed record OutputConfig
 {
-    /// <summary>Where finished PDFs are written, typically the paperless-ngx consume directory.</summary>
-    [Required]
-    public string Directory { get; init; } = "/data/consume";
-
-    [Required]
-    [RegularExpression(@"^.+\.pdf$", ErrorMessage = "must end with .pdf")]
-    public string FilenameTemplate { get; init; } = "{date:yyyy-MM-dd}_{time:HHmm}_scan.pdf";
-
     [Required]
     public PdfConfig Pdf { get; init; } = new();
-
-    /// <summary>
-    /// Directories the UI may export into, each including everything beneath it. Empty means
-    /// only <see cref="Directory"/> and its subfolders, which is the locked-down default: the
-    /// export folder is typed into a browser by anyone who can reach this unauthenticated
-    /// service, so widening it is a deliberate act. Use <c>["/"]</c> to allow anywhere.
-    /// </summary>
-    public string[] AllowedRoots { get; init; } = [];
-
-    /// <summary>Offer a browser download instead of only the server-side save.</summary>
-    public bool AllowDownload { get; init; } = true;
-
-    public OnSuccessAction OnSuccess { get; init; } = OnSuccessAction.KeepSession;
 }
 
 /// <summary><c>output.pdf:</c> section.</summary>

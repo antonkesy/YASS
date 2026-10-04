@@ -6,10 +6,13 @@ namespace Yass.Core.Domain;
 [TranspilationSource]
 public enum SessionEventKind
 {
-    /// <summary>Written to the configured output directory.</summary>
+    /// <summary>
+    /// Written to a folder on the server, by the export-to-folder feature that is gone. Never
+    /// produced any more; still here so a <c>session.json</c> from before still loads.
+    /// </summary>
     Exported = 0,
 
-    /// <summary>Written to a directory chosen in the UI.</summary>
+    /// <summary>Written to a folder chosen in the UI. Legacy, as <see cref="Exported"/>.</summary>
     Saved,
 
     /// <summary>Handed to the browser as a download.</summary>

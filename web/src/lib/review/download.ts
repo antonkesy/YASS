@@ -91,14 +91,14 @@ export async function saveToDisk(
 	extension: string,
 	get: typeof fetch = fetch
 ): Promise<number> {
-	const documents = result.Documents.filter((d) => d.DownloadPath);
+	const documents = result.Documents;
 	if ('file' in target && documents.length > 1) {
 		throw new Error('This scan is several documents. Pick a folder to save them into.');
 	}
 
 	let written = 0;
 	for (const [index, document] of documents.entries()) {
-		const response = await get(document.DownloadPath!);
+		const response = await get(document.DownloadPath);
 		if (!response.ok) throw new Error(`The file could not be fetched (${response.status}).`);
 		const handle =
 			'file' in target
@@ -124,7 +124,6 @@ export async function saveToDisk(
 export function saveToBrowser(result: ExportResult): number {
 	let started = 0;
 	for (const document of result.Documents) {
-		if (!document.DownloadPath) continue;
 		const a = window.document.createElement('a');
 		a.href = document.DownloadPath;
 		a.download = '';
@@ -135,11 +134,4 @@ export function saveToBrowser(result: ExportResult): number {
 		started += 1;
 	}
 	return started;
-}
-
-/** Where a save put things: one path, or how many files it wrote. */
-export function savedLabel(result: ExportResult): string {
-	const paths = result.Documents.map((d) => d.SavedPath).filter((p): p is string => !!p);
-	if (paths.length === 1) return paths[0];
-	return `${paths.length} documents`;
 }

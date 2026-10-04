@@ -41,7 +41,6 @@ async function startServer(): Promise<ChildProcess> {
 				...process.env,
 				YASS__server__listen: `127.0.0.1:${port}`,
 				YASS__sessions__directory: `${tmp}/yass-screenshots/sessions`,
-				YASS__output__directory: `${tmp}/yass-screenshots/consume`,
 				YASS__logging__level: 'warning',
 				YASS_WEBROOT: new URL('../build', import.meta.url).pathname
 			}

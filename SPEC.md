@@ -6,7 +6,7 @@ Base prompt / project specification for a coding agent. Read fully before writin
 
 ## 1. One-paragraph summary
 
-YASS is a headless scanning service for a home server on Linux (bare metal, NixOS, Docker). A scanner is attached to the host (USB/SANE or network/eSCL). YASS exposes a small web UI where a user can see scanner readiness, start a scan that runs until the feeder is empty, review pages in a preview (rotate / delete / color mode, per page or for all), and save the result as a PDF into a configured directory — primarily the paperless-ngx consume folder. Everything is configured through a single file. Backend is .NET with **NAPS2.Sdk**; frontend is a **SvelteKit** mobile-first PWA. **There is no authentication**: the service is trusted-LAN only and must never be exposed to the internet (document this prominently in the README).
+YASS is a headless scanning service for a home server on Linux (bare metal, NixOS, Docker). A scanner is attached to the host (USB/SANE or network/eSCL). YASS exposes a small web UI where a user can see scanner readiness, start a scan that runs until the feeder is empty, review pages in a preview (rotate / delete / color mode, per page or for all), and download the result as a PDF (or one image per page) to the device at hand. The server writes documents nowhere else. Everything is configured through a single file. Backend is .NET with **NAPS2.Sdk**; frontend is a **SvelteKit** mobile-first PWA. **There is no authentication**: the service is trusted-LAN only and must never be exposed to the internet (document this prominently in the README).
 
 ## 2. Guiding principle — DECIDED
 
@@ -49,7 +49,7 @@ yass/
 ├── src/
 │   ├── Yass.Core/        # domain records, IScannerBackend, IDocumentWriter, hub contracts (IYassHub/IYassClient)
 │   ├── Yass.Scanning/    # NAPS2 adapter
-│   ├── Yass.Export/      # PDF via NAPS2 PdfExporter, filename templating, atomic write to consume dir
+│   ├── Yass.Export/      # PDF and images via NAPS2 exporters, filename templating
 │   ├── Yass.Server/      # host: SignalR hub, HTTP image endpoints, static frontend, /healthz
 │   └── Yass.Fake/        # FakeScannerBackend + fixtures (tests and `--fake` dev mode)
 ├── tests/Yass.{Core,Scanning,Export,Server}.Tests/
@@ -85,14 +85,10 @@ scanner:
     auto_deskew: false
     device: ""                # exact device id; empty = whatever scanner.device resolves to
   ui_editable: []             # deprecated, ignored: every default above can be changed from the UI
-output:
-  directory: /data/consume    # paperless consume dir
-  filename_template: "{date:yyyy-MM-dd}_{time:HHmm}_scan.pdf"
+output:                       # how a document is written; where it goes is the browser's choice
   pdf:
     compression: jpeg         # jpeg | lossless
     jpeg_quality: 75
-  allow_download: true        # browser "save as" instead of server-side save
-  on_success: keep_session    # keep_session | delete_session
 processing:
   max_concurrent_renders: 2
   thumbnail_width: 320
@@ -129,7 +125,7 @@ Task<SessionDto>   GetSession(string sessionId)
 Task<SessionDto[]> ListSessions()
 Task               DeleteSession(string sessionId)
 Task<SessionDto>   ApplyEdits(string sessionId, PageEdit[] edits)
-Task<ExportResult> Export(string sessionId, ExportRequest req)   // mode: Save | Download
+Task<ExportResult> Export(string sessionId, ExportRequest req)   // builds the document(s); returns one-shot download URLs
 Task<ScannerStatusDto> GetScannerStatus()
 Task<ScanOptionsDto>   GetEffectiveOptions()
 Task               ReloadConfig()
@@ -148,7 +144,7 @@ ExportProgress(string sessionId, int percent)
 GET /healthz
 GET /img/{sessionId}/{pageIndex}/thumb?h={hash}    -> webp, ETag=hash, Cache-Control: public, max-age=31536000, immutable
 GET /img/{sessionId}/{pageIndex}/preview?h={hash}
-GET /export/{sessionId}/{token}.pdf                -> one-shot download URL returned by Export(mode: Download)
+GET /export/{sessionId}/{token}.pdf                -> one-shot download URL returned by Export
 GET /                                              -> static SvelteKit build
 ```
 
@@ -160,7 +156,7 @@ Routes: `/` (scanner picker, presets, big Scan button, recent sessions), `/sessi
 
 The UI comes first: it can change every scan option, and `yass.yaml` only supplies the defaults (`scanner.defaults`). Nothing in the config hides a control; `scanner.ui_editable` is accepted for old files and ignored. The scanner is chosen on `/`, not in `/settings`: the picker shows whenever the server lists at least one scanner, with `scanner.defaults.device` as the default, and presets belong to whichever scanner is chosen unless saved as available for all scanners.
 
-Review: page strip (a row above the page on a phone, a column beside it on desktop); tap a thumbnail = show that page on the stage, its checkbox = multi-select; drag = reorder; toolbar acts on selection or "all" when nothing selected: rotate ⟲ ⟳, delete/restore, color mode. Tap → full preview with swipe. Blank pages pre-marked deleted with badge. Sticky bottom bar: page count, **Save** (to `output.directory`), Download (if `allow_download`), Discard. Edits apply optimistically (CSS rotate) and reconcile on `PageUpdated`.
+Review: page strip (a row above the page on a phone, a column beside it on desktop); tap a thumbnail = show that page on the stage, its checkbox = multi-select; drag = reorder; toolbar acts on selection or "all" when nothing selected: rotate ⟲ ⟳, delete/restore, color mode. Tap → full preview with swipe. Blank pages pre-marked deleted with badge. Sticky bottom bar: page count, **Save as…** (browser download, through the save dialog where there is one), Discard. Edits apply optimistically (CSS rotate) and reconcile on `PageUpdated`.
 
 Targets: first paint < 1 s over LAN; JS ≤ 150 kB gzipped; no image bytes held in JS beyond the current preview; all actions keyboard-reachable; touch targets ≥ 44 px; works without service worker.
 
@@ -170,7 +166,7 @@ Idle RSS ≤ 80 MB; 50-page 300 dpi color scan ≤ 400 MB peak; container image 
 
 ## 10. Testing — DECIDED
 
-80 % line coverage gate on `Yass.*` (excl. `Yass.Fake`). Fake scenarios: N pages, blank at k, error after k, slow pages, feeder-empty-after-N. Export tests assert page count, rotation, deleted pages absent, atomic write (watch dir for partial files). Config tests: round-trip every key; invalid value names the key. Hub contract test: generated TS matches C#; drift fails CI. Playwright: desktop + mobile viewport, real server in `--fake` mode.
+80 % line coverage gate on `Yass.*` (excl. `Yass.Fake`). Fake scenarios: N pages, blank at k, error after k, slow pages, feeder-empty-after-N. Export tests assert page count, rotation, deleted pages absent, one-shot download URLs. Config tests: round-trip every key; invalid value names the key. Hub contract test: generated TS matches C#; drift fails CI. Playwright: desktop + mobile viewport, real server in `--fake` mode.
 
 ## 11. Commit plan — DECIDED
 

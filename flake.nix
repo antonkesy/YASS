@@ -41,7 +41,7 @@
               pkgs.sane-backends
               pkgs.dockerTools.caCertificates
             ];
-            extraCommands = "mkdir -p data/sessions data/consume etc/yass";
+            extraCommands = "mkdir -p data/sessions etc/yass";
             config = {
               Cmd = [ "${pkgs.lib.getExe yass}" ];
               Env = [

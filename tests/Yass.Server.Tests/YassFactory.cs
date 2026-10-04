@@ -26,7 +26,6 @@ public sealed class YassFactory : WebApplicationFactory<Program>
         YassConfig config = new YassConfig() with
         {
             Sessions = new SessionsConfig { Directory = Path.Combine(Root, "sessions") },
-            Output = new OutputConfig { Directory = Path.Combine(Root, "consume") },
             Scanner = new ScannerConfig { PollIntervalSeconds = 1 },
         };
         Config = configure?.Invoke(config) ?? config;
@@ -40,8 +39,6 @@ public sealed class YassFactory : WebApplicationFactory<Program>
     public YassConfig Config { get; }
 
     public FakeScannerBackend Backend { get; }
-
-    public string ConsumeDirectory => Config.Output.Directory;
 
     public HubConnection CreateHub()
     {
@@ -60,7 +57,6 @@ public sealed class YassFactory : WebApplicationFactory<Program>
             services.AddSingleton(sp => new ConfigStore(Config, Path.Combine(Root, "yass.yaml"), sp.GetRequiredService<ILogger<ConfigStore>>()));
             services.AddSingleton<IScannerBackend>(Backend);
             services.AddSingleton<IDocumentWriter, FakeDocumentWriter>();
-            services.AddSingleton<IDocumentStore>(_ => new FakeDocumentStore(ConsumeDirectory));
         });
     }
 

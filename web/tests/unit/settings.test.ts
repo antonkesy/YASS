@@ -25,7 +25,7 @@ describe('settings', () => {
 
 	it('keeps only the scan options out of the effective options', () => {
 		expect(
-			scanOverrides({ Dpi: 300, Device: 'epson:1', AllowDownload: true, ExportRoots: ['/data'] })
+			scanOverrides({ Dpi: 300, Device: 'epson:1', Color: undefined, BlankPageDetection: null! })
 		).toEqual({ Dpi: 300, Device: 'epson:1' });
 	});
 
