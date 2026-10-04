@@ -39,6 +39,36 @@ describe('StatusPill', () => {
 		rerender({ status: null, connection: 'reconnecting' });
 		expect(screen.getByRole('status')).toHaveTextContent(/Offline/);
 	});
+
+	it('counts the pages of a running scan, one or many', () => {
+		const busy = { State: ScannerState.Busy, DeviceName: 'ADF', CheckedAt: '' };
+		const { rerender } = render(StatusPill, { status: busy, connection: 'connected', pages: 1 });
+		expect(screen.getByRole('status')).toHaveTextContent('Scanning · 1 page');
+		rerender({ status: busy, connection: 'connected', pages: 3 });
+		expect(screen.getByRole('status')).toHaveTextContent('Scanning · 3 pages');
+		rerender({ status: busy, connection: 'connected', pages: 0 });
+		expect(screen.getByRole('status')).toHaveTextContent(/^Scanning$/);
+	});
+
+	it('opens a panel of scanner details on click', async () => {
+		render(StatusPill, {
+			status: {
+				State: ScannerState.Ready,
+				DeviceName: 'ADF',
+				Message: 'Flatbed lid open',
+				CheckedAt: new Date().toISOString()
+			},
+			connection: 'connected'
+		});
+		expect(screen.queryByRole('dialog')).toBeNull();
+		await fireEvent.click(screen.getByTestId('status-pill'));
+		const panel = screen.getByRole('dialog', { name: 'Scanner details' });
+		expect(panel).toHaveTextContent('ADF');
+		expect(panel).toHaveTextContent('Flatbed lid open');
+		expect(panel).toHaveTextContent('Connected');
+		await fireEvent.click(screen.getByRole('button', { name: 'Close scanner details' }));
+		expect(screen.queryByRole('dialog')).toBeNull();
+	});
 });
 
 describe('ScanStage', () => {
