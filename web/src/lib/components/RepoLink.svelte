@@ -1,6 +1,6 @@
 <script lang="ts">
 	/** The header's one control on the right: the project on GitHub, in a new tab. */
-	const REPO = 'https://github.com/antonkesy/YAWSS';
+	const REPO = 'https://github.com/antonkesy/YASS';
 </script>
 
 <a

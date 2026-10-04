@@ -88,7 +88,7 @@ buildDotnetModule {
 
   meta = {
     description = "Yet Another Scanner Service: headless scan-to-PDF with a mobile-first web UI";
-    homepage = "https://github.com/antonkesy/yass";
+    homepage = "https://github.com/antonkesy/YASS";
     license = lib.licenses.mit;
     mainProgram = "Yass.Server";
     platforms = lib.platforms.linux;
