@@ -16,7 +16,8 @@
 		pages?: number | null;
 	} = $props();
 
-	let open = $state(false);
+	/** Hovering the pill shows the panel until the pointer leaves; a press pins it until a press outside. */
+	let open = $state<'hover' | 'pinned' | null>(null);
 
 	const offline = $derived(connection !== 'connected');
 	const scanning = $derived(!offline && status?.State === ScannerState.Busy);
@@ -43,15 +44,24 @@
 	);
 </script>
 
-<div class="relative flex justify-center">
+<div
+	class="relative flex justify-center"
+	role="presentation"
+	onmouseenter={() => {
+		if (open === null) open = 'hover';
+	}}
+	onmouseleave={() => {
+		if (open === 'hover') open = null;
+	}}
+>
 	<!-- The pill stays a status for screen readers; the click is on top of that, not instead. -->
 	<button
 		type="button"
 		class="inline-flex h-[34px] items-center gap-2 rounded-full bg-surface py-0 pr-[14px] pl-3 text-[13px] font-semibold text-ink shadow-chip transition-colors hover:bg-accent-wash"
-		aria-expanded={open}
+		aria-expanded={open === 'pinned'}
 		aria-haspopup="dialog"
 		aria-label="Scanner details"
-		onclick={() => (open = !open)}
+		onclick={() => (open = open === 'pinned' ? null : 'pinned')}
 		data-testid="status-pill"
 	>
 		<span role="status" aria-live="polite" class="contents">
@@ -63,7 +73,13 @@
 		</span>
 	</button>
 
-	{#if open}
-		<ScannerDetails {status} {connection} {pages} onclose={() => (open = false)} />
+	{#if open !== null}
+		<ScannerDetails
+			{status}
+			{connection}
+			{pages}
+			pinned={open === 'pinned'}
+			onclose={() => (open = null)}
+		/>
 	{/if}
 </div>

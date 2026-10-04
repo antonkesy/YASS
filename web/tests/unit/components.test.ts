@@ -69,6 +69,19 @@ describe('StatusPill', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Close scanner details' }));
 		expect(screen.queryByRole('dialog')).toBeNull();
 	});
+
+	it('shows the details while hovered, without a click-catcher', async () => {
+		render(StatusPill, {
+			status: { State: ScannerState.Ready, DeviceName: 'ADF', CheckedAt: '' },
+			connection: 'connected'
+		});
+		const wrapper = screen.getByTestId('status-pill').parentElement!;
+		await fireEvent.mouseEnter(wrapper);
+		expect(screen.getByRole('dialog', { name: 'Scanner details' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Close scanner details' })).toBeNull();
+		await fireEvent.mouseLeave(wrapper);
+		expect(screen.queryByRole('dialog')).toBeNull();
+	});
 });
 
 describe('ScanStage', () => {
