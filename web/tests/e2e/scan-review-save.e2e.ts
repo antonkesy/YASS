@@ -4,7 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 async function scanToReview(page: Page) {
 	await page.goto('/');
-	await expect(page.getByTestId('status-pill')).toHaveText(/Ready/);
+	await expect(page.getByTestId('scan-button')).toBeEnabled();
 	await page.getByTestId('scan-button').click();
 	await expect(page).toHaveURL(/\/session\/[A-Za-z0-9-]+$/);
 	// The scan is over once its edits are on offer: the toolbar carries them only while the

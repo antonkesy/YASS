@@ -367,11 +367,10 @@
 	color-scheme: light;
 
 	/*
-	 * Chrome the home screen has to subtract to fill the viewport exactly. Declared here
-	 * so AppHeader, AppFooter and that calc cannot drift apart.
+	 * Chrome the home and review screens have to subtract to fill the viewport exactly.
+	 * Declared here so AppHeader and those calcs cannot drift apart.
 	 */
 	--app-header-h: 4rem;
-	--app-footer-h: 2.75rem;
 }
 
 :focus-visible {
