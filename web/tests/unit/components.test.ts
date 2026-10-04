@@ -553,7 +553,7 @@ describe('RepoLink', () => {
 	it('links out to the repository in a new tab, and marks the link external', () => {
 		render(RepoLink);
 		const link = screen.getByRole('link', { name: /GitHub/ });
-		expect(link).toHaveAttribute('href', 'https://github.com/antonkesy/YAWSS');
+		expect(link).toHaveAttribute('href', 'https://github.com/antonkesy/YASS');
 		// rel=external keeps SvelteKit's router out of the way, and is what lets this
 		// pass svelte/no-navigation-without-resolve without loosening the rule.
 		expect(link.getAttribute('rel')).toContain('external');
