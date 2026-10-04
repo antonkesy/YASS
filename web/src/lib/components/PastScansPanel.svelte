@@ -207,7 +207,7 @@
 		<div class="mt-auto flex items-center gap-2 border-t border-line pt-3">
 			<p class="text-xs text-ink-muted">
 				{sessions.length}
-				{sessions.length === 1 ? 'scan' : 'scans'} · {formatBytes(bytes)} on server
+				{sessions.length === 1 ? 'scan' : 'scans'} · {formatBytes(bytes)}
 			</p>
 			<div class="flex-1"></div>
 			{#if onclear}
