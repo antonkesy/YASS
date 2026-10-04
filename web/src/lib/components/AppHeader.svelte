@@ -3,7 +3,7 @@
 	import { page as route } from '$app/state';
 	import { getHub, sortedSessions } from '$lib/hub/hub';
 	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
-	import AppMenu from './AppMenu.svelte';
+	import RepoLink from './RepoLink.svelte';
 	import StatusPill from './StatusPill.svelte';
 	import { Icon } from '$lib/icons';
 	import { cameFrom } from '$lib/navigation';
@@ -61,7 +61,10 @@
 	<div class="flex min-w-0 items-center justify-center">
 		{#if atHome}
 			<!-- The brand is at the left; the middle spells it out, where there is room to. -->
-			<span class="hidden text-[15px] font-bold text-ink-3 sm:inline" data-testid="app-name">
+			<span
+				class="hidden text-[20px] font-extrabold tracking-[-0.01em] text-ink sm:inline"
+				data-testid="app-name"
+			>
 				Yet Another Scanner Service
 			</span>
 		{:else if atReview}
@@ -74,7 +77,7 @@
 	</div>
 
 	<div class="flex justify-end">
-		<AppMenu />
+		<RepoLink />
 	</div>
 
 	<!--
