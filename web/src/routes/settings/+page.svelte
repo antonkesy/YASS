@@ -223,7 +223,7 @@
 <!--
 	The card only clips; the wrapper inside it scrolls. Scrolling the card itself ran the
 	browser's scrollbar through the rounded corners and the padding, so here it sits
-	inside the vertical padding, a little in from the edge, and drawn thin.
+	inside the vertical padding, a little in from the edge.
 -->
 <div
 	class="fixed inset-x-0 bottom-0 z-41 flex max-h-[92%] animate-pop-in flex-col overflow-hidden rounded-t-[28px] bg-surface pt-[22px] pb-6 shadow-modal sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:max-h-[calc(100%-32px)] sm:w-[min(1180px,calc(100%-40px))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[26px] sm:py-[30px]"
@@ -237,7 +237,7 @@
 	></span>
 
 	<div
-		class="grid min-h-0 scrollbar-thin items-start gap-x-7 gap-y-[18px] overflow-y-auto overscroll-contain px-[22px] sm:mr-2.5 sm:grid-cols-[repeat(auto-fit,minmax(320px,1fr))] sm:pr-[24px] sm:pl-[34px]"
+		class="grid min-h-0 items-start gap-x-7 gap-y-[18px] overflow-y-auto overscroll-contain px-[22px] sm:mr-2.5 sm:grid-cols-[repeat(auto-fit,minmax(320px,1fr))] sm:pr-[24px] sm:pl-[34px]"
 	>
 		<div class="col-span-full flex items-center gap-2">
 			<h1 class="text-[20px] font-extrabold tracking-[-0.01em] sm:text-[26px]">Scan settings</h1>
