@@ -78,8 +78,8 @@
 	const planned = $derived(effective ? { ...effective, ...$settings } : null);
 
 	/**
-	 * The chosen scanner as a person reads it. Nothing when none is chosen — the header menu's
-	 * status row already names whatever the server would pick — and the bare id for one the server has
+	 * The chosen scanner as a person reads it. Nothing when none is chosen — the review header's
+	 * status pill names whatever the server would pick — and the bare id for one the server has
 	 * stopped listing, which at least says something is wrong.
 	 */
 	const deviceName = $derived(

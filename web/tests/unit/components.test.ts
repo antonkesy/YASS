@@ -567,20 +567,14 @@ describe('SortMenu', () => {
 });
 
 describe('AppMenu', () => {
-	const menu = () =>
-		render(AppMenu, {
-			status: { State: ScannerState.Ready, DeviceName: 'ADF', CheckedAt: '' },
-			connection: 'connected'
-		});
+	const menu = () => render(AppMenu);
 
-	it('keeps the status and the links behind the button until it is pressed', async () => {
+	it('keeps the links behind the button until it is pressed', async () => {
 		menu();
 		expect(screen.queryByRole('menu')).toBeNull();
-		expect(screen.queryByRole('status')).toBeNull();
 
 		await fireEvent.click(screen.getByTestId('app-menu-button'));
 
-		expect(screen.getByRole('status')).toHaveTextContent(/Ready/);
 		// The anchors are menu items, as the menu role asks, so that is what they answer to.
 		expect(screen.getByRole('menuitem', { name: /GitHub/ })).toHaveAttribute(
 			'href',
