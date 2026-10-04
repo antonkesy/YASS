@@ -468,13 +468,13 @@
 {/snippet}
 
 <!--
-	Side by side, the three panes get exactly the height left over after the header, the
-	footer and this container's own padding -- so the review screen fits without scrolling
+	Side by side, the three panes get exactly the height left over after the header and
+	this container's own padding -- so the review screen fits without scrolling
 	and each pane scrolls its own overflow instead. Stacked (below lg) they keep their
 	natural height and the page scrolls, which is the right behaviour on a phone.
 -->
 <div
-	class="mx-auto flex max-w-[2200px] animate-slide-from-right flex-col px-4 pt-2 pb-7 sm:px-7 lg:h-[calc(100dvh-var(--app-header-h)-var(--app-footer-h))] lg:min-h-0"
+	class="mx-auto flex max-w-[2200px] animate-slide-from-right flex-col px-4 pt-2 pb-7 sm:px-7 lg:h-[calc(100dvh-var(--app-header-h))] lg:min-h-0"
 >
 	{#if missing}
 		<p class="rounded-[14px] bg-danger-bg px-4 py-3 font-semibold text-danger" role="alert">

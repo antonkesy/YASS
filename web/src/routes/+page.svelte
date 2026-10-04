@@ -78,8 +78,8 @@
 	const planned = $derived(effective ? { ...effective, ...$settings } : null);
 
 	/**
-	 * The chosen scanner as a person reads it. Nothing when none is chosen — the status pill
-	 * already names whatever the server would pick — and the bare id for one the server has
+	 * The chosen scanner as a person reads it. Nothing when none is chosen — the header menu's
+	 * status row already names whatever the server would pick — and the bare id for one the server has
 	 * stopped listing, which at least says something is wrong.
 	 */
 	const deviceName = $derived(
@@ -167,13 +167,13 @@
 	{/if}
 
 	<!--
-		Side by side, the panes get exactly the height left over after the header, the footer
-		and this main's own pt-3 + pb-7 (2.5rem) -- so the home screen fits without scrolling
+		Side by side, the panes get exactly the height left over after the header and this
+		main's own pt-3 + pb-7 (2.5rem) -- so the home screen fits without scrolling
 		and each pane scrolls its own overflow instead. Stacked (below lg) they keep their
 		natural height and the page scrolls, which is the right behaviour on a phone.
 	-->
 	<div
-		class="flex flex-wrap items-stretch gap-6 lg:h-[calc(100dvh-var(--app-header-h)-var(--app-footer-h)-2.5rem)] lg:min-h-0 lg:flex-nowrap"
+		class="flex flex-wrap items-stretch gap-6 lg:h-[calc(100dvh-var(--app-header-h)-2.5rem)] lg:min-h-0 lg:flex-nowrap"
 	>
 		<ScanStage
 			status={$scanner}
