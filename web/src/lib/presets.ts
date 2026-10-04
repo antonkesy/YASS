@@ -137,6 +137,21 @@ export function presetsFor(presets: readonly Preset[], device: string | undefine
 	return presets.filter((p) => !p.device || p.device === device);
 }
 
+/** Past-scans preferences: for now, only whether and when old scans go on their own. */
+export type HistoryPrefs = {
+	/**
+	 * Scans older than this are deleted by whichever browser has it set, next time it looks at
+	 * the list. `null` keeps them until someone deletes them or the server's own retention does.
+	 */
+	autoClear: { amount: number; unit: RetentionUnit } | null;
+};
+
+export type RetentionUnit = 'minutes' | 'hours' | 'days' | 'months';
+
+export const HISTORY_KEY = 'yass.history';
+
+export const defaultHistoryPrefs: HistoryPrefs = { autoClear: null };
+
 function load<T>(storage: Storage | undefined, key: string, fallback: T): T {
 	try {
 		const raw = storage?.getItem(key);
@@ -181,7 +196,11 @@ export const createExportPrefs = (storage: Storage | undefined) =>
 export const createReviewPrefs = (storage: Storage | undefined) =>
 	persisted<ReviewPrefs>(storage, REVIEW_KEY, defaultReviewPrefs);
 
+export const createHistoryPrefs = (storage: Storage | undefined) =>
+	persisted<HistoryPrefs>(storage, HISTORY_KEY, defaultHistoryPrefs);
+
 const storage = typeof localStorage === 'undefined' ? undefined : localStorage;
 export const presets = createPresets(storage);
 export const exportPrefs = createExportPrefs(storage);
 export const reviewPrefs = createReviewPrefs(storage);
+export const historyPrefs = createHistoryPrefs(storage);

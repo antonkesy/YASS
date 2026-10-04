@@ -16,7 +16,10 @@
 	import { settings } from '$lib/settings';
 	import { ExportMode } from '$lib/hub/generated/Yass.Core.Hub';
 	import { saveToBrowser } from '$lib/review/download';
-	import { documentMetadata, exportPrefs } from '$lib/presets';
+	import { documentMetadata, exportPrefs, historyPrefs } from '$lib/presets';
+	import { expiredSessions } from '$lib/sessions/retention';
+	import { untrack } from 'svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	const client = getHub();
 	const scanner = client.scanner;
@@ -124,6 +127,41 @@
 			working = false;
 		}
 	}
+
+	/**
+	 * The auto-clear preference, carried out: whichever browser has it set deletes the scans
+	 * past its timeframe whenever the list changes and once a minute besides, so a scan ages
+	 * out while the page is simply left open. One delete per scan at a time; a failed one
+	 * is tried again on the next look rather than reported, there being nothing to do about it.
+	 */
+	const sweeping = new SvelteSet<string>();
+
+	async function sweep() {
+		if ($connection !== 'connected') return;
+		for (const s of expiredSessions(sortedSessions($sessions), $historyPrefs)) {
+			if (sweeping.has(s.Id)) continue;
+			sweeping.add(s.Id);
+			try {
+				await client.hub.deleteSession(s.Id);
+			} catch {
+				// gone already, or the server said no: the next sweep will see which
+			} finally {
+				sweeping.delete(s.Id);
+			}
+		}
+	}
+
+	$effect(() => {
+		void $sessions;
+		void $historyPrefs;
+		void $connection;
+		void untrack(sweep);
+	});
+
+	$effect(() => {
+		const timer = setInterval(() => void sweep(), 60_000);
+		return () => clearInterval(timer);
+	});
 
 	async function deleteAll(ids: string[]) {
 		error = null;
