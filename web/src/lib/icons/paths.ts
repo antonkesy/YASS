@@ -194,8 +194,6 @@ export const icons = {
 		size: 16
 	},
 	search: { shapes: [circle(11, 11, 8), p('m21 21-4.3-4.3')], size: 16 },
-	/** Nor a header menu: three dots, the usual sign of "more". */
-	more: { shapes: [circle(12, 5, 1), circle(12, 12, 1), circle(12, 19, 1)], stroke: 2 },
 	/** Not in the mockup, which has no full-screen page view; this app does. */
 	expand: { shapes: [p('M15 3h6v6'), p('M9 21H3v-6'), p('M21 3l-7 7'), p('M3 21l7-7')] },
 	/** Nor a full-screen overview, which zooms every thumbnail at once. */
