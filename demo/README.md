@@ -25,16 +25,15 @@ YASS_PORT=9000 docker compose up --build
 3. **Name it** — the scan is already called what the file name template says;
    click the name to change it. The **Ready-made** button in Settings offers
    whole templates.
-4. **Save** — the PDFs land in [`output/`](output) on your host, the demo's
-   stand-in for a paperless-ngx consume folder.
-   **Download** hands them to the browser instead.
+4. **Save as…** — the PDF is handed to your browser, through its save dialog
+   where it offers one and as a plain download where it does not.
 5. **Past scans** — every scan is listed with its status, searchable and
    sortable, with a select mode for bulk download and delete.
 6. **Settings** — presets, source, dpi, colour, page size, blank-page detection,
    file format and the name template. All stored in the browser, not on the server.
 
 `Ctrl-C` stops it; `docker compose down` removes the container. Scan sessions
-live in the container's `/tmp`, so nothing survives except the PDFs you saved.
+live in the container's `/tmp`, so nothing survives except what you downloaded.
 
 Hacking on YASS itself? `docker compose watch` runs the same container and
 rebuilds it whenever something under `src/`, `web/` or the `Dockerfile`
@@ -54,10 +53,10 @@ change is a full rebuild — the Docker cache keeps most of them short.
   faded carbon copy. Last is a German invoice. They cycle, so ask for more pages than there
   are and you see each more than once; to change what a page says, edit its
   Markdown and rebuild.
-- The saved PDF holds those pages as images, rotated and greyed the way your
-  edits ask. It opens in any reader and shows the document. A scan you have
-  named uses that name; an unnamed one falls back to `fake_<timestamp>.pdf`
-  rather than `output.filename_template`, which only the real store expands.
+- The downloaded PDF holds those pages as images, rotated and greyed the way
+  your edits ask. It opens in any reader and shows the document. It is named
+  after the scan, or after the name template in Settings when nobody has named
+  it.
 
 What is *not* simulated is the scanner itself: there is no glass, no feeder and
 no driver. For that you need hardware and the non-fake path — see the
@@ -82,18 +81,6 @@ slow scan that jams part-way — useful for exercising the error and progress UI
 
 Everything else lives in [`yass.yaml`](yass.yaml); non-`server` keys reload at
 runtime, so you can edit it and hit reload without restarting the container.
-
-The export folder you can type in Settings is confined to `output.allowed_roots`,
-which the demo leaves empty — so it is `/data/consume` and below, i.e. `output/`
-on your host. That is the default everywhere, not a demo-only restriction.
-
-## If the PDFs are not writable
-
-The container runs as uid 1000 so `output/` stays yours. If your uid differs:
-
-```sh
-UID=$(id -u) GID=$(id -g) docker compose up --build
-```
 
 ## If port 8080 is taken
 

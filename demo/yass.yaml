@@ -1,5 +1,5 @@
 # Config for the demo container only. See ../yass.example.yaml for every key.
-# Paths are container paths; ./output is bind-mounted onto /data/consume.
+# Paths are container paths.
 
 server:
   listen: "0.0.0.0:8080" # inside the container; compose publishes it on 127.0.0.1
@@ -21,13 +21,9 @@ scanner:
     auto_deskew: false
 
 output:
-  directory: /data/consume # -> demo/output on the host
-  filename_template: "{date:yyyy-MM-dd}_{time:HHmm}_scan.pdf" # fake mode names files fake_<timestamp>.pdf
   pdf:
     compression: jpeg
     jpeg_quality: 75
-  allow_download: true
-  on_success: keep_session
 
 processing:
   max_concurrent_renders: 2
