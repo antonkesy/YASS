@@ -3,7 +3,7 @@
 	import { page as route } from '$app/state';
 	import { getHub, sortedSessions } from '$lib/hub/hub';
 	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
-	import StatusPill from './StatusPill.svelte';
+	import AppMenu from './AppMenu.svelte';
 	import { Icon } from '$lib/icons';
 	import { cameFrom } from '$lib/navigation';
 
@@ -51,7 +51,7 @@
 
 	<div class="flex-1"></div>
 
-	<StatusPill status={$scanner} connection={$connection} pages={scanning?.Pages.length ?? null} />
+	<AppMenu status={$scanner} connection={$connection} pages={scanning?.Pages.length ?? null} />
 
 	<!--
 		Sub-page scan progress is not something the scanner reports, so the rail runs

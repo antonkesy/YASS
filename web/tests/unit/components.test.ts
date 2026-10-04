@@ -8,6 +8,7 @@ import ScanStage from '$lib/components/ScanStage.svelte';
 import SettingsChips from '$lib/components/SettingsChips.svelte';
 import SortMenu from '$lib/components/SortMenu.svelte';
 import AppFooter from '$lib/components/AppFooter.svelte';
+import AppMenu from '$lib/components/AppMenu.svelte';
 import TemplateEditor from '$lib/components/TemplateEditor.svelte';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import {
@@ -584,6 +585,52 @@ describe('AppFooter', () => {
 			expect(link.getAttribute('rel')).toContain('external');
 			expect(link).toHaveAttribute('target', '_blank');
 		}
+	});
+});
+
+describe('AppMenu', () => {
+	const menu = () =>
+		render(AppMenu, {
+			status: { State: ScannerState.Ready, DeviceName: 'ADF', CheckedAt: '' },
+			connection: 'connected'
+		});
+
+	it('keeps the status and the links behind the button until it is pressed', async () => {
+		menu();
+		expect(screen.queryByRole('menu')).toBeNull();
+		expect(screen.queryByRole('status')).toBeNull();
+
+		await fireEvent.click(screen.getByTestId('app-menu-button'));
+
+		expect(screen.getByRole('status')).toHaveTextContent(/Ready/);
+		// The anchors are menu items, as the menu role asks, so that is what they answer to.
+		expect(screen.getByRole('menuitem', { name: /GitHub/ })).toHaveAttribute(
+			'href',
+			'https://github.com/antonkesy/YAWSS'
+		);
+		expect(screen.getByRole('menuitem', { name: /Report an issue/ })).toHaveAttribute(
+			'href',
+			'https://github.com/antonkesy/YAWSS/issues/new'
+		);
+		expect(screen.getByRole('menuitem', { name: /Documentation/ })).toHaveAttribute(
+			'href',
+			'https://github.com/antonkesy/YAWSS#readme'
+		);
+
+		// rel=external keeps SvelteKit's router out of the way, and is what lets these
+		// pass svelte/no-navigation-without-resolve without loosening the rule.
+		for (const link of screen.getAllByRole('menuitem')) {
+			expect(link.getAttribute('rel')).toContain('external');
+			expect(link).toHaveAttribute('target', '_blank');
+		}
+	});
+
+	it('closes on Escape', async () => {
+		menu();
+		await fireEvent.click(screen.getByTestId('app-menu-button'));
+		expect(screen.getByRole('menu')).toBeInTheDocument();
+		await fireEvent.keyDown(window, { key: 'Escape' });
+		expect(screen.queryByRole('menu')).toBeNull();
 	});
 });
 

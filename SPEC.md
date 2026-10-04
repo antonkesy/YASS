@@ -156,7 +156,7 @@ Scan loop: iterate `ScanController.Scan(options)` until the enumerable ends (fee
 
 ## 8. UI — DECIDED behaviour, OPEN styling
 
-Routes: `/` (scanner status pill, scanner picker, presets, big Scan button, recent sessions), `/session/[id]` (review), `/settings` (every scan option, stored in `localStorage`).
+Routes: `/` (scanner status in the header menu, scanner picker, presets, big Scan button, recent sessions), `/session/[id]` (review), `/settings` (every scan option, stored in `localStorage`).
 
 The UI comes first: it can change every scan option, and `yass.yaml` only supplies the defaults (`scanner.defaults`). Nothing in the config hides a control; `scanner.ui_editable` is accepted for old files and ignored. The scanner is chosen on `/`, not in `/settings`: the picker shows whenever the server lists at least one scanner, with `scanner.defaults.device` as the default, and presets belong to whichever scanner is chosen unless saved as available for all scanners.
 
