@@ -362,25 +362,8 @@ describe('ExportBar', () => {
 			'title',
 			expect.stringContaining('/data/consume')
 		);
-		expect(screen.getByTestId('autosave-strip')).toHaveTextContent(/Auto-saved to past scans/);
 		await fireEvent.click(screen.getByTestId('save-button'));
 		expect(onsave).toHaveBeenCalled();
-	});
-
-	it('drops the auto-save strip once the save card is saying the same thing', async () => {
-		const props = {
-			session: session(),
-			allowDownload: true,
-			onsave: vi.fn(),
-			ondownload: vi.fn()
-		};
-		const { rerender } = render(ExportBar, props);
-		expect(screen.getByTestId('autosave-strip')).toBeInTheDocument();
-
-		// Saved: the card above is already green and already names the file.
-		await rerender({ ...props, savedPath: '/data/consume/scan.pdf' });
-		expect(screen.getByTestId('saved-message')).toBeInTheDocument();
-		expect(screen.queryByTestId('autosave-strip')).toBeNull();
 	});
 
 	it('says what the one download button will do, and asks for a place when it can', async () => {

@@ -136,19 +136,4 @@
 			</button>
 		{/if}
 	{/if}
-
-	<!--
-		True as written: the session is on disk and listed the moment it is scanned. It goes
-		once a save has finished, because the card above is then already green and already
-		saying the document is safe — two of those stacked is one too many.
-	-->
-	{#if !savedPath}
-		<p
-			class="flex items-center gap-2 rounded-[12px] bg-success-bg px-3 py-2.5 text-xs font-bold text-success-ink"
-			data-testid="autosave-strip"
-		>
-			<Icon name="checkSmall" />
-			{scanning ? 'Auto-saving to past scans…' : 'Auto-saved to past scans'}
-		</p>
-	{/if}
 </div>
