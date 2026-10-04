@@ -1,23 +1,9 @@
 <script lang="ts">
 	/**
-	 * The header's one control on the right: a button that opens a small menu holding the
-	 * scanner's status and the links out to the project. Modelled on SortMenu.
+	 * The header's one control on the right: a button that opens a small menu of the links
+	 * out to the project. Modelled on SortMenu.
 	 */
-	import type { ScannerStatusDto } from '$lib/hub/generated/Yass.Core.Hub';
-	import type { ConnectionState } from '$lib/hub/client';
-	import StatusPill from './StatusPill.svelte';
 	import { Icon } from '$lib/icons';
-
-	let {
-		status,
-		connection,
-		pages = null
-	}: {
-		status: ScannerStatusDto | null;
-		connection: ConnectionState;
-		/** Pages scanned so far while a scan runs; the status row counts them. */
-		pages?: number | null;
-	} = $props();
 
 	const REPO = 'https://github.com/antonkesy/YAWSS';
 
@@ -47,7 +33,7 @@
 		class="flex h-11 w-11 items-center justify-center rounded-[12px] text-ink shadow-chip transition-colors {open
 			? 'bg-accent-wash'
 			: 'bg-surface hover:bg-accent-wash'}"
-		aria-label="Scanner status and help"
+		aria-label="Help"
 		aria-expanded={open}
 		aria-haspopup="menu"
 		onclick={() => (open = !open)}
@@ -65,19 +51,10 @@
 			onclick={() => (open = false)}
 		></button>
 		<div
-			class="absolute top-[calc(100%+6px)] right-0 z-31 min-w-[230px] animate-pop-in rounded-[16px] bg-surface p-1.5 shadow-menu"
+			class="absolute top-[calc(100%+6px)] right-0 z-31 min-w-[200px] animate-pop-in rounded-[16px] bg-surface p-1.5 shadow-menu"
 			role="menu"
 			data-testid="app-menu"
 		>
-			<p class="px-2.5 py-1.5 text-[11px] font-bold tracking-[0.06em] text-ink-faint uppercase">
-				Scanner
-			</p>
-			<div class="px-1 pb-1.5">
-				<StatusPill {status} {connection} {pages} />
-			</div>
-
-			<hr class="mx-1 my-1 border-t border-line-strong" />
-
 			<a
 				href={REPO}
 				target="_blank"
