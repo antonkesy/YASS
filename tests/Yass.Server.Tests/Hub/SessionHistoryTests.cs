@@ -78,7 +78,7 @@ public sealed class SessionHistoryTests
         // The source is copied, not consumed.
         Assert.Equal(2, (await hub.GetSession(source.Id)).Pages.Length);
 
-        ExportResult result = await hub.Export(target.Id, ExportMode.Save);
+        ExportResult result = await hub.Export(target.Id);
         Assert.Equal(2, result.Documents.Length);
     }
 

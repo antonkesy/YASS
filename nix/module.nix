@@ -29,7 +29,6 @@ in
         {
           server.listen = "0.0.0.0:8080";
           scanner.device = "epsonds";
-          output.directory = "/var/lib/paperless/consume";
         }
       '';
       description = ''
@@ -110,8 +109,7 @@ in
           PrivateTmp = true;
           ReadWritePaths = [
             "/var/lib/yass"
-          ]
-          ++ lib.optional (settings ? output.directory) settings.output.directory;
+          ];
         };
       };
 

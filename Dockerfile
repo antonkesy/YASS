@@ -34,7 +34,7 @@ RUN apk add --no-cache sane-backends sane-utils libusb tini \
  # camera/video backends are irrelevant for document scanning and make every probe take ~20 s
  && for b in gphoto2 v4l dc210 dc240 dc25 qcam stv680 pnm net; do rm -f /etc/sane.d/dll.d/$b; sed -i "s/^$b\$/#$b/" /etc/sane.d/dll.conf; done \
  && addgroup -S yass && adduser -S -G yass yass \
- && mkdir -p /data/sessions /data/consume && chown -R yass:yass /data
+ && mkdir -p /data/sessions && chown -R yass:yass /data
 WORKDIR /app
 COPY --from=server /app/ ./
 COPY --from=web /src/web/build/ ./wwwroot/

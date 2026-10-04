@@ -32,11 +32,7 @@ public class ConfigRoundTripTests
         },
         Output = new OutputConfig
         {
-            Directory = "/mnt/consume",
-            FilenameTemplate = "{date:yyyyMMdd}.pdf",
             Pdf = new PdfConfig { Compression = PdfCompression.Lossless, JpegQuality = 90 },
-            AllowDownload = false,
-            OnSuccess = OnSuccessAction.DeleteSession,
         },
         Processing = new ProcessingConfig { MaxConcurrentRenders = 4, ThumbnailWidth = 200, PreviewMaxWidth = 2000 },
         Sessions = new SessionsConfig { Directory = "/var/lib/yass", RetentionHours = 48 },
@@ -62,7 +58,7 @@ public class ConfigRoundTripTests
         Assert.Equal("127.0.0.1:9999", restored.Server.Listen);
         Assert.Equal(ScanSource.Duplex, restored.Scanner.Defaults.Source);
         Assert.Equal(["dpi", "auto_deskew"], restored.Scanner.UiEditable);
-        Assert.Equal(OnSuccessAction.DeleteSession, restored.Output.OnSuccess);
+        Assert.Equal(PdfCompression.Lossless, restored.Output.Pdf.Compression);
     }
 
     [Fact]
@@ -87,7 +83,6 @@ public class ConfigRoundTripTests
         Assert.Contains("color: grayscale", yaml, StringComparison.Ordinal);
         Assert.Contains("page_size: a4", yaml, StringComparison.Ordinal);
         Assert.Contains("compression: jpeg", yaml, StringComparison.Ordinal);
-        Assert.Contains("on_success: keep_session", yaml, StringComparison.Ordinal);
         Assert.Contains("level: info", yaml, StringComparison.Ordinal);
         Assert.Contains("format: text", yaml, StringComparison.Ordinal);
     }

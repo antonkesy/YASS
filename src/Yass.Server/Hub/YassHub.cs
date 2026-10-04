@@ -227,7 +227,7 @@ public sealed class YassHub(
         Find(sessionId);
         try
         {
-            return await exporter.ExportAsync(sessionId, request ?? new ExportRequest(ExportMode.Save), Context.ConnectionAborted).ConfigureAwait(false);
+            return await exporter.ExportAsync(sessionId, request ?? new ExportRequest(), Context.ConnectionAborted).ConfigureAwait(false);
         }
         catch (InvalidOperationException ex)
         {

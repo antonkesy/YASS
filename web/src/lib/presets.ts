@@ -59,12 +59,10 @@ export const defaultPresets: Preset[] = [
 	}
 ];
 
-/** Export preferences that are not scan options: where files go and what they are called. */
+/** Export preferences that are not scan options: what a downloaded file is and what it is called. */
 export type ExportPrefs = {
 	format: ExportFormat;
-	directory: string;
 	nameTemplate: string;
-	exportButton: boolean;
 	/** Stamped into every PDF saved from this browser. The title is the document's name. */
 	author: string;
 	subject: string;
@@ -75,9 +73,7 @@ export const EXPORT_KEY = 'yass.export';
 
 export const defaultExportPrefs: ExportPrefs = {
 	format: ExportFormat.Pdf,
-	directory: '',
 	nameTemplate: '',
-	exportButton: true,
 	author: '',
 	subject: '',
 	keywords: ''

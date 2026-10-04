@@ -115,16 +115,13 @@ test('scan, review, edit, download and save', async ({ page }) => {
 	const file = await download;
 	expect(file.suggestedFilename()).toMatch(/\.pdf$/);
 
-	// Save finishes the session.
-	await page.getByTestId('save-button').click();
-	await expect(page.getByTestId('saved-message')).toBeVisible({ timeout: 20_000 });
-	await expect(page.getByTestId('session-state')).toHaveText('Saved');
+	// Handing the document over finishes the session.
+	await expect(page.getByTestId('session-state')).toHaveText('Downloaded', { timeout: 20_000 });
 
-	// Home lists it as exported with the active page count. Save writes to the configured
-	// output directory, which is what "Exported" means; "Saved" is a chosen folder.
+	// Home lists it as downloaded with the active page count.
 	await page.getByRole('link', { name: 'Back to home' }).click();
 	const list = page.getByTestId('session-list');
-	await expect(list.getByTestId('session-status').first()).toHaveText('Exported');
+	await expect(list.getByTestId('session-status').first()).toHaveText('Downloaded');
 	await expect(list.getByTestId('session-tile').first()).toContainText('2 p');
 	await expect(list.getByTestId('session-tile').first()).toContainText('Tax return 2025');
 });
@@ -328,11 +325,11 @@ test('save as… writes the document where the save dialog points', async ({ pag
 	// A two-page PDF of blank fake pages is small, but it is the whole document.
 	await expect.poll(async () => (await saved()).bytes, { timeout: 20_000 }).toBeGreaterThan(500);
 	expect((await saved()).name).toBe('Tax return 2025.pdf');
-	// Handing the document over finishes the session, the same as Export does.
-	await expect(page.getByTestId('session-state')).toHaveText('Saved');
+	// Handing the document over finishes the session.
+	await expect(page.getByTestId('session-state')).toHaveText('Downloaded');
 });
 
-test('scan more appends pages and export writes to the configured folder', async ({ page }) => {
+test('scan more appends pages', async ({ page }) => {
 	await scanToReview(page);
 
 	// The dashed tile at the end of the filmstrip runs the feeder again.
@@ -342,30 +339,6 @@ test('scan more appends pages and export writes to the configured folder', async
 	await expect(page.getByTestId('filter-button')).toBeVisible({ timeout: 30_000 });
 	// 4 of 6: page 2 of each run comes out blank and starts deleted.
 	await expect(page.getByTestId('page-count')).toHaveText('4 of 6 pages');
-
-	// Export writes into output.directory, which is where the path under the button points.
-	await expect(page.getByTestId('export-path')).toBeVisible();
-	await page.getByTestId('save-button').click();
-	await expect(page.getByTestId('saved-message')).toBeVisible({ timeout: 20_000 });
-	await expect(page.getByTestId('session-state')).toHaveText('Saved');
-});
-
-test('turning the export button off promotes the download button in its place', async ({
-	page
-}) => {
-	await page.goto('/settings');
-	const toggle = page.getByTestId('toggle-export-button');
-	await expect(toggle).toBeVisible();
-	await toggle.click();
-
-	await scanToReview(page);
-	await expect(page.getByTestId('save-button')).toHaveCount(0);
-	await expect(page.getByTestId('export-path')).toHaveCount(0);
-	await expect(page.getByTestId('download-button')).toBeVisible();
-
-	// Put it back so the following tests see the default sidebar.
-	await page.goto('/settings');
-	await page.getByTestId('toggle-export-button').click();
 });
 
 test('the name a scan is shown under ends in the format that will be written', async ({ page }) => {

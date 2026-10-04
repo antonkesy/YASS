@@ -78,10 +78,6 @@ export type ScanOptionsDto = {
     BlankPageThreshold?: number;
     /** Transpiled from bool */
     AutoDeskew?: boolean;
-    /** Transpiled from bool */
-    AllowDownload?: boolean;
-    /** Transpiled from string[]? */
-    ExportRoots?: string[];
     /** Transpiled from string? */
     Device?: string;
 }
@@ -106,12 +102,6 @@ export type ScannerDeviceDto = {
     Name: string;
 }
 
-/** Transpiled from Yass.Core.Hub.ExportMode */
-export enum ExportMode {
-    Save = 0,
-    Download = 1,
-}
-
 /** Transpiled from Yass.Core.Hub.ExportFormat */
 export enum ExportFormat {
     Pdf = 0,
@@ -121,14 +111,10 @@ export enum ExportFormat {
 
 /** Transpiled from Yass.Core.Hub.ExportRequest */
 export type ExportRequest = {
-    /** Transpiled from Yass.Core.Hub.ExportMode */
-    Mode: ExportMode;
     /** Transpiled from Yass.Core.Hub.ExportFormat */
     Format: ExportFormat;
     /** Transpiled from string? */
     Name?: string;
-    /** Transpiled from string? */
-    Directory?: string;
     /** Transpiled from Yass.Core.Hub.DocumentMetadataDto? */
     Metadata?: DocumentMetadataDto;
 }
@@ -145,8 +131,6 @@ export type DocumentMetadataDto = {
 
 /** Transpiled from Yass.Core.Hub.ExportResult */
 export type ExportResult = {
-    /** Transpiled from Yass.Core.Hub.ExportMode */
-    Mode: ExportMode;
     /** Transpiled from int */
     PageCount: number;
     /** Transpiled from Yass.Core.Hub.ExportedDocumentDto[] */
@@ -157,8 +141,6 @@ export type ExportResult = {
 export type ExportedDocumentDto = {
     /** Transpiled from int */
     PageCount: number;
-    /** Transpiled from string? */
-    SavedPath?: string;
-    /** Transpiled from string? */
-    DownloadPath?: string;
+    /** Transpiled from string */
+    DownloadPath: string;
 }

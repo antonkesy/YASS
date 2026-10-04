@@ -16,9 +16,9 @@ export function sessionStateLabel(state: SessionState): string {
 		case SessionState.Review:
 			return 'Ready to review';
 		case SessionState.Exporting:
-			return 'Saving';
+			return 'Preparing';
 		case SessionState.Done:
-			return 'Saved';
+			return 'Downloaded';
 		case SessionState.Failed:
 			return 'Failed';
 		default:
@@ -107,6 +107,8 @@ export function usesFeeder(source: ScanSource | undefined): boolean {
  * than stored: no events means it is still a draft, and a busy state outranks the
  * history because it says what is happening right now.
  */
+// `exported` and `saved` are what the export-to-folder feature used to leave behind; no scan
+// gets them any more, but one from before still reads that way rather than as a draft.
 export type SessionStatus =
 	'draft' | 'scanning' | 'exporting' | 'exported' | 'saved' | 'downloaded' | 'discarded' | 'failed';
 
@@ -134,7 +136,7 @@ export function sessionStatus(session: SessionDto): SessionStatus {
 export const statusLabels: Record<SessionStatus, string> = {
 	draft: 'Draft',
 	scanning: 'Scanning',
-	exporting: 'Saving',
+	exporting: 'Preparing',
 	exported: 'Exported',
 	saved: 'Saved',
 	downloaded: 'Downloaded',
@@ -185,17 +187,6 @@ export function sessionTitle(
 	now: Date = new Date()
 ): string {
 	return documentName(session, template, now) ?? formatTime(session.CreatedAt, now);
-}
-
-/**
- * The last segment of a folder path — what a person calls the folder. A consume folder
- * reads as `/srv/paperless/consume` on the server and as "consume" in conversation, and a
- * chip has room for the latter. Empty and root paths come back as they are.
- */
-export function folderName(path: string): string {
-	const trimmed = path.trim().replace(/[/\\]+$/, '');
-	const last = trimmed.split(/[/\\]/).pop();
-	return last || path.trim();
 }
 
 /** Where a session's document ended up, when its last event produced a file. */

@@ -19,10 +19,8 @@ public class ConfigValidationTests
         { "scanner.defaults.contrast", c => WithDefaults(c, d => d with { Contrast = -101 }) },
         { "scanner.defaults.blank_page_threshold", c => WithDefaults(c, d => d with { BlankPageThreshold = 1.5 }) },
         { "scanner.ui_editable", c => c with { Scanner = c.Scanner with { UiEditable = ["dpi", "bogus"] } } },
-        { "output.directory", c => c with { Output = c.Output with { Directory = "" } } },
-        { "output.filename_template", c => c with { Output = c.Output with { FilenameTemplate = "scan.txt" } } },
         { "output.pdf.jpeg_quality", c => c with { Output = c.Output with { Pdf = c.Output.Pdf with { JpegQuality = 101 } } } },
-        { "output.on_success", c => c with { Output = c.Output with { OnSuccess = (OnSuccessAction)7 } } },
+        { "output.pdf.compression", c => c with { Output = c.Output with { Pdf = c.Output.Pdf with { Compression = (PdfCompression)7 } } } },
         { "processing.max_concurrent_renders", c => c with { Processing = c.Processing with { MaxConcurrentRenders = 0 } } },
         { "processing.thumbnail_width", c => c with { Processing = c.Processing with { ThumbnailWidth = 10 } } },
         { "processing.preview_max_width", c => c with { Processing = c.Processing with { PreviewMaxWidth = 10000 } } },
@@ -53,12 +51,13 @@ public class ConfigValidationTests
         YassConfig config = new YassConfig() with
         {
             Server = new ServerConfig { Listen = "nope" },
-            Output = new OutputConfig { Directory = "", Pdf = new PdfConfig { JpegQuality = 0 } },
+            Output = new OutputConfig { Pdf = new PdfConfig { JpegQuality = 0 } },
+            Sessions = new SessionsConfig { Directory = "" },
         };
 
         IReadOnlyList<ConfigError> errors = ConfigValidator.Validate(config);
 
-        Assert.Equal(["output.directory", "output.pdf.jpeg_quality", "server.listen"], errors.Select(e => e.Key).Order());
+        Assert.Equal(["output.pdf.jpeg_quality", "server.listen", "sessions.directory"], errors.Select(e => e.Key).Order());
     }
 
     [Fact]

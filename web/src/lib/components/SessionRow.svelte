@@ -63,7 +63,7 @@
 				? 'Discarded'
 				: status === 'downloaded'
 					? 'Downloaded to this browser'
-					: 'Not exported yet'
+					: 'Not downloaded yet'
 	);
 
 	const shell =

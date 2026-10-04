@@ -14,7 +14,6 @@
 	import ScanStage from '$lib/components/ScanStage.svelte';
 	import PastScansPanel from '$lib/components/PastScansPanel.svelte';
 	import { settings } from '$lib/settings';
-	import { ExportMode } from '$lib/hub/generated/Yass.Core.Hub';
 	import { saveToBrowser } from '$lib/review/download';
 	import { documentMetadata, exportPrefs, historyPrefs } from '$lib/presets';
 	import { expiredSessions } from '$lib/sessions/retention';
@@ -114,7 +113,6 @@
 			for (const id of ids) {
 				files += saveToBrowser(
 					await client.hub.export(id, {
-						Mode: ExportMode.Download,
 						Format: $exportPrefs.format,
 						Metadata: documentMetadata($exportPrefs)
 					})

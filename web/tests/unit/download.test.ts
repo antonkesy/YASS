@@ -7,7 +7,6 @@ import {
 	safeFileName,
 	savePicker,
 	saveToDisk,
-	savedLabel,
 	type SaveTarget
 } from '$lib/review/download';
 import { ExportFormat, type ExportResult } from '$lib/hub/generated/Yass.Core.Hub';
@@ -140,21 +139,5 @@ describe('saving to a picked place', () => {
 				missing
 			)
 		).rejects.toThrow(/404/);
-	});
-});
-
-describe('savedLabel', () => {
-	it('names the one path, or counts them', () => {
-		expect(
-			savedLabel({ Documents: [{ PageCount: 1, SavedPath: '/data/a.pdf' }] } as ExportResult)
-		).toBe('/data/a.pdf');
-		expect(
-			savedLabel({
-				Documents: [
-					{ PageCount: 1, SavedPath: '/data/a.pdf' },
-					{ PageCount: 1, SavedPath: '/data/b.pdf' }
-				]
-			} as ExportResult)
-		).toBe('2 documents');
 	});
 });

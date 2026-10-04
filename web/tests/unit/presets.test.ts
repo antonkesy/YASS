@@ -96,20 +96,18 @@ describe('loading stored preferences', () => {
 		}) as unknown as Storage;
 
 	it('fills in a preference stored before it existed', () => {
-		// A browser that saved its prefs before exportButton was added.
+		// A browser that saved its prefs before the metadata fields were added.
 		const store = createExportPrefs(
-			fake({ [EXPORT_KEY]: JSON.stringify({ format: 0, directory: '/data/consume' }) })
+			fake({ [EXPORT_KEY]: JSON.stringify({ format: 1, nameTemplate: '{YEAR}' }) })
 		);
 		const prefs = get(store);
-		expect(prefs.directory).toBe('/data/consume');
-		expect(prefs.exportButton).toBe(defaultExportPrefs.exportButton);
+		expect(prefs.nameTemplate).toBe('{YEAR}');
+		expect(prefs.author).toBe(defaultExportPrefs.author);
 	});
 
 	it('keeps a stored value that happens to match a falsy default', () => {
-		const store = createExportPrefs(
-			fake({ [EXPORT_KEY]: JSON.stringify({ exportButton: false }) })
-		);
-		expect(get(store).exportButton).toBe(false);
+		const store = createExportPrefs(fake({ [EXPORT_KEY]: JSON.stringify({ format: 0 }) }));
+		expect(get(store).format).toBe(0);
 	});
 
 	it('replaces the preset list wholesale rather than merging the defaults back in', () => {
