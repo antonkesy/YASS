@@ -16,13 +16,15 @@ export const sortShortLabels: Record<SortOrder, string> = {
 	name: 'Name'
 };
 
-/** Statuses the filter row offers, in the order the mockup lists them. */
+/**
+ * Statuses the filter row offers, in the order the mockup lists them. Discarded is not
+ * one: discarding deletes the scan, so nothing listed ever carries it.
+ */
 export const filterableStatuses = [
 	'draft',
 	'exported',
 	'saved',
-	'downloaded',
-	'discarded'
+	'downloaded'
 ] as const satisfies readonly SessionStatus[];
 
 export type StatusFilter = 'all' | (typeof filterableStatuses)[number];
