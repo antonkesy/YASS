@@ -154,7 +154,6 @@ export const icons = {
 			p('M16 18v4')
 		]
 	},
-	stop: { shapes: [rect(6, 6, 12, 12, 2)] },
 	folder: {
 		shapes: [
 			p(
