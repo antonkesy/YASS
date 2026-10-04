@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { base, resolve } from '$app/paths';
+	import { resolve } from '$app/paths';
 	import { page as route } from '$app/state';
 	import { getHub, sortedSessions } from '$lib/hub/hub';
 	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
@@ -14,7 +14,7 @@
 	const sessions = client.sessions;
 	const exportProgress = client.exportProgress;
 
-	// Home wears the brand; every other route wears a way back to it.
+	// Home wears the name in the middle; every other route wears a way back to it.
 	const atHome = $derived(route.url.pathname === resolve('/'));
 	// Review is where the scanner's state matters mid-task, so it sits in the middle there.
 	const atReview = $derived(route.params.id !== undefined);
@@ -38,10 +38,7 @@
 	class="sticky top-0 z-20 grid h-16 grid-cols-[1fr_auto_1fr] items-center gap-2.5 bg-header px-4 backdrop-blur-[14px] sm:px-7"
 >
 	<div class="flex min-w-0 items-center gap-2.5">
-		{#if atHome}
-			<img src="{base}/icons/icon.svg" alt="" class="h-8 w-8 rounded-[9px]" />
-			<span class="text-[19px] font-extrabold tracking-[-0.01em]">YASS</span>
-		{:else}
+		{#if !atHome}
 			<!-- Label and arrow are one link: the words are the obvious thing to click. -->
 			<a
 				href={resolve('/')}
@@ -60,9 +57,9 @@
 
 	<div class="flex min-w-0 items-center justify-center">
 		{#if atHome}
-			<!-- The brand is at the left; the middle spells it out, where there is room to. -->
+			<!-- The name is the whole of the brand here: no logo, no short form at the left. -->
 			<span
-				class="hidden text-[20px] font-extrabold tracking-[-0.01em] text-ink sm:inline"
+				class="truncate text-[17px] font-extrabold tracking-[-0.01em] text-ink sm:text-[20px]"
 				data-testid="app-name"
 			>
 				Yet Another Scanner Service
