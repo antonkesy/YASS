@@ -83,6 +83,8 @@
 	let previewIndex = $state<number | null>(null);
 	/** The big preview slides in from whichever side the new page came from. */
 	let stage = $state<HTMLElement | null>(null);
+	/** Hash of the page whose preview has finished loading onto the stage. */
+	let stageLoaded = $state<string | null>(null);
 	// Deliberately the initial value: it tracks which page the stage is showing, and is
 	// updated by the effect below rather than following `current` on its own.
 	let shownAt = untrack(() => current);
@@ -586,18 +588,36 @@
 						     as that height makes it; stacked it is as wide as the phone allows. -->
 						<div
 							bind:this={stage}
-							class="w-full max-w-[max(280px,calc((100dvh-230px)/1.414))] flex-1 lg:h-full lg:w-auto lg:max-w-none lg:flex-none"
+							class="relative w-full max-w-[max(280px,calc((100dvh-230px)/1.414))] flex-1 lg:h-full lg:w-auto lg:max-w-none lg:flex-none"
 							style="aspect-ratio: 1 / 1.414"
+							aria-busy={stageLoaded !== shown.Hash}
 						>
 							<!-- A fresh element per page: swapping only the src keeps the previous page on
 							     screen until the new one has decoded, which reads as the arrows not working. -->
 							{#key shown.Hash}
+								{@const hash = shown.Hash}
 								<img
-									src={imageUrl(id, shown.Index, shown.Hash, 'preview')}
+									src={imageUrl(id, shown.Index, hash, 'preview')}
 									alt="Page {shown.Index + 1}"
 									class="h-full w-full rounded-[6px] object-contain drop-shadow-[0_18px_36px_rgb(19_26_43_/_0.14)]"
+									onload={() => (stageLoaded = hash)}
 								/>
 							{/key}
+							{#if stageLoaded !== shown.Hash}
+								<!-- The preview is rendered on demand, so the empty box sits there for a
+								     moment; the same spinner the thumbnails use says it is on the way. -->
+								<span
+									class="pointer-events-none absolute inset-0 flex items-center justify-center"
+									role="status"
+									aria-label="Loading page {shown.Index + 1}"
+									data-testid="stage-loading"
+								>
+									<span
+										class="h-9 w-9 animate-spin rounded-full border-[3px] border-accent-100 border-t-accent"
+										aria-hidden="true"
+									></span>
+								</span>
+							{/if}
 						</div>
 
 						<button
