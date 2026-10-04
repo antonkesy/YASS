@@ -43,6 +43,7 @@
 			<a
 				href={resolve('/')}
 				onclick={() => cameFrom.leaving(route.params.id ?? '')}
+				aria-label="Back to home"
 				class="group flex items-center gap-2.5 rounded-[12px] text-[15px] font-bold text-ink-3 transition-colors hover:text-ink"
 			>
 				<span
