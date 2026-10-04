@@ -58,6 +58,16 @@
 		device || devices.find((d) => d.Name === status?.DeviceName)?.Id || devices[0]?.Id || ''
 	);
 
+	/**
+	 * One the server has stopped listing still has to show, or the row would silently
+	 * light another scanner while the scan goes somewhere else.
+	 */
+	const listed = $derived(
+		device && !devices.some((d) => d.Id === device)
+			? [...devices, { Id: device, Name: `${device} (not found)` }]
+			: devices
+	);
+
 	/** Presets follow the scanner, so a scanner-specific one is out of sight on the others. */
 	const offered = $derived(presetsFor($presets, device || undefined));
 
@@ -120,23 +130,31 @@
 	{/if}
 
 	{#if canPickDevice}
+		<!-- Every scanner in a row, the chosen one lit, the same way the presets are picked. -->
 		<div class="flex flex-col items-center gap-2" data-testid="device-picker">
 			<span class="text-[11px] font-bold tracking-[0.08em] text-ink-faint uppercase">Scanner</span>
-			<select
-				class="h-[38px] max-w-[min(340px,80vw)] cursor-pointer truncate rounded-full bg-surface px-3.5 text-center text-[13px] font-bold text-accent-deep shadow-chip outline-none [text-align-last:center] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-				value={shown}
-				onchange={(e) => settings.set({ ...$settings, Device: e.currentTarget.value })}
-				data-testid="device-select"
+			<div
+				class="flex flex-wrap justify-center gap-1.5 rounded-[24px] bg-[rgb(238_242_255_/_0.8)] p-[5px]"
+				role="radiogroup"
+				aria-label="Scanner"
+				data-testid="device-pills"
 			>
-				{#each devices as scanner (scanner.Id)}
-					<option value={scanner.Id}>{scanner.Name}</option>
+				{#each listed as scanner (scanner.Id)}
+					<button
+						type="button"
+						role="radio"
+						class="flex h-[38px] max-w-[min(340px,80vw)] items-center rounded-full px-3.5 text-[13px] font-bold transition-[background-color,color,box-shadow,transform] duration-200 ease-spring hover:-translate-y-px active:scale-[0.97] {shown ===
+						scanner.Id
+							? 'bg-accent text-white shadow-preset'
+							: 'bg-surface text-accent-deep shadow-chip'}"
+						aria-checked={shown === scanner.Id}
+						onclick={() => settings.set({ ...$settings, Device: scanner.Id })}
+						data-device={scanner.Id}
+					>
+						<span class="truncate">{scanner.Name}</span>
+					</button>
 				{/each}
-				<!-- One the server has stopped listing still has to show, or the box would
-				     silently name another scanner while the scan goes somewhere else. -->
-				{#if device && !devices.some((d) => d.Id === device)}
-					<option value={device}>{device} (not found)</option>
-				{/if}
-			</select>
+			</div>
 		</div>
 	{/if}
 

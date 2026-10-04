@@ -251,10 +251,10 @@ test('every scan setting can be set, and is applied to the next scan', async ({ 
 
 test('the scanner is chosen on the home screen, and the presets follow it', async ({ page }) => {
 	await page.goto('/');
-	const picker = page.getByTestId('device-select');
-	// No "Automatic": with nothing picked, the box names the scanner the server is on.
-	await expect(picker).toHaveValue('YASS Fake ADF');
-	await picker.selectOption({ label: 'Canon LiDE 400' });
+	const picker = page.getByTestId('device-pills');
+	// No "Automatic": with nothing picked, the row lights the scanner the server is on.
+	await expect(picker.getByRole('radio', { checked: true })).toHaveText('YASS Fake ADF');
+	await picker.getByRole('radio', { name: 'Canon LiDE 400' }).click();
 
 	// Saved with no "available for all scanners" tick, so it belongs to the Canon alone.
 	await page.goto('/settings');
@@ -268,7 +268,7 @@ test('the scanner is chosen on the home screen, and the presets follow it', asyn
 	const stage = page.getByTestId('scan-stage');
 	await page.goto('/');
 	await expect(stage.getByRole('button', { name: 'Canon only' })).toBeVisible();
-	await page.getByTestId('device-select').selectOption({ label: 'Epson DS-530' });
+	await page.getByTestId('device-pills').getByRole('radio', { name: 'Epson DS-530' }).click();
 	await expect(stage.getByRole('button', { name: 'Canon only' })).toHaveCount(0);
 	// The built-in presets belong to no scanner, so they are still all there.
 	await expect(stage.getByRole('button', { name: 'Document' })).toBeVisible();
