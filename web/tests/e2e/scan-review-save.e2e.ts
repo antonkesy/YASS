@@ -280,16 +280,17 @@ test('the scanner is chosen on the home screen, and the presets follow it', asyn
 	await expect(stage.getByRole('button', { name: 'Canon only' })).toBeVisible();
 });
 
-test('discard keeps the scan listed as discarded', async ({ page }) => {
+test('discard removes the scan from past scans', async ({ page }) => {
 	await scanToReview(page);
+	const url = page.url();
 	await page.getByTestId('discard-button').click();
 	await expect(page.getByTestId('discard-button')).toHaveText('Really discard?');
 	await page.getByTestId('discard-button').click();
 	await expect(page).toHaveURL(/\/$/);
 
-	// Discarding throws the pages away but leaves the row, unlike deleting.
-	const list = page.getByTestId('session-list');
-	await expect(list.getByTestId('session-status').first()).toHaveText('Discarded');
+	// Discarding deletes the scan outright: no row is left behind.
+	const id = url.slice(url.lastIndexOf('/') + 1);
+	await expect(page.locator(`a[href$="/session/${id}"]`)).toHaveCount(0);
 });
 
 test('stop ends a scan early', async ({ page }) => {

@@ -18,8 +18,7 @@
 		draft: 'bg-warning',
 		exported: 'bg-success',
 		saved: 'bg-saved',
-		downloaded: 'bg-downloaded',
-		discarded: 'bg-discarded'
+		downloaded: 'bg-downloaded'
 	};
 
 	// Only statuses that actually occur get a chip, so the row does not list five

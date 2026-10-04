@@ -190,13 +190,10 @@
 		await client.hub.stopScan(id);
 	}
 
-	/**
-	 * Discard marks the scan discarded and drops its pages, but leaves the row in
-	 * past scans. Deleting a session outright is the trash button over there.
-	 */
+	/** Discard throws the scan away entirely: it leaves no row behind in past scans. */
 	async function discard() {
 		try {
-			await client.hub.discardSession(id);
+			await client.hub.deleteSession(id);
 			cameFrom.leaving(id);
 			await goto(resolve('/'));
 			toast.show('Scan discarded');
