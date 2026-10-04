@@ -14,7 +14,7 @@
 	const sessions = client.sessions;
 	const exportProgress = client.exportProgress;
 
-	// Home wears the name in the middle and the scanner at the left; every other route wears a way back to it.
+	// Home wears the name in the middle; every other route wears a way back to it.
 	const atHome = $derived(route.url.pathname === resolve('/'));
 	// Review is where the scanner's state matters mid-task, so it sits in the middle there.
 	const atReview = $derived(route.params.id !== undefined);
@@ -38,14 +38,7 @@
 	class="sticky top-0 z-20 grid h-16 grid-cols-[1fr_auto_1fr] items-center gap-2.5 bg-header px-4 backdrop-blur-[14px] sm:px-7"
 >
 	<div class="flex min-w-0 items-center gap-2.5">
-		{#if atHome}
-			<!-- Home has no way back, so the scanner's state takes the left where review has the arrow. -->
-			<StatusPill
-				status={$scanner}
-				connection={$connection}
-				pages={scanning?.Pages.length ?? null}
-			/>
-		{:else}
+		{#if !atHome}
 			<!-- Label and arrow are one link: the words are the obvious thing to click. -->
 			<a
 				href={resolve('/')}
