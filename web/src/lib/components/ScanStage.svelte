@@ -39,8 +39,11 @@
 		onsettings: () => void;
 	} = $props();
 
-	/** Whether the lit pill's details panel is open: a second press on it opens, outside closes. */
-	let details = $state(false);
+	/**
+	 * The lit pill's details panel: hovering the pill shows it until the pointer leaves,
+	 * a press pins it until a press outside.
+	 */
+	let details = $state<'hover' | 'pinned' | null>(null);
 
 	/** The scanner the next scan will run on: this browser's pick, or the server's. */
 	const device = $derived(options?.Device || '');
@@ -146,7 +149,16 @@
 				{#each listed as scanner (scanner.Id)}
 					{@const lit = shown === scanner.Id}
 					<!-- Pressing a pill picks that scanner; pressing the lit one again opens its details. -->
-					<div class="relative">
+					<div
+						class="relative"
+						role="presentation"
+						onmouseenter={() => {
+							if (lit && details === null) details = 'hover';
+						}}
+						onmouseleave={() => {
+							if (details === 'hover') details = null;
+						}}
+					>
 						<button
 							type="button"
 							role="radio"
@@ -155,19 +167,20 @@
 								: 'bg-surface text-accent-deep shadow-chip'}"
 							aria-checked={lit}
 							onclick={() => {
-								if (lit) details = !details;
+								if (lit) details = details === 'pinned' ? null : 'pinned';
 								else settings.set({ ...$settings, Device: scanner.Id });
 							}}
 							data-device={scanner.Id}
 						>
 							<span class="truncate">{scanner.Name}</span>
 						</button>
-						{#if lit && details}
+						{#if lit && details !== null}
 							<ScannerDetails
 								{status}
 								{connection}
 								name={scanner.Name}
-								onclose={() => (details = false)}
+								pinned={details === 'pinned'}
+								onclose={() => (details = null)}
 							/>
 						{/if}
 					</div>

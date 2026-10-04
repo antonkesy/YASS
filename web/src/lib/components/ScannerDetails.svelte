@@ -9,6 +9,7 @@
 		connection,
 		name = null,
 		pages = null,
+		pinned = true,
 		onclose
 	}: {
 		status: ScannerStatusDto | null;
@@ -17,6 +18,8 @@
 		name?: string | null;
 		/** Pages scanned so far, when a scan is running. */
 		pages?: number | null;
+		/** Opened by a press, so it stays until an outside press; a hover has no catcher. */
+		pinned?: boolean;
 		onclose: () => void;
 	} = $props();
 
@@ -49,13 +52,15 @@
 	);
 </script>
 
-<!-- Click-catcher so the panel closes on any outside press, including a tap. -->
-<button
-	type="button"
-	class="fixed inset-0 z-30 cursor-default"
-	aria-label="Close scanner details"
-	onclick={onclose}
-></button>
+{#if pinned}
+	<!-- Click-catcher so the panel closes on any outside press, including a tap. -->
+	<button
+		type="button"
+		class="fixed inset-0 z-30 cursor-default"
+		aria-label="Close scanner details"
+		onclick={onclose}
+	></button>
+{/if}
 <div
 	class="absolute top-[calc(100%+8px)] left-1/2 z-31 w-max max-w-[min(320px,calc(100vw-32px))] -translate-x-1/2 animate-pop-in rounded-[16px] bg-surface p-4 text-left shadow-menu"
 	role="dialog"
