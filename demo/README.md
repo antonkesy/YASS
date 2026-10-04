@@ -36,6 +36,11 @@ YASS_PORT=9000 docker compose up --build
 `Ctrl-C` stops it; `docker compose down` removes the container. Scan sessions
 live in the container's `/tmp`, so nothing survives except the PDFs you saved.
 
+Hacking on YASS itself? `docker compose watch` runs the same container and
+rebuilds it whenever something under `src/`, `web/` or the `Dockerfile`
+changes. The image is a trimmed publish with nothing to sync into, so every
+change is a full rebuild — the Docker cache keeps most of them short.
+
 ## What is simulated
 
 `--fake` replaces the scanner and the PDF writer. Both produce real output:

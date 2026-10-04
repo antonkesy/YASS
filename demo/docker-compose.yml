@@ -2,6 +2,7 @@
 #
 #   cd demo && docker compose up --build              ->  http://localhost:8080
 #   cd demo && YASS_PORT=9000 docker compose up --build  ->  http://localhost:9000
+#   cd demo && docker compose watch                    ->  rebuilds when the source changes
 #
 # Scan, reorder/rotate/delete pages, then "Save": the PDF appears
 # in ./output on the host. Sessions live in the container's /tmp and are gone
@@ -29,3 +30,25 @@ services:
     volumes:
       - ./yass.yaml:/etc/yass/yass.yaml:ro
       - ./output:/data/consume
+    # `docker compose watch`: the image is a trimmed, self-contained publish, so there is
+    # nothing to sync into it; a source change means a rebuild. yass.yaml is not listed
+    # because it is bind-mounted and the server reloads it on its own.
+    develop:
+      watch:
+        - action: rebuild
+          path: ../src
+          ignore:
+            - "**/bin/"
+            - "**/obj/"
+        - action: rebuild
+          path: ../web
+          ignore:
+            - node_modules/
+            - build/
+            - .svelte-kit/
+            - test-results/
+            - playwright-report/
+        - action: rebuild
+          path: ../Dockerfile
+        - action: rebuild
+          path: ../yass.example.yaml
