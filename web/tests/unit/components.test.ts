@@ -136,37 +136,36 @@ describe('ScanStage scanner picker', () => {
 		presets.reset();
 	});
 
-	it('lists what the server can see and shows which one the scan will use', () => {
+	const picked = () => screen.getByRole('radio', { checked: true }).getAttribute('data-device');
+
+	it('lists what the server can see and lights the one the scan will use', () => {
 		stage({ Device: 'canon:2' });
-		const select = screen.getByTestId('device-select') as HTMLSelectElement;
-		expect(select).toHaveValue('canon:2');
-		expect([...select.options].map((o) => o.textContent?.trim())).toEqual([
+		expect(picked()).toBe('canon:2');
+		expect(screen.getAllByRole('radio').map((o) => o.textContent?.trim())).toEqual([
 			'Epson DS-530',
 			'Canon LiDE 400'
 		]);
 	});
 
-	it("names the server's scanner when this browser has not picked one", () => {
+	it("lights the server's scanner when this browser has not picked one", () => {
 		const { unmount } = stage({ Device: '' }, [epson, { Id: 'adf:3', Name: 'ADF' }]);
-		expect(screen.getByTestId('device-select')).toHaveValue('adf:3');
+		expect(picked()).toBe('adf:3');
 		unmount();
 
-		// The server's name matches nothing listed: the first one stands in rather than a blank.
+		// The server's name matches nothing listed: the first one stands in rather than none.
 		stage({ Device: '' });
-		expect(screen.getByTestId('device-select')).toHaveValue('epson:1');
+		expect(picked()).toBe('epson:1');
 	});
 
-	it('keeps a scanner the server has stopped listing visible rather than naming another', () => {
+	it('keeps a scanner the server has stopped listing visible rather than lighting another', () => {
 		stage({ Device: 'gone:9' });
-		const select = screen.getByTestId('device-select') as HTMLSelectElement;
-		expect(select).toHaveValue('gone:9');
-		expect(screen.getByRole('option', { name: 'gone:9 (not found)' })).toBeInTheDocument();
+		expect(picked()).toBe('gone:9');
+		expect(screen.getByRole('radio', { name: 'gone:9 (not found)' })).toBeChecked();
 	});
 
 	it("writes the pick into this browser's overrides", async () => {
 		stage({ Device: '' });
-		const select = screen.getByTestId('device-select');
-		await fireEvent.change(select, { target: { value: 'canon:2' } });
+		await fireEvent.click(screen.getByRole('radio', { name: 'Canon LiDE 400' }));
 		expect(get(settings).Device).toBe('canon:2');
 	});
 
