@@ -383,6 +383,12 @@
  * The mockup never uses :disabled for dimming — it pairs opacity with pointer-events.
  * Kept as a utility so components can say `is-muted` instead of repeating both.
  */
+/* A slim, quiet scrollbar in the surface's own colours, for panes that scroll inside a card. */
+@utility scrollbar-thin {
+	scrollbar-width: thin;
+	scrollbar-color: var(--color-handle) transparent;
+}
+
 @utility is-muted {
 	opacity: 0.4;
 	pointer-events: none;
