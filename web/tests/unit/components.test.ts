@@ -169,6 +169,16 @@ describe('ScanStage scanner picker', () => {
 		expect(get(settings).Device).toBe('canon:2');
 	});
 
+	it('opens the details of the lit scanner on a press, and only of that one', async () => {
+		stage({ Device: 'epson:1' });
+		await fireEvent.click(screen.getByRole('radio', { name: 'Canon LiDE 400' }));
+		expect(screen.queryByRole('dialog')).toBeNull();
+		await fireEvent.click(screen.getByRole('radio', { name: 'Epson DS-530' }));
+		expect(screen.getByRole('dialog', { name: 'Scanner details' })).toHaveTextContent(
+			'Epson DS-530'
+		);
+	});
+
 	it('stays away when there is nothing to pick', () => {
 		stage({ Device: 'epson:1' }, []);
 		expect(screen.queryByTestId('device-picker')).toBeNull();

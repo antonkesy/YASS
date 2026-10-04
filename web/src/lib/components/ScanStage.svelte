@@ -15,6 +15,7 @@
 	import ScanButton from './ScanButton.svelte';
 	import SettingsChips from './SettingsChips.svelte';
 	import { Icon } from '$lib/icons';
+	import ScannerDetails from './ScannerDetails.svelte';
 
 	let {
 		status,
@@ -37,6 +38,9 @@
 		onscan: () => void;
 		onsettings: () => void;
 	} = $props();
+
+	/** Whether the lit pill's details panel is open: a second press on it opens, outside closes. */
+	let details = $state(false);
 
 	/** The scanner the next scan will run on: this browser's pick, or the server's. */
 	const device = $derived(options?.Device || '');
@@ -140,19 +144,33 @@
 				data-testid="device-pills"
 			>
 				{#each listed as scanner (scanner.Id)}
-					<button
-						type="button"
-						role="radio"
-						class="flex h-[38px] max-w-[min(340px,80vw)] items-center rounded-full px-3.5 text-[13px] font-bold transition-[background-color,color,box-shadow,transform] duration-200 ease-spring hover:-translate-y-px active:scale-[0.97] {shown ===
-						scanner.Id
-							? 'bg-accent text-white shadow-preset'
-							: 'bg-surface text-accent-deep shadow-chip'}"
-						aria-checked={shown === scanner.Id}
-						onclick={() => settings.set({ ...$settings, Device: scanner.Id })}
-						data-device={scanner.Id}
-					>
-						<span class="truncate">{scanner.Name}</span>
-					</button>
+					{@const lit = shown === scanner.Id}
+					<!-- Pressing a pill picks that scanner; pressing the lit one again opens its details. -->
+					<div class="relative">
+						<button
+							type="button"
+							role="radio"
+							class="flex h-[38px] max-w-[min(340px,80vw)] items-center rounded-full px-3.5 text-[13px] font-bold transition-[background-color,color,box-shadow,transform] duration-200 ease-spring hover:-translate-y-px active:scale-[0.97] {lit
+								? 'bg-accent text-white shadow-preset'
+								: 'bg-surface text-accent-deep shadow-chip'}"
+							aria-checked={lit}
+							onclick={() => {
+								if (lit) details = !details;
+								else settings.set({ ...$settings, Device: scanner.Id });
+							}}
+							data-device={scanner.Id}
+						>
+							<span class="truncate">{scanner.Name}</span>
+						</button>
+						{#if lit && details}
+							<ScannerDetails
+								{status}
+								{connection}
+								name={scanner.Name}
+								onclose={() => (details = false)}
+							/>
+						{/if}
+					</div>
 				{/each}
 			</div>
 		</div>
