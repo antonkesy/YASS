@@ -20,6 +20,22 @@ review the pages, and save a PDF straight into your
 > Whatever you allow, anyone who can reach the port can write there, so run YASS
 > as a user with no more filesystem reach than it needs.
 
+## Screenshots
+
+<p align="center">
+  <img src="assets/screenshots/home.png" alt="Home screen: scanner picker, presets and the Scan button" width="24%">
+  <img src="assets/screenshots/review.png" alt="Review screen: the page on the stage, the toolbar under it, the page strip below" width="24%">
+  <img src="assets/screenshots/all-pages.png" alt="All pages view: the whole scan on one screen with a blank page pre-marked deleted" width="24%">
+  <img src="assets/screenshots/past-scans.png" alt="Past scans list on the home screen" width="24%">
+</p>
+
+<p align="center">
+  <img src="assets/screenshots/review-desktop.png" alt="Review screen on a desktop browser: page strip, stage, and the export panel" width="98%">
+</p>
+
+Taken against the simulated scanner (`--fake`); regenerate them with
+`pnpm --dir web screenshots`.
+
 ## What it does
 
 - **One tap to scan.** Big Scan button, live scanner status, pages appear as
