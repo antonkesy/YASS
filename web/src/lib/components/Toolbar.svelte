@@ -67,177 +67,185 @@
 	/**
 	 * A button is here when pressing it would do something, and absent when it would not —
 	 * no shelf of grey buttons explaining what you cannot have. Editing stops altogether
-	 * while a scan runs, so the row empties down to Expand until the feeder does.
+	 * while a scan runs, and a bar holding nothing but Expand is not an edit bar, so then
+	 * there is no bar at all until the feeder stops. The all-pages view keeps its own, for
+	 * the selection it shows.
 	 */
 	const editing = $derived(!disabled);
 	const canAim = $derived(editing && !scanning && one);
+	const shown = $derived(editing || scoped);
 
 	const tool =
 		'flex h-[58px] min-w-[62px] flex-col items-center justify-center gap-1 rounded-[14px] px-2 text-[11px] font-bold transition-colors hover:bg-accent-hover50';
 </script>
 
-<div
-	class="relative flex flex-wrap items-center gap-0.5 rounded-[20px] bg-surface p-1.5 shadow-toolbar"
-	role="toolbar"
-	aria-label="Page edits"
-	data-testid="toolbar"
->
-	{#if scoped}
-		<span class="px-3 text-[13px] font-semibold text-ink-muted" data-testid="toolbar-scope">
-			Acting on {scope}
-		</span>
+{#if shown}<div
+		class="relative flex flex-wrap items-center gap-0.5 rounded-[20px] bg-surface p-1.5 shadow-toolbar"
+		role="toolbar"
+		aria-label="Page edits"
+		data-testid="toolbar"
+	>
+		{#if scoped}
+			<span class="px-3 text-[13px] font-semibold text-ink-muted" data-testid="toolbar-scope">
+				Acting on {scope}
+			</span>
 
-		{#if selectedCount > 0}
+			{#if selectedCount > 0}
+				<button
+					type="button"
+					class="h-9 rounded-full px-3 text-[13px] font-bold text-accent transition-colors hover:bg-accent-wash"
+					onclick={onclear}
+				>
+					Clear
+				</button>
+			{:else if onselectall && total > 1 && editing}
+				<button
+					type="button"
+					class="h-9 rounded-full px-3 text-[13px] font-bold text-accent transition-colors hover:bg-accent-wash"
+					onclick={onselectall}
+					data-testid="toolbar-select-all"
+				>
+					All {total}
+				</button>
+			{/if}
+
+			<span class="mx-1 h-8 w-px bg-line" aria-hidden="true"></span>
+		{/if}
+
+		{#if onexpand && total > 0}
+			<!-- Looking at a page is not editing it, so this one stays on while a scan runs. -->
 			<button
 				type="button"
-				class="h-9 rounded-full px-3 text-[13px] font-bold text-accent transition-colors hover:bg-accent-wash"
-				onclick={onclear}
+				class="text-ink {tool}"
+				onclick={onexpand}
+				aria-label="Open this page full screen"
+				data-testid="expand-button"
 			>
-				Clear
-			</button>
-		{:else if onselectall && total > 1 && editing}
-			<button
-				type="button"
-				class="h-9 rounded-full px-3 text-[13px] font-bold text-accent transition-colors hover:bg-accent-wash"
-				onclick={onselectall}
-				data-testid="toolbar-select-all"
-			>
-				All {total}
+				<Icon name="expand" />
+				Expand
 			</button>
 		{/if}
 
-		<span class="mx-1 h-8 w-px bg-line" aria-hidden="true"></span>
-	{/if}
+		{#if editing}
+			<button
+				type="button"
+				class="text-ink {tool}"
+				onclick={() => onrotate(-90)}
+				aria-label="Rotate left"
+			>
+				<Icon name="rotateLeft" />
+				Rotate left
+			</button>
+			<button
+				type="button"
+				class="text-ink {tool}"
+				onclick={() => onrotate(90)}
+				aria-label="Rotate right"
+			>
+				<Icon name="rotateRight" />
+				Rotate right
+			</button>
+		{/if}
 
-	{#if onexpand && total > 0}
-		<!-- Looking at a page is not editing it, so this one stays on while a scan runs. -->
-		<button
-			type="button"
-			class="text-ink {tool}"
-			onclick={onexpand}
-			aria-label="Open this page full screen"
-			data-testid="expand-button"
-		>
-			<Icon name="expand" />
-			Expand
-		</button>
-	{/if}
+		{#if oncrop && canAim}
+			<button
+				type="button"
+				class="text-ink {tool}"
+				onclick={oncrop}
+				aria-label="Crop page"
+				data-testid="crop-button"
+			>
+				<Icon name="crop" />
+				Crop
+			</button>
+		{/if}
 
-	{#if editing}
-		<button
-			type="button"
-			class="text-ink {tool}"
-			onclick={() => onrotate(-90)}
-			aria-label="Rotate left"
-		>
-			<Icon name="rotateLeft" />
-			Rotate left
-		</button>
-		<button
-			type="button"
-			class="text-ink {tool}"
-			onclick={() => onrotate(90)}
-			aria-label="Rotate right"
-		>
-			<Icon name="rotateRight" />
-			Rotate right
-		</button>
-	{/if}
+		{#if editing}
+			<button
+				type="button"
+				class="{filterOpen ? 'bg-accent-50 text-accent' : 'text-ink'} {tool}"
+				onclick={() => (filterOpen = !filterOpen)}
+				aria-expanded={filterOpen}
+				aria-haspopup="menu"
+				aria-label="Filter"
+				data-testid="filter-button"
+			>
+				<Icon name="wand" />
+				Filter
+			</button>
+		{/if}
 
-	{#if oncrop && canAim}
-		<button
-			type="button"
-			class="text-ink {tool}"
-			onclick={oncrop}
-			aria-label="Crop page"
-			data-testid="crop-button"
-		>
-			<Icon name="crop" />
-			Crop
-		</button>
-	{/if}
+		{#if onrescan && canAim}
+			<button
+				type="button"
+				class="text-ink {tool}"
+				onclick={onrescan}
+				aria-label="Rescan this page"
+				data-testid="rescan-button"
+			>
+				<Icon name="rescan" />
+				Rescan
+			</button>
+		{/if}
 
-	{#if editing}
-		<button
-			type="button"
-			class="{filterOpen ? 'bg-accent-50 text-accent' : 'text-ink'} {tool}"
-			onclick={() => (filterOpen = !filterOpen)}
-			aria-expanded={filterOpen}
-			aria-haspopup="menu"
-			aria-label="Filter"
-			data-testid="filter-button"
-		>
-			<Icon name="wand" />
-			Filter
-		</button>
-	{/if}
-
-	{#if onrescan && canAim}
-		<button
-			type="button"
-			class="text-ink {tool}"
-			onclick={onrescan}
-			aria-label="Rescan this page"
-			data-testid="rescan-button"
-		>
-			<Icon name="rescan" />
-			Rescan
-		</button>
-	{/if}
-
-	<!--
+		<!--
 		The two take the same place at the end of the row and trade it between them: a page
 		that is deleted offers Restore, one that is not offers Delete. Both appear only for a
 		selection that is some of each, where both of them mean something.
 	-->
-	{#if editing && anyDeleted}
-		<button type="button" class="text-ink {tool}" onclick={onrestore} data-testid="restore-button">
-			<Icon name="layers" />
-			Restore
-		</button>
-	{/if}
-	{#if editing && anyActive}
-		<button
-			type="button"
-			class="text-danger hover:bg-danger-bg! {tool}"
-			onclick={ondelete}
-			data-testid="delete-button"
-		>
-			<Icon name="trash" />
-			Delete
-		</button>
-	{/if}
+		{#if editing && anyDeleted}
+			<button
+				type="button"
+				class="text-ink {tool}"
+				onclick={onrestore}
+				data-testid="restore-button"
+			>
+				<Icon name="layers" />
+				Restore
+			</button>
+		{/if}
+		{#if editing && anyActive}
+			<button
+				type="button"
+				class="text-danger hover:bg-danger-bg! {tool}"
+				onclick={ondelete}
+				data-testid="delete-button"
+			>
+				<Icon name="trash" />
+				Delete
+			</button>
+		{/if}
 
-	{#if filterOpen}
-		<button
-			type="button"
-			class="fixed inset-0 z-30 cursor-default"
-			aria-label="Close filter menu"
-			onclick={() => (filterOpen = false)}
-		></button>
-		<div
-			class="absolute bottom-[calc(100%+8px)] left-1/2 z-31 min-w-[200px] -translate-x-1/2 animate-fade-in rounded-[16px] bg-surface p-1.5 shadow-menu"
-			role="menu"
-			data-testid="filter-menu"
-		>
-			{#each pageFilters as option (option.value)}
-				<button
-					type="button"
-					role="menuitem"
-					class="flex h-[42px] w-full items-center gap-2.5 rounded-[10px] px-2.5 text-left text-sm font-semibold transition-colors hover:bg-accent-hover50"
-					onclick={() => {
-						onfilter(option.value);
-						filterOpen = false;
-					}}
-				>
-					<span
-						class="h-7 w-[22px] flex-none rounded-[5px] shadow-[0_0_0_1px_rgb(19_26_43_/_0.1)]"
-						style="background: linear-gradient(135deg, {option.swatch})"
-						aria-hidden="true"
-					></span>
-					{option.label}
-				</button>
-			{/each}
-		</div>
-	{/if}
-</div>
+		{#if filterOpen}
+			<button
+				type="button"
+				class="fixed inset-0 z-30 cursor-default"
+				aria-label="Close filter menu"
+				onclick={() => (filterOpen = false)}
+			></button>
+			<div
+				class="absolute bottom-[calc(100%+8px)] left-1/2 z-31 min-w-[200px] -translate-x-1/2 animate-fade-in rounded-[16px] bg-surface p-1.5 shadow-menu"
+				role="menu"
+				data-testid="filter-menu"
+			>
+				{#each pageFilters as option (option.value)}
+					<button
+						type="button"
+						role="menuitem"
+						class="flex h-[42px] w-full items-center gap-2.5 rounded-[10px] px-2.5 text-left text-sm font-semibold transition-colors hover:bg-accent-hover50"
+						onclick={() => {
+							onfilter(option.value);
+							filterOpen = false;
+						}}
+					>
+						<span
+							class="h-7 w-[22px] flex-none rounded-[5px] shadow-[0_0_0_1px_rgb(19_26_43_/_0.1)]"
+							style="background: linear-gradient(135deg, {option.swatch})"
+							aria-hidden="true"
+						></span>
+						{option.label}
+					</button>
+				{/each}
+			</div>
+		{/if}
+	</div>{/if}
