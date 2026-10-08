@@ -32,7 +32,8 @@
 		deviceName = null,
 		busy = false,
 		onscan,
-		onsettings
+		onsettings,
+		onsavepreset
 	}: {
 		status: ScannerStatusDto | null;
 		connection: ConnectionState;
@@ -44,6 +45,8 @@
 		busy?: boolean;
 		onscan: () => void;
 		onsettings: () => void;
+		/** Opens Settings ready to name the current settings as a preset; falls back to plain Settings. */
+		onsavepreset?: () => void;
 	} = $props();
 
 	/**
@@ -203,7 +206,7 @@
 			settings.set(applyPreset(preset, $settings));
 			pickedPreset.set({ id });
 		}}
-		onsave={onsettings}
+		onsave={onsavepreset ?? onsettings}
 	/>
 
 	<SettingsChips

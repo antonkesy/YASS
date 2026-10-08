@@ -523,3 +523,24 @@ test('a configured server folder can be switched on in settings and saved into',
 	// Nothing half-written is left beside it.
 	expect(readdirSync(serverFolder).filter((f) => f.startsWith('._yass-'))).toEqual([]);
 });
+
+test('Save as preset on the home screen opens Settings ready to name it', async ({ page }) => {
+	await page.goto('/');
+	await page.getByTestId('scan-stage').getByRole('button', { name: 'Document' }).click();
+	// Moved off every preset, the home screen offers to keep these settings.
+	await page.goto('/settings');
+	await page.getByTestId('seg-dpi').getByRole('radio', { name: '150', exact: true }).check();
+	await page.goto('/');
+	await page.getByTestId('preset-save-current').click();
+
+	await expect(page).toHaveURL(/\/settings$/);
+	await expect(page.getByTestId('preset-name')).toBeFocused();
+	await page.keyboard.type('Quick 150');
+	await page.keyboard.press('Enter');
+
+	await page.goto('/');
+	await expect(
+		page.getByTestId('scan-stage').getByRole('button', { name: 'Quick 150' })
+	).toHaveAttribute('aria-pressed', 'true');
+	await expect(page.getByTestId('preset-save-current')).toHaveCount(0);
+});
