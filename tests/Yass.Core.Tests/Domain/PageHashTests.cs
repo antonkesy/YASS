@@ -26,4 +26,21 @@ public class PageHashTests
             PageHash.Derive("abc", new RenderSpec(Rotation.R0, PageFilter.Original, ColorMode.Color, null)),
             PageHash.Derive("abc", new RenderSpec(Rotation.R0, PageFilter.Original, ColorMode.Color, new CropBox(0, 0, 0, 0))));
     }
+
+    [Fact]
+    public void Straightening_leaves_no_empty_corners()
+    {
+        // A square turned 45 degrees fits a square 1/sqrt(2) of its size inside it.
+        Assert.Equal(1 / Math.Sqrt(2), Straighten.InnerScale(100, 100, 45), 9);
+        Assert.Equal(1, Straighten.InnerScale(200, 300, 0), 9);
+        Assert.Equal(Straighten.InnerScale(200, 300, 5), Straighten.InnerScale(200, 300, -5), 9);
+    }
+
+    [Fact]
+    public void A_tone_slider_maps_to_the_css_factor()
+    {
+        Assert.Equal(1f, PageAdjusts.Tone(0));
+        Assert.Equal(0.5f, PageAdjusts.Tone(-100));
+        Assert.Equal(1.5f, PageAdjusts.Tone(100));
+    }
 }

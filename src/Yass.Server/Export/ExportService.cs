@@ -81,7 +81,7 @@ public sealed class ExportService(
 
         ExportPage[][] documentPages = session.Documents
             .Select(doc => doc
-                .Select(p => new ExportPage(SessionPaths.Source(store.Root, session, p), p.Rotation, p.Filter, session.OptionsUsed.Color, p.Crop, session.OptionsUsed.Dpi))
+                .Select(p => new ExportPage(SessionPaths.Source(store.Root, session, p), p.Rotation, p.Filter, session.OptionsUsed.Color, p.Crop, session.OptionsUsed.Dpi, p.Adjust, p.Cleanup, p.Skew))
                 .ToArray())
             .ToArray();
         int totalPages = documentPages.Sum(d => d.Length);

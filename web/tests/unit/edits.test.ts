@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PageEditOp, PageFilter, Rotation } from '$lib/hub/generated/Yass.Core.Domain';
+import { PageCleanup, PageEditOp, PageFilter, Rotation } from '$lib/hub/generated/Yass.Core.Domain';
 import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 import { sessionOf } from './fixtures';
 import {
@@ -25,6 +25,8 @@ describe('edit builders', () => {
 			Degrees: 90,
 			Filter: PageFilter.Original,
 			Split: false,
+			Cleanup: PageCleanup.None,
+			Skew: 0,
 			Targets: [2]
 		});
 		expect(deleteEdit(new Set()).Targets).toBeUndefined();

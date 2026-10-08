@@ -1,9 +1,17 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Yass.Core.Domain;
 
 namespace Yass.Core.Tests.Domain;
 
 public class PageEditsTests
 {
+    // The options SessionStore writes session.json with.
+    private static readonly JsonSerializerOptions SessionJson = new(JsonSerializerDefaults.Web)
+    {
+        Converters = { new JsonStringEnumConverter() },
+    };
+
     private static Session Session(int pages) => new(
         "s1",
         DateTimeOffset.UnixEpoch,
@@ -149,5 +157,100 @@ public class PageEditsTests
         Assert.Equal("page-1.png", after.Pages[0].SourceFile);
         Assert.True(after.Pages[0].Deleted);
         Assert.False(after.Pages[1].Deleted);
+    }
+
+    [Fact]
+    public void Adjust_is_set_per_page_and_a_neutral_one_is_stored_as_none()
+    {
+        Session before = Session(2);
+
+        Session adjusted = PageEdits.Apply(before, [PageEdit.SetAdjust(new PageAdjust(20, -10, 30), 1)]);
+        Session cleared = PageEdits.Apply(adjusted, [PageEdit.SetAdjust(new PageAdjust(0, 0, 0), 1)]);
+
+        Assert.Equal(new PageAdjust(20, -10, 30), adjusted.Pages[1].Adjust);
+        Assert.Null(adjusted.Pages[0].Adjust);
+        Assert.NotEqual(before.Pages[1].Hash, adjusted.Pages[1].Hash);
+        Assert.Null(cleared.Pages[1].Adjust);
+        Assert.Equal(before.Pages[1].Hash, cleared.Pages[1].Hash);
+    }
+
+    [Theory]
+    [InlineData(101, 0, 0)]
+    [InlineData(0, -101, 0)]
+    [InlineData(0, 0, -1)]
+    [InlineData(0, 0, 101)]
+    public void An_adjust_out_of_range_is_rejected(int brightness, int contrast, int sharpen)
+    {
+        Assert.Throws<ArgumentException>(() => PageEdits.Apply(Session(1), [PageEdit.SetAdjust(new PageAdjust(brightness, contrast, sharpen), 0)]));
+    }
+
+    [Fact]
+    public void Cleanup_passes_are_turned_on_and_off_independently()
+    {
+        Session before = Session(1);
+
+        Session both = PageEdits.Apply(before, [PageEdit.AddCleanup(PageCleanup.Despeckle, 0), PageEdit.AddCleanup(PageCleanup.AutoLevels, 0)]);
+        Session again = PageEdits.Apply(both, [PageEdit.AddCleanup(PageCleanup.Despeckle, 0)]);
+        Session one = PageEdits.Apply(both, [PageEdit.RemoveCleanup(PageCleanup.Despeckle, 0)]);
+        Session none = PageEdits.Apply(one, [PageEdit.RemoveCleanup(PageCleanup.AutoLevels, 0)]);
+
+        Assert.Equal(PageCleanup.Despeckle | PageCleanup.AutoLevels, both.Pages[0].Cleanup);
+        Assert.Equal(both.Pages[0], again.Pages[0]);
+        Assert.Equal(PageCleanup.AutoLevels, one.Pages[0].Cleanup);
+        Assert.NotEqual(both.Pages[0].Hash, one.Pages[0].Hash);
+        Assert.Equal(before.Pages[0].Hash, none.Pages[0].Hash);
+    }
+
+    [Fact]
+    public void Skew_is_rounded_to_a_tenth_of_a_degree()
+    {
+        Session before = Session(1);
+
+        Session skewed = PageEdits.Apply(before, [PageEdit.SetSkew(2.34, 0)]);
+        Session same = PageEdits.Apply(before, [PageEdit.SetSkew(2.3, 0)]);
+        Session straight = PageEdits.Apply(skewed, [PageEdit.SetSkew(0.04, 0)]);
+
+        Assert.Equal(2.3, skewed.Pages[0].Skew);
+        Assert.Equal(same.Pages[0].Hash, skewed.Pages[0].Hash);
+        Assert.NotEqual(before.Pages[0].Hash, skewed.Pages[0].Hash);
+        Assert.Equal(0, straight.Pages[0].Skew);
+        Assert.Equal(before.Pages[0].Hash, straight.Pages[0].Hash);
+    }
+
+    [Theory]
+    [InlineData(15.1)]
+    [InlineData(-20)]
+    [InlineData(double.NaN)]
+    public void A_skew_out_of_range_is_rejected(double degrees)
+    {
+        Assert.Throws<ArgumentException>(() => PageEdits.Apply(Session(1), [PageEdit.SetSkew(degrees, 0)]));
+    }
+
+    [Fact]
+    public void A_page_saved_before_adjust_cleanup_and_skew_existed_loads_without_them()
+    {
+        const string Old = """
+            {"index":0,"sourceFile":"p.png","rotation":"R90","filter":"Enhance","crop":null,"startsDocument":false,
+             "deleted":false,"isBlank":false,"sourceHash":"abc","hash":"fd2d0c3f3a11b654"}
+            """;
+
+        Page page = JsonSerializer.Deserialize<Page>(Old, SessionJson)!;
+
+        Assert.Null(page.Adjust);
+        Assert.Equal(PageCleanup.None, page.Cleanup);
+        Assert.Equal(0, page.Skew);
+        Assert.Equal(
+            PageHash.Derive("abc", new RenderSpec(Rotation.R90, PageFilter.Enhance, ColorMode.Color, null)),
+            PageHash.Rehash(page, ColorMode.Color).Hash);
+    }
+
+    [Fact]
+    public void Cleanup_flags_round_trip_through_the_session_file_format()
+    {
+        Page page = Session(1).Pages[0] with { Cleanup = PageCleanup.Despeckle | PageCleanup.AutoLevels, Adjust = new PageAdjust(5, 0, 10), Skew = -1.5 };
+
+        Page back = JsonSerializer.Deserialize<Page>(JsonSerializer.Serialize(page, SessionJson), SessionJson)!;
+
+        Assert.Equal(page, back);
     }
 }

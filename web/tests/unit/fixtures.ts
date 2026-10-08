@@ -1,5 +1,5 @@
 import type { PageDto, SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
-import { PageFilter, SessionState } from '$lib/hub/generated/Yass.Core.Domain';
+import { PageCleanup, PageFilter, SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 
 /**
  * Wire-shaped test data. Built here rather than inline so that growing SessionDto
@@ -16,6 +16,8 @@ export function page(Index: number, over: Partial<PageDto> = {}): PageDto {
 		StartsDocument: false,
 		Hash: `h${Index}`,
 		ThumbnailReady: true,
+		Cleanup: PageCleanup.None,
+		Skew: 0,
 		...over
 	};
 }
