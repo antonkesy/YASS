@@ -29,7 +29,7 @@ export function imageUrl(
 	sessionId: string,
 	index: number,
 	hash: string,
-	kind: 'thumb' | 'preview'
+	kind: 'thumb' | 'preview' | 'frame'
 ) {
 	return `${base}/img/${encodeURIComponent(sessionId)}/${index}/${kind}?h=${hash}`;
 }

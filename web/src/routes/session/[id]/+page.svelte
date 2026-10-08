@@ -793,7 +793,8 @@
 
 {#if cropping !== null && session?.Pages[cropping]}
 	<CropModal
-		src={imageUrl(id, session.Pages[cropping].Index, session.Pages[cropping].Hash, 'preview')}
+		src={imageUrl(id, session.Pages[cropping].Index, session.Pages[cropping].Hash, 'frame')}
+		rotation={session.Pages[cropping].Rotation}
 		alt="Page {session.Pages[cropping].Index + 1}"
 		crop={session.Pages[cropping].Crop ?? null}
 		onapply={applyCrop}

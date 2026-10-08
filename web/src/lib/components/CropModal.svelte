@@ -1,19 +1,27 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import type { CropBox } from '$lib/hub/generated/Yass.Core.Domain';
+	import { Rotation, type CropBox } from '$lib/hub/generated/Yass.Core.Domain';
+	import { cropFromView, cropToView } from '$lib/review/edits';
 	import { Icon } from '$lib/icons';
 
 	let {
 		src,
 		alt,
 		crop,
+		rotation = Rotation.R0,
 		onapply,
 		oncancel
 	}: {
+		/**
+		 * The page's frame image: upright, with every edit but its crop and skew. Drawing over the
+		 * page's preview instead put the box in the wrong place on a page already cropped.
+		 */
 		src: string;
 		alt: string;
-		/** The page's current crop, if any. */
+		/** The page's current crop, if any, in the scan's own coordinates. */
 		crop: CropBox | null;
+		/** The page's quarter turns, which the frame image shows and the crop is taken before. */
+		rotation?: Rotation;
 		onapply: (crop: CropBox | undefined) => void;
 		oncancel: () => void;
 	} = $props();
@@ -26,14 +34,12 @@
 	] as const;
 
 	// Seeded once and then owned by the dialog: the sliders are a draft, not a mirror.
-	// The dialog is mounted fresh each time it opens, so the seed is always current.
+	// The dialog is mounted fresh each time it opens, so the seed is always current. The
+	// draft is the box as it looks on the upright page, which is what the sliders' Top and
+	// Left mean to whoever is moving them.
+	const turn = untrack(() => rotation);
 	let box = $state<CropBox>(
-		untrack(() => ({
-			Top: crop?.Top ?? 0,
-			Right: crop?.Right ?? 0,
-			Bottom: crop?.Bottom ?? 0,
-			Left: crop?.Left ?? 0
-		}))
+		untrack(() => cropToView(crop ?? { Top: 0, Right: 0, Bottom: 0, Left: 0 }, turn))
 	);
 
 	const empty = $derived(box.Top === 0 && box.Right === 0 && box.Bottom === 0 && box.Left === 0);
@@ -127,7 +133,7 @@
 				type="button"
 				class="flex h-[46px] items-center gap-2 rounded-[14px] bg-linear-135 from-accent-light to-accent-grad2 px-5 text-[15px] font-extrabold text-white shadow-export transition-shadow disabled:pointer-events-none disabled:opacity-40"
 				disabled={impossible}
-				onclick={() => onapply(empty ? undefined : box)}
+				onclick={() => onapply(empty ? undefined : cropFromView(box, turn))}
 				data-testid="crop-apply"
 			>
 				<Icon name="crop" />

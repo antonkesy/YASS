@@ -18,6 +18,8 @@ public static class ImageEndpoints
             ServeAsync(sessionId, pageIndex, h, ImageKind.Thumb, ctx, store, cache, ct));
         app.MapGet("/img/{sessionId}/{pageIndex:int}/preview", (string sessionId, int pageIndex, string? h, HttpContext ctx, SessionStore store, RenderCache cache, CancellationToken ct) =>
             ServeAsync(sessionId, pageIndex, h, ImageKind.Preview, ctx, store, cache, ct));
+        app.MapGet("/img/{sessionId}/{pageIndex:int}/frame", (string sessionId, int pageIndex, string? h, HttpContext ctx, SessionStore store, RenderCache cache, CancellationToken ct) =>
+            ServeAsync(sessionId, pageIndex, h, ImageKind.Frame, ctx, store, cache, ct));
     }
 
     private static async Task<Results<PhysicalFileHttpResult, NotFound, StatusCodeHttpResult>> ServeAsync(
