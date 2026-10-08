@@ -40,5 +40,23 @@ public sealed class ImageRenderer : IDisposable
         }
     }
 
+    /// <summary>
+    /// Looks for a scanner's dark frame around the page in a source file, taking a render slot
+    /// like any other job that decodes a full page.
+    /// </summary>
+    public async Task<CropBox?> DetectBordersAsync(string sourcePath, CancellationToken cancellationToken)
+    {
+        await _slots.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            using Image image = await Image.LoadAsync(sourcePath, cancellationToken).ConfigureAwait(false);
+            return BorderDetector.Detect(image);
+        }
+        finally
+        {
+            _slots.Release();
+        }
+    }
+
     public void Dispose() => _slots.Dispose();
 }

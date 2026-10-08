@@ -62,6 +62,14 @@ export type IYassHub = {
     */
     applyEdits(sessionId: string, edits: PageEdit[]): Promise<SessionDto>;
     /**
+    * Crops the scanner's dark frame off the target pages (all of them when null or empty), as
+    * ordinary crop edits. Returns how many pages had one.
+    * @param sessionId Transpiled from string
+    * @param targets Transpiled from int[]?
+    * @returns Transpiled from System.Threading.Tasks.Task<int>
+    */
+    autoCrop(sessionId: string, targets: number[]): Promise<number>;
+    /**
     * Scans one sheet and puts it in place of , keeping that page's edits.
     * @param sessionId Transpiled from string
     * @param pageIndex Transpiled from int

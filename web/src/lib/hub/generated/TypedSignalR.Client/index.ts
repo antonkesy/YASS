@@ -117,6 +117,10 @@ class IYassHub_HubProxy implements IYassHub {
         return await this.connection.invoke("ApplyEdits", sessionId, edits);
     }
 
+    public readonly autoCrop = async (sessionId: string, targets: number[]): Promise<number> => {
+        return await this.connection.invoke("AutoCrop", sessionId, targets);
+    }
+
     public readonly rescanPage = async (sessionId: string, pageIndex: number): Promise<SessionDto> => {
         return await this.connection.invoke("RescanPage", sessionId, pageIndex);
     }
