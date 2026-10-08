@@ -117,11 +117,16 @@
 		/>
 	{:else if sessions.length > 0}
 		<div class="flex gap-2">
-			<label class="flex h-[38px] flex-1 items-center gap-2 rounded-[12px] bg-ctl px-3">
+			<!--
+				min-w-0 here and w-0 on the input: an input keeps a default width of about twenty
+				characters however flexible its box, which with Sort and Select beside it made this
+				row wider than a phone.
+			-->
+			<label class="flex h-[38px] min-w-0 flex-1 items-center gap-2 rounded-[12px] bg-ctl px-3">
 				<span class="text-ink-faint"><Icon name="search" /></span>
 				<span class="sr-only">Search past scans</span>
 				<input
-					class="min-w-0 flex-1 bg-transparent text-sm font-medium outline-none"
+					class="w-0 min-w-0 flex-1 bg-transparent text-sm font-medium outline-none"
 					type="search"
 					placeholder="Search scans"
 					bind:value={query}
