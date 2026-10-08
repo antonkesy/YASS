@@ -120,8 +120,34 @@ export function matchesPreset(preset: Preset, overrides: ScanOverrides): boolean
 	return pinned.every(([key, value]) => overrides[key as keyof ScanOverrides] === value);
 }
 
-export function activePreset(presets: readonly Preset[], overrides: ScanOverrides): Preset | null {
-	return presets.find((p) => matchesPreset(p, overrides)) ?? null;
+/**
+ * The preset the next scan is running, if any. Presets overlap — one saved while Document was
+ * lit pins Document's keys and more — so several can match at once. The one last picked wins
+ * while it still matches; otherwise the one that pins the most, so a saved preset is not
+ * forever hidden behind the built-in it was made from.
+ */
+export function activePreset(
+	presets: readonly Preset[],
+	overrides: ScanOverrides,
+	picked: string | null = null
+): Preset | null {
+	const matching = presets.filter((p) => matchesPreset(p, overrides));
+	const preferred = matching.find((p) => p.id === picked);
+	if (preferred) return preferred;
+	const pins = (p: Preset) => Object.keys(p.settings).length;
+	return matching.reduce<Preset | null>(
+		(best, p) => (!best || pins(p) > pins(best) ? p : best),
+		null
+	);
+}
+
+/**
+ * The overrides after picking a preset: exactly what it pins, and the scanner, which a preset
+ * never carries. Merged over the old overrides instead, a Receipt's brightness rode along into
+ * the Photo picked after it, and the pill said Photo while the scan said otherwise.
+ */
+export function applyPreset(preset: Preset, current: ScanOverrides): ScanOverrides {
+	return current.Device ? { ...preset.settings, Device: current.Device } : { ...preset.settings };
 }
 
 /**
@@ -192,11 +218,23 @@ export const createExportPrefs = (storage: Storage | undefined) =>
 export const createReviewPrefs = (storage: Storage | undefined) =>
 	persisted<ReviewPrefs>(storage, REVIEW_KEY, defaultReviewPrefs);
 
+/**
+ * The preset this browser last picked, so it stays lit when another one matches as well, and
+ * can be shown as edited rather than simply vanishing once a setting is changed.
+ */
+export type PickedPreset = { id: string | null };
+
+export const PICKED_KEY = 'yass.pickedPreset';
+
+export const createPickedPreset = (storage: Storage | undefined) =>
+	persisted<PickedPreset>(storage, PICKED_KEY, { id: null });
+
 export const createHistoryPrefs = (storage: Storage | undefined) =>
 	persisted<HistoryPrefs>(storage, HISTORY_KEY, defaultHistoryPrefs);
 
 const storage = typeof localStorage === 'undefined' ? undefined : localStorage;
 export const presets = createPresets(storage);
+export const pickedPreset = createPickedPreset(storage);
 export const exportPrefs = createExportPrefs(storage);
 export const reviewPrefs = createReviewPrefs(storage);
 export const historyPrefs = createHistoryPrefs(storage);

@@ -4,6 +4,7 @@ import {
 	EXPORT_KEY,
 	PRESETS_KEY,
 	activePreset,
+	applyPreset,
 	createExportPrefs,
 	createPresets,
 	defaultExportPrefs,
@@ -85,6 +86,41 @@ describe('preset matching against planned options', () => {
 			PageSize: PageSize.A4
 		};
 		expect(activePreset(defaultPresets, planned)).toBeNull();
+	});
+});
+
+describe('picking between presets that overlap', () => {
+	const document = defaultPresets[0];
+	// Saved while Document was lit: Document's keys and everything else the scan would do.
+	const office: Preset = {
+		id: 'office',
+		name: 'Office',
+		icon: 'briefcase',
+		settings: { ...document.settings, Brightness: 0, Contrast: 0, BlankPageDetection: true }
+	};
+	const all = [...defaultPresets, office];
+	const planned = { ...office.settings };
+
+	it('lights the preset that was picked, not the first one that happens to match', () => {
+		expect(activePreset(all, planned, 'office')?.id).toBe('office');
+		expect(activePreset(all, planned, 'document')?.id).toBe('document');
+	});
+
+	it('prefers the most specific match when nothing was picked', () => {
+		expect(activePreset(all, planned)?.id).toBe('office');
+	});
+
+	it('ignores a picked preset that no longer matches', () => {
+		expect(activePreset(all, { ...planned, Dpi: 600 }, 'office')).toBeNull();
+		expect(activePreset(all, { ...planned, Brightness: 5 }, 'office')?.id).toBe('document');
+	});
+
+	it('replaces the overrides rather than leaving the last preset behind', () => {
+		const receipt = defaultPresets[2];
+		const photo = defaultPresets[3];
+		const after = applyPreset(photo, applyPreset(receipt, { Device: 'epson:1' }));
+		expect(after).toEqual({ ...photo.settings, Device: 'epson:1' });
+		expect(after.Brightness).toBeUndefined();
 	});
 });
 

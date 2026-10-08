@@ -7,7 +7,14 @@
 	import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 	import type { ConnectionState } from '$lib/hub/client';
 	import { pageSizeLabel } from '$lib/format';
-	import { activePreset, exportPrefs, presets, presetsFor } from '$lib/presets';
+	import {
+		activePreset,
+		applyPreset,
+		exportPrefs,
+		pickedPreset,
+		presets,
+		presetsFor
+	} from '$lib/presets';
 	import { exportFormatLabels } from '$lib/format';
 	import { settings } from '$lib/settings';
 	import PaperStack from './PaperStack.svelte';
@@ -80,7 +87,11 @@
 
 	// Matched against what the scan will do, not against the stored overrides alone:
 	// a browser with no overrides still matches whichever preset the server defaults to.
-	const chosen = $derived(options ? activePreset(offered, options) : null);
+	const chosen = $derived(options ? activePreset(offered, options, $pickedPreset.id) : null);
+	/** The preset picked last, once a setting has moved away from it. */
+	const edited = $derived(
+		chosen || !options ? null : (offered.find((p) => p.id === $pickedPreset.id) ?? null)
+	);
 
 	const offline = $derived(connection !== 'connected');
 	const ready = $derived(!offline && status?.State === ScannerState.Ready);
@@ -184,10 +195,13 @@
 	<PresetPills
 		presets={offered}
 		active={chosen?.id ?? null}
+		edited={edited?.id ?? null}
 		modified={chosen === null}
 		onpick={(id) => {
 			const preset = offered.find((p) => p.id === id);
-			if (preset) settings.set({ ...$settings, ...preset.settings });
+			if (!preset) return;
+			settings.set(applyPreset(preset, $settings));
+			pickedPreset.set({ id });
 		}}
 		onsave={onsettings}
 	/>

@@ -277,6 +277,37 @@ test('the scanner is chosen on the home screen, and the presets follow it', asyn
 	await expect(stage.getByRole('button', { name: 'Canon only' })).toBeVisible();
 });
 
+test('a picked preset stays picked, and says so once a setting moves away from it', async ({
+	page
+}) => {
+	await page.goto('/settings');
+	const presets = page.getByTestId('presets');
+	const pill = (name: string) => presets.getByRole('button', { name, exact: true });
+
+	// Saved on top of Document, so it pins Document's settings and more: both match at once.
+	await pill('Document').click();
+	await page.getByTestId('preset-new').click();
+	await page.getByTestId('preset-name').fill('Office');
+	await page.getByTestId('preset-save').click();
+	await expect(pill('Office')).toHaveAttribute('aria-pressed', 'true');
+
+	// Switching back and forth lights whichever was pressed, not the first that matches.
+	await pill('Document').click();
+	await expect(pill('Document')).toHaveAttribute('aria-pressed', 'true');
+	await expect(pill('Office')).toHaveAttribute('aria-pressed', 'false');
+	await pill('Office').click();
+	await expect(pill('Office')).toHaveAttribute('aria-pressed', 'true');
+
+	// Changing a setting leaves Office named as edited rather than dropping it.
+	await page.getByTestId('seg-dpi').getByRole('radio', { name: '600', exact: true }).check();
+	await expect(page.getByTestId('preset-edited')).toContainText('Office');
+	await page.getByTestId('preset-revert').click();
+	await expect(pill('Office')).toHaveAttribute('aria-pressed', 'true');
+	await expect(
+		page.getByTestId('seg-dpi').getByRole('radio', { name: '300', exact: true })
+	).toBeChecked();
+});
+
 test('discard removes the scan from past scans', async ({ page }) => {
 	await scanToReview(page);
 	const url = page.url();
