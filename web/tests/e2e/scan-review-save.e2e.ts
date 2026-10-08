@@ -581,3 +581,56 @@ test('screens slide forward and back, and the settings sheet cross-fades', async
 
 	await expect.poll(transitions).toEqual(['forward', 'back', 'fade']);
 });
+
+test('scanners can be renamed, hidden and inspected, and an unplugged one stays listed', async ({
+	page
+}) => {
+	// A scanner this browser saw once and that is not on the server's list now.
+	await page.addInitScript(() => {
+		if (localStorage.getItem('yass.scanners')) return;
+		localStorage.setItem(
+			'yass.scanners',
+			JSON.stringify({
+				known: {
+					'gone:1': {
+						name: 'Old Fujitsu',
+						driver: 'sane',
+						firstSeen: '2026-01-01T10:00:00Z',
+						lastSeen: '2026-02-01T10:00:00Z'
+					}
+				},
+				labels: {},
+				hidden: []
+			})
+		);
+	});
+	await page.goto('/settings');
+	const list = page.getByTestId('scanner-list');
+	const row = (name: string) =>
+		list.getByTestId('scanner-row').filter({ has: page.getByText(name, { exact: true }) });
+
+	await expect(row('Canon LiDE 400')).toHaveAttribute('data-connected', 'true');
+	await expect(row('Old Fujitsu')).toHaveAttribute('data-connected', 'false');
+
+	// Rename the Canon.
+	await row('Canon LiDE 400').getByTestId('scanner-rename').click();
+	await page.getByTestId('scanner-name-input').fill('Photo scanner');
+	await page.getByTestId('scanner-name-input').press('Enter');
+	await expect(row('Photo scanner')).toContainText('Canon LiDE 400');
+
+	// Hide the Epson; its details say what the driver reported.
+	await row('Epson DS-530').getByTestId('scanner-hide').click();
+	await row('Epson DS-530').getByTestId('scanner-details-toggle').click();
+	await expect(row('Epson DS-530').getByTestId('scanner-facts')).toContainText('fake');
+
+	// The ghost can be forgotten.
+	await row('Old Fujitsu').getByTestId('scanner-details-toggle').click();
+	await row('Old Fujitsu').getByTestId('scanner-forget').click();
+	await expect(row('Old Fujitsu')).toHaveCount(0);
+
+	// The home screen's picker follows: the new name, and no Epson.
+	await page.goto('/');
+	const picker = page.getByTestId('device-pills');
+	await expect(picker.getByRole('radio', { name: 'Photo scanner' })).toBeVisible();
+	await expect(picker.getByRole('radio', { name: 'Epson DS-530' })).toHaveCount(0);
+});

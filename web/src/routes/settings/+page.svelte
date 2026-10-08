@@ -3,7 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { hubError } from '$lib/hub/errors';
-	import { getHub } from '$lib/hub/hub';
+	import { getHub, sortedSessions } from '$lib/hub/hub';
 	import { PageSize, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
 	import type { ScannerDeviceDto, ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { editableKeys, scanOverrides, settings, type ScanOverrides } from '$lib/settings';
@@ -12,6 +12,8 @@
 	import SettingsSection from '$lib/components/SettingsSection.svelte';
 	import Slider from '$lib/components/Slider.svelte';
 	import TemplateEditor from '$lib/components/TemplateEditor.svelte';
+	import ScannerList from '$lib/components/ScannerList.svelte';
+	import { forget, remember, rename, scannerName, scannerRows, setHidden } from '$lib/scanners';
 	import { Icon, presetIcons, type PresetIconName } from '$lib/icons';
 	import {
 		activePreset,
@@ -21,6 +23,7 @@
 		pickedPreset,
 		presets,
 		reviewPrefs,
+		scannerPrefs,
 		type Preset,
 		type RetentionUnit
 	} from '$lib/presets';
@@ -34,6 +37,7 @@
 
 	const client = getHub();
 	const connection = client.connection;
+	const sessions = client.sessions;
 
 	let effective = $state<ScanOptionsDto | null>(null);
 	let error = $state<string | null>(null);
@@ -62,7 +66,10 @@
 			// no picker on it.
 			client.hub
 				.listDevices()
-				.then((d) => (devices = d))
+				.then((d) => {
+					devices = d;
+					scannerPrefs.set(remember($scannerPrefs, d));
+				})
 				.catch(() => (devices = []));
 		}
 	});
@@ -146,7 +153,8 @@
 	let draftShared = $state(false);
 
 	/** A device id as its human name, falling back to the id for one the server no longer lists. */
-	const deviceLabel = (id: string) => devices?.find((d) => d.Id === id)?.Name ?? id;
+	const deviceLabel = (id: string) =>
+		scannerName($scannerPrefs, id, devices?.find((d) => d.Id === id)?.Name);
 
 	/**
 	 * The scanner the next scan runs on, chosen on the home screen. Empty when none is —
@@ -621,6 +629,26 @@
 					</fieldset>
 				</form>
 			{/if}
+		</SettingsSection>
+
+		<!--
+			Every scanner the server lists, has listed or a past scan ran on: renamed and hidden
+			for this browser only. Outside the scanner section's loading branch, since none of it
+			needs the server's scan defaults.
+		-->
+		<SettingsSection
+			title="Scanners"
+			icon="scan"
+			hint="Name them, hide the ones you never use. Unplugged ones stay listed, faded."
+			testid="scanners-section"
+		>
+			<ScannerList
+				rows={scannerRows($scannerPrefs, devices ?? [], sortedSessions($sessions))}
+				chosen={currentDevice}
+				onrename={(id, label) => scannerPrefs.set(rename($scannerPrefs, id, label))}
+				onhide={(id, hidden) => scannerPrefs.set(setHidden($scannerPrefs, id, hidden))}
+				onforget={(id) => scannerPrefs.set(forget($scannerPrefs, id))}
+			/>
 		</SettingsSection>
 
 		<!--

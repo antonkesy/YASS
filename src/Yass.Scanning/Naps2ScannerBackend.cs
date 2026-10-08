@@ -132,7 +132,7 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
     public async Task<IReadOnlyList<ScannerDevice>> ListDevicesAsync(CancellationToken cancellationToken)
     {
         await FindDeviceAsync(force: false, cancellationToken).ConfigureAwait(false);
-        return [.. _cache.Devices.Select(d => new ScannerDevice(d.ID, d.Name))];
+        return [.. _cache.Devices.Select(d => new ScannerDevice(d.ID, d.Name, d.Driver.ToString().ToLowerInvariant(), string.IsNullOrWhiteSpace(d.ConnectionUri) ? null : d.ConnectionUri))];
     }
 
     private async Task<(ScanDevice? Device, string? Error)> FindDeviceAsync(bool force, CancellationToken cancellationToken)

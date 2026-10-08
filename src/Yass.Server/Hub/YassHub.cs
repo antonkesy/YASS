@@ -263,7 +263,7 @@ public sealed class YassHub(
     public async Task<ScannerDeviceDto[]> ListDevices()
     {
         IReadOnlyList<ScannerDevice> devices = await backend.ListDevicesAsync(Context.ConnectionAborted).ConfigureAwait(false);
-        return [.. devices.Select(d => new ScannerDeviceDto(d.Id, d.Name))];
+        return [.. devices.Select(d => new ScannerDeviceDto(d.Id, d.Name, d.Driver, d.Connection))];
     }
 
     public Task<ScanOptionsDto> GetEffectiveOptions() => Task.FromResult(options.Current());

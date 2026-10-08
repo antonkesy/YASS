@@ -67,8 +67,12 @@ public sealed record ScanOptionsDto(
 public sealed record ScannerStatusDto(ScannerState State, string? DeviceName, string? Message, string CheckedAt);
 
 /// <summary>One scanner to choose between. <see cref="Id"/> is what a scan asks for.</summary>
+/// <param name="Id">The driver's identifier, what a scan asks for.</param>
+/// <param name="Name">What the driver calls it.</param>
+/// <param name="Driver">The driver that found it — sane, escl, … — when known.</param>
+/// <param name="Connection">Where it is reached, e.g. an eSCL address, when the driver reports one.</param>
 [TranspilationSource]
-public sealed record ScannerDeviceDto(string Id, string Name);
+public sealed record ScannerDeviceDto(string Id, string Name, string? Driver = null, string? Connection = null);
 
 /// <summary>File type a session is exported as. Images write one file per page.</summary>
 [TranspilationSource]

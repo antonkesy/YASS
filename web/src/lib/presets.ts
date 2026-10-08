@@ -238,9 +238,39 @@ export const createPickedPreset = (storage: Storage | undefined) =>
 export const createHistoryPrefs = (storage: Storage | undefined) =>
 	persisted<HistoryPrefs>(storage, HISTORY_KEY, defaultHistoryPrefs);
 
+/** A scanner this browser has seen, remembered so it can be listed after it goes away. */
+export type KnownScanner = {
+	/** What the driver calls it, as last seen. */
+	name: string;
+	driver?: string;
+	connection?: string;
+	/** ISO times this browser first and last saw it on the server's list. */
+	firstSeen: string;
+	lastSeen: string;
+};
+
+/**
+ * What this browser knows and has decided about scanners: the ones it has seen, the names it
+ * gave them, and the ones it hid from the picker. Kept here rather than on the server like the
+ * rest of this browser's preferences: a name is whoever is standing at it's business.
+ */
+export type ScannerPrefs = {
+	known: Record<string, KnownScanner>;
+	labels: Record<string, string>;
+	hidden: string[];
+};
+
+export const SCANNERS_KEY = 'yass.scanners';
+
+export const defaultScannerPrefs: ScannerPrefs = { known: {}, labels: {}, hidden: [] };
+
+export const createScannerPrefs = (storage: Storage | undefined) =>
+	persisted<ScannerPrefs>(storage, SCANNERS_KEY, defaultScannerPrefs);
+
 const storage = typeof localStorage === 'undefined' ? undefined : localStorage;
 export const presets = createPresets(storage);
 export const pickedPreset = createPickedPreset(storage);
 export const exportPrefs = createExportPrefs(storage);
 export const reviewPrefs = createReviewPrefs(storage);
 export const historyPrefs = createHistoryPrefs(storage);
+export const scannerPrefs = createScannerPrefs(storage);
