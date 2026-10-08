@@ -525,6 +525,59 @@
 		0 0 0 3px var(--color-accent-ring);
 }
 
+/*
+ * Moving between screens, through the View Transitions API where the browser has it (see
+ * +layout.svelte); elsewhere the screens simply swap, as before. Going deeper slides the new
+ * screen in from the right, going back from the left; the settings sheet, which brings its
+ * own entrance, only cross-fades. The header is its own layer, so it stays put throughout.
+ */
+header {
+	view-transition-name: app-header;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation-duration: 0.22s;
+}
+
+:root[data-nav='forward']::view-transition-old(root) {
+	animation: vt-out-left 0.24s var(--ease-out-soft) both;
+}
+:root[data-nav='forward']::view-transition-new(root) {
+	animation: vt-in-right 0.34s var(--ease-spring) 0.04s both;
+}
+:root[data-nav='back']::view-transition-old(root) {
+	animation: vt-out-right 0.24s var(--ease-out-soft) both;
+}
+:root[data-nav='back']::view-transition-new(root) {
+	animation: vt-in-left 0.34s var(--ease-spring) 0.04s both;
+}
+
+@keyframes vt-out-left {
+	to {
+		opacity: 0;
+		transform: translateX(-28px);
+	}
+}
+@keyframes vt-in-right {
+	from {
+		opacity: 0;
+		transform: translateX(36px);
+	}
+}
+@keyframes vt-out-right {
+	to {
+		opacity: 0;
+		transform: translateX(28px);
+	}
+}
+@keyframes vt-in-left {
+	from {
+		opacity: 0;
+		transform: translateX(-36px);
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
 	*,
 	*::before,
@@ -532,5 +585,12 @@
 		animation-duration: 0.01ms !important;
 		animation-iteration-count: 1 !important;
 		transition-duration: 0.01ms !important;
+	}
+
+	/* The pseudo-elements above are not matched by `*`. */
+	::view-transition-group(*),
+	::view-transition-old(*),
+	::view-transition-new(*) {
+		animation: none !important;
 	}
 }

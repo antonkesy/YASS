@@ -557,3 +557,27 @@ test('the scanner pill sits centred over the page on the review screen', async (
 	};
 	expect(Math.abs((await centre(pill)) - (await centre(stage)))).toBeLessThan(3);
 });
+
+test('screens slide forward and back, and the settings sheet cross-fades', async ({ page }) => {
+	// Records each view transition as it starts, with the direction the layout chose for it.
+	await page.addInitScript(() => {
+		const log: string[] = [];
+		(window as unknown as { transitions: string[] }).transitions = log;
+		const start = document.startViewTransition?.bind(document);
+		if (start)
+			document.startViewTransition = ((update: () => Promise<void>) => {
+				log.push(document.documentElement.dataset.nav ?? '');
+				return start(update);
+			}) as typeof document.startViewTransition;
+	});
+	const transitions = () =>
+		page.evaluate(() => (window as unknown as { transitions: string[] }).transitions);
+
+	await scanToReview(page);
+	await page.getByLabel('Back to home').click();
+	await expect(page.getByTestId('scan-button')).toBeVisible();
+	await page.getByRole('button', { name: /Change settings/ }).click();
+	await expect(page).toHaveURL(/\/settings$/);
+
+	await expect.poll(transitions).toEqual(['forward', 'back', 'fade']);
+});

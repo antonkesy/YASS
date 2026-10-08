@@ -1,6 +1,8 @@
 <script lang="ts">
 	import './layout.css';
 	import { onMount } from 'svelte';
+	import { onNavigate } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { getHub } from '$lib/hub/hub';
 	import AppHeader from '$lib/components/AppHeader.svelte';
 	import Toast from '$lib/components/Toast.svelte';
@@ -10,6 +12,29 @@
 	onMount(() => {
 		const hub = getHub();
 		void hub.start();
+	});
+
+	/**
+	 * Screens slide rather than swap, through the browser's View Transitions API; one without
+	 * it swaps as it always did. Home is the root, so going there is back and leaving it is
+	 * forward. The settings sheet only cross-fades: it brings its own entrance.
+	 */
+	onNavigate((navigation) => {
+		const from = navigation.from?.url.pathname;
+		const to = navigation.to?.url.pathname;
+		if (!document.startViewTransition || !from || !to || from === to) return;
+
+		const home = resolve('/');
+		const settings = resolve('/settings');
+		document.documentElement.dataset.nav =
+			from === settings || to === settings ? 'fade' : to === home ? 'back' : 'forward';
+
+		return new Promise((ready) => {
+			document.startViewTransition(async () => {
+				ready();
+				await navigation.complete;
+			});
+		});
 	});
 </script>
 
