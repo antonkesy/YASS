@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { PageFilter } from '$lib/hub/generated/Yass.Core.Domain';
+	import { PageCleanup, PageFilter } from '$lib/hub/generated/Yass.Core.Domain';
 	import FilterMenu from './FilterMenu.svelte';
 	import { Icon } from '$lib/icons';
 
@@ -14,6 +14,8 @@
 		ondelete,
 		onrestore,
 		onfilter,
+		cleanup = PageCleanup.None,
+		oncleanup,
 		onexpand,
 		oncrop,
 		onrescan,
@@ -34,6 +36,9 @@
 		ondelete: () => void;
 		onrestore: () => void;
 		onfilter: (filter: PageFilter) => void;
+		/** The clean-ups every page in the frame has, which the filter menu shows ticked. */
+		cleanup?: PageCleanup;
+		oncleanup?: (cleanup: PageCleanup, on: boolean) => void;
 		/** Opens the page the edits point at, full screen. Not an edit, but this is where it lives. */
 		onexpand?: () => void;
 		oncrop?: () => void;
@@ -217,6 +222,6 @@
 		{/if}
 
 		{#if filterOpen}
-			<FilterMenu {onfilter} onclose={() => (filterOpen = false)} />
+			<FilterMenu {cleanup} {onfilter} {oncleanup} onclose={() => (filterOpen = false)} />
 		{/if}
 	</div>{/if}
