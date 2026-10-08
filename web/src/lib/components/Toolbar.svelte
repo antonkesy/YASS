@@ -19,6 +19,8 @@
 		onexpand,
 		oncrop,
 		onstraighten,
+		onautocrop,
+		autocropping = false,
 		onadjust,
 		onrescan,
 		scoped = false,
@@ -46,6 +48,10 @@
 		oncrop?: () => void;
 		/** Opens the fine-rotation dialog for the page in view. */
 		onstraighten?: () => void;
+		/** Trims the scanner's dark frame off the page in view or the selection. */
+		onautocrop?: () => void;
+		/** An auto-crop is under way; its menu item says so and cannot be pressed again. */
+		autocropping?: boolean;
 		/** Opens the tone and sharpness dialog for the page in view or the selection. */
 		onadjust?: () => void;
 		onrescan?: () => void;
@@ -163,7 +169,7 @@
 			The page's shape — crop, straighten — behind one button, so the row does not grow
 			by a button per tool and still fits a phone.
 		-->
-		{#if canAim && (oncrop || onstraighten)}
+		{#if editing && !scanning && ((one && (oncrop || onstraighten)) || onautocrop)}
 			<button
 				type="button"
 				class="{cropOpen ? 'bg-accent-50 text-accent' : 'text-ink'} {tool}"
@@ -260,7 +266,7 @@
 				data-testid="crop-menu"
 			>
 				{#each [{ id: 'crop', label: 'Crop…', icon: 'crop', run: oncrop }, { id: 'straighten', label: 'Straighten…', icon: 'rotateRight', run: onstraighten }] as const as item (item.id)}
-					{#if item.run}
+					{#if item.run && one}
 						{@const run = item.run}
 						<button
 							type="button"
@@ -277,6 +283,31 @@
 						</button>
 					{/if}
 				{/each}
+				{#if onautocrop}
+					<button
+						type="button"
+						role="menuitem"
+						class="flex min-h-[44px] w-full items-center gap-2.5 rounded-[10px] px-2.5 py-1 text-left transition-colors hover:bg-accent-hover50 disabled:pointer-events-none disabled:opacity-50"
+						disabled={autocropping}
+						onclick={() => {
+							cropOpen = false;
+							onautocrop();
+						}}
+						data-testid="autocrop"
+					>
+						<Icon name="scissors" />
+						<span class="flex flex-col">
+							<span class="text-sm font-semibold">
+								{autocropping ? 'Finding borders…' : 'Auto-crop borders'}
+							</span>
+							<span class="text-[11px] text-ink-muted">
+								Trim the dark frame around {selectedCount > 1
+									? `${selectedCount} pages`
+									: 'this page'}
+							</span>
+						</span>
+					</button>
+				{/if}
 			</div>
 		{/if}
 

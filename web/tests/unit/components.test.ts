@@ -326,6 +326,36 @@ describe('Toolbar', () => {
 		expect(oncrop).toHaveBeenCalled();
 	});
 
+	it('offers only auto-crop for several pages, and says when it is busy', async () => {
+		const onautocrop = vi.fn();
+		const props = {
+			selectedCount: 3,
+			total: 5,
+			anyDeleted: false,
+			onrotate: vi.fn(),
+			ondelete: vi.fn(),
+			onrestore: vi.fn(),
+			onfilter: vi.fn(),
+			onclear: vi.fn(),
+			oncrop: vi.fn(),
+			onstraighten: vi.fn(),
+			onautocrop
+		};
+		const { rerender } = render(Toolbar, props);
+
+		await fireEvent.click(screen.getByTestId('crop-button'));
+		expect(screen.queryByTestId('crop-open')).toBeNull();
+		expect(screen.queryByTestId('straighten-open')).toBeNull();
+		expect(screen.getByTestId('autocrop')).toHaveTextContent('3 pages');
+		await fireEvent.click(screen.getByTestId('autocrop'));
+		expect(onautocrop).toHaveBeenCalledOnce();
+
+		await rerender({ ...props, autocropping: true });
+		await fireEvent.click(screen.getByTestId('crop-button'));
+		expect(screen.getByTestId('autocrop')).toBeDisabled();
+		expect(screen.getByTestId('autocrop')).toHaveTextContent('Finding borders');
+	});
+
 	it('offers expand only when asked to, and drops the whole bar while edits are off', async () => {
 		const onexpand = vi.fn();
 		const props = {

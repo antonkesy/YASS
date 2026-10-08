@@ -74,6 +74,7 @@
 	/** The pages the Adjust dialog sets, and the one it shows and starts from. */
 	/** The page the Straighten dialog is open on. */
 	let straightening = $state<number | null>(null);
+	let autocropping = $state(false);
 	let adjusting = $state<{ pages: ReadonlySet<number>; from: number } | null>(null);
 	let previewIndex = $state<number | null>(null);
 	/** The big preview slides in from whichever side the new page came from. */
@@ -385,6 +386,36 @@
 		send(setAdjustEdit(adjust, pages));
 	}
 
+	/**
+	 * Crops the scanner's frame off the pages in frame. Detection happens on the server, so
+	 * there is no optimistic step: the pages update as the server's crops come back. Undo puts
+	 * back the crops they had, which were snapshotted before asking.
+	 */
+	async function autoCrop() {
+		if (!session || autocropping) return;
+		const before = session.Pages.filter((p) => targets.has(p.Index)).map((p) => ({
+			index: p.Index,
+			crop: p.Crop
+		}));
+		autocropping = true;
+		error = null;
+		try {
+			const count = await client.hub.autoCrop(
+				id,
+				before.map((p) => p.index)
+			);
+			if (count === 0) toast.show('No borders found');
+			else
+				toast.show(`Cropped ${count} page${count === 1 ? '' : 's'}`, () => {
+					for (const p of before) send(setCropEdit(p.crop, new Set([p.index])));
+				});
+		} catch (e) {
+			error = hubError(e);
+		} finally {
+			autocropping = false;
+		}
+	}
+
 	function applySkew(degrees: number) {
 		const page = straightening !== null ? session?.Pages[straightening] : null;
 		straightening = null;
@@ -463,6 +494,8 @@
 			onexpand={() => (previewIndex = targetPage())}
 			oncrop={() => (cropping = targetPage())}
 			onstraighten={() => (straightening = targetPage())}
+			onautocrop={autoCrop}
+			{autocropping}
 			onadjust={() => (adjusting = { pages: new Set(targets), from: targetPage() })}
 			onrescan={rescan}
 			{scanning}
