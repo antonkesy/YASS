@@ -33,6 +33,12 @@ public interface IYassHub
 
     Task<SessionDto> ApplyEdits(string sessionId, PageEdit[] edits);
 
+    /// <summary>
+    /// Crops the scanner's dark frame off the target pages (all of them when null or empty), as
+    /// ordinary crop edits. Returns how many pages had one.
+    /// </summary>
+    Task<int> AutoCrop(string sessionId, int[]? targets);
+
     /// <summary>Scans one sheet and puts it in place of <paramref name="pageIndex"/>, keeping that page's edits.</summary>
     Task<SessionDto> RescanPage(string sessionId, int pageIndex);
 

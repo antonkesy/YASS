@@ -2,10 +2,13 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 using Yass.Core.Domain;
 using Yass.Core.Hub;
 using Yass.Fake;
+using Yass.Server.Sessions;
 
 namespace Yass.Server.Tests.Hub;
 
@@ -64,6 +67,43 @@ public sealed class EditAndImageTests : IAsyncLifetime
         using var full = await Image.LoadAsync(await (await http.GetAsync(new Uri($"/img/{done.Id}/1/preview?h={done.Pages[1].Hash}", UriKind.Relative))).Content.ReadAsStreamAsync());
         using var trimmed = await Image.LoadAsync(await (await http.GetAsync(new Uri($"/img/{done.Id}/0/preview?h={cropped.Pages[0].Hash}", UriKind.Relative))).Content.ReadAsStreamAsync());
         Assert.True(trimmed.Width < full.Width, $"cropped {trimmed.Width} should be narrower than {full.Width}");
+    }
+
+    [Fact]
+    public async Task Auto_crop_trims_the_frame_off_the_pages_that_have_one()
+    {
+        SessionDto done = await _hub.ScanToEnd();
+        // The fake scanner's pages are clean, so give page 0 the dark band a scanner lid leaves.
+        SessionStore store = _factory.Services.GetRequiredService<SessionStore>();
+        Session session = store.Get(done.Id);
+        string source = SessionPaths.Source(store.Root, session, session.Pages[0]);
+        using (Image<Rgb24> page = await Image.LoadAsync<Rgb24>(source))
+        {
+            int band = page.Height / 10;
+            page.ProcessPixelRows(rows =>
+            {
+                for (int y = 0; y < band; y++)
+                {
+                    rows.GetRowSpan(y).Fill(new Rgb24(15, 15, 15));
+                }
+            });
+            await page.SaveAsPngAsync(source);
+        }
+
+        int cropped = await _hub.AutoCrop(done.Id);
+        SessionDto after = await _hub.GetSession(done.Id);
+
+        Assert.Equal(1, cropped);
+        CropBox box = Assert.IsType<CropBox>(after.Pages[0].Crop);
+        Assert.InRange(box.Top, 10, 12);
+        Assert.Equal(0, box.Left);
+        Assert.NotEqual(done.Pages[0].Hash, after.Pages[0].Hash);
+        Assert.All(after.Pages.Skip(1), p => Assert.Null(p.Crop));
+        Assert.Contains(_hub.PagesUpdated, p => p.SessionId == done.Id && p.Page.Index == 0 && p.Page.Crop != null);
+
+        // Asking again finds the same frame, which is already cropped: nothing changes.
+        Assert.Equal(0, await _hub.AutoCrop(done.Id, 0));
+        await Assert.ThrowsAsync<HubException>(() => _hub.AutoCrop(done.Id, 42));
     }
 
     [Fact]

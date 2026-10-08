@@ -72,6 +72,8 @@ public sealed class HubClient : IAsyncDisposable
 
     public Task<SessionDto> ApplyEdits(string id, params PageEdit[] edits) => _connection.InvokeAsync<SessionDto>(nameof(IYassHub.ApplyEdits), id, edits);
 
+    public Task<int> AutoCrop(string id, params int[] targets) => _connection.InvokeAsync<int>(nameof(IYassHub.AutoCrop), id, targets);
+
     public Task<ExportResult> Export(string id) => _connection.InvokeAsync<ExportResult>(nameof(IYassHub.Export), id, new ExportRequest());
 
     public Task<ExportResult> Export(string id, ExportRequest request) => _connection.InvokeAsync<ExportResult>(nameof(IYassHub.Export), id, request);

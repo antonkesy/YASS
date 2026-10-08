@@ -51,6 +51,7 @@ builder.Services.AddSingleton<IPageSink>(sp => sp.GetRequiredService<ThumbnailWo
 builder.Services.AddHostedService(sp => sp.GetRequiredService<ThumbnailWorker>());
 builder.Services.AddSingleton<ScanService>();
 builder.Services.AddSingleton<EditService>();
+builder.Services.AddSingleton<AutoCropService>();
 builder.Services.AddSingleton<DownloadTokens>();
 builder.Services.AddSingleton<ExportService>();
 builder.Services.AddSingleton<SessionRetentionService>();

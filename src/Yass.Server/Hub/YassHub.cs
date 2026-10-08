@@ -19,6 +19,7 @@ public sealed class YassHub(
     SessionMapper mapper,
     ScanService scans,
     EditService editor,
+    AutoCropService cropper,
     ExportService exporter,
     IPageSink sinkFor,
     TimeProvider time,
@@ -130,6 +131,19 @@ public sealed class YassHub(
         try
         {
             return mapper.ToDto(await editor.ApplyAsync(sessionId, edits ?? []).ConfigureAwait(false));
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+        {
+            throw new HubException(ex.Message);
+        }
+    }
+
+    public async Task<int> AutoCrop(string sessionId, int[]? targets)
+    {
+        Find(sessionId);
+        try
+        {
+            return await cropper.CropAsync(sessionId, targets, Context.ConnectionAborted).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
         {
