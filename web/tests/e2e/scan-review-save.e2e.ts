@@ -574,8 +574,11 @@ test('screens slide forward and back, and the settings sheet cross-fades', async
 		page.evaluate(() => (window as unknown as { transitions: string[] }).transitions);
 
 	await scanToReview(page);
+	// The transition slides the screen in, so the screen adds no slide of its own on top.
+	await expect(page.locator('[class*="animate-slide-from"]')).toHaveCount(0);
 	await page.getByLabel('Back to home').click();
 	await expect(page.getByTestId('scan-button')).toBeVisible();
+	await expect(page.locator('[class*="animate-slide-from"]')).toHaveCount(0);
 	await page.getByRole('button', { name: /Change settings/ }).click();
 	await expect(page).toHaveURL(/\/settings$/);
 

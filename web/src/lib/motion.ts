@@ -25,3 +25,19 @@ export const cardOut: (node: Element) => TransitionConfig = () => ({
 	easing: cubicIn,
 	css: (t) => `opacity: ${t}; transform: translateY(${(1 - t) * 12}px) scale(${0.96 + 0.04 * t})`
 });
+
+let sliding = false;
+
+/**
+ * Whether a screen change is being animated by a view transition right now (see
+ * +layout.svelte). A screen reads it once as it mounts: while the transition already slides it
+ * in, its own entrance animation would be a second slide on top of the first. Without view
+ * transitions, and on a cold load, it is false and the screen animates itself as before.
+ */
+export const screenTransition = {
+	start: () => (sliding = true),
+	end: () => (sliding = false),
+	get active() {
+		return sliding;
+	}
+};
