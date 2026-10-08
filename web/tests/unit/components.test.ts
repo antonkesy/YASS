@@ -11,6 +11,7 @@ import RepoLink from '$lib/components/RepoLink.svelte';
 import TemplateEditor from '$lib/components/TemplateEditor.svelte';
 import AdjustModal from '$lib/components/AdjustModal.svelte';
 import StraightenModal from '$lib/components/StraightenModal.svelte';
+import Preview from '$lib/components/Preview.svelte';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import {
 	ColorMode,
@@ -739,5 +740,64 @@ describe('StraightenModal', () => {
 		expect(screen.getByTestId('straighten-right')).toBeDisabled();
 		await fireEvent.keyDown(screen.getByTestId('straighten-modal'), { key: 'Escape' });
 		expect(oncancel).toHaveBeenCalled();
+	});
+});
+
+describe('Preview edit bar', () => {
+	const pages = [page(0), page(1, { Cleanup: PageCleanup.Despeckle })];
+	const base = {
+		sessionId: 's',
+		pages,
+		index: 1,
+		onnavigate: vi.fn(),
+		onclose: vi.fn(),
+		onrotate: vi.fn()
+	};
+
+	it('edits the page on screen', async () => {
+		const onadjust = vi.fn();
+		const onstraighten = vi.fn();
+		const oncleanup = vi.fn();
+		render(Preview, {
+			...base,
+			editable: true,
+			onadjust,
+			oncrop: vi.fn(),
+			onstraighten,
+			onfilter: vi.fn(),
+			oncleanup
+		});
+
+		await fireEvent.click(screen.getByTestId('preview-adjust'));
+		expect(onadjust).toHaveBeenCalledWith(1);
+		await fireEvent.click(screen.getByTestId('preview-straighten'));
+		expect(onstraighten).toHaveBeenCalledWith(1);
+
+		await fireEvent.click(screen.getByTestId('preview-filter'));
+		const despeckle = screen.getByRole('menuitemcheckbox', { name: /Despeckle/ });
+		expect(despeckle).toHaveAttribute('aria-checked', 'true');
+		await fireEvent.click(despeckle);
+		expect(oncleanup).toHaveBeenCalledWith(1, PageCleanup.Despeckle, false);
+	});
+
+	it('has no edit bar while the page cannot be edited', () => {
+		render(Preview, { ...base, onadjust: vi.fn() });
+
+		expect(screen.queryByTestId('preview-edit-bar')).toBeNull();
+	});
+
+	it('leaves the keys to a dialog open over it', async () => {
+		const onclose = vi.fn();
+		const onnavigate = vi.fn();
+		const { rerender } = render(Preview, { ...base, onclose, onnavigate, paused: true });
+
+		await fireEvent.keyDown(window, { key: 'Escape' });
+		await fireEvent.keyDown(window, { key: 'ArrowLeft' });
+		expect(onclose).not.toHaveBeenCalled();
+		expect(onnavigate).not.toHaveBeenCalled();
+
+		await rerender({ ...base, onclose, onnavigate, paused: false });
+		await fireEvent.keyDown(window, { key: 'Escape' });
+		expect(onclose).toHaveBeenCalled();
 	});
 });
