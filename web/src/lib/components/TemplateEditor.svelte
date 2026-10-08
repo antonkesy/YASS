@@ -52,7 +52,7 @@
 </script>
 
 <div class="flex flex-col gap-2">
-	<label class="flex h-11 items-center gap-2 rounded-[12px] bg-ctl px-3">
+	<label class="field flex h-11 items-center gap-2 px-3">
 		<span class="text-ink-faint"><Icon name="template" /></span>
 		<span class="sr-only">File name template</span>
 		<input
