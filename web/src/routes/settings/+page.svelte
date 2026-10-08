@@ -14,8 +14,10 @@
 	import { Icon, presetIcons, type PresetIconName } from '$lib/icons';
 	import {
 		activePreset,
+		applyPreset,
 		exportPrefs,
 		historyPrefs,
+		pickedPreset,
 		presets,
 		reviewPrefs,
 		type Preset,
@@ -110,7 +112,16 @@
 	const planned = $derived<ScanOverrides>(
 		effective ? { ...scanOverrides(effective), ...$settings } : $settings
 	);
-	const chosen = $derived(activePreset($presets, planned));
+	const chosen = $derived(activePreset($presets, planned, $pickedPreset.id));
+	/**
+	 * The preset picked last, once a setting has been changed away from it. Shown as edited
+	 * rather than simply going dark, so it is clear what Update would overwrite.
+	 */
+	const edited = $derived(
+		chosen ? null : ($presets.find((p) => p.id === $pickedPreset.id) ?? null)
+	);
+	/** The preset the Update, Delete and scope controls act on. */
+	const target = $derived(chosen ?? edited);
 	let drafting = $state(false);
 	let draftName = $state('');
 	let draftIcon = $state<PresetIconName>('star');
@@ -179,16 +190,29 @@
 			...(draftShared || !currentDevice ? {} : { device: currentDevice })
 		};
 		presets.set([...$presets, preset]);
+		pickedPreset.set({ id: preset.id });
 		drafting = false;
 		draftName = '';
 		draftShared = false;
 	}
 
+	function pickPreset(preset: Preset) {
+		settings.set(applyPreset(preset, $settings));
+		pickedPreset.set({ id: preset.id });
+	}
+
 	function updatePreset() {
-		if (!chosen) return;
+		if (!target) return;
+		const id = target.id;
 		presets.set(
-			$presets.map((p) => (p.id === chosen.id ? { ...p, settings: withoutDevice(planned) } : p))
+			$presets.map((p) => (p.id === id ? { ...p, settings: withoutDevice(planned) } : p))
 		);
+		pickedPreset.set({ id });
+	}
+
+	function resetSettings() {
+		settings.reset();
+		pickedPreset.set({ id: null });
 	}
 
 	/** Move a saved preset between "every scanner" and "only the one chosen now". */
@@ -206,6 +230,7 @@
 
 	function deletePreset(id: string) {
 		presets.set($presets.filter((p) => p.id !== id));
+		if ($pickedPreset.id === id) pickedPreset.set({ id: null });
 	}
 
 	function close() {
@@ -261,7 +286,7 @@
 			<button
 				type="button"
 				class="h-9 rounded-full px-3 text-[13px] font-bold text-accent transition-colors hover:bg-accent-wash disabled:pointer-events-none disabled:text-ink-faint"
-				onclick={() => settings.reset()}
+				onclick={resetSettings}
 				disabled={!changed}
 				title="Put every scan option back to its default"
 				data-testid="reset-settings"
@@ -316,8 +341,12 @@
 								<Icon name="checkSmall" />
 								{chosen.name}
 							</span>
+						{:else if edited}
+							<span class="text-xs font-bold text-warning-ink" data-testid="preset-edited">
+								“{edited.name}” edited
+							</span>
 						{:else}
-							<span class="text-xs font-bold text-warning-ink">Unsaved changes</span>
+							<span class="text-xs font-bold text-warning-ink">Custom</span>
 						{/if}
 					</div>
 
@@ -325,13 +354,22 @@
 						{#each $presets as preset (preset.id)}
 							<button
 								type="button"
-								class="flex h-[38px] items-center gap-2 rounded-full px-3.5 text-[13px] font-bold transition-all duration-200 {chosen?.id ===
+								class="relative flex h-[38px] items-center gap-2 rounded-full px-3.5 text-[13px] font-bold transition-all duration-200 {chosen?.id ===
 								preset.id
 									? 'bg-accent text-white shadow-preset'
-									: 'bg-surface text-accent-deep shadow-chip hover:-translate-y-px hover:bg-accent-50'}"
+									: edited?.id === preset.id
+										? 'bg-surface text-accent-deep shadow-ring-outline'
+										: 'bg-surface text-accent-deep shadow-chip hover:-translate-y-px hover:bg-accent-50'}"
 								aria-pressed={chosen?.id === preset.id}
-								onclick={() => settings.set({ ...$settings, ...preset.settings })}
+								title={edited?.id === preset.id ? 'Edited — press to go back to it' : undefined}
+								onclick={() => pickPreset(preset)}
 							>
+								{#if edited?.id === preset.id}
+									<span
+										class="absolute top-0.5 right-1 h-2 w-2 rounded-full bg-warning ring-2 ring-surface"
+										aria-hidden="true"
+									></span>
+								{/if}
 								<Icon name={preset.icon} />
 								{preset.name}
 								<!-- The home screen only offers this one on that scanner, so this sheet — the
@@ -418,37 +456,50 @@
 								</label>
 							{/if}
 						</div>
-					{:else if chosen}
+					{:else if target}
 						<div
 							class="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-line-strong pt-2.5"
 						>
-							{#if currentDevice || chosen.device}
+							{#if currentDevice || target.device}
 								<label class="flex flex-wrap items-center gap-2 text-xs font-semibold text-ink-2">
 									<input
 										type="checkbox"
 										class="h-4 w-4 accent-accent"
-										checked={!chosen.device}
-										onchange={(e) => sharePreset(chosen.id, e.currentTarget.checked)}
+										checked={!target.device}
+										onchange={(e) => sharePreset(target.id, e.currentTarget.checked)}
 										data-testid="preset-scope"
 									/>
 									Available for all scanners
 									<span class="font-normal text-ink-muted"
-										>· otherwise only on {deviceLabel(chosen.device || currentDevice)}</span
+										>· otherwise only on {deviceLabel(target.device || currentDevice)}</span
 									>
 								</label>
 							{/if}
 							<div class="flex-1"></div>
+							{#if edited}
+								<button
+									type="button"
+									class="h-8 rounded-full px-3 text-xs font-bold text-ink-3 transition-colors hover:bg-ctl"
+									onclick={() => pickPreset(edited)}
+									data-testid="preset-revert"
+								>
+									Revert
+								</button>
+							{/if}
 							<button
 								type="button"
-								class="h-8 rounded-full px-3 text-xs font-bold text-accent transition-colors hover:bg-accent-wash"
+								class="h-8 rounded-full px-3 text-xs font-bold transition-colors {edited
+									? 'bg-accent text-white hover:bg-accent-hover'
+									: 'text-accent hover:bg-accent-wash'}"
 								onclick={updatePreset}
+								data-testid="preset-update"
 							>
-								Update “{chosen.name}”
+								Update “{target.name}”
 							</button>
 							<button
 								type="button"
 								class="flex h-8 items-center gap-1 rounded-full px-3 text-xs font-bold text-danger transition-colors hover:bg-danger-bg"
-								onclick={() => deletePreset(chosen.id)}
+								onclick={() => deletePreset(target.id)}
 							>
 								<Icon name="trash" />
 								Delete
