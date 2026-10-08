@@ -1,15 +1,22 @@
 <script lang="ts">
-	import type { PageFilter } from '$lib/hub/generated/Yass.Core.Domain';
-	import { pageFilters } from '$lib/review/edits';
+	import { PageCleanup, type PageFilter } from '$lib/hub/generated/Yass.Core.Domain';
+	import { cleanupOptions, pageFilters } from '$lib/review/edits';
+	import { Icon } from '$lib/icons';
 
 	let {
 		placement = 'above',
+		cleanup = PageCleanup.None,
 		onfilter,
+		oncleanup,
 		onclose
 	}: {
 		/** Above the review toolbar at the foot of the page; below the preview's header bar. */
 		placement?: 'above' | 'below';
+		/** The clean-ups every targeted page has; those show ticked. */
+		cleanup?: PageCleanup;
 		onfilter: (filter: PageFilter) => void;
+		/** Turn one clean-up on or off for the targeted pages. Absent hides the section. */
+		oncleanup?: (cleanup: PageCleanup, on: boolean) => void;
 		onclose: () => void;
 	} = $props();
 </script>
@@ -47,4 +54,37 @@
 			{option.label}
 		</button>
 	{/each}
+
+	{#if oncleanup}
+		<!-- On top of whichever filter is picked, so these tick on and off rather than choose. -->
+		<div class="mx-1 my-1.5 h-px bg-line" role="separator"></div>
+		<span
+			class="block px-2.5 pt-0.5 pb-1 text-[11px] font-bold tracking-[0.06em] text-ink-faint uppercase"
+			>Clean up</span
+		>
+		{#each cleanupOptions as option (option.value)}
+			{@const on = (cleanup & option.value) === option.value}
+			<button
+				type="button"
+				role="menuitemcheckbox"
+				aria-checked={on}
+				class="flex min-h-[44px] w-full items-center gap-2.5 rounded-[10px] px-2.5 py-1 text-left transition-colors hover:bg-accent-hover50"
+				onclick={() => oncleanup(option.value, !on)}
+				data-testid="cleanup-{option.value}"
+			>
+				<span
+					class="flex h-5 w-5 flex-none items-center justify-center rounded-[6px] transition-colors {on
+						? 'bg-accent text-white'
+						: 'shadow-[inset_0_0_0_1.5px] shadow-checkbox'}"
+					aria-hidden="true"
+				>
+					{#if on}<Icon name="checkSmall" />{/if}
+				</span>
+				<span class="flex flex-col">
+					<span class="text-sm font-semibold">{option.label}</span>
+					<span class="text-[11px] text-ink-muted">{option.hint}</span>
+				</span>
+			</button>
+		{/each}
+	{/if}
 </div>

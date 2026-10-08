@@ -12,6 +12,7 @@ import TemplateEditor from '$lib/components/TemplateEditor.svelte';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import {
 	ColorMode,
+	PageCleanup,
 	PageFilter,
 	PageSize,
 	ScanSource,
@@ -266,6 +267,35 @@ describe('Toolbar', () => {
 		await fireEvent.click(screen.getByTestId('filter-button'));
 		await fireEvent.click(screen.getByRole('menuitem', { name: 'Black & white' }));
 		expect(onfilter).toHaveBeenCalledWith(PageFilter.Bw);
+	});
+
+	it('ticks the clean-ups the pages share, and toggles one at a time', async () => {
+		const oncleanup = vi.fn();
+		render(Toolbar, {
+			selectedCount: 0,
+			total: 2,
+			anyDeleted: false,
+			onrotate: vi.fn(),
+			ondelete: vi.fn(),
+			onrestore: vi.fn(),
+			onfilter: vi.fn(),
+			onclear: vi.fn(),
+			cleanup: PageCleanup.AutoLevels,
+			oncleanup
+		});
+		await fireEvent.click(screen.getByTestId('filter-button'));
+
+		const despeckle = screen.getByRole('menuitemcheckbox', { name: /Despeckle/ });
+		const levels = screen.getByRole('menuitemcheckbox', { name: /Auto-levels/ });
+		expect(despeckle).toHaveAttribute('aria-checked', 'false');
+		expect(levels).toHaveAttribute('aria-checked', 'true');
+
+		await fireEvent.click(despeckle);
+		expect(oncleanup).toHaveBeenLastCalledWith(PageCleanup.Despeckle, true);
+		await fireEvent.click(levels);
+		expect(oncleanup).toHaveBeenLastCalledWith(PageCleanup.AutoLevels, false);
+		// Ticking stays in the menu: two clean-ups are often wanted together.
+		expect(screen.getByTestId('filter-menu')).toBeInTheDocument();
 	});
 
 	it('offers expand only when asked to, and drops the whole bar while edits are off', async () => {

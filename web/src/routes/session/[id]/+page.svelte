@@ -17,8 +17,11 @@
 		sessionStateLabel
 	} from '$lib/format';
 	import {
+		addCleanupEdit,
 		applyOptimistic,
+		commonCleanup,
 		deleteEdit,
+		removeCleanupEdit,
 		reorderEdit,
 		restoreEdit,
 		rotateEdit,
@@ -147,6 +150,10 @@
 	 * and a rotation of the whole scan is worth asking for — the toolbar's All does that.
 	 */
 	const targets = $derived(selection.size > 0 ? selection : new Set(shown ? [shown.Index] : []));
+	/** The clean-ups every targeted page already has, which the filter menu shows ticked. */
+	const targetCleanup = $derived(
+		commonCleanup(session?.Pages.filter((p) => targets.has(p.Index)) ?? [])
+	);
 
 	const anyDeleted = $derived(
 		session?.Pages.filter((p) => targets.has(p.Index)).some((p) => p.Deleted) ?? false
@@ -429,6 +436,9 @@
 			}}
 			onrestore={() => send(restoreEdit(targets))}
 			onfilter={(filter) => send(setFilterEdit(filter, targets))}
+			cleanup={targetCleanup}
+			oncleanup={(cleanup, on) =>
+				send(on ? addCleanupEdit(cleanup, targets) : removeCleanupEdit(cleanup, targets))}
 			onexpand={() => (previewIndex = targetPage())}
 			oncrop={() => (cropping = targetPage())}
 			onrescan={rescan}
