@@ -1,5 +1,8 @@
 <script lang="ts">
 	import type { PageDto } from '$lib/hub/generated/Yass.Core.Hub';
+	import type { PageCleanup, PageFilter } from '$lib/hub/generated/Yass.Core.Domain';
+	import { Icon } from '$lib/icons';
+	import FilterMenu from './FilterMenu.svelte';
 	import { imageUrl } from '$lib/hub/hub';
 	import { detectSwipe, step } from '$lib/review/swipe';
 
@@ -9,7 +12,14 @@
 		index,
 		onnavigate,
 		onclose,
-		onrotate
+		onrotate,
+		editable = false,
+		paused = false,
+		onadjust,
+		oncrop,
+		onstraighten,
+		onfilter,
+		oncleanup
 	}: {
 		sessionId: string;
 		pages: PageDto[];
@@ -17,7 +27,26 @@
 		onnavigate: (index: number) => void;
 		onclose: () => void;
 		onrotate: (index: number, degrees: 90 | -90) => void;
+		/** Whether the page can be edited now, which is what brings up the edit bar. */
+		editable?: boolean;
+		/**
+		 * A dialog is open over the preview: keys are left to it, or Escape would close the
+		 * preview underneath and the arrows would change the page it is editing.
+		 */
+		paused?: boolean;
+		onadjust?: (index: number) => void;
+		oncrop?: (index: number) => void;
+		onstraighten?: (index: number) => void;
+		onfilter?: (index: number, filter: PageFilter) => void;
+		oncleanup?: (index: number, cleanup: PageCleanup, on: boolean) => void;
 	} = $props();
+
+	let filterOpen = $state(false);
+	const tools = $derived([
+		{ id: 'adjust', label: 'Adjust', icon: 'sliders', run: onadjust },
+		{ id: 'crop', label: 'Crop', icon: 'crop', run: oncrop },
+		{ id: 'straighten', label: 'Straighten', icon: 'rotateRight', run: onstraighten }
+	] as const);
 
 	const page = $derived(pages[index]);
 	let shown = $state<{ hash: string; rotation: number } | null>(null);
@@ -49,7 +78,12 @@
 	}
 
 	function keydown(e: KeyboardEvent) {
-		if (!page) return;
+		if (!page || paused) return;
+		if (e.key === 'Escape' && filterOpen) {
+			filterOpen = false;
+			e.preventDefault();
+			return;
+		}
 		if (e.key === 'Escape' && zoomed) zoomedIndex = -1;
 		else if (e.key === 'Escape') onclose();
 		else if (e.key === 'ArrowRight') onnavigate(step(index, pages.length, 'left'));
@@ -221,5 +255,60 @@
 				>
 			</button>
 		</div>
+
+		<!--
+			The edit bar, under the page rather than over it, and within reach of a thumb. It acts on
+			the page on screen only; selections are the review screen's business.
+		-->
+		{#if editable && (onadjust || oncrop || onstraighten || onfilter)}
+			<div
+				class="flex justify-center px-2 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+				data-testid="preview-edit-bar"
+			>
+				<div
+					class="relative flex gap-0.5 rounded-[18px] bg-white/10 p-1"
+					role="toolbar"
+					aria-label="Edit this page"
+				>
+					{#each tools as tool (tool.id)}
+						{#if tool.run}
+							{@const run = tool.run}
+							<button
+								type="button"
+								class="flex h-12 min-w-[64px] flex-col items-center justify-center gap-0.5 rounded-[14px] px-2 text-[11px] font-bold text-white transition-colors hover:bg-white/15"
+								onclick={() => run(index)}
+								data-testid="preview-{tool.id}"
+							>
+								<Icon name={tool.icon} />
+								{tool.label}
+							</button>
+						{/if}
+					{/each}
+					{#if onfilter}
+						<button
+							type="button"
+							class="flex h-12 min-w-[64px] flex-col items-center justify-center gap-0.5 rounded-[14px] px-2 text-[11px] font-bold text-white transition-colors {filterOpen
+								? 'bg-white/20'
+								: 'hover:bg-white/15'}"
+							aria-expanded={filterOpen}
+							aria-haspopup="menu"
+							onclick={() => (filterOpen = !filterOpen)}
+							data-testid="preview-filter"
+						>
+							<Icon name="wand" />
+							Filter
+						</button>
+						{#if filterOpen}
+							<FilterMenu
+								cleanup={page.Cleanup}
+								onfilter={(filter) => onfilter(index, filter)}
+								oncleanup={oncleanup ? (cleanup, on) => oncleanup(index, cleanup, on) : undefined}
+								onclose={() => (filterOpen = false)}
+							/>
+						{/if}
+					{/if}
+				</div>
+			</div>
+		{/if}
 	</div>
 {/if}

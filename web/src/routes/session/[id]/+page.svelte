@@ -831,5 +831,13 @@
 		onnavigate={(i) => (previewIndex = i)}
 		onclose={() => (previewIndex = null)}
 		onrotate={(i, deg) => send(rotateEdit(deg, new Set([i])))}
+		editable={editable && !scanning}
+		paused={cropping !== null || straightening !== null || adjusting !== null}
+		onadjust={(i) => (adjusting = { pages: new Set([i]), from: i })}
+		oncrop={(i) => (cropping = i)}
+		onstraighten={(i) => (straightening = i)}
+		onfilter={(i, filter) => send(setFilterEdit(filter, new Set([i])))}
+		oncleanup={(i, cleanup, on) =>
+			send(on ? addCleanupEdit(cleanup, new Set([i])) : removeCleanupEdit(cleanup, new Set([i])))}
 	/>
 {/if}
