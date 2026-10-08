@@ -397,6 +397,98 @@
 	pointer-events: none;
 }
 
+/*
+ * A text, number or select control on a settings surface: a quiet grey well that turns
+ * white with the accent ring while it has focus, so it is clear where typing will land.
+ */
+@utility field {
+	border-radius: var(--radius-12);
+	background-color: var(--color-ctl);
+	font-weight: 500;
+	outline: none;
+	transition:
+		background-color 0.15s,
+		box-shadow 0.15s;
+
+	&:hover {
+		background-color: var(--color-ctl-hover);
+	}
+	&:focus,
+	&:focus-within {
+		background-color: var(--color-surface);
+		box-shadow: var(--shadow-ring-selected);
+	}
+	&:disabled {
+		opacity: 0.45;
+		pointer-events: none;
+	}
+}
+
+/*
+ * A range input drawn in the app's own colours. The track is filled between `--from` and
+ * `--to`, which the component sets, so a centred slider can fill outwards from zero.
+ */
+.yass-range {
+	appearance: none;
+	background: transparent;
+	cursor: pointer;
+	--track: linear-gradient(
+		to right,
+		var(--color-toggle-off) var(--from, 0%),
+		var(--color-accent) var(--from, 0%),
+		var(--color-accent) var(--to, 0%),
+		var(--color-toggle-off) var(--to, 0%)
+	);
+}
+.yass-range::-webkit-slider-runnable-track {
+	height: 6px;
+	border-radius: 9999px;
+	background: var(--track);
+}
+.yass-range::-moz-range-track {
+	height: 6px;
+	border-radius: 9999px;
+	background: var(--track);
+}
+.yass-range::-webkit-slider-thumb {
+	appearance: none;
+	margin-top: -8px;
+	height: 22px;
+	width: 22px;
+	border-radius: 9999px;
+	background: var(--color-surface);
+	box-shadow:
+		var(--shadow-knob),
+		0 0 0 1px rgb(19 26 43 / 0.06);
+	transition: transform 0.15s var(--ease-spring);
+}
+.yass-range::-moz-range-thumb {
+	height: 22px;
+	width: 22px;
+	border: 0;
+	border-radius: 9999px;
+	background: var(--color-surface);
+	box-shadow:
+		var(--shadow-knob),
+		0 0 0 1px rgb(19 26 43 / 0.06);
+}
+.yass-range:active::-webkit-slider-thumb {
+	transform: scale(1.12);
+}
+.yass-range:focus-visible {
+	outline: none;
+}
+.yass-range:focus-visible::-webkit-slider-thumb {
+	box-shadow:
+		var(--shadow-knob),
+		0 0 0 3px var(--color-accent-ring);
+}
+.yass-range:focus-visible::-moz-range-thumb {
+	box-shadow:
+		var(--shadow-knob),
+		0 0 0 3px var(--color-accent-ring);
+}
+
 @media (prefers-reduced-motion: reduce) {
 	*,
 	*::before,

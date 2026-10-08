@@ -9,6 +9,7 @@
 	import Segmented from '$lib/components/Segmented.svelte';
 	import Toggle from '$lib/components/Toggle.svelte';
 	import SettingsSection from '$lib/components/SettingsSection.svelte';
+	import Slider from '$lib/components/Slider.svelte';
 	import TemplateEditor from '$lib/components/TemplateEditor.svelte';
 	import { Icon, presetIcons, type PresetIconName } from '$lib/icons';
 	import {
@@ -23,7 +24,7 @@
 	import { retentionUnits } from '$lib/sessions/retention';
 	import { TILE_SIZES } from '$lib/review/overview';
 	import { ExportFormat } from '$lib/hub/generated/Yass.Core.Hub';
-	import { exportFormatLabels } from '$lib/format';
+	import { colorLabel, exportFormatLabels, pageSizeLabel, sourceLabel } from '$lib/format';
 	import { fileExtensions } from '$lib/review/download';
 	import { expandTemplate, templateTokens, unknownTokens } from '$lib/template';
 	import { colorModeLabels } from '$lib/review/edits';
@@ -65,7 +66,16 @@
 	];
 
 	const overrides = $derived($settings);
-	const changed = $derived(Object.values(editableKeys).some((key) => overrides[key] !== undefined));
+	const changedCount = $derived(
+		Object.values(editableKeys).filter((key) => overrides[key] !== undefined).length
+	);
+	const changed = $derived(changedCount > 0);
+
+	/**
+	 * What "Default" stands for, said beside the control: a row of segments with Default lit
+	 * otherwise leaves you guessing whether the next scan is 150 dpi or 600.
+	 */
+	const defaultHint = (label: string | undefined) => (label ? `default ${label}` : '');
 
 	// "" is the segment that clears the override and falls back to yass.yaml.
 	const DEFAULT = '';
@@ -216,53 +226,66 @@
 <div class="fixed inset-0 z-40 bg-[rgb(19_26_43_/_0.35)] backdrop-blur-[3px]"></div>
 
 <!--
-	The card only clips; the wrapper inside it scrolls. Scrolling the card itself ran the
-	browser's scrollbar through the rounded corners and the padding, so here it sits
-	inside the vertical padding, a little in from the edge.
+	Header and footer stay put while the middle scrolls, so Close, Reset and Done are never
+	a long scroll away. The card only clips; the wrapper inside it scrolls, a little in from
+	the edge, so the scrollbar does not run through the rounded corners.
 -->
 <div
-	class="fixed inset-x-0 bottom-0 z-41 flex max-h-[92%] animate-pop-in flex-col overflow-hidden rounded-t-[28px] bg-surface pt-[22px] pb-6 shadow-modal sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:max-h-[calc(100%-32px)] sm:w-[min(1180px,calc(100%-40px))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[26px] sm:py-[30px]"
+	class="fixed inset-x-0 bottom-0 z-41 flex max-h-[92%] animate-pop-in flex-col overflow-hidden rounded-t-[28px] bg-surface shadow-modal sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:max-h-[calc(100%-32px)] sm:w-[min(1080px,calc(100%-40px))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[26px]"
 	role="dialog"
 	aria-modal="true"
-	aria-label="Scan settings"
+	aria-label="Settings"
 >
-	<span
-		class="mx-auto mb-3 block h-1 w-10 flex-none rounded-full bg-handle sm:hidden"
-		aria-hidden="true"
-	></span>
-
-	<div
-		class="grid min-h-0 items-start gap-x-7 gap-y-[18px] overflow-y-auto overscroll-contain px-[22px] sm:mr-2.5 sm:grid-cols-[repeat(auto-fit,minmax(320px,1fr))] sm:pr-[24px] sm:pl-[34px]"
-	>
-		<div class="col-span-full flex items-center gap-2">
-			<h1 class="text-[20px] font-extrabold tracking-[-0.01em] sm:text-[26px]">Scan settings</h1>
+	<header class="flex-none border-b border-line px-[22px] pt-3 pb-4 sm:px-[34px] sm:pt-6">
+		<span class="mx-auto mb-3 block h-1 w-10 rounded-full bg-handle sm:hidden" aria-hidden="true"
+		></span>
+		<div class="flex items-center gap-2">
+			<div class="flex min-w-0 flex-col">
+				<h1 class="text-[20px] font-extrabold tracking-[-0.01em] sm:text-[24px]">Settings</h1>
+				<p class="text-[12px] leading-snug text-ink-muted sm:text-[13px]">
+					Kept in this browser. Default means whatever
+					<code class="font-mono">yass.yaml</code> says.
+				</p>
+			</div>
 			<div class="flex-1"></div>
+			{#if changed}
+				<span
+					class="flex h-7 items-center gap-1.5 rounded-full bg-accent-tint px-2.5 text-[12px] font-bold whitespace-nowrap text-accent-deep"
+					title="Scan options changed from the defaults for the next scan"
+					data-testid="overrides-active"
+				>
+					<span class="h-1.5 w-1.5 rounded-full bg-accent"></span>
+					{changedCount} changed
+				</span>
+			{/if}
 			<button
 				type="button"
-				class="h-8 rounded-full px-3 text-[13px] font-bold text-accent transition-colors hover:bg-accent-wash"
+				class="h-9 rounded-full px-3 text-[13px] font-bold text-accent transition-colors hover:bg-accent-wash disabled:pointer-events-none disabled:text-ink-faint"
 				onclick={() => settings.reset()}
+				disabled={!changed}
+				title="Put every scan option back to its default"
 				data-testid="reset-settings"
 			>
 				Reset
 			</button>
 			<button
 				type="button"
-				class="flex h-9 w-9 items-center justify-center rounded-full bg-ctl transition-colors hover:bg-ctl-hover"
+				class="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-ctl transition-colors hover:bg-ctl-hover"
 				onclick={close}
 				aria-label="Close settings"
 			>
 				<Icon name="close" />
 			</button>
 		</div>
+	</header>
 
-		<p class="col-span-full text-[13px] text-ink-muted">
-			Stored in this browser only. Anything left on Default comes from
-			<code class="font-mono">yass.yaml</code>.
-		</p>
-
+	<div
+		class="grid min-h-0 flex-1 items-start gap-y-5 overflow-y-auto overscroll-contain px-[22px] py-5 sm:mr-2.5 sm:pr-[24px] sm:pl-[34px] md:py-7"
+	>
 		<SettingsSection
 			title="Scanner"
-			hint="What the next scan asks the scanner for, kept in this browser. Default is whatever yass.yaml says."
+			icon="scan"
+			hint="What the next scan asks the scanner for."
 			testid="scanner-section"
 		>
 			{#if error}
@@ -273,15 +296,27 @@
 					{error}
 				</p>
 			{:else if !effective}
-				<p class="col-span-full text-ink-muted">Loading…</p>
+				<div class="col-span-full grid gap-3" aria-label="Loading" role="status">
+					{#each [0, 1, 2] as i (i)}
+						<div class="h-[60px] animate-pulse rounded-[14px] bg-skeleton"></div>
+					{/each}
+				</div>
 			{:else}
 				<div
-					class="col-span-full flex flex-col gap-2.5 rounded-[18px] bg-app p-3.5"
+					class="col-span-full flex flex-col gap-3 rounded-[18px] bg-app p-3.5"
 					data-testid="presets"
 				>
 					<div class="flex items-center gap-2">
 						<span class="text-[13px] font-bold text-ink-2">Presets</span>
-						{#if !chosen}
+						{#if chosen}
+							<span
+								class="flex items-center gap-1 text-xs font-bold text-success-ink"
+								data-testid="preset-match"
+							>
+								<Icon name="checkSmall" />
+								{chosen.name}
+							</span>
+						{:else}
 							<span class="text-xs font-bold text-warning-ink">Unsaved changes</span>
 						{/if}
 					</div>
@@ -293,7 +328,7 @@
 								class="flex h-[38px] items-center gap-2 rounded-full px-3.5 text-[13px] font-bold transition-all duration-200 {chosen?.id ===
 								preset.id
 									? 'bg-accent text-white shadow-preset'
-									: 'bg-surface text-accent-deep shadow-chip'}"
+									: 'bg-surface text-accent-deep shadow-chip hover:-translate-y-px hover:bg-accent-50'}"
 								aria-pressed={chosen?.id === preset.id}
 								onclick={() => settings.set({ ...$settings, ...preset.settings })}
 							>
@@ -308,34 +343,64 @@
 								{/if}
 							</button>
 						{/each}
+						{#if !drafting}
+							<button
+								type="button"
+								class="flex h-[38px] items-center gap-1.5 rounded-full border-[1.5px] border-dashed border-accent-dash px-3.5 text-[13px] font-bold text-accent transition-colors hover:border-accent hover:bg-surface"
+								onclick={() => (drafting = true)}
+								data-testid="preset-new"
+							>
+								<Icon name="plus" />
+								Save as new
+							</button>
+						{/if}
 					</div>
 
 					{#if drafting}
-						<div class="flex flex-col gap-2">
+						<div
+							class="flex animate-pop-in flex-col gap-3 rounded-[14px] bg-surface p-3 shadow-chip"
+						>
 							<div class="flex flex-wrap gap-2">
 								<input
-									class="h-9 min-w-[160px] flex-1 rounded-[10px] border-[1.5px] border-accent bg-surface px-3 text-sm outline-none"
+									class="field h-10 min-w-[160px] flex-1 px-3 text-sm"
 									type="text"
 									placeholder="Preset name"
 									bind:value={draftName}
+									onkeydown={(e) => e.key === 'Enter' && savePreset()}
 									data-testid="preset-name"
 								/>
 								<button
 									type="button"
-									class="h-9 rounded-full bg-accent px-3 text-xs font-extrabold text-white transition-opacity disabled:pointer-events-none disabled:opacity-45"
+									class="h-10 rounded-full px-3.5 text-[13px] font-bold text-ink-3 transition-colors hover:bg-ctl"
+									onclick={() => (drafting = false)}
+								>
+									Cancel
+								</button>
+								<button
+									type="button"
+									class="h-10 rounded-full bg-accent px-4 text-[13px] font-extrabold text-white transition-[opacity,background-color] hover:bg-accent-hover disabled:pointer-events-none disabled:opacity-45"
 									disabled={!draftName.trim()}
 									onclick={savePreset}
 									data-testid="preset-save"
 								>
 									Save
 								</button>
-								<button
-									type="button"
-									class="h-9 rounded-full px-3 text-xs font-bold text-ink-3 transition-colors hover:bg-ctl"
-									onclick={() => (drafting = false)}
-								>
-									Cancel
-								</button>
+							</div>
+							<div class="flex flex-wrap gap-1.5" role="group" aria-label="Icon">
+								{#each presetIcons as icon (icon)}
+									<button
+										type="button"
+										class="flex h-9 w-9 items-center justify-center rounded-[10px] transition-transform duration-150 hover:scale-110 {draftIcon ===
+										icon
+											? 'bg-accent text-white shadow-swatch'
+											: 'bg-ctl text-ink-2'}"
+										aria-pressed={draftIcon === icon}
+										aria-label={icon}
+										onclick={() => (draftIcon = icon)}
+									>
+										<Icon name={icon} />
+									</button>
+								{/each}
 							</div>
 							{#if currentDevice}
 								<!-- Only worth asking when there is a scanner for it to belong to. -->
@@ -352,76 +417,55 @@
 									>
 								</label>
 							{/if}
-							<div class="flex flex-wrap gap-1.5">
-								{#each presetIcons as icon (icon)}
-									<button
-										type="button"
-										class="flex h-9 w-9 items-center justify-center rounded-[10px] transition-transform duration-150 hover:scale-110 {draftIcon ===
-										icon
-											? 'bg-accent text-white shadow-swatch'
-											: 'bg-surface text-ink-2 shadow-chip'}"
-										aria-pressed={draftIcon === icon}
-										aria-label={icon}
-										onclick={() => (draftIcon = icon)}
-									>
-										<Icon name={icon} />
-									</button>
-								{/each}
-							</div>
 						</div>
-					{:else}
-						<div class="flex flex-wrap gap-1.5">
-							{#if chosen}
-								<button
-									type="button"
-									class="h-8 rounded-full bg-accent px-3 text-xs font-extrabold text-white transition-colors hover:bg-accent-hover"
-									onclick={updatePreset}
-								>
-									Update “{chosen.name}”
-								</button>
-								<button
-									type="button"
-									class="h-8 rounded-full px-3 text-xs font-bold text-danger transition-colors hover:bg-danger-bg"
-									onclick={() => deletePreset(chosen.id)}
-								>
-									Delete “{chosen.name}”
-								</button>
+					{:else if chosen}
+						<div
+							class="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-line-strong pt-2.5"
+						>
+							{#if currentDevice || chosen.device}
+								<label class="flex flex-wrap items-center gap-2 text-xs font-semibold text-ink-2">
+									<input
+										type="checkbox"
+										class="h-4 w-4 accent-accent"
+										checked={!chosen.device}
+										onchange={(e) => sharePreset(chosen.id, e.currentTarget.checked)}
+										data-testid="preset-scope"
+									/>
+									Available for all scanners
+									<span class="font-normal text-ink-muted"
+										>· otherwise only on {deviceLabel(chosen.device || currentDevice)}</span
+									>
+								</label>
 							{/if}
+							<div class="flex-1"></div>
 							<button
 								type="button"
-								class="h-8 rounded-full bg-surface px-3 text-xs font-bold text-accent-deep shadow-chip transition-colors hover:bg-accent-50"
-								onclick={() => (drafting = true)}
-								data-testid="preset-new"
+								class="h-8 rounded-full px-3 text-xs font-bold text-accent transition-colors hover:bg-accent-wash"
+								onclick={updatePreset}
 							>
-								Save as new preset
+								Update “{chosen.name}”
+							</button>
+							<button
+								type="button"
+								class="flex h-8 items-center gap-1 rounded-full px-3 text-xs font-bold text-danger transition-colors hover:bg-danger-bg"
+								onclick={() => deletePreset(chosen.id)}
+							>
+								<Icon name="trash" />
+								Delete
 							</button>
 						</div>
-						{#if chosen && (currentDevice || chosen.device)}
-							<label class="flex flex-wrap items-center gap-2 text-xs font-semibold text-ink-2">
-								<input
-									type="checkbox"
-									class="h-4 w-4 accent-accent"
-									checked={!chosen.device}
-									onchange={(e) => sharePreset(chosen.id, e.currentTarget.checked)}
-									data-testid="preset-scope"
-								/>
-								“{chosen.name}” is available for all scanners
-								<span class="font-normal text-ink-muted"
-									>· otherwise only on {deviceLabel(chosen.device || currentDevice)}</span
-								>
-							</label>
-						{/if}
 					{/if}
 				</div>
 
 				<form
-					class="col-span-full grid items-start gap-x-7 gap-y-[18px] sm:grid-cols-[repeat(auto-fit,minmax(320px,1fr))]"
+					class="col-span-full grid items-start gap-x-6 gap-y-5 sm:grid-cols-2"
 					onsubmit={(e) => e.preventDefault()}
 					data-testid="settings-form"
 				>
 					<Segmented
 						name="source"
 						label="Source"
+						hint={defaultHint(sourceLabel(effective.Source))}
 						options={withDefault(sources)}
 						value={asSegment(overrides.Source)}
 						onchange={(v) => setNumber('Source', v)}
@@ -429,6 +473,7 @@
 					<Segmented
 						name="color"
 						label="Colour mode"
+						hint={defaultHint(colorLabel(effective.Color))}
 						options={withDefault(colors)}
 						value={asSegment(overrides.Color)}
 						onchange={(v) => setNumber('Color', v)}
@@ -436,7 +481,7 @@
 					<Segmented
 						name="dpi"
 						label="Resolution"
-						hint="dpi"
+						hint={effective.Dpi ? `default ${effective.Dpi} dpi` : 'dpi'}
 						options={withDefault(dpis)}
 						value={asSegment(overrides.Dpi)}
 						onchange={(v) => setNumber('Dpi', v)}
@@ -444,12 +489,15 @@
 					<Segmented
 						name="page_size"
 						label="Paper size"
+						hint={defaultHint(pageSizeLabel(effective.PageSize))}
 						options={withDefault(pageSizes)}
 						value={asSegment(overrides.PageSize)}
 						onchange={(v) => setNumber('PageSize', v)}
 					/>
 
-					<div class="rounded-[16px] bg-app px-3.5 py-1.5">
+					<!-- What happens to a page after it comes off the scanner. -->
+					<fieldset class="flex flex-col rounded-[16px] bg-app px-3.5 py-1.5">
+						<legend class="sr-only">Clean-up</legend>
 						<Toggle
 							name="blank_page_detection"
 							label="Skip blank pages"
@@ -457,6 +505,35 @@
 							checked={overrides.BlankPageDetection ?? effective.BlankPageDetection ?? false}
 							onchange={(v) => settings.update('BlankPageDetection', v)}
 						/>
+						<!-- Belongs to the toggle above, and only matters while it is on. -->
+						<label
+							class="mb-2 ml-3 flex items-center justify-between gap-3 border-l-2 border-line-strong pl-3 transition-opacity {(overrides.BlankPageDetection ??
+							effective.BlankPageDetection)
+								? ''
+								: 'opacity-50'}"
+						>
+							<span class="flex min-w-0 flex-col">
+								<span class="text-[13px] font-bold text-ink-2">Blank threshold</span>
+								<span class="text-xs text-ink-muted">
+									Higher skips more · default {effective.BlankPageThreshold}
+								</span>
+							</span>
+							<input
+								class="field h-10 w-[84px] flex-none px-2.5 text-center font-mono text-sm"
+								type="number"
+								name="blank_page_threshold"
+								min="0"
+								max="1"
+								step="0.01"
+								value={overrides.BlankPageThreshold ?? ''}
+								placeholder={String(effective.BlankPageThreshold)}
+								onchange={(e) => {
+									const v = (e.currentTarget as HTMLInputElement).value;
+									settings.update('BlankPageThreshold', v === '' ? undefined : Number(v));
+								}}
+							/>
+						</label>
+						<div class="border-t border-line-strong"></div>
 						<Toggle
 							name="auto_deskew"
 							label="Auto-deskew"
@@ -464,62 +541,20 @@
 							checked={overrides.AutoDeskew ?? effective.AutoDeskew ?? false}
 							onchange={(v) => settings.update('AutoDeskew', v)}
 						/>
-					</div>
+					</fieldset>
 
-					{#each [['brightness', 'Brightness', 'Brightness'], ['contrast', 'Contrast', 'Contrast']] as const as [key, label, prop] (key)}
-						<label class="flex flex-col gap-1.5">
-							<span class="flex justify-between text-[13px] font-bold text-ink-2">
-								{label}
-								<span class="text-ink-muted tabular-nums">
-									{overrides[prop] ?? effective[prop] ?? 0}
-								</span>
-							</span>
-							<input
-								class="h-11 accent-accent"
-								type="range"
+					<fieldset class="flex flex-col gap-1 rounded-[16px] bg-app px-3.5 py-2.5">
+						<legend class="sr-only">Image adjustments</legend>
+						{#each [['brightness', 'Brightness', 'Brightness'], ['contrast', 'Contrast', 'Contrast']] as const as [key, label, prop] (key)}
+							<Slider
 								name={key}
-								min="-100"
-								max="100"
-								step="5"
+								{label}
 								value={overrides[prop] ?? effective[prop] ?? 0}
-								oninput={(e) =>
-									settings.update(prop, Number((e.currentTarget as HTMLInputElement).value))}
+								onchange={(v) => settings.update(prop, v)}
 							/>
-						</label>
-					{/each}
-
-					<label class="flex flex-col gap-1.5">
-						<span class="text-[13px] font-bold text-ink-2">
-							Blank threshold
-							<span class="font-semibold text-ink-muted">
-								· default {effective.BlankPageThreshold}
-							</span>
-						</span>
-						<input
-							class="h-11 rounded-[12px] bg-ctl px-3 font-mono text-sm"
-							type="number"
-							name="blank_page_threshold"
-							min="0"
-							max="1"
-							step="0.01"
-							value={overrides.BlankPageThreshold ?? ''}
-							placeholder={String(effective.BlankPageThreshold)}
-							onchange={(e) => {
-								const v = (e.currentTarget as HTMLInputElement).value;
-								settings.update('BlankPageThreshold', v === '' ? undefined : Number(v));
-							}}
-						/>
-					</label>
+						{/each}
+					</fieldset>
 				</form>
-
-				{#if changed}
-					<p
-						class="col-span-full rounded-[12px] bg-success-bg px-3 py-2.5 text-xs font-bold text-success-ink"
-						data-testid="overrides-active"
-					>
-						Overrides active for the next scan.
-					</p>
-				{/if}
 			{/if}
 		</SettingsSection>
 
@@ -530,6 +565,7 @@
 		-->
 		<SettingsSection
 			title="Export"
+			icon="download"
 			hint="What kind of file a document is downloaded as."
 			testid="export-section"
 		>
@@ -556,6 +592,7 @@
 		-->
 		<SettingsSection
 			title="Naming"
+			icon="pencil"
 			hint="What a document is called when nobody has named it."
 			testid="naming-section"
 		>
@@ -579,17 +616,19 @@
 		-->
 		<SettingsSection
 			title="Metadata"
+			icon="tag"
 			hint="Written into every PDF's properties. The title is always the document's name."
 			testid="metadata-section"
 		>
-			{#each [['author', 'Author', 'Who the documents belong to. Left empty, the PDF names nobody.'], ['subject', 'Subject', 'What they are about, if every scan from here is about the same thing.'], ['keywords', 'Keywords', 'Comma-separated, for whatever indexes them.']] as const as [key, label, hint] (key)}
+			{#each [['author', 'Author', 'Who the documents belong to', 'Left empty, the PDF names nobody.'], ['subject', 'Subject', 'What they are about', 'If every scan from here is about the same thing.'], ['keywords', 'Keywords', 'invoices, tax, 2026', 'Comma-separated, for whatever indexes them.']] as const as [key, label, placeholder, hint] (key)}
 				<label class="flex flex-col gap-1.5">
 					<span class="text-[13px] font-bold text-ink-2">{label}</span>
 					<input
-						class="h-11 rounded-[12px] bg-ctl px-3 text-sm font-medium outline-none"
+						class="field h-11 px-3 text-sm placeholder:text-ink-faint"
 						type="text"
 						name="metadata-{key}"
 						autocomplete="off"
+						{placeholder}
 						value={$exportPrefs[key]}
 						oninput={(e) => exportPrefs.set({ ...$exportPrefs, [key]: e.currentTarget.value })}
 						data-testid="metadata-{key}"
@@ -605,18 +644,23 @@
 		-->
 		<SettingsSection
 			title="Editing"
+			icon="grid"
 			hint="How the review screen behaves while you go through the pages."
 			testid="editing-section"
 		>
-			<Segmented
-				name="overview-tile"
-				label="Page size in the all-pages view"
-				hint="Fit puts the whole scan on one screen; the zoom buttons in that view set the rest"
-				options={tileSizes}
-				value={String($reviewPrefs.overviewTile)}
-				onchange={(v) =>
-					reviewPrefs.set({ ...$reviewPrefs, overviewTile: v === 'fit' ? 'fit' : Number(v) })}
-			/>
+			<div class="col-span-full flex flex-col gap-1.5">
+				<Segmented
+					name="overview-tile"
+					label="Page size in the all-pages view"
+					options={tileSizes}
+					value={String($reviewPrefs.overviewTile)}
+					onchange={(v) =>
+						reviewPrefs.set({ ...$reviewPrefs, overviewTile: v === 'fit' ? 'fit' : Number(v) })}
+				/>
+				<span class="text-[11px] text-ink-faint">
+					Fit puts the whole scan on one screen; the zoom buttons in that view set the rest.
+				</span>
+			</div>
 		</SettingsSection>
 
 		<!--
@@ -625,23 +669,27 @@
 		-->
 		<SettingsSection
 			title="Past scans"
+			icon="archive"
 			hint="Scans stay listed until you delete them, or until this does."
 			testid="history-section"
 		>
-			<div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+			<div class="col-span-full flex flex-col rounded-[16px] bg-app px-3.5 py-1.5">
 				<Toggle
 					name="auto-clear"
 					label="Delete old scans automatically"
+					hint="Whichever browser has this on does the deleting"
 					checked={$historyPrefs.autoClear !== null}
 					onchange={(on) =>
 						historyPrefs.set({ autoClear: on ? { amount: 30, unit: 'days' } : null })}
 				/>
 				{#if $historyPrefs.autoClear}
 					{@const rule = $historyPrefs.autoClear}
-					<label class="flex items-center gap-2 text-[13px] font-bold text-ink-2">
-						older than
+					<label
+						class="mb-2 flex animate-fade-in flex-wrap items-center gap-2 border-t border-line-strong pt-2.5 text-[13px] font-bold text-ink-2"
+					>
+						Older than
 						<input
-							class="h-9 w-16 rounded-[10px] bg-ctl px-2.5 text-center text-sm font-medium tabular-nums outline-none"
+							class="field h-10 w-16 px-2.5 text-center text-sm tabular-nums"
 							type="number"
 							name="auto-clear-amount"
 							min="1"
@@ -654,7 +702,7 @@
 							data-testid="auto-clear-amount"
 						/>
 						<select
-							class="h-9 rounded-[10px] bg-ctl px-2.5 text-sm font-medium outline-none"
+							class="field h-10 px-2.5 text-sm"
 							name="auto-clear-unit"
 							value={rule.unit}
 							onchange={(e) =>
@@ -671,13 +719,17 @@
 				{/if}
 			</div>
 		</SettingsSection>
+	</div>
 
+	<footer
+		class="flex flex-none justify-end border-t border-line px-[22px] pt-3.5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-[34px] sm:pb-5"
+	>
 		<button
 			type="button"
-			class="col-span-full h-12 w-full justify-self-end rounded-[14px] bg-linear-135 from-accent-light to-accent-grad2 text-[15px] font-extrabold text-white shadow-done transition-shadow duration-200 hover:shadow-export-hover sm:w-[220px]"
+			class="h-12 w-full rounded-[14px] bg-linear-135 from-accent-light to-accent-grad2 text-[15px] font-extrabold text-white shadow-done transition-shadow duration-200 hover:shadow-export-hover sm:w-[200px]"
 			onclick={close}
 		>
 			Done
 		</button>
-	</div>
+	</footer>
 </div>
