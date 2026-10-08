@@ -268,7 +268,7 @@ describe('Toolbar', () => {
 		expect(onfilter).toHaveBeenCalledWith(PageFilter.Bw);
 	});
 
-	it('offers expand only when asked to, and keeps it on while edits are off', async () => {
+	it('offers expand only when asked to, and drops the whole bar while edits are off', async () => {
 		const onexpand = vi.fn();
 		const props = {
 			selectedCount: 0,
@@ -283,15 +283,19 @@ describe('Toolbar', () => {
 		const { rerender } = render(Toolbar, props);
 		expect(screen.queryByTestId('expand-button')).toBeNull();
 
-		// Disabled here means "not editable", e.g. mid-scan. The edits go, because none of
-		// them can be made; looking at a page is not an edit, so Expand stays.
-		await rerender({ ...props, onexpand, disabled: true });
-		expect(screen.getByTestId('expand-button')).toBeEnabled();
-		expect(screen.queryByRole('button', { name: 'Rotate right' })).toBeNull();
-		expect(screen.queryByTestId('filter-button')).toBeNull();
-		expect(screen.queryByTestId('delete-button')).toBeNull();
+		await rerender({ ...props, onexpand });
 		await fireEvent.click(screen.getByTestId('expand-button'));
 		expect(onexpand).toHaveBeenCalled();
+
+		// Disabled here means "not editable", e.g. mid-scan. Every edit goes, and a bar left
+		// holding Expand alone is not worth showing, so there is no bar at all.
+		await rerender({ ...props, onexpand, disabled: true });
+		expect(screen.queryByTestId('toolbar')).toBeNull();
+		expect(screen.queryByTestId('expand-button')).toBeNull();
+
+		// The all-pages view keeps its bar for the selection, even with edits off.
+		await rerender({ ...props, onexpand, disabled: true, scoped: true });
+		expect(screen.getByTestId('toolbar-scope')).toBeVisible();
 
 		// Nothing scanned yet: there is no page to open, so Expand goes too.
 		await rerender({ ...props, onexpand, total: 0 });
