@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { backdropOut, cardOut } from '$lib/motion';
 	import { untrack } from 'svelte';
 	import { MAX_SKEW, innerScale, roundSkew } from '$lib/review/edits';
 	import { Icon } from '$lib/icons';
@@ -56,6 +57,7 @@
 
 <div
 	class="fixed inset-0 z-50 flex animate-fade-in items-center justify-center bg-[rgb(19_26_43_/_0.38)] p-4 backdrop-blur-[3px]"
+	out:backdropOut|global
 >
 	<button
 		type="button"
@@ -65,7 +67,8 @@
 	></button>
 
 	<div
-		class="relative flex max-h-full w-[min(640px,100%)] animate-pop-in flex-col gap-[18px] overflow-y-auto rounded-[26px] bg-surface p-6 text-ink shadow-modal outline-none"
+		class="relative flex max-h-full w-[min(640px,100%)] animate-card-in flex-col gap-[18px] overflow-y-auto rounded-[26px] bg-surface p-6 text-ink shadow-modal outline-none"
+		out:cardOut|global
 		role="dialog"
 		aria-modal="true"
 		aria-label="Straighten page"

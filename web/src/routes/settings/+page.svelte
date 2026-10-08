@@ -261,7 +261,7 @@
 	The route stays, but it reads as the mockup's sheet: a centred card on a desktop
 	and a bottom sheet on a phone, over a dimmed page.
 -->
-<div class="fixed inset-0 z-40 bg-[rgb(19_26_43_/_0.35)] backdrop-blur-[3px]"></div>
+<div class="fixed inset-0 z-40 animate-fade-in bg-[rgb(19_26_43_/_0.35)] backdrop-blur-[3px]"></div>
 
 <!--
 	Header and footer stay put while the middle scrolls, so Close, Reset and Done are never
@@ -269,7 +269,7 @@
 	the edge, so the scrollbar does not run through the rounded corners.
 -->
 <div
-	class="fixed inset-x-0 bottom-0 z-41 flex max-h-[92%] animate-pop-in flex-col overflow-hidden rounded-t-[28px] bg-surface shadow-modal sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:max-h-[calc(100%-32px)] sm:w-[min(1080px,calc(100%-40px))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[26px]"
+	class="fixed inset-x-0 bottom-0 z-41 flex max-h-[92%] animate-sheet-up flex-col overflow-hidden rounded-t-[28px] bg-surface shadow-modal sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:max-h-[calc(100%-32px)] sm:w-[min(1080px,calc(100%-40px))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:animate-card-in sm:rounded-[26px]"
 	role="dialog"
 	aria-modal="true"
 	aria-label="Settings"
