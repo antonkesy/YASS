@@ -27,6 +27,7 @@
 		pageFilterLabels
 	} from '$lib/review/edits';
 	import { clear, prune, toggle } from '$lib/review/selection';
+	import { createPreloader, preloadOrder } from '$lib/review/preload';
 	import PageGrid from '$lib/components/PageGrid.svelte';
 	import PageOverview from '$lib/components/PageOverview.svelte';
 	import Toolbar from '$lib/components/Toolbar.svelte';
@@ -121,6 +122,24 @@
 				: 'This scan can no longer be edited'
 	);
 	const shown = $derived(session?.Pages[current] ?? null);
+
+	/**
+	 * Warms the previews around whichever page is in view — the full-screen preview's if it is
+	 * open, else the stage's — so stepping to the next one does not wait for the server to render
+	 * it. Held off during a scan, when the render slots belong to the thumbnails coming in.
+	 */
+	const preloader = createPreloader();
+	$effect(() => {
+		const pages = session?.Pages;
+		if (!pages || scanning) return preloader.stop();
+		const from = previewIndex ?? current;
+		preloader.want(
+			preloadOrder(pages.length, from).map((i) =>
+				imageUrl(id, pages[i].Index, pages[i].Hash, 'preview')
+			)
+		);
+	});
+	$effect(() => () => preloader.stop());
 
 	/**
 	 * What the toolbar acts on. Nothing ticked means the page on the stage rather than every
