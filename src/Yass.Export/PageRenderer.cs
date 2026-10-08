@@ -3,7 +3,6 @@ using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Metadata;
-using SixLabors.ImageSharp.Processing;
 using Yass.Core.Config;
 using Yass.Core.Domain;
 using Yass.Core.Export;
@@ -27,7 +26,7 @@ public static class PageRenderer
         string path = Path.Combine(directory, Guid.NewGuid().ToString("N") + (lossless ? ".png" : ".jpg"));
 
         using Image image = await Image.LoadAsync(page.SourcePath, cancellationToken).ConfigureAwait(false);
-        image.Mutate(ctx => PagePipeline.Apply(ctx, page.Rotation, page.Filter, page.ScanColor, page.Crop));
+        PagePipeline.Apply(image, page.Spec);
 
         // ImageSharp reports 96 dpi for files without resolution metadata, so "absent" is indistinguishable
         // from "96"; the scan resolution is authoritative and is stamped unconditionally.
@@ -53,7 +52,7 @@ public static class PageRenderer
         ArgumentNullException.ThrowIfNull(quality);
 
         using Image image = await Image.LoadAsync(page.SourcePath, cancellationToken).ConfigureAwait(false);
-        image.Mutate(ctx => PagePipeline.Apply(ctx, page.Rotation, page.Filter, page.ScanColor, page.Crop));
+        PagePipeline.Apply(image, page.Spec);
 
         ImageMetadata meta = image.Metadata;
         meta.ResolutionUnits = PixelResolutionUnit.PixelsPerInch;

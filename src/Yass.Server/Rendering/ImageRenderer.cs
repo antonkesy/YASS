@@ -25,15 +25,11 @@ public sealed class ImageRenderer : IDisposable
         try
         {
             using Image image = await Image.LoadAsync(sourcePath, cancellationToken).ConfigureAwait(false);
-            image.Mutate(ctx =>
+            PagePipeline.Apply(image, RenderSpec.Of(page, scanColor));
+            if (image.Width > maxWidth)
             {
-                PagePipeline.Apply(ctx, page.Rotation, page.Filter, scanColor, page.Crop);
-
-                if (ctx.GetCurrentSize().Width > maxWidth)
-                {
-                    ctx.Resize(maxWidth, 0);
-                }
-            });
+                image.Mutate(ctx => ctx.Resize(maxWidth, 0));
+            }
 
             var encoder = new WebpEncoder { Quality = 80, FileFormat = WebpFileFormatType.Lossy };
             await image.SaveAsync(destination, encoder, cancellationToken).ConfigureAwait(false);

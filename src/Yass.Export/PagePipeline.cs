@@ -14,9 +14,17 @@ public static class PagePipeline
     /// Crop, then rotate, then filter — the order the UI implies, since a crop is drawn on the
     /// upright page and rotation is a view on the result.
     /// </summary>
-    public static void Apply(IImageProcessingContext ctx, Rotation rotation, PageFilter filter, ColorMode scanColor, CropBox? crop)
+    public static void Apply(Image image, RenderSpec spec)
     {
-        ArgumentNullException.ThrowIfNull(ctx);
+        ArgumentNullException.ThrowIfNull(image);
+        ArgumentNullException.ThrowIfNull(spec);
+        image.Mutate(ctx => Apply(ctx, spec));
+    }
+
+    private static void Apply(IImageProcessingContext ctx, RenderSpec spec)
+    {
+        CropBox? crop = spec.Crop;
+        Rotation rotation = spec.Rotation;
 
         if (crop is not null && !crop.IsEmpty())
         {
@@ -30,14 +38,14 @@ public static class PagePipeline
             ctx.Rotate((float)(int)rotation);
         }
 
-        if (filter.Enhances())
+        if (spec.Filter.Enhances())
         {
             ctx.Contrast(PageFilters.EnhanceContrast)
                 .Saturate(PageFilters.EnhanceSaturation)
                 .Brightness(PageFilters.EnhanceBrightness);
         }
 
-        switch (filter.ColorFor(scanColor))
+        switch (spec.ColorMode)
         {
             case ColorMode.Grayscale:
                 ctx.Grayscale();

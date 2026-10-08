@@ -11,6 +11,9 @@ namespace Yass.Core.Export;
 /// <param name="Dpi">Resolution the page was scanned at; used for the PDF page size when the file carries none.</param>
 public sealed record ExportPage(string SourcePath, Rotation Rotation, PageFilter Filter, ColorMode ScanColor, CropBox? Crop, int Dpi)
 {
+    /// <summary>What the pipeline renders: everything above but the file and the resolution.</summary>
+    public RenderSpec Spec => new(Rotation, Filter, ScanColor, Crop);
+
     /// <summary>The colour mode this page actually renders in.</summary>
-    public ColorMode ColorMode => Filter.ColorFor(ScanColor);
+    public ColorMode ColorMode => Spec.ColorMode;
 }
