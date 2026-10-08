@@ -1,4 +1,10 @@
-import { ColorMode, PageEditOp, PageFilter, Rotation } from '$lib/hub/generated/Yass.Core.Domain';
+import {
+	ColorMode,
+	PageCleanup,
+	PageEditOp,
+	PageFilter,
+	Rotation
+} from '$lib/hub/generated/Yass.Core.Domain';
 import type { CropBox, PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
 import type { PageDto, SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 
@@ -12,7 +18,15 @@ export function targetsOf(selection: ReadonlySet<number>): number[] | undefined 
  * does not use rather than each of them repeating the defaults.
  */
 function edit(Op: PageEditOp, extra: Partial<PageEdit> = {}): PageEdit {
-	return { Op, Degrees: 0, Filter: PageFilter.Original, Split: false, ...extra };
+	return {
+		Op,
+		Degrees: 0,
+		Filter: PageFilter.Original,
+		Split: false,
+		Cleanup: PageCleanup.None,
+		Skew: 0,
+		...extra
+	};
 }
 
 export function rotateEdit(degrees: 90 | -90 | 180, selection: ReadonlySet<number>): PageEdit {

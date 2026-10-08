@@ -30,6 +30,12 @@ public sealed record PageEdit
     /// <summary>Payload for <see cref="PageEditOp.Reorder"/>: a permutation of every page index.</summary>
     public IReadOnlyList<int>? Order { get; init; }
 
+    public PageAdjust? Adjust { get; init; }
+
+    public PageCleanup Cleanup { get; init; }
+
+    public double Skew { get; init; }
+
     public static PageEdit Rotate(int degrees, params int[] targets) =>
         new() { Op = PageEditOp.Rotate, Degrees = degrees, Targets = ToTargets(targets) };
 
@@ -47,6 +53,18 @@ public sealed record PageEdit
 
     public static PageEdit SetSplit(bool split, params int[] targets) =>
         new() { Op = PageEditOp.SetSplit, Split = split, Targets = ToTargets(targets) };
+
+    public static PageEdit SetAdjust(PageAdjust? adjust, params int[] targets) =>
+        new() { Op = PageEditOp.SetAdjust, Adjust = adjust, Targets = ToTargets(targets) };
+
+    public static PageEdit AddCleanup(PageCleanup cleanup, params int[] targets) =>
+        new() { Op = PageEditOp.AddCleanup, Cleanup = cleanup, Targets = ToTargets(targets) };
+
+    public static PageEdit RemoveCleanup(PageCleanup cleanup, params int[] targets) =>
+        new() { Op = PageEditOp.RemoveCleanup, Cleanup = cleanup, Targets = ToTargets(targets) };
+
+    public static PageEdit SetSkew(double degrees, params int[] targets) =>
+        new() { Op = PageEditOp.SetSkew, Skew = degrees, Targets = ToTargets(targets) };
 
     public static PageEdit Reorder(params int[] order) =>
         new() { Op = PageEditOp.Reorder, Order = order };

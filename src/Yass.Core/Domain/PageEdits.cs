@@ -38,6 +38,10 @@ public static class PageEdits
                 PageEditOp.SetFilter => page with { Filter = edit.Filter },
                 PageEditOp.SetCrop => page with { Crop = Validated(edit.Crop) },
                 PageEditOp.SetSplit => page with { StartsDocument = edit.Split },
+                PageEditOp.SetAdjust => page with { Adjust = Validated(edit.Adjust) },
+                PageEditOp.AddCleanup => page with { Cleanup = page.Cleanup | edit.Cleanup },
+                PageEditOp.RemoveCleanup => page with { Cleanup = page.Cleanup & ~edit.Cleanup },
+                PageEditOp.SetSkew => page with { Skew = Straighten.Normalise(edit.Skew) },
                 _ => throw new ArgumentException($"Unsupported edit op {edit.Op}.", nameof(edit)),
             };
             pages[index] = PageHash.Rehash(updated, sessionColor);
@@ -56,6 +60,17 @@ public static class PageEdits
 
         crop.Validate();
         return crop;
+    }
+
+    private static PageAdjust? Validated(PageAdjust? adjust)
+    {
+        if (adjust is null || adjust.IsNeutral())
+        {
+            return null;
+        }
+
+        adjust.Validate();
+        return adjust;
     }
 
     private static List<Page> Reorder(List<Page> pages, PageEdit edit)

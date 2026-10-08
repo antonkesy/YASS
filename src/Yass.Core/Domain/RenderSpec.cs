@@ -9,7 +9,17 @@ namespace Yass.Core.Domain;
 /// <param name="Filter">Per-page treatment.</param>
 /// <param name="ScanColor">Colour mode the page was scanned in, which <see cref="PageFilter.Original"/> keeps.</param>
 /// <param name="Crop">Trim to apply before rotating, or <c>null</c>.</param>
-public sealed record RenderSpec(Rotation Rotation, PageFilter Filter, ColorMode ScanColor, CropBox? Crop)
+/// <param name="Adjust">Tone and sharpness, or <c>null</c> for none.</param>
+/// <param name="Cleanup">Clean-up passes.</param>
+/// <param name="Skew">Fine rotation in degrees, after the quarter turns.</param>
+public sealed record RenderSpec(
+    Rotation Rotation,
+    PageFilter Filter,
+    ColorMode ScanColor,
+    CropBox? Crop,
+    PageAdjust? Adjust = null,
+    PageCleanup Cleanup = PageCleanup.None,
+    double Skew = 0)
 {
     /// <summary>The colour mode the page actually renders in.</summary>
     public ColorMode ColorMode => Filter.ColorFor(ScanColor);
@@ -17,6 +27,6 @@ public sealed record RenderSpec(Rotation Rotation, PageFilter Filter, ColorMode 
     public static RenderSpec Of(Page page, ColorMode scanColor)
     {
         ArgumentNullException.ThrowIfNull(page);
-        return new RenderSpec(page.Rotation, page.Filter, scanColor, page.Crop);
+        return new RenderSpec(page.Rotation, page.Filter, scanColor, page.Crop, page.Adjust, page.Cleanup, page.Skew);
     }
 }

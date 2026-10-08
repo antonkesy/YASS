@@ -21,11 +21,36 @@ public static class PageHash
             : string.Create(CultureInfo.InvariantCulture, $"{crop.Top}/{crop.Right}/{crop.Bottom}/{crop.Left}");
         string key = string.Create(
             CultureInfo.InvariantCulture,
-            $"{sourceHash}|{(int)spec.Rotation}|{(int)spec.Filter}|{(int)spec.ColorMode}|{box}");
+            $"{sourceHash}|{(int)spec.Rotation}|{(int)spec.Filter}|{(int)spec.ColorMode}|{box}{Extras(spec)}");
         return OfBytes(Encoding.UTF8.GetBytes(key));
     }
 
     /// <summary>Recomputes <see cref="Page.Hash"/> from the page's current edits and the session's scan colour mode.</summary>
+    /// <summary>
+    /// The edits that came after the original key, appended only when set: a page that has none
+    /// of them keeps the hash — and the cached images — it had before they existed.
+    /// </summary>
+    private static string Extras(RenderSpec spec)
+    {
+        var extras = new StringBuilder();
+        if (spec.Adjust is { } a && !a.IsNeutral())
+        {
+            extras.Append(CultureInfo.InvariantCulture, $"|a{a.Brightness}/{a.Contrast}/{a.Sharpen}");
+        }
+
+        if (spec.Cleanup != PageCleanup.None)
+        {
+            extras.Append(CultureInfo.InvariantCulture, $"|c{(int)spec.Cleanup}");
+        }
+
+        if (spec.Skew != 0)
+        {
+            extras.Append(CultureInfo.InvariantCulture, $"|k{spec.Skew:0.0}");
+        }
+
+        return extras.ToString();
+    }
+
     public static Page Rehash(Page page, ColorMode sessionColor)
     {
         ArgumentNullException.ThrowIfNull(page);

@@ -26,4 +26,16 @@ public enum PageEditOp
 
     /// <summary>Start (or stop starting) a document at the target pages, per <see cref="PageEdit.Split"/>.</summary>
     SetSplit,
+
+    /// <summary>Set <see cref="PageEdit.Adjust"/> as the tone and sharpness of the target pages; null clears it.</summary>
+    SetAdjust,
+
+    /// <summary>Turn on the clean-up passes in <see cref="PageEdit.Cleanup"/> on the target pages.</summary>
+    AddCleanup,
+
+    /// <summary>Turn off the clean-up passes in <see cref="PageEdit.Cleanup"/> on the target pages.</summary>
+    RemoveCleanup,
+
+    /// <summary>Set <see cref="PageEdit.Skew"/> as the fine rotation of the target pages.</summary>
+    SetSkew,
 }

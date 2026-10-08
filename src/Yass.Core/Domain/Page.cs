@@ -14,6 +14,9 @@ namespace Yass.Core.Domain;
 /// <param name="IsBlank">Flagged by blank-page detection at scan time; such pages start out deleted.</param>
 /// <param name="SourceHash">Hash of the source file bytes, fixed at scan time.</param>
 /// <param name="Hash">Content hash of (source, edits); changes whenever a derived image would change.</param>
+/// <param name="Adjust">Tone and sharpness set after scanning, or <c>null</c> for none.</param>
+/// <param name="Cleanup">Clean-up passes: despeckle, auto-levels.</param>
+/// <param name="Skew">Fine rotation in degrees (±15), applied after the quarter turns.</param>
 public sealed record Page(
     int Index,
     string SourceFile,
@@ -24,4 +27,7 @@ public sealed record Page(
     bool Deleted,
     bool IsBlank,
     string SourceHash,
-    string Hash);
+    string Hash,
+    PageAdjust? Adjust = null,
+    PageCleanup Cleanup = PageCleanup.None,
+    double Skew = 0);

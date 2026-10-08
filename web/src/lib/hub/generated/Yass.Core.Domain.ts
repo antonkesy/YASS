@@ -21,6 +21,23 @@ export type CropBox = {
     Left: number;
 }
 
+/** Transpiled from Yass.Core.Domain.PageAdjust */
+export type PageAdjust = {
+    /** Transpiled from int */
+    Brightness: number;
+    /** Transpiled from int */
+    Contrast: number;
+    /** Transpiled from int */
+    Sharpen: number;
+}
+
+/** Transpiled from Yass.Core.Domain.PageCleanup */
+export enum PageCleanup {
+    None = 0,
+    Despeckle = 1,
+    AutoLevels = 2,
+}
+
 /** Transpiled from Yass.Core.Domain.PageEdit */
 export type PageEdit = {
     /** Transpiled from Yass.Core.Domain.PageEditOp */
@@ -37,6 +54,12 @@ export type PageEdit = {
     Split: boolean;
     /** Transpiled from System.Collections.Generic.IReadOnlyList<int>? */
     Order?: number[];
+    /** Transpiled from Yass.Core.Domain.PageAdjust? */
+    Adjust?: PageAdjust;
+    /** Transpiled from Yass.Core.Domain.PageCleanup */
+    Cleanup: PageCleanup;
+    /** Transpiled from double */
+    Skew: number;
 }
 
 /** Transpiled from Yass.Core.Domain.PageEditOp */
@@ -48,6 +71,10 @@ export enum PageEditOp {
     Reorder = 4,
     SetCrop = 5,
     SetSplit = 6,
+    SetAdjust = 7,
+    AddCleanup = 8,
+    RemoveCleanup = 9,
+    SetSkew = 10,
 }
 
 /** Transpiled from Yass.Core.Domain.PageFilter */

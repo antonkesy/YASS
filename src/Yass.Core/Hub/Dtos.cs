@@ -39,7 +39,10 @@ public sealed record PageDto(
     bool Deleted,
     bool IsBlank,
     string Hash,
-    bool ThumbnailReady);
+    bool ThumbnailReady,
+    PageAdjust? Adjust,
+    PageCleanup Cleanup,
+    double Skew);
 
 
 /// <summary>
