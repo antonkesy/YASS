@@ -73,7 +73,7 @@
 				class="truncate text-[17px] font-extrabold tracking-[-0.01em] text-ink sm:text-[20px]"
 				data-testid="app-name"
 			>
-				Yet Another Scanner Service
+				Yet Another Scanner Slop
 			</span>
 		{:else if atReview}
 			<StatusPill
