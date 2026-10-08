@@ -10,6 +10,8 @@ services:
     volumes:
       - ./yass.yaml:/etc/yass/yass.yaml:ro
       - yass-sessions:/data/sessions
+      # Only with output.directory set in yass.yaml, for "Save to server":
+      # - /srv/paperless/consume:/data/consume
     devices:
       - /dev/bus/usb:/dev/bus/usb # USB/SANE scanners; not needed for network (eSCL) scanners
     # eSCL discovery uses mDNS; host networking makes that work out of the box:

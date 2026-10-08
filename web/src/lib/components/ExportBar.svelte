@@ -10,7 +10,9 @@
 		progress = null,
 		busy = false,
 		picker = false,
-		ondownload
+		serverFolder = null,
+		ondownload,
+		onserver
 	}: {
 		session: SessionDto;
 		progress?: number | null;
@@ -18,6 +20,12 @@
 		/** Whether the browser can offer a save dialog, which is what the button says it will do. */
 		picker?: boolean;
 		ondownload: () => void;
+		/**
+		 * The server's output folder, when saving there is configured and this browser has
+		 * switched it on in Settings. Null hides the button.
+		 */
+		serverFolder?: string | null;
+		onserver?: () => void;
 	} = $props();
 
 	const active = $derived(activePageCount(session));
@@ -66,5 +74,19 @@
 			<Icon name="download" />
 			{picker ? 'Save as…' : 'Download'}
 		</button>
+		{#if serverFolder && onserver}
+			<!-- A second way out, not a replacement: the download is still one click. -->
+			<button
+				type="button"
+				class="flex h-[46px] w-full items-center justify-center gap-2 rounded-[14px] bg-accent-tint text-[14px] font-extrabold text-accent-deep transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-40"
+				onclick={onserver}
+				disabled={!canExport}
+				title="Save into {serverFolder} on the server"
+				data-testid="server-save-button"
+			>
+				<Icon name="folder" />
+				Save to server
+			</button>
+		{/if}
 	{/if}
 </div>

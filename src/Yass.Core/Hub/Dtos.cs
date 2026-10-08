@@ -79,12 +79,16 @@ public enum ExportFormat
     Png,
 }
 
-/// <summary>What to produce for the browser to download. Every export is a one-shot download URL.</summary>
+/// <summary>
+/// What to produce: a one-shot download URL per document, or with <see cref="ToServer"/>, a file
+/// per document in the server's <c>output.directory</c>.
+/// </summary>
 /// <param name="Format">File type to produce.</param>
 /// <param name="Name">Base file name, without extension; empty falls back to the session's name or a generated one.</param>
 /// <param name="Metadata">What to stamp into a PDF besides its pages; null means the writer's defaults.</param>
+/// <param name="ToServer">Save into <c>output.directory</c> instead of offering a download. Refused when it is not configured.</param>
 [TranspilationSource]
-public sealed record ExportRequest(ExportFormat Format = ExportFormat.Pdf, string? Name = null, DocumentMetadataDto? Metadata = null);
+public sealed record ExportRequest(ExportFormat Format = ExportFormat.Pdf, string? Name = null, DocumentMetadataDto? Metadata = null, bool ToServer = false);
 
 /// <summary>
 /// What to stamp into a PDF besides its pages, as the browser keeps it in its settings. The
@@ -99,6 +103,7 @@ public sealed record DocumentMetadataDto(string? Author = null, string? Subject 
 public sealed record ExportResult(int PageCount, ExportedDocumentDto[] Documents);
 
 /// <param name="PageCount">Pages in this document.</param>
-/// <param name="DownloadPath">One-shot relative URL the browser fetches the file from.</param>
+/// <param name="DownloadPath">One-shot relative URL the browser fetches the file from; empty when saved to the server.</param>
+/// <param name="SavedTo">Where on the server the file was saved, when it was.</param>
 [TranspilationSource]
-public sealed record ExportedDocumentDto(int PageCount, string DownloadPath);
+public sealed record ExportedDocumentDto(int PageCount, string DownloadPath, string? SavedTo = null);

@@ -60,6 +60,12 @@ public interface IYassHub
 
     Task<ScanOptionsDto> GetEffectiveOptions();
 
+    /// <summary>
+    /// The server's <c>output.directory</c>, or empty when saving to the server is off. A browser
+    /// only offers the option when this names a folder.
+    /// </summary>
+    Task<string> GetServerFolder();
+
     /// <summary>Re-reads every section of the config file except <c>server</c>.</summary>
     Task ReloadConfig();
 }

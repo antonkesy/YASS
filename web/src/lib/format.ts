@@ -107,8 +107,9 @@ export function usesFeeder(source: ScanSource | undefined): boolean {
  * than stored: no events means it is still a draft, and a busy state outranks the
  * history because it says what is happening right now.
  */
-// `exported` and `saved` are what the export-to-folder feature used to leave behind; no scan
-// gets them any more, but one from before still reads that way rather than as a draft.
+// `exported` is a scan saved into the server's output folder. `saved` is what the old
+// pick-a-folder feature left behind; no scan gets it any more, but one from before still
+// reads that way rather than as a draft.
 export type SessionStatus =
 	'draft' | 'scanning' | 'exporting' | 'exported' | 'saved' | 'downloaded' | 'discarded' | 'failed';
 
@@ -137,7 +138,7 @@ export const statusLabels: Record<SessionStatus, string> = {
 	draft: 'Draft',
 	scanning: 'Scanning',
 	exporting: 'Preparing',
-	exported: 'Exported',
+	exported: 'On server',
 	saved: 'Saved',
 	downloaded: 'Downloaded',
 	discarded: 'Discarded',

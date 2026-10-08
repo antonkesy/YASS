@@ -6,7 +6,7 @@ Base prompt / project specification for a coding agent. Read fully before writin
 
 ## 1. One-paragraph summary
 
-YASS is a headless scanning service for a home server on Linux (bare metal, NixOS, Docker). A scanner is attached to the host (USB/SANE or network/eSCL). YASS exposes a small web UI where a user can see scanner readiness, start a scan that runs until the feeder is empty, review pages in a preview (rotate / delete / color mode, per page or for all), and download the result as a PDF (or one image per page) to the device at hand. The server writes documents nowhere else. Everything is configured through a single file. Backend is .NET with **NAPS2.Sdk**; frontend is a **SvelteKit** mobile-first PWA. **There is no authentication**: the service is trusted-LAN only and must never be exposed to the internet (document this prominently in the README).
+YASS is a headless scanning service for a home server on Linux (bare metal, NixOS, Docker). A scanner is attached to the host (USB/SANE or network/eSCL). YASS exposes a small web UI where a user can see scanner readiness, start a scan that runs until the feeder is empty, review pages in a preview (rotate / delete / color mode, per page or for all), and download the result as a PDF (or one image per page) to the device at hand — or, where `output.directory` is configured, save it into that one folder on the server (e.g. a paperless-ngx consume folder). The server writes documents nowhere else. Everything is configured through a single file. Backend is .NET with **NAPS2.Sdk**; frontend is a **SvelteKit** mobile-first PWA. **There is no authentication**: the service is trusted-LAN only and must never be exposed to the internet (document this prominently in the README).
 
 ## 2. Guiding principle — DECIDED
 
@@ -85,7 +85,8 @@ scanner:
     auto_deskew: false
     device: ""                # exact device id; empty = whatever scanner.device resolves to
   ui_editable: []             # deprecated, ignored: every default above can be changed from the UI
-output:                       # how a document is written; where it goes is the browser's choice
+output:                       # how a document is written, and the one server folder it may go to
+  directory: ""               # absolute; empty = off. Browsers opt in per browser in Settings
   pdf:
     compression: jpeg         # jpeg | lossless
     jpeg_quality: 75
@@ -132,7 +133,8 @@ Task<SessionDto[]> ListSessions()
 Task               DeleteSession(string sessionId)
 Task<SessionDto>   ApplyEdits(string sessionId, PageEdit[] edits)
 Task<int>          AutoCrop(string sessionId, int[]? targets)     // finds the scanner's dark frame, applies it as SetCrop; returns pages cropped
-Task<ExportResult> Export(string sessionId, ExportRequest req)   // builds the document(s); returns one-shot download URLs
+Task<ExportResult> Export(string sessionId, ExportRequest req)   // builds the document(s); one-shot download URLs, or with ToServer, files in output.directory
+Task<string>       GetServerFolder()                             // output.directory, or "" when saving to the server is off
 Task<ScannerStatusDto> GetScannerStatus()
 Task<ScanOptionsDto>   GetEffectiveOptions()
 Task               ReloadConfig()
@@ -164,7 +166,7 @@ Routes: `/` (scanner picker, presets, big Scan button, recent sessions), `/sessi
 
 The UI comes first: it can change every scan option, and `yass.yaml` only supplies the defaults (`scanner.defaults`). Nothing in the config hides a control; `scanner.ui_editable` is accepted for old files and ignored. The scanner is chosen on `/`, not in `/settings`: the picker shows whenever the server lists at least one scanner, with `scanner.defaults.device` as the default, and presets belong to whichever scanner is chosen unless saved as available for all scanners.
 
-Review: page strip (a row above the page on a phone, a column beside it on desktop); tap a thumbnail = show that page on the stage, its checkbox = multi-select; drag = reorder; toolbar acts on the selection, or the page on the stage when nothing is selected: rotate ⟲ ⟳, Adjust (brightness, contrast, sharpen with a live CSS preview), Crop menu (Crop…, Straighten… ±15° over a grid, Auto-crop borders), Filter menu (Original / Enhance / Grayscale / B&W, plus Despeckle and Auto-levels clean-ups), rescan, delete/restore. While a scan runs there is no edit bar. Tap → full preview with swipe, its own edit bar (Adjust, Crop, Straighten, Filter) for the page on screen, and previews preloaded nearest-first around the page in view. Blank pages pre-marked deleted with badge. Sticky bottom bar: page count, **Save as…** (browser download, through the save dialog where there is one), Discard. Edits apply optimistically (CSS rotate) and reconcile on `PageUpdated`.
+Review: page strip (a row above the page on a phone, a column beside it on desktop); tap a thumbnail = show that page on the stage, its checkbox = multi-select; drag = reorder; toolbar acts on the selection, or the page on the stage when nothing is selected: rotate ⟲ ⟳, Adjust (brightness, contrast, sharpen with a live CSS preview), Crop menu (Crop…, Straighten… ±15° over a grid, Auto-crop borders), Filter menu (Original / Enhance / Grayscale / B&W, plus Despeckle and Auto-levels clean-ups), rescan, delete/restore. While a scan runs there is no edit bar. Tap → full preview with swipe, its own edit bar (Adjust, Crop, Straighten, Filter) for the page on screen, and previews preloaded nearest-first around the page in view. Blank pages pre-marked deleted with badge. Sticky bottom bar: page count, **Save as…** (browser download, through the save dialog where there is one), **Save to server** (only when `output.directory` is set and this browser switched it on in Settings; atomic write, never overwrites, `-2`, `-3`… on a clash), Discard. Edits apply optimistically (CSS rotate) and reconcile on `PageUpdated`.
 
 Targets: first paint < 1 s over LAN; JS ≤ 150 kB gzipped; no image bytes held in JS beyond the current preview; all actions keyboard-reachable; touch targets ≥ 44 px; works without service worker.
 

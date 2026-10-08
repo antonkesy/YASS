@@ -114,7 +114,8 @@
 				files += saveToBrowser(
 					await client.hub.export(id, {
 						Format: $exportPrefs.format,
-						Metadata: documentMetadata($exportPrefs)
+						Metadata: documentMetadata($exportPrefs),
+						ToServer: false
 					})
 				);
 			}

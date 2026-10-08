@@ -1,4 +1,7 @@
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
+import { serverFolder } from '../../playwright.config';
 
 // The server runs `--fake pages=3,blank=2,delay=400ms,devices=…` (see playwright.config.ts).
 
@@ -489,4 +492,34 @@ test('the crop dialog draws over the whole page, upright, even once it is croppe
 	await openCrop();
 	await expect(page.getByTestId('crop-top')).toHaveValue('12');
 	await expect(page.getByTestId('crop-left')).toHaveValue('0');
+});
+
+test('a configured server folder can be switched on in settings and saved into', async ({
+	page
+}) => {
+	// Scans are named uniquely so a rerun never finds last time's file under the same name.
+	const name = `server-save-${Date.now()}`;
+
+	await page.goto('/settings');
+	await expect(page.getByTestId('server-folder')).toHaveText(serverFolder);
+	const toggle = page.getByTestId('toggle-server-save').locator('input');
+	await expect(toggle).not.toBeChecked();
+
+	// Off: the review screen offers the download alone.
+	await scanToReview(page);
+	await expect(page.getByTestId('server-save-button')).toHaveCount(0);
+
+	await page.goto('/settings');
+	await page.getByTestId('toggle-server-save').locator('input').check();
+	await scanToReview(page);
+	await page.getByTestId('name-input').fill(name);
+	await page.getByTestId('name-input').press('Enter');
+	await page.getByTestId('server-save-button').click();
+
+	await expect(page.getByTestId('toast')).toContainText(`Saved to server as ${name}.pdf`);
+	const file = join(serverFolder, `${name}.pdf`);
+	expect(existsSync(file)).toBe(true);
+	expect(readFileSync(file).subarray(0, 4).toString()).toBe('%PDF');
+	// Nothing half-written is left beside it.
+	expect(readdirSync(serverFolder).filter((f) => f.startsWith('._yass-'))).toEqual([]);
 });

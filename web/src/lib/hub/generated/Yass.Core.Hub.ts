@@ -123,6 +123,8 @@ export type ExportRequest = {
     Name?: string;
     /** Transpiled from Yass.Core.Hub.DocumentMetadataDto? */
     Metadata?: DocumentMetadataDto;
+    /** Transpiled from bool */
+    ToServer: boolean;
 }
 
 /** Transpiled from Yass.Core.Hub.DocumentMetadataDto */
@@ -149,4 +151,6 @@ export type ExportedDocumentDto = {
     PageCount: number;
     /** Transpiled from string */
     DownloadPath: string;
+    /** Transpiled from string? */
+    SavedTo?: string;
 }

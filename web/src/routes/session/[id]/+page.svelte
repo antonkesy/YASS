@@ -58,6 +58,17 @@
 	const client = getHub();
 	const sessions = client.sessions;
 	const connection = client.connection;
+
+	/** The server's output folder, or "" when it has none; null until asked. */
+	let serverFolder = $state<string | null>(null);
+	$effect(() => {
+		if ($connection === 'connected' && serverFolder === null) {
+			client.hub
+				.getServerFolder()
+				.then((f) => (serverFolder = f))
+				.catch(() => (serverFolder = ''));
+		}
+	});
 	const exportProgress = client.exportProgress;
 
 	const id = $derived(route.params.id ?? '');
@@ -277,13 +288,41 @@
 			const result = await client.hub.export(id, {
 				Format: $exportPrefs.format,
 				Name: exportName,
-				Metadata: documentMetadata($exportPrefs)
+				Metadata: documentMetadata($exportPrefs),
+				ToServer: false
 			});
 			const count = target
 				? await saveToDisk(result, target, base, extension)
 				: saveToBrowser(result);
 			const verb = target ? 'Saved' : 'Downloaded';
 			toast.show(count === 1 ? verb : `${verb} ${count} files`);
+		} catch (e) {
+			error = hubError(e);
+		} finally {
+			exporting = false;
+		}
+	}
+
+	/**
+	 * Save to server: the same export, written by the server into its configured folder
+	 * instead of handed to the browser. The name is the one Save as… would suggest.
+	 */
+	async function saveToServer() {
+		if (!session) return;
+		error = null;
+		exporting = true;
+		try {
+			const result = await client.hub.export(id, {
+				Format: $exportPrefs.format,
+				Name: exportName,
+				Metadata: documentMetadata($exportPrefs),
+				ToServer: true
+			});
+			const saved = result.Documents.map((d) => d.SavedTo).filter((p): p is string => !!p);
+			const file = saved[0]?.split('/').pop() ?? '';
+			toast.show(
+				saved.length === 1 ? `Saved to server as ${file}` : `Saved ${saved.length} files to server`
+			);
 		} catch (e) {
 			error = hubError(e);
 		} finally {
@@ -696,6 +735,8 @@
 					busy={exporting}
 					picker={savePicker() !== null}
 					ondownload={saveAs}
+					serverFolder={$exportPrefs.serverSave && serverFolder ? serverFolder : null}
+					onserver={saveToServer}
 				/>
 
 				<!-- The facts about the scan, with the page count up on the heading beside them. -->

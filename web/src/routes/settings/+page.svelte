@@ -39,6 +39,17 @@
 	/** Scanners the server can see. Null until asked; empty means it found none. */
 	let devices = $state<ScannerDeviceDto[] | null>(null);
 
+	/** The server's output folder, or "" when it has none; null until asked. */
+	let serverFolder = $state<string | null>(null);
+	$effect(() => {
+		if ($connection === 'connected' && serverFolder === null) {
+			client.hub
+				.getServerFolder()
+				.then((f) => (serverFolder = f))
+				.catch(() => (serverFolder = ''));
+		}
+	});
+
 	$effect(() => {
 		if ($connection === 'connected' && !effective) {
 			client.hub
@@ -617,7 +628,7 @@
 		<SettingsSection
 			title="Export"
 			icon="download"
-			hint="What kind of file a document is downloaded as."
+			hint="What kind of file a document is saved as, and where it can go."
 			testid="export-section"
 		>
 			<Segmented
@@ -634,6 +645,28 @@
 				value={String($exportPrefs.format)}
 				onchange={(v) => exportPrefs.set({ ...$exportPrefs, format: Number(v) as ExportFormat })}
 			/>
+			<!--
+				Only where yass.yaml names a folder: a browser can switch saving there on for
+				itself, but the folder is the server's to choose, so there is nothing to type.
+			-->
+			{#if serverFolder}
+				<div class="flex flex-col rounded-[16px] bg-app px-3.5 py-1.5">
+					<Toggle
+						name="server-save"
+						label="Save to server"
+						hint="Adds a button that saves into the server's folder"
+						checked={$exportPrefs.serverSave}
+						onchange={(on) => exportPrefs.set({ ...$exportPrefs, serverSave: on })}
+					/>
+					<span
+						class="mb-2 truncate border-t border-line-strong pt-2 font-mono text-[12px] text-ink-muted"
+						title={serverFolder}
+						data-testid="server-folder"
+					>
+						{serverFolder}
+					</span>
+				</div>
+			{/if}
 		</SettingsSection>
 
 		<!--

@@ -516,6 +516,26 @@ describe('ExportBar', () => {
 		expect(ondownload).toHaveBeenCalled();
 	});
 
+	it('offers Save to server beside the download only when given a folder', async () => {
+		const onserver = vi.fn();
+		const { rerender } = render(ExportBar, { session: session(), ondownload: vi.fn(), onserver });
+		expect(screen.queryByTestId('server-save-button')).toBeNull();
+
+		await rerender({
+			session: session(),
+			ondownload: vi.fn(),
+			onserver,
+			serverFolder: '/data/consume'
+		});
+		expect(screen.getByTestId('download-button')).toBeInTheDocument();
+		await fireEvent.click(screen.getByTestId('server-save-button'));
+		expect(onserver).toHaveBeenCalled();
+		expect(screen.getByTestId('server-save-button')).toHaveAttribute(
+			'title',
+			expect.stringContaining('/data/consume')
+		);
+	});
+
 	it('disables the download while scanning or with everything deleted', () => {
 		const { rerender } = render(ExportBar, {
 			session: session(SessionState.Scanning),

@@ -19,6 +19,7 @@ public class ConfigValidationTests
         { "scanner.defaults.contrast", c => WithDefaults(c, d => d with { Contrast = -101 }) },
         { "scanner.defaults.blank_page_threshold", c => WithDefaults(c, d => d with { BlankPageThreshold = 1.5 }) },
         { "scanner.ui_editable", c => c with { Scanner = c.Scanner with { UiEditable = ["dpi", "bogus"] } } },
+        { "output.directory", c => c with { Output = c.Output with { Directory = "relative/consume" } } },
         { "output.pdf.jpeg_quality", c => c with { Output = c.Output with { Pdf = c.Output.Pdf with { JpegQuality = 101 } } } },
         { "output.pdf.compression", c => c with { Output = c.Output with { Pdf = c.Output.Pdf with { Compression = (PdfCompression)7 } } } },
         { "processing.max_concurrent_renders", c => c with { Processing = c.Processing with { MaxConcurrentRenders = 0 } } },
