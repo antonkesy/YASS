@@ -5,7 +5,10 @@ declare global {
 		// interface Error {}
 		// interface Locals {}
 		// interface PageData {}
-		// interface PageState {}
+		interface PageState {
+			/** Settings opens with the new-preset name field ready, from the home screen's Save as preset. */
+			newPreset?: boolean;
+		}
 		// interface Platform {}
 	}
 }

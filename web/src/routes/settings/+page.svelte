@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { hubError } from '$lib/hub/errors';
 	import { getHub } from '$lib/hub/hub';
 	import { PageSize, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
@@ -133,7 +134,8 @@
 	);
 	/** The preset the Update, Delete and scope controls act on. */
 	const target = $derived(chosen ?? edited);
-	let drafting = $state(false);
+	/** Arriving from the home screen's Save as preset opens the name field straight away. */
+	let drafting = $state(page.state.newPreset === true);
 	let draftName = $state('');
 	let draftIcon = $state<PresetIconName>('star');
 	/**
@@ -417,6 +419,7 @@
 									bind:value={draftName}
 									onkeydown={(e) => e.key === 'Enter' && savePreset()}
 									data-testid="preset-name"
+									{@attach (el) => el.focus()}
 								/>
 								<button
 									type="button"

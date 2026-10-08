@@ -188,6 +188,11 @@
 	function openSettings() {
 		void goto(resolve('/settings'));
 	}
+
+	/** Straight to naming a new preset, which is what Save as preset promised. */
+	function savePreset() {
+		void goto(resolve('/settings'), { state: { newPreset: true } });
+	}
 </script>
 
 <svelte:head><title>YASS</title></svelte:head>
@@ -221,6 +226,7 @@
 			busy={starting}
 			onscan={scan}
 			onsettings={openSettings}
+			onsavepreset={savePreset}
 		/>
 		<PastScansPanel
 			sessions={recent}

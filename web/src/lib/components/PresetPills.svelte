@@ -15,7 +15,7 @@
 		active: string | null;
 		/** Id of the preset picked last, when a setting has since been changed away from it. */
 		edited?: string | null;
-		/** Settings differ from every preset. */
+		/** Settings differ from every preset, so they can be saved as one. */
 		modified: boolean;
 		onpick: (id: string) => void;
 		onsave: () => void;
@@ -51,13 +51,21 @@
 			</button>
 		{/each}
 
+		<!--
+			Settings that match no preset are not a problem to flag, just a chance to keep them:
+			one plain action, shaped like the "Save as new" button in Settings, where it leads.
+		-->
 		{#if modified}
-			<span
-				class="flex h-[38px] animate-pop-in items-center gap-1.5 rounded-full bg-warning-bg px-3.5 text-[13px] font-bold text-warning-ink"
+			<button
+				type="button"
+				class="flex h-[38px] animate-pop-in items-center gap-1.5 rounded-full border-[1.5px] border-dashed border-accent-dash px-3.5 text-[13px] font-bold text-accent transition-colors hover:border-accent hover:bg-surface"
+				onclick={onsave}
+				title="These settings match no preset; save them as one"
+				data-testid="preset-save-current"
 			>
-				Custom
-				<button type="button" class="underline underline-offset-2" onclick={onsave}>Save…</button>
-			</span>
+				<Icon name="plus" />
+				Save as preset
+			</button>
 		{/if}
 	</div>
 </div>

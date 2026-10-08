@@ -13,6 +13,7 @@ import AdjustModal from '$lib/components/AdjustModal.svelte';
 import StraightenModal from '$lib/components/StraightenModal.svelte';
 import Preview from '$lib/components/Preview.svelte';
 import CropModal from '$lib/components/CropModal.svelte';
+import PresetPills from '$lib/components/PresetPills.svelte';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import {
 	ColorMode,
@@ -844,5 +845,19 @@ describe('CropModal', () => {
 		await fireEvent.click(screen.getByTestId('crop-apply'));
 
 		expect(onapply).toHaveBeenCalledWith({ Top: 5, Right: 0, Bottom: 0, Left: 10 });
+	});
+});
+
+describe('PresetPills', () => {
+	it('offers to save settings that match no preset, as one plain button', async () => {
+		const onsave = vi.fn();
+		const props = { presets: [], active: null, onpick: vi.fn(), onsave };
+		const { rerender } = render(PresetPills, { ...props, modified: false });
+		expect(screen.queryByTestId('preset-save-current')).toBeNull();
+
+		await rerender({ ...props, modified: true });
+		const save = screen.getByRole('button', { name: 'Save as preset' });
+		await fireEvent.click(save);
+		expect(onsave).toHaveBeenCalled();
 	});
 });
