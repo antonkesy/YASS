@@ -28,11 +28,13 @@
 		setCropEdit,
 		setAdjustEdit,
 		setFilterEdit,
+		setSkewEdit,
 		pageFilterLabels
 	} from '$lib/review/edits';
 	import { clear, prune, toggle } from '$lib/review/selection';
 	import { createPreloader, preloadOrder } from '$lib/review/preload';
 	import AdjustModal from '$lib/components/AdjustModal.svelte';
+	import StraightenModal from '$lib/components/StraightenModal.svelte';
 	import PageGrid from '$lib/components/PageGrid.svelte';
 	import PageOverview from '$lib/components/PageOverview.svelte';
 	import Toolbar from '$lib/components/Toolbar.svelte';
@@ -70,6 +72,8 @@
 	let overview = $state(false);
 
 	/** The pages the Adjust dialog sets, and the one it shows and starts from. */
+	/** The page the Straighten dialog is open on. */
+	let straightening = $state<number | null>(null);
 	let adjusting = $state<{ pages: ReadonlySet<number>; from: number } | null>(null);
 	let previewIndex = $state<number | null>(null);
 	/** The big preview slides in from whichever side the new page came from. */
@@ -381,6 +385,12 @@
 		send(setAdjustEdit(adjust, pages));
 	}
 
+	function applySkew(degrees: number) {
+		const page = straightening !== null ? session?.Pages[straightening] : null;
+		straightening = null;
+		if (page) send(setSkewEdit(degrees, new Set([page.Index])));
+	}
+
 	function applyCrop(crop: CropBox | undefined) {
 		const page = cropping !== null ? session?.Pages[cropping] : null;
 		cropping = null;
@@ -452,6 +462,7 @@
 				send(on ? addCleanupEdit(cleanup, targets) : removeCleanupEdit(cleanup, targets))}
 			onexpand={() => (previewIndex = targetPage())}
 			oncrop={() => (cropping = targetPage())}
+			onstraighten={() => (straightening = targetPage())}
 			onadjust={() => (adjusting = { pages: new Set(targets), from: targetPage() })}
 			onrescan={rescan}
 			{scanning}
@@ -733,6 +744,17 @@
 		count={adjusting.pages.size}
 		onapply={applyAdjust}
 		oncancel={() => (adjusting = null)}
+	/>
+{/if}
+
+{#if straightening !== null && session?.Pages[straightening]}
+	{@const page = session.Pages[straightening]}
+	<StraightenModal
+		src={imageUrl(id, page.Index, page.Hash, 'preview')}
+		alt="Page {page.Index + 1}"
+		skew={page.Skew}
+		onapply={applySkew}
+		oncancel={() => (straightening = null)}
 	/>
 {/if}
 

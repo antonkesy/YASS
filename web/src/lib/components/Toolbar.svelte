@@ -18,6 +18,7 @@
 		oncleanup,
 		onexpand,
 		oncrop,
+		onstraighten,
 		onadjust,
 		onrescan,
 		scoped = false,
@@ -43,6 +44,8 @@
 		/** Opens the page the edits point at, full screen. Not an edit, but this is where it lives. */
 		onexpand?: () => void;
 		oncrop?: () => void;
+		/** Opens the fine-rotation dialog for the page in view. */
+		onstraighten?: () => void;
 		/** Opens the tone and sharpness dialog for the page in view or the selection. */
 		onadjust?: () => void;
 		onrescan?: () => void;
@@ -58,6 +61,7 @@
 	} = $props();
 
 	let filterOpen = $state(false);
+	let cropOpen = $state(false);
 
 	/**
 	 * Nothing ticked means the page on the stage, the one these buttons sit under. Acting on
@@ -155,12 +159,18 @@
 			</button>
 		{/if}
 
-		{#if oncrop && canAim}
+		<!--
+			The page's shape — crop, straighten — behind one button, so the row does not grow
+			by a button per tool and still fits a phone.
+		-->
+		{#if canAim && (oncrop || onstraighten)}
 			<button
 				type="button"
-				class="text-ink {tool}"
-				onclick={oncrop}
-				aria-label="Crop page"
+				class="{cropOpen ? 'bg-accent-50 text-accent' : 'text-ink'} {tool}"
+				onclick={() => (cropOpen = !cropOpen)}
+				aria-expanded={cropOpen}
+				aria-haspopup="menu"
+				aria-label="Crop and straighten"
 				data-testid="crop-button"
 			>
 				<Icon name="crop" />
@@ -235,6 +245,39 @@
 				<Icon name="trash" />
 				Delete
 			</button>
+		{/if}
+
+		{#if cropOpen}
+			<button
+				type="button"
+				class="fixed inset-0 z-30 cursor-default"
+				aria-label="Close crop menu"
+				onclick={() => (cropOpen = false)}
+			></button>
+			<div
+				class="absolute bottom-[calc(100%+8px)] left-1/2 z-31 min-w-[220px] -translate-x-1/2 animate-fade-in rounded-[16px] bg-surface p-1.5 shadow-menu"
+				role="menu"
+				data-testid="crop-menu"
+			>
+				{#each [{ id: 'crop', label: 'Crop…', icon: 'crop', run: oncrop }, { id: 'straighten', label: 'Straighten…', icon: 'rotateRight', run: onstraighten }] as const as item (item.id)}
+					{#if item.run}
+						{@const run = item.run}
+						<button
+							type="button"
+							role="menuitem"
+							class="flex h-[44px] w-full items-center gap-2.5 rounded-[10px] px-2.5 text-left text-sm font-semibold transition-colors hover:bg-accent-hover50"
+							onclick={() => {
+								cropOpen = false;
+								run();
+							}}
+							data-testid="{item.id}-open"
+						>
+							<Icon name={item.icon} />
+							{item.label}
+						</button>
+					{/if}
+				{/each}
+			</div>
 		{/if}
 
 		{#if filterOpen}
