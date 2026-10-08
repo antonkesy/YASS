@@ -33,12 +33,32 @@ public static class PagePipeline
     /// <item>grayscale or the black-and-white threshold last, on the cleaned page.</item>
     /// </list>
     /// </summary>
-    public static void Apply(Image image, RenderSpec spec)
+    /// <param name="image">The scan as it came, edited in place.</param>
+    /// <param name="spec">The edits to apply.</param>
+    /// <param name="maxWidth">
+    /// For a preview or thumbnail: shrink to this width once cropped and turned, before the
+    /// skew and the filters, which cost a second or more each on a full page and are wasted on
+    /// pixels about to be thrown away. Every filter is per pixel or scaled to the page's size,
+    /// so the result looks the same. Null for export, which keeps every pixel.
+    /// </param>
+    public static void Apply(Image image, RenderSpec spec, int? maxWidth = null)
     {
         ArgumentNullException.ThrowIfNull(image);
         ArgumentNullException.ThrowIfNull(spec);
 
-        image.Mutate(ctx => Geometry(ctx, spec));
+        image.Mutate(ctx =>
+        {
+            Turn(ctx, spec);
+            if (maxWidth is { } width && ctx.GetCurrentSize().Width > width)
+            {
+                ctx.Resize(width, 0);
+            }
+
+            if (spec.Skew != 0)
+            {
+                Skew(ctx, spec.Skew);
+            }
+        });
 
         // Measuring the histogram needs the pixels as they are at this point, which a single
         // Mutate cannot give it, so the pipeline runs in two halves around it.
@@ -55,7 +75,7 @@ public static class PagePipeline
         });
     }
 
-    private static void Geometry(IImageProcessingContext ctx, RenderSpec spec)
+    private static void Turn(IImageProcessingContext ctx, RenderSpec spec)
     {
         if (spec.Crop is { } crop && !crop.IsEmpty())
         {
@@ -67,11 +87,6 @@ public static class PagePipeline
         if (spec.Rotation != Rotation.R0)
         {
             ctx.Rotate((int)spec.Rotation);
-        }
-
-        if (spec.Skew != 0)
-        {
-            Skew(ctx, spec.Skew);
         }
     }
 
