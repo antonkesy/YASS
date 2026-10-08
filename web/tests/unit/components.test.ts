@@ -10,6 +10,7 @@ import SortMenu from '$lib/components/SortMenu.svelte';
 import RepoLink from '$lib/components/RepoLink.svelte';
 import TemplateEditor from '$lib/components/TemplateEditor.svelte';
 import AdjustModal from '$lib/components/AdjustModal.svelte';
+import StraightenModal from '$lib/components/StraightenModal.svelte';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import {
 	ColorMode,
@@ -297,6 +298,32 @@ describe('Toolbar', () => {
 		expect(oncleanup).toHaveBeenLastCalledWith(PageCleanup.AutoLevels, false);
 		// Ticking stays in the menu: two clean-ups are often wanted together.
 		expect(screen.getByTestId('filter-menu')).toBeInTheDocument();
+	});
+
+	it('keeps crop and straighten behind one Crop button', async () => {
+		const oncrop = vi.fn();
+		const onstraighten = vi.fn();
+		render(Toolbar, {
+			selectedCount: 0,
+			total: 2,
+			anyDeleted: false,
+			onrotate: vi.fn(),
+			ondelete: vi.fn(),
+			onrestore: vi.fn(),
+			onfilter: vi.fn(),
+			onclear: vi.fn(),
+			oncrop,
+			onstraighten
+		});
+
+		await fireEvent.click(screen.getByTestId('crop-button'));
+		await fireEvent.click(screen.getByTestId('straighten-open'));
+		expect(onstraighten).toHaveBeenCalled();
+		expect(screen.queryByTestId('crop-menu')).toBeNull();
+
+		await fireEvent.click(screen.getByTestId('crop-button'));
+		await fireEvent.click(screen.getByTestId('crop-open'));
+		expect(oncrop).toHaveBeenCalled();
 	});
 
 	it('offers expand only when asked to, and drops the whole bar while edits are off', async () => {
@@ -654,5 +681,33 @@ describe('AdjustModal', () => {
 
 		expect(screen.getByRole('dialog', { name: 'Adjust 3 pages' })).toBeInTheDocument();
 		expect(screen.getByTestId('adjust-apply')).toBeEnabled();
+	});
+});
+
+describe('StraightenModal', () => {
+	const base = { src: '/x.webp', alt: 'Page 1', skew: 0, onapply: vi.fn(), oncancel: vi.fn() };
+
+	it('turns the preview by the change, nudges in tenths and applies the angle', async () => {
+		const onapply = vi.fn();
+		render(StraightenModal, { ...base, skew: 1.5, onapply });
+		expect(screen.getByTestId('straighten-apply')).toBeDisabled();
+
+		await fireEvent.click(screen.getByTestId('straighten-right'));
+		await fireEvent.click(screen.getByTestId('straighten-right'));
+
+		expect(screen.getByTestId('straighten-preview').style.transform).toMatch(
+			/^rotate\(0\.2\d*deg\)/
+		);
+		await fireEvent.click(screen.getByTestId('straighten-apply'));
+		expect(onapply).toHaveBeenCalledWith(1.7);
+	});
+
+	it('stops at the limit and cancels on Escape', async () => {
+		const oncancel = vi.fn();
+		render(StraightenModal, { ...base, skew: 15, oncancel });
+
+		expect(screen.getByTestId('straighten-right')).toBeDisabled();
+		await fireEvent.keyDown(screen.getByTestId('straighten-modal'), { key: 'Escape' });
+		expect(oncancel).toHaveBeenCalled();
 	});
 });
