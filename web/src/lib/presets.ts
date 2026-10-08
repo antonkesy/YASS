@@ -67,6 +67,11 @@ export type ExportPrefs = {
 	author: string;
 	subject: string;
 	keywords: string;
+	/**
+	 * Whether this browser offers Save to server next to Save as…. Only shown in Settings, and
+	 * only acted on, when the server has an output.directory configured.
+	 */
+	serverSave: boolean;
 };
 
 export const EXPORT_KEY = 'yass.export';
@@ -76,7 +81,8 @@ export const defaultExportPrefs: ExportPrefs = {
 	nameTemplate: '',
 	author: '',
 	subject: '',
-	keywords: ''
+	keywords: '',
+	serverSave: false
 };
 
 /**

@@ -32,6 +32,7 @@ public class ConfigRoundTripTests
         },
         Output = new OutputConfig
         {
+            Directory = "/data/consume",
             Pdf = new PdfConfig { Compression = PdfCompression.Lossless, JpegQuality = 90 },
         },
         Processing = new ProcessingConfig { MaxConcurrentRenders = 4, ThumbnailWidth = 200, PreviewMaxWidth = 2000 },
@@ -59,6 +60,7 @@ public class ConfigRoundTripTests
         Assert.Equal(ScanSource.Duplex, restored.Scanner.Defaults.Source);
         Assert.Equal(["dpi", "auto_deskew"], restored.Scanner.UiEditable);
         Assert.Equal(PdfCompression.Lossless, restored.Output.Pdf.Compression);
+        Assert.Equal("/data/consume", restored.Output.Directory);
     }
 
     [Fact]

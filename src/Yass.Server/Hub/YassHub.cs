@@ -251,6 +251,11 @@ public sealed class YassHub(
         {
             throw new HubException("Export failed: " + ex.Message);
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            // The server folder exists but this service may not write there: worth saying plainly.
+            throw new HubException("Export failed: " + ex.Message);
+        }
     }
 
     public Task<ScannerStatusDto> GetScannerStatus() => Task.FromResult(scanner.Current);
@@ -262,6 +267,9 @@ public sealed class YassHub(
     }
 
     public Task<ScanOptionsDto> GetEffectiveOptions() => Task.FromResult(options.Current());
+
+    public Task<string> GetServerFolder() =>
+        Task.FromResult(config.Current.Output.SavesToServer() ? config.Current.Output.Directory : "");
 
     public Task ReloadConfig()
     {

@@ -10,6 +10,8 @@ let
   cfg = config.services.yass;
   yaml = pkgs.formats.yaml { };
   configFile = yaml.generate "yass.yaml" cfg.settings;
+  # Saving to the server writes here; the sandbox below has to let it.
+  outputDirectory = lib.attrByPath [ "output" "directory" ] "" cfg.settings;
 in
 {
   options.services.yass = {
@@ -29,10 +31,13 @@ in
         {
           server.listen = "0.0.0.0:8080";
           scanner.device = "epsonds";
+          output.directory = "/var/lib/paperless/consume";
         }
       '';
       description = ''
         Contents of yass.yaml (see yass.example.yaml). `sessions.directory` defaults to the state directory.
+        `output.directory`, when set, is added to the service's writable paths; the service user
+        still needs write access to it.
       '';
     };
 
@@ -109,7 +114,8 @@ in
           PrivateTmp = true;
           ReadWritePaths = [
             "/var/lib/yass"
-          ];
+          ]
+          ++ lib.optional (outputDirectory != "") outputDirectory;
         };
       };
 

@@ -47,8 +47,11 @@ Taken against the simulated scanner (`--fake`); regenerate them with
   PDF or as one image per page: it opens the browser's own save dialog over
   https or on localhost, and is a plain download anywhere else (the button then
   says *Download*, and your browser's "ask where to save each file" setting is
-  what brings the dialog back). Drop it into a paperless-ngx consume folder from
-  there if that is where it is going.
+  what brings the dialog back).
+- **Save to server**, optionally: set `output.directory` (a paperless-ngx consume
+  folder, say) and each browser can switch on a *Save to server* button in its
+  Settings. Files are written atomically and never overwrite one another; the
+  folder is fixed in the config, so a browser cannot write anywhere else.
 - **Installable PWA**, works without a service worker, everything reachable by
   keyboard, touch targets ≥ 44 px.
 - **Single config file** (`yass.yaml`), every key overridable through the
@@ -159,6 +162,7 @@ values stop startup and name the offending key.
 | `scanner.defaults.auto_deskew` | `false` | Straighten pages during the scan. |
 | `scanner.defaults.device` | `""` | Default scanner, by exact device id; empty = whatever `scanner.device` resolves to. The picker on the home screen overrides it per browser. |
 | `scanner.ui_editable` | `[]` | Deprecated and ignored: every scan setting can be changed from the UI (stored in the browser), and `scanner.defaults` only supplies the defaults. Still accepted so older files load. |
+| `output.directory` | `""` | Absolute folder on the server documents can be saved into from the review screen; empty turns it off and hides it from the UI. |
 | `output.pdf.compression` | `jpeg` | `jpeg` or `lossless`. |
 | `output.pdf.jpeg_quality` | `75` | 1–100. |
 | `processing.max_concurrent_renders` | `2` | Upper bound on decoded bitmaps in memory. |

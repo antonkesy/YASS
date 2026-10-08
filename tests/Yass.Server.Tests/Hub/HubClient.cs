@@ -80,6 +80,8 @@ public sealed class HubClient : IAsyncDisposable
 
     public Task<ScannerStatusDto> GetScannerStatus() => _connection.InvokeAsync<ScannerStatusDto>(nameof(IYassHub.GetScannerStatus));
 
+    public Task<string> GetServerFolder() => _connection.InvokeAsync<string>(nameof(IYassHub.GetServerFolder));
+
     public Task<ScanOptionsDto> GetEffectiveOptions() => _connection.InvokeAsync<ScanOptionsDto>(nameof(IYassHub.GetEffectiveOptions));
 
 

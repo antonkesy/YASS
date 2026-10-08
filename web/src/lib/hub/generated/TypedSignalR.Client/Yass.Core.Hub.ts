@@ -110,6 +110,12 @@ export type IYassHub = {
     */
     getEffectiveOptions(): Promise<ScanOptionsDto>;
     /**
+    * The server's output.directory, or empty when saving to the server is off. A browser
+    * only offers the option when this names a folder.
+    * @returns Transpiled from System.Threading.Tasks.Task<string>
+    */
+    getServerFolder(): Promise<string>;
+    /**
     * Re-reads every section of the config file except server.
     * @returns Transpiled from System.Threading.Tasks.Task
     */

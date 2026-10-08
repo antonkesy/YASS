@@ -29,8 +29,12 @@ scanner:
   # is stored in the browser). Still accepted so older files keep loading.
   # ui_editable: []
 
-# A finished document is downloaded by the browser; the server writes it nowhere else.
+# A finished document is downloaded by the browser. Set `directory` to also let browsers
+# save it into one folder on the server (a paperless-ngx consume folder, say): each browser
+# switches the "Save to server" button on in its Settings, and cannot pick another folder.
+# Empty, or left out, keeps the server writing nothing outside sessions.directory.
 output:
+  directory: "" # e.g. /data/consume; must be absolute
   pdf:
     compression: jpeg # jpeg | lossless
     jpeg_quality: 75 # 1..100

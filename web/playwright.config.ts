@@ -5,6 +5,8 @@ import { defineConfig, devices } from '@playwright/test';
  * `pnpm build` writes to ./build; the server is pointed at it through YASS_WEBROOT.
  */
 const port = 4173;
+/** The server's output.directory for e2e; the save-to-server test reads what lands here. */
+export const serverFolder = `${process.env.TMPDIR ?? '/tmp'}/yass-e2e/consume`;
 
 export default defineConfig({
 	testDir: 'tests/e2e',
@@ -34,6 +36,8 @@ export default defineConfig({
 		env: {
 			YASS__server__listen: `127.0.0.1:${port}`,
 			YASS__sessions__directory: `${process.env.TMPDIR ?? '/tmp'}/yass-e2e/sessions`,
+			// Saving to the server is configured, so its Settings toggle and button can be tested.
+			YASS__output__directory: serverFolder,
 			YASS__logging__level: 'warning',
 			YASS_WEBROOT: `${import.meta.dirname}/build`
 		}

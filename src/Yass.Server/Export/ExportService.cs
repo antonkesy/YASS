@@ -47,9 +47,19 @@ public sealed class ExportService(
     }
 
     /// <exception cref="InvalidOperationException">Nothing to export or the session is busy.</exception>
+    /// <summary>Prefix of a file still being written into the server folder, renamed once complete.</summary>
+    public const string TempPrefix = "._yass-";
+
     public async Task<ExportResult> ExportAsync(string sessionId, ExportRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+
+        // Checked before the session turns Exporting, so a refusal leaves nothing to undo.
+        OutputConfig output = config.Current.Output;
+        if (request.ToServer && !output.SavesToServer())
+        {
+            throw new InvalidOperationException("Saving to the server is off: output.directory is not set in yass.yaml.");
+        }
 
         Session session = store.Update(sessionId, s =>
         {
@@ -93,39 +103,78 @@ public sealed class ExportService(
             int overall = (int)((finished + percent / 100.0) / documentPages.Length * 100);
             _ = hub.Clients.All.ExportProgress(sessionId, Math.Clamp(overall, 0, 100));
         });
-        PdfConfig pdf = config.Current.Output.Pdf;
+        PdfConfig pdf = output.Pdf;
 
+        string? pending = null;
         try
         {
-            string dir = SessionPaths.Export(store.Root, sessionId);
+            string dir = request.ToServer ? output.Directory : SessionPaths.Export(store.Root, sessionId);
             Directory.CreateDirectory(dir);
             var produced = new List<ExportedDocumentDto>();
             for (int d = 0; d < documentPages.Length; d++)
             {
                 ExportPage[] document = documentPages[d];
-                string token = tokens.Issue(sessionId, Path.Combine(dir, $"{Guid.NewGuid():N}{extension}"));
-                tokens.TryPeekPath(token, out string path);
-                await using (FileStream output = File.Create(path))
+                string? token = null;
+                string path;
+                if (request.ToServer)
+                {
+                    // Written under a hidden temporary name and renamed once complete, so whatever
+                    // watches the folder — paperless-ngx, say — never picks up half a document.
+                    path = Path.Combine(dir, $"{TempPrefix}{Guid.NewGuid():N}.tmp");
+                    pending = path;
+                }
+                else
+                {
+                    token = tokens.Issue(sessionId, Path.Combine(dir, $"{Guid.NewGuid():N}{extension}"));
+                    tokens.TryPeekPath(token, out path);
+                }
+
+                FileStream file = new(path, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1 << 16, FileOptions.Asynchronous);
+                await using (file.ConfigureAwait(false))
                 {
                     if (request.Format == ExportFormat.Pdf)
                     {
                         DocumentMetadata metadata = MetadataFor(request, NameFor(request.Name, session, facts, documentPages.Length, d));
-                        await writer.WritePdfAsync(document, pdf, metadata, output, progress, cancellationToken).ConfigureAwait(false);
+                        await writer.WritePdfAsync(document, pdf, metadata, file, progress, cancellationToken).ConfigureAwait(false);
                     }
                     else
                     {
                         // A browser download is one file, so an image download is the first
                         // page of the document rather than a silent partial archive.
-                        await writer.WriteImageAsync(document[0], request.Format, pdf, output, cancellationToken).ConfigureAwait(false);
+                        await writer.WriteImageAsync(document[0], request.Format, pdf, file, cancellationToken).ConfigureAwait(false);
+                    }
+
+                    if (request.ToServer)
+                    {
+                        await file.FlushAsync(cancellationToken).ConfigureAwait(false);
+#pragma warning disable CA1849 // fsync has no async counterpart; the rename must not outrun the data.
+                        file.Flush(flushToDisk: true);
+#pragma warning restore CA1849
                     }
                 }
 
-                produced.Add(new ExportedDocumentDto(document.Length, $"/export/{sessionId}/{token}{extension}"));
+                if (request.ToServer)
+                {
+                    string stem = SafeFileName(NameFor(request.Name, session, facts, documentPages.Length, d)
+                        ?? Fallback(session, documentPages.Length, d));
+                    string saved = UniquePath(dir, stem + extension);
+                    File.Move(path, saved);
+                    pending = null;
+                    logger.LogInformation("Saved {File}", saved);
+                    produced.Add(new ExportedDocumentDto(document.Length, "", saved));
+                }
+                else
+                {
+                    produced.Add(new ExportedDocumentDto(document.Length, $"/export/{sessionId}/{token}{extension}"));
+                }
+
                 finished++;
             }
 
             var result = new ExportResult(totalPages, [.. produced]);
-            var recorded = new SessionEvent(SessionEventKind.Downloaded, time.GetUtcNow());
+            var recorded = request.ToServer
+                ? new SessionEvent(SessionEventKind.Exported, time.GetUtcNow(), produced[0].SavedTo)
+                : new SessionEvent(SessionEventKind.Downloaded, time.GetUtcNow());
             logger.LogInformation(
                 "Session {Session} exported as {Documents} document(s), {Pages} page(s) total",
                 sessionId,
@@ -144,5 +193,46 @@ public sealed class ExportService(
             await hub.Clients.All.SessionChanged(mapper.ToDto(failed)).ConfigureAwait(false);
             throw;
         }
+        finally
+        {
+            // A save into the server folder that did not finish leaves no half-written file behind.
+            if (pending is not null && File.Exists(pending))
+            {
+                File.Delete(pending);
+            }
+        }
+    }
+
+    /// <summary>A name for an unnamed scan, from when it was scanned — what the browser would suggest too.</summary>
+    private static string Fallback(Session session, int documentCount, int index)
+    {
+        string stem = "scan-" + session.CreatedAt.ToString("yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture);
+        return documentCount == 1 ? stem : $"{stem}-{(index + 1).ToString(CultureInfo.InvariantCulture)}";
+    }
+
+    /// <summary>
+    /// A name made safe to put in the folder: no path separators or characters the file system
+    /// refuses, so a name can never climb out of <c>output.directory</c>.
+    /// </summary>
+    internal static string SafeFileName(string name)
+    {
+        char[] invalid = Path.GetInvalidFileNameChars();
+        string safe = new(name.Select(c => invalid.Contains(c) || c == '\\' ? '-' : c).ToArray());
+        safe = safe.Trim().Trim('.');
+        return safe.Length == 0 ? "scan" : safe;
+    }
+
+    /// <summary>The name, or the name with -2, -3… before the extension: never over an existing file.</summary>
+    internal static string UniquePath(string directory, string fileName)
+    {
+        string candidate = Path.Combine(directory, fileName);
+        string stem = Path.GetFileNameWithoutExtension(fileName);
+        string extension = Path.GetExtension(fileName);
+        for (int n = 2; File.Exists(candidate); n++)
+        {
+            candidate = Path.Combine(directory, $"{stem}-{n.ToString(CultureInfo.InvariantCulture)}{extension}");
+        }
+
+        return candidate;
     }
 }

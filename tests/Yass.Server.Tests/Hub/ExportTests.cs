@@ -164,4 +164,64 @@ public sealed class ExportTests
 
         Assert.Contains("No pages", ex.Message, StringComparison.Ordinal);
     }
+
+    private static YassFactory WithServerFolder(int pages, out string folder)
+    {
+        string root = Path.Combine(Path.GetTempPath(), "yass-tests", Guid.NewGuid().ToString("N"), "consume");
+        folder = root;
+        return new YassFactory(FakeScenario.Pages(pages), c => c with { Output = c.Output with { Directory = root } });
+    }
+
+    [Fact]
+    public async Task Saving_to_the_server_writes_the_named_document_into_the_folder()
+    {
+        await using YassFactory factory = WithServerFolder(2, out string folder);
+        await using HubClient hub = await HubClient.ConnectAsync(factory);
+        SessionDto done = await hub.ScanToEnd();
+
+        Assert.Equal(folder, await hub.GetServerFolder());
+        ExportResult result = await hub.Export(done.Id, new ExportRequest(Name: "Tax/2026: letter", ToServer: true));
+
+        ExportedDocumentDto document = Assert.Single(result.Documents);
+        Assert.Equal("", document.DownloadPath);
+        // The slash and colon cannot climb out of the folder or upset the file system.
+        Assert.Equal(Path.Combine(folder, "Tax_2026_ letter.pdf"), document.SavedTo);
+        Assert.StartsWith("%PDF", await File.ReadAllTextAsync(document.SavedTo!), StringComparison.Ordinal);
+        Assert.Equal([document.SavedTo], Directory.GetFiles(folder));
+
+        SessionDto after = await hub.GetSession(done.Id);
+        Assert.Equal(SessionState.Done, after.State);
+        SessionEventDto saved = after.Events[^1];
+        Assert.Equal(SessionEventKind.Exported, saved.Kind);
+        Assert.Equal(document.SavedTo, saved.Path);
+        Directory.Delete(Path.GetDirectoryName(folder)!, recursive: true);
+    }
+
+    [Fact]
+    public async Task Saving_twice_under_one_name_never_overwrites()
+    {
+        await using YassFactory factory = WithServerFolder(1, out string folder);
+        await using HubClient hub = await HubClient.ConnectAsync(factory);
+        SessionDto done = await hub.ScanToEnd();
+
+        ExportResult first = await hub.Export(done.Id, new ExportRequest(Name: "letter", ToServer: true));
+        ExportResult second = await hub.Export(done.Id, new ExportRequest(Name: "letter", ToServer: true));
+
+        Assert.Equal(Path.Combine(folder, "letter.pdf"), first.Documents[0].SavedTo);
+        Assert.Equal(Path.Combine(folder, "letter-2.pdf"), second.Documents[0].SavedTo);
+        Directory.Delete(Path.GetDirectoryName(folder)!, recursive: true);
+    }
+
+    [Fact]
+    public async Task Saving_to_the_server_is_refused_while_no_folder_is_configured()
+    {
+        await using var factory = new YassFactory(FakeScenario.Pages(1));
+        await using HubClient hub = await HubClient.ConnectAsync(factory);
+        SessionDto done = await hub.ScanToEnd();
+
+        Assert.Equal("", await hub.GetServerFolder());
+        await Assert.ThrowsAsync<HubException>(() => hub.Export(done.Id, new ExportRequest(ToServer: true)));
+        // Refused before it started, so the scan is still there to be saved another way.
+        Assert.Equal(SessionState.Review, (await hub.GetSession(done.Id)).State);
+    }
 }

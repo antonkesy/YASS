@@ -149,6 +149,10 @@ class IYassHub_HubProxy implements IYassHub {
         return await this.connection.invoke("GetEffectiveOptions");
     }
 
+    public readonly getServerFolder = async (): Promise<string> => {
+        return await this.connection.invoke("GetServerFolder");
+    }
+
     public readonly reloadConfig = async (): Promise<void> => {
         return await this.connection.invoke("ReloadConfig");
     }
