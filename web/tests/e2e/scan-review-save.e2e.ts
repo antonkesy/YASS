@@ -637,3 +637,42 @@ test('scanners can be renamed, hidden and inspected, and an unplugged one stays 
 	await expect(picker.getByRole('radio', { name: 'Photo scanner' })).toBeVisible();
 	await expect(picker.getByRole('radio', { name: 'Epson DS-530' })).toHaveCount(0);
 });
+
+test('the footer links out to GitHub and issues, and keeps the documentation in the app', async ({
+	page
+}) => {
+	await page.goto('/');
+	// After a whole run Past scans holds long names; none may widen the page past the screen.
+	await expect(page.getByTestId('past-scans')).toBeVisible();
+	expect(
+		await page.evaluate(
+			() => document.documentElement.scrollWidth - document.documentElement.clientWidth
+		)
+	).toBeLessThanOrEqual(0);
+	const footer = page.getByTestId('app-footer');
+	await expect(footer.getByTestId('footer-github')).toHaveAttribute(
+		'href',
+		'https://github.com/antonkesy/YASS'
+	);
+	await expect(footer.getByTestId('footer-issue')).toHaveAttribute(
+		'href',
+		'https://github.com/antonkesy/YASS/issues/new'
+	);
+	await expect(footer.getByTestId('footer-issue')).toHaveAttribute('target', '_blank');
+	// The documentation is a page of the app's own, opened in the same tab.
+	await expect(footer.getByTestId('footer-docs')).not.toHaveAttribute('target');
+
+	// After a whole run the past-scans list is long and its thumbnails keep arriving, which
+	// moves the footer about; let it settle before aiming at a link at the bottom of the page.
+	await page.waitForLoadState('networkidle');
+	await footer.getByTestId('footer-docs').scrollIntoViewIfNeeded();
+	await footer.getByTestId('footer-docs').click();
+	await expect(page).toHaveURL(/\/docs$/);
+	await expect(page.getByTestId('docs-quote')).toHaveText(
+		'You thought this &#@! would be documented?!?'
+	);
+	// The cat laughs: its frames change on their own.
+	const cat = page.getByTestId('docs-cat');
+	await expect(cat).toHaveAttribute('data-frame', '0');
+	await expect(cat).toHaveAttribute('data-frame', '1');
+});

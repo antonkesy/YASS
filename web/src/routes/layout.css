@@ -396,9 +396,10 @@
 
 	/*
 	 * Chrome the home and review screens have to subtract to fill the viewport exactly.
-	 * Declared here so AppHeader and those calcs cannot drift apart.
+	 * Declared here so AppHeader, AppFooter and those calcs cannot drift apart.
 	 */
 	--app-header-h: 4rem;
+	--app-footer-h: 2.75rem;
 
 	/*
 	 * The review screen's side panes on a wide screen, page strip and sidebar. Declared here
