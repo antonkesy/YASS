@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import { onNavigate } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { screenTransition } from '$lib/motion';
 	import { getHub } from '$lib/hub/hub';
 	import AppHeader from '$lib/components/AppHeader.svelte';
 	import Toast from '$lib/components/Toast.svelte';
@@ -29,11 +30,13 @@
 		document.documentElement.dataset.nav =
 			from === settings || to === settings ? 'fade' : to === home ? 'back' : 'forward';
 
+		screenTransition.start();
 		return new Promise((ready) => {
-			document.startViewTransition(async () => {
+			const transition = document.startViewTransition(async () => {
 				ready();
 				await navigation.complete;
 			});
+			void transition.finished.finally(screenTransition.end);
 		});
 	});
 </script>

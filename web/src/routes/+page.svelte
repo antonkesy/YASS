@@ -17,6 +17,7 @@
 	import { saveToBrowser } from '$lib/review/download';
 	import { documentMetadata, exportPrefs, historyPrefs, scannerPrefs } from '$lib/presets';
 	import { pickable, remember, scannerName } from '$lib/scanners';
+	import { screenTransition } from '$lib/motion';
 	import { expiredSessions } from '$lib/sessions/retention';
 	import { untrack } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
@@ -76,6 +77,12 @@
 	// highlights that scan; a cold load just fades.
 	const landed = cameFrom.take();
 	const cameBack = landed !== null;
+	// A view transition already slides the screen in; its own entrance would be a second slide.
+	const entrance = screenTransition.active
+		? ''
+		: cameBack
+			? 'animate-slide-from-left'
+			: 'animate-fade-in';
 
 	/**
 	 * What the next scan will actually use: the server's defaults with this browser's
@@ -211,11 +218,7 @@
 
 <svelte:head><title>YASS</title></svelte:head>
 
-<main
-	class="mx-auto flex max-w-[2200px] flex-col gap-6 px-4 pt-3 pb-7 sm:px-7 {cameBack
-		? 'animate-slide-from-left'
-		: 'animate-fade-in'}"
->
+<main class="mx-auto flex max-w-[2200px] flex-col gap-6 px-4 pt-3 pb-7 sm:px-7 {entrance}">
 	{#if error}
 		<p class="rounded-[14px] bg-danger-bg px-4 py-2 font-semibold text-danger" role="alert">
 			{error}

@@ -33,6 +33,7 @@
 	} from '$lib/review/edits';
 	import { clear, prune, toggle } from '$lib/review/selection';
 	import { createPreloader, preloadOrder } from '$lib/review/preload';
+	import { screenTransition } from '$lib/motion';
 	import AdjustModal from '$lib/components/AdjustModal.svelte';
 	import StraightenModal from '$lib/components/StraightenModal.svelte';
 	import PageGrid from '$lib/components/PageGrid.svelte';
@@ -145,6 +146,8 @@
 				: 'This scan can no longer be edited'
 	);
 	const shown = $derived(session?.Pages[current] ?? null);
+	// A view transition already slides the screen in; its own entrance would be a second slide.
+	const entrance = screenTransition.active ? '' : 'animate-slide-from-right';
 
 	/**
 	 * Warms the previews around whichever page is in view — the full-screen preview's if it is
@@ -551,7 +554,7 @@
 	natural height and the page scrolls, which is the right behaviour on a phone.
 -->
 <div
-	class="mx-auto flex max-w-[2200px] animate-slide-from-right flex-col px-4 pt-2 pb-7 sm:px-7 lg:h-[calc(100dvh-var(--app-header-h))] lg:min-h-0"
+	class="mx-auto flex max-w-[2200px] {entrance} flex-col px-4 pt-2 pb-7 sm:px-7 lg:h-[calc(100dvh-var(--app-header-h))] lg:min-h-0"
 >
 	{#if missing}
 		<p class="rounded-[14px] bg-danger-bg px-4 py-3 font-semibold text-danger" role="alert">
