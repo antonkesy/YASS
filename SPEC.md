@@ -107,11 +107,17 @@ logging:
 
 ```
 Session  { Id, CreatedAt, State: Idle|Scanning|Review|Exporting|Done|Failed, Pages: Page[], OptionsUsed }
-Page     { Index, SourceFile, Rotation: 0|90|180|270, ColorOverride?, Deleted, IsBlank, Hash }
-PageEdit { Target: All | int[], Op: Rotate(deg) | Delete | Restore | SetColor(mode) | Reorder(int[]) }
+Page     { Index, SourceFile, Rotation: 0|90|180|270, Filter: Original|Enhance|Grayscale|Bw, Crop?,
+           StartsDocument, Deleted, IsBlank, SourceHash, Hash,
+           Adjust? { Brightness -100..100, Contrast -100..100, Sharpen 0..100 },
+           Cleanup: None | Despeckle | AutoLevels (flags), Skew: -15..15° in 0.1° }
+PageEdit { Targets?: int[] (null = all), Op: Rotate(deg) | Delete | Restore | SetFilter(filter) | Reorder(int[])
+           | SetCrop(box?) | SetSplit(bool) | SetAdjust(adjust?) | AddCleanup(flags) | RemoveCleanup(flags) | SetSkew(deg) }
 ```
 
-Edits are non-destructive and recorded in `session.json`; derived images are a pure function of `(source, edits)` cached on disk by hash.
+Edits are non-destructive and recorded in `session.json`; derived images are a pure function of `(source, edits)` cached on disk by hash. One `RenderSpec` feeds both the hash and the pixels, so nothing reaches the image without reaching the hash; edits added later are appended to the hash key only when set, so older pages keep their hashes.
+
+Render order (`PagePipeline`): crop (on the scan as it came) → quarter turns → skew (rotated, then cropped back to the page's own proportions, so no corners show) → auto-levels → Enhance filter → brightness, contrast → despeckle → sharpen → grayscale / B&W threshold.
 
 ## 7. Hub contract + HTTP — DECIDED
 
@@ -125,6 +131,7 @@ Task<SessionDto>   GetSession(string sessionId)
 Task<SessionDto[]> ListSessions()
 Task               DeleteSession(string sessionId)
 Task<SessionDto>   ApplyEdits(string sessionId, PageEdit[] edits)
+Task<int>          AutoCrop(string sessionId, int[]? targets)     // finds the scanner's dark frame, applies it as SetCrop; returns pages cropped
 Task<ExportResult> Export(string sessionId, ExportRequest req)   // builds the document(s); returns one-shot download URLs
 Task<ScannerStatusDto> GetScannerStatus()
 Task<ScanOptionsDto>   GetEffectiveOptions()
@@ -156,7 +163,7 @@ Routes: `/` (scanner picker, presets, big Scan button, recent sessions), `/sessi
 
 The UI comes first: it can change every scan option, and `yass.yaml` only supplies the defaults (`scanner.defaults`). Nothing in the config hides a control; `scanner.ui_editable` is accepted for old files and ignored. The scanner is chosen on `/`, not in `/settings`: the picker shows whenever the server lists at least one scanner, with `scanner.defaults.device` as the default, and presets belong to whichever scanner is chosen unless saved as available for all scanners.
 
-Review: page strip (a row above the page on a phone, a column beside it on desktop); tap a thumbnail = show that page on the stage, its checkbox = multi-select; drag = reorder; toolbar acts on selection or "all" when nothing selected: rotate ⟲ ⟳, delete/restore, color mode. Tap → full preview with swipe. Blank pages pre-marked deleted with badge. Sticky bottom bar: page count, **Save as…** (browser download, through the save dialog where there is one), Discard. Edits apply optimistically (CSS rotate) and reconcile on `PageUpdated`.
+Review: page strip (a row above the page on a phone, a column beside it on desktop); tap a thumbnail = show that page on the stage, its checkbox = multi-select; drag = reorder; toolbar acts on the selection, or the page on the stage when nothing is selected: rotate ⟲ ⟳, Adjust (brightness, contrast, sharpen with a live CSS preview), Crop menu (Crop…, Straighten… ±15° over a grid, Auto-crop borders), Filter menu (Original / Enhance / Grayscale / B&W, plus Despeckle and Auto-levels clean-ups), rescan, delete/restore. While a scan runs there is no edit bar. Tap → full preview with swipe, its own edit bar (Adjust, Crop, Straighten, Filter) for the page on screen, and previews preloaded nearest-first around the page in view. Blank pages pre-marked deleted with badge. Sticky bottom bar: page count, **Save as…** (browser download, through the save dialog where there is one), Discard. Edits apply optimistically (CSS rotate) and reconcile on `PageUpdated`.
 
 Targets: first paint < 1 s over LAN; JS ≤ 150 kB gzipped; no image bytes held in JS beyond the current preview; all actions keyboard-reachable; touch targets ≥ 44 px; works without service worker.
 
