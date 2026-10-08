@@ -405,3 +405,57 @@ test('the sidebar names its groups, and hides none of them', async ({ page }) =>
 	// Discarding sits on its own at the foot, away from the routine actions above it.
 	await expect(page.getByTestId('discard-button')).toBeVisible();
 });
+
+test('post-processing: adjust, straighten, clean up and auto-crop a page', async ({ page }) => {
+	await scanToReview(page);
+	const stage = page.getByRole('img', { name: 'Page 1', exact: true });
+	const hashOf = async () =>
+		new URL((await stage.getAttribute('src'))!, page.url()).searchParams.get('h');
+	await expect(stage).toBeVisible();
+	const original = await hashOf();
+
+	// Adjust: the stage's image is re-rendered under a new hash once the edit lands.
+	await page.getByTestId('adjust-button').click();
+	const adjust = page.getByTestId('adjust-modal');
+	await adjust.getByLabel('Brightness').fill('40');
+	await expect(page.getByTestId('adjust-preview')).toHaveAttribute('style', /brightness\(1\.2\b/);
+	await page.getByTestId('adjust-apply').click();
+	await expect(adjust).toBeHidden();
+	await expect.poll(hashOf).not.toBe(original);
+	const adjusted = await hashOf();
+
+	// Straighten, from the Crop menu.
+	await page.getByTestId('crop-button').click();
+	await page.getByTestId('straighten-open').click();
+	await page.getByTestId('straighten-right').click();
+	await page.getByTestId('straighten-right').click();
+	await page.getByTestId('straighten-apply').click();
+	await expect(page.getByTestId('straighten-modal')).toBeHidden();
+	await expect.poll(hashOf).not.toBe(adjusted);
+	const straightened = await hashOf();
+
+	// A clean-up ticks on in the filter menu and stays ticked when it is opened again.
+	await page.getByTestId('filter-button').click();
+	await page.getByRole('menuitemcheckbox', { name: /Despeckle/ }).click();
+	await expect(page.getByRole('menuitemcheckbox', { name: /Despeckle/ })).toHaveAttribute(
+		'aria-checked',
+		'true'
+	);
+	await page.getByRole('button', { name: 'Close filter menu' }).click({ position: { x: 5, y: 5 } });
+	await expect.poll(hashOf).not.toBe(straightened);
+
+	// The fake scanner's pages are clean renders with no frame round them (ADR-012).
+	await page.getByTestId('crop-button').click();
+	await page.getByTestId('autocrop').click();
+	await expect(page.getByTestId('toast')).toContainText('No borders found');
+
+	// The same tools are on the full-screen preview's own bar.
+	await page.getByTestId('expand-button').click();
+	await expect(page.getByTestId('preview-edit-bar')).toBeVisible();
+	await page.getByTestId('preview-adjust').click();
+	await expect(page.getByTestId('adjust-modal')).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(page.getByTestId('adjust-modal')).toBeHidden();
+	// Escape closed the dialog, not the preview underneath it.
+	await expect(page.getByTestId('preview')).toBeVisible();
+});
