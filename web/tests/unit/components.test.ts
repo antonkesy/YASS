@@ -9,6 +9,7 @@ import SettingsChips from '$lib/components/SettingsChips.svelte';
 import SortMenu from '$lib/components/SortMenu.svelte';
 import RepoLink from '$lib/components/RepoLink.svelte';
 import TemplateEditor from '$lib/components/TemplateEditor.svelte';
+import AdjustModal from '$lib/components/AdjustModal.svelte';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import {
 	ColorMode,
@@ -602,5 +603,56 @@ describe('TemplateEditor', () => {
 
 		await rerender({ ...editor(['YEAR']), extension: '.pdf' });
 		expect(screen.getByTestId('template-preview')).toHaveTextContent('2026-09-24.pdf');
+	});
+});
+
+describe('AdjustModal', () => {
+	const base = { src: '/x.webp', alt: 'Page 1', adjust: null, onapply: vi.fn(), oncancel: vi.fn() };
+
+	it('previews the change with CSS and applies the draft', async () => {
+		const onapply = vi.fn();
+		render(AdjustModal, { ...base, onapply });
+		const apply = screen.getByTestId('adjust-apply');
+		expect(apply).toBeDisabled();
+
+		await fireEvent.input(screen.getByLabelText('Brightness'), { target: { value: '50' } });
+
+		expect(screen.getByTestId('adjust-preview').style.filter).toContain('brightness(1.250)');
+		await fireEvent.click(apply);
+		expect(onapply).toHaveBeenCalledWith({ Brightness: 50, Contrast: 0, Sharpen: 0 });
+	});
+
+	it('previews only the difference from what the page already has', async () => {
+		render(AdjustModal, { ...base, adjust: { Brightness: 50, Contrast: 0, Sharpen: 0 } });
+
+		await fireEvent.input(screen.getByLabelText('Brightness'), { target: { value: '0' } });
+
+		// The preview image is already 1.25 bright; back to 0 means scaling it by 1/1.25.
+		expect(screen.getByTestId('adjust-preview').style.filter).toContain('brightness(0.800)');
+	});
+
+	it('sends a reset to neutral as no adjust at all, and cancels on Escape', async () => {
+		const onapply = vi.fn();
+		const oncancel = vi.fn();
+		render(AdjustModal, {
+			...base,
+			adjust: { Brightness: 10, Contrast: 20, Sharpen: 30 },
+			onapply,
+			oncancel
+		});
+
+		await fireEvent.click(screen.getByTestId('adjust-reset'));
+		await fireEvent.click(screen.getByTestId('adjust-apply'));
+		expect(onapply).toHaveBeenCalledWith(undefined);
+
+		await fireEvent.keyDown(screen.getByTestId('adjust-modal'), { key: 'Escape' });
+		expect(oncancel).toHaveBeenCalled();
+	});
+
+	it('says how many pages it sets, and lets a selection be set to the same values', () => {
+		render(AdjustModal, { ...base, count: 3 });
+
+		expect(screen.getByRole('dialog', { name: 'Adjust 3 pages' })).toBeInTheDocument();
+		expect(screen.getByTestId('adjust-apply')).toBeEnabled();
 	});
 });
