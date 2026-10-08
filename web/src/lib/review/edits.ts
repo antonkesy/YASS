@@ -5,7 +5,7 @@ import {
 	PageFilter,
 	Rotation
 } from '$lib/hub/generated/Yass.Core.Domain';
-import type { CropBox, PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
+import type { CropBox, PageAdjust, PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
 import type { PageDto, SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 
 /** Empty selection means "all pages", mirroring PageEdit.Targets = null on the server. */
@@ -49,6 +49,30 @@ export function setCropEdit(crop: CropBox | undefined, selection: ReadonlySet<nu
 	return edit(PageEditOp.SetCrop, { Crop: crop, Targets: targetsOf(selection) });
 }
 
+/** Tone and sharpness; a neutral adjust is sent as none, which the server stores as none anyway. */
+export function setAdjustEdit(
+	adjust: PageAdjust | undefined,
+	selection: ReadonlySet<number>
+): PageEdit {
+	return edit(PageEditOp.SetAdjust, {
+		Adjust: adjust && !isNeutral(adjust) ? adjust : undefined,
+		Targets: targetsOf(selection)
+	});
+}
+
+export function addCleanupEdit(cleanup: PageCleanup, selection: ReadonlySet<number>): PageEdit {
+	return edit(PageEditOp.AddCleanup, { Cleanup: cleanup, Targets: targetsOf(selection) });
+}
+
+export function removeCleanupEdit(cleanup: PageCleanup, selection: ReadonlySet<number>): PageEdit {
+	return edit(PageEditOp.RemoveCleanup, { Cleanup: cleanup, Targets: targetsOf(selection) });
+}
+
+/** Rounded to the tenth of a degree the server keeps, so the optimistic page matches it. */
+export function setSkewEdit(degrees: number, selection: ReadonlySet<number>): PageEdit {
+	return edit(PageEditOp.SetSkew, { Skew: roundSkew(degrees), Targets: targetsOf(selection) });
+}
+
 export function reorderEdit(order: number[]): PageEdit {
 	return edit(PageEditOp.Reorder, { Order: order });
 }
@@ -82,12 +106,73 @@ export function applyOptimistic(session: SessionDto, edit: PageEdit): SessionDto
 				return { ...page, Filter: edit.Filter };
 			case PageEditOp.SetCrop:
 				return { ...page, Crop: edit.Crop };
+			case PageEditOp.SetAdjust:
+				return { ...page, Adjust: edit.Adjust };
+			case PageEditOp.AddCleanup:
+				return { ...page, Cleanup: page.Cleanup | edit.Cleanup };
+			case PageEditOp.RemoveCleanup:
+				return { ...page, Cleanup: page.Cleanup & ~edit.Cleanup };
+			case PageEditOp.SetSkew:
+				return { ...page, Skew: edit.Skew };
 			default:
 				return page;
 		}
 	});
 	return { ...session, Pages: pages };
 }
+
+export const NEUTRAL_ADJUST: PageAdjust = { Brightness: 0, Contrast: 0, Sharpen: 0 };
+
+export function isNeutral(adjust: PageAdjust | undefined): boolean {
+	return !adjust || (adjust.Brightness === 0 && adjust.Contrast === 0 && adjust.Sharpen === 0);
+}
+
+/** The furthest Straighten turns a page either way, as the server allows. */
+export const MAX_SKEW = 15;
+
+export function roundSkew(degrees: number): number {
+	const clamped = Math.max(-MAX_SKEW, Math.min(MAX_SKEW, degrees));
+	const rounded = Math.round(clamped * 10) / 10;
+	return rounded === 0 ? 0 : rounded;
+}
+
+/**
+ * A tone slider as a CSS factor: 1 unchanged, -100 halves, 100 is one and a half. The same
+ * mapping as PageAdjusts.Tone on the server, which is what lets the dialog preview it with CSS.
+ */
+export function toneFactor(value: number): number {
+	return 1 + value / 200;
+}
+
+/**
+ * How much a page turned by `degrees` is scaled for its own proportions to fit inside the
+ * turned page, with no empty corners. The twin of Straighten.InnerScale on the server.
+ */
+export function innerScale(width: number, height: number, degrees: number): number {
+	const theta = (Math.abs(degrees) * Math.PI) / 180;
+	const cos = Math.cos(theta);
+	const sin = Math.sin(theta);
+	return Math.min(width / (width * cos + height * sin), height / (width * sin + height * cos));
+}
+
+/** The clean-ups every one of `pages` has, which is what the filter menu shows as ticked. */
+export function commonCleanup(pages: readonly PageDto[]): PageCleanup {
+	if (pages.length === 0) return PageCleanup.None;
+	return pages.reduce((all, p) => all & p.Cleanup, ~0) as PageCleanup;
+}
+
+export const cleanupOptions = [
+	{
+		value: PageCleanup.Despeckle,
+		label: 'Despeckle',
+		hint: 'Remove dust and specks'
+	},
+	{
+		value: PageCleanup.AutoLevels,
+		label: 'Auto-levels',
+		hint: 'Make faded scans black on white'
+	}
+] as const;
 
 export const colorModeLabels: Record<ColorMode, string> = {
 	[ColorMode.Bw]: 'Black & white',
