@@ -716,7 +716,7 @@
 				want 180 — so they meet in the middle and the page lands near enough to centre.
 			-->
 			<aside
-				class="order-3 flex w-full min-w-0 basis-full flex-col gap-3.5 rounded-[24px] bg-surface p-[22px] shadow-panel lg:min-h-0 lg:w-auto lg:basis-[clamp(250px,16vw,280px)] lg:overflow-y-auto"
+				class="order-3 flex w-full min-w-0 basis-full flex-col gap-3.5 rounded-[24px] bg-surface p-[22px] shadow-panel lg:min-h-0 lg:w-auto lg:basis-(--review-aside-w) lg:overflow-y-auto"
 			>
 				{@render heading('Name')}
 

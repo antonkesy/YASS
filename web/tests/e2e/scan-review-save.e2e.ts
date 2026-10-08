@@ -544,3 +544,16 @@ test('Save as preset on the home screen opens Settings ready to name it', async 
 	).toHaveAttribute('aria-pressed', 'true');
 	await expect(page.getByTestId('preset-save-current')).toHaveCount(0);
 });
+
+test('the scanner pill sits centred over the page on the review screen', async ({ page }) => {
+	await scanToReview(page);
+	const pill = page.getByTestId('header-centre').locator('> *').first();
+	const stage = page.getByRole('img', { name: 'Page 1', exact: true });
+	await expect(stage).toBeVisible();
+
+	const centre = async (l: typeof pill) => {
+		const box = (await l.boundingBox())!;
+		return box.x + box.width / 2;
+	};
+	expect(Math.abs((await centre(pill)) - (await centre(stage)))).toBeLessThan(3);
+});

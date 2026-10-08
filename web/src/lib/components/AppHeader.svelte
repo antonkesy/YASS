@@ -56,7 +56,17 @@
 		{/if}
 	</div>
 
-	<div class="flex min-w-0 items-center justify-center">
+	<!--
+		On review, a wide screen puts the page between a narrow strip and a wider sidebar, so
+		its centre sits left of the window's: the pill moves by half the difference to stay
+		over the page rather than over the gap beside it.
+	-->
+	<div
+		class="flex min-w-0 items-center justify-center {atReview
+			? 'lg:-translate-x-[calc((var(--review-aside-w)-var(--review-strip-w))/2)]'
+			: ''}"
+		data-testid="header-centre"
+	>
 		{#if atHome}
 			<!-- The name is the whole of the brand here: no logo, no short form at the left. -->
 			<span

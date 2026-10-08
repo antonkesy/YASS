@@ -330,7 +330,7 @@
 	const panel = $derived(
 		overview
 			? 'flex min-h-0 flex-1 flex-col'
-			: 'flex w-full flex-col gap-2 rounded-[22px] bg-surface p-3 shadow-panel lg:h-full lg:w-[clamp(180px,14vw,260px)]'
+			: 'flex w-full flex-col gap-2 rounded-[22px] bg-surface p-3 shadow-panel lg:h-full lg:w-(--review-strip-w)'
 	);
 	const scroller = $derived(
 		overview

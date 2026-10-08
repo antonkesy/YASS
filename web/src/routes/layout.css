@@ -371,6 +371,14 @@
 	 * Declared here so AppHeader and those calcs cannot drift apart.
 	 */
 	--app-header-h: 4rem;
+
+	/*
+	 * The review screen's side panes on a wide screen, page strip and sidebar. Declared here
+	 * because the header centres the scanner pill over the page between them, not over the
+	 * window, and the two would otherwise have to agree by copy.
+	 */
+	--review-strip-w: clamp(180px, 14vw, 260px);
+	--review-aside-w: clamp(250px, 16vw, 280px);
 }
 
 :focus-visible {
