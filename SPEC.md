@@ -1,4 +1,4 @@
-# YASS — Yet Another Scanner Service
+# YASS — Yet Another Scanner Slop
 
 Base prompt / project specification for a coding agent. Read fully before writing code. Sections marked **DECIDED** are not up for debate; sections marked **OPEN** may be resolved by the agent with a one-line justification in `docs/decisions/`.
 
@@ -234,7 +234,7 @@ Scopes: `core`, `fake`, `server`, `web`, `scanning`, `export`, `nix`, `docker`, 
 
 ## 13. Branding
 
-**YASS** — Yet Another Scanner Service. Logo: an original triumphant "nailed it" character — flat-color figure pumping a fist while holding a scanned sheet; readable at 16 px, maskable at 512 px. SVG + PNG 192/512 + favicon. No recognisable actor, film still or existing meme image.
+**YASS** — Yet Another Scanner Slop. Logo: an original triumphant "nailed it" character — flat-color figure pumping a fist while holding a scanned sheet; readable at 16 px, maskable at 512 px. SVG + PNG 192/512 + favicon. No recognisable actor, film still or existing meme image.
 
 ## 14. OPEN
 
