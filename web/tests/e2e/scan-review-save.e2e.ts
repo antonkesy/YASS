@@ -459,3 +459,34 @@ test('post-processing: adjust, straighten, clean up and auto-crop a page', async
 	// Escape closed the dialog, not the preview underneath it.
 	await expect(page.getByTestId('preview')).toBeVisible();
 });
+
+test('the crop dialog draws over the whole page, upright, even once it is cropped', async ({
+	page
+}) => {
+	await scanToReview(page);
+	await page.getByRole('button', { name: 'Rotate right' }).click();
+
+	const openCrop = async () => {
+		await page.getByTestId('crop-button').click();
+		await page.getByTestId('crop-open').click();
+		const modal = page.getByTestId('crop-modal');
+		await expect(modal).toBeVisible();
+		// The frame image, not the page's (cropped) preview.
+		const img = modal.getByRole('img');
+		await expect(img).toHaveAttribute('src', /\/frame\?h=/);
+		await expect
+			.poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth))
+			.toBeGreaterThan(0);
+		return modal;
+	};
+
+	await openCrop();
+	await page.getByTestId('crop-top').fill('12');
+	await page.getByTestId('crop-apply').click();
+	await expect(page.getByTestId('crop-modal')).toBeHidden();
+
+	// Opened again on the cropped, turned page, the box is where it was drawn.
+	await openCrop();
+	await expect(page.getByTestId('crop-top')).toHaveValue('12');
+	await expect(page.getByTestId('crop-left')).toHaveValue('0');
+});

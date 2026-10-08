@@ -12,12 +12,14 @@ import TemplateEditor from '$lib/components/TemplateEditor.svelte';
 import AdjustModal from '$lib/components/AdjustModal.svelte';
 import StraightenModal from '$lib/components/StraightenModal.svelte';
 import Preview from '$lib/components/Preview.svelte';
+import CropModal from '$lib/components/CropModal.svelte';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import {
 	ColorMode,
 	PageCleanup,
 	PageFilter,
 	PageSize,
+	Rotation,
 	ScanSource,
 	SessionState
 } from '$lib/hub/generated/Yass.Core.Domain';
@@ -799,5 +801,28 @@ describe('Preview edit bar', () => {
 		await rerender({ ...base, onclose, onnavigate, paused: false });
 		await fireEvent.keyDown(window, { key: 'Escape' });
 		expect(onclose).toHaveBeenCalled();
+	});
+});
+
+describe('CropModal', () => {
+	it('draws a turned page upright and hands the crop back in scan coordinates', async () => {
+		const onapply = vi.fn();
+		render(CropModal, {
+			src: '/frame.webp',
+			alt: 'Page 1',
+			crop: { Top: 0, Right: 0, Bottom: 0, Left: 10 },
+			rotation: Rotation.R90,
+			onapply,
+			oncancel: vi.fn()
+		});
+
+		// Turned right, the scan's left edge is the top of the page on screen.
+		expect(screen.getByTestId('crop-top')).toHaveValue('10');
+		expect(screen.getByTestId('crop-left')).toHaveValue('0');
+
+		await fireEvent.input(screen.getByTestId('crop-right'), { target: { value: '5' } });
+		await fireEvent.click(screen.getByTestId('crop-apply'));
+
+		expect(onapply).toHaveBeenCalledWith({ Top: 5, Right: 0, Bottom: 0, Left: 10 });
 	});
 });

@@ -70,6 +70,29 @@ public sealed class EditAndImageTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task The_crop_frame_shows_the_whole_page_with_its_other_edits()
+    {
+        SessionDto done = await _hub.ScanToEnd();
+        SessionDto edited = await _hub.ApplyEdits(
+            done.Id,
+            PageEdit.SetCrop(new CropBox(10, 20, 10, 20), 0),
+            PageEdit.SetSkew(5, 0),
+            PageEdit.Rotate(90, 0),
+            PageEdit.Rotate(90, 1));
+        string hash = edited.Pages[0].Hash;
+
+        // Page 1 is rotated and nothing else, so its preview is the size page 0's frame should be.
+        using var full = await Image.LoadAsync(await _http.GetStreamAsync(new Uri($"/img/{done.Id}/1/preview?h={edited.Pages[1].Hash}", UriKind.Relative)));
+        using var preview = await Image.LoadAsync(await _http.GetStreamAsync(new Uri($"/img/{done.Id}/0/preview?h={hash}", UriKind.Relative)));
+        using var frame = await Image.LoadAsync(await _http.GetStreamAsync(new Uri($"/img/{done.Id}/0/frame?h={hash}", UriKind.Relative)));
+
+        // Previews are scaled to a set width, so the crop shows in the proportions, not the width.
+        Assert.NotEqual(Math.Round((double)full.Width / full.Height, 2), Math.Round((double)preview.Width / preview.Height, 2));
+        Assert.Equal((full.Width, full.Height), (frame.Width, frame.Height));
+        Assert.True(frame.Width > frame.Height, "the frame keeps the quarter turn");
+    }
+
+    [Fact]
     public async Task Auto_crop_trims_the_frame_off_the_pages_that_have_one()
     {
         SessionDto done = await _hub.ScanToEnd();

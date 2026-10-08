@@ -151,6 +151,7 @@ ExportProgress(string sessionId, int percent)
 GET /healthz
 GET /img/{sessionId}/{pageIndex}/thumb?h={hash}    -> webp, ETag=hash, Cache-Control: public, max-age=31536000, immutable
 GET /img/{sessionId}/{pageIndex}/preview?h={hash}
+GET /img/{sessionId}/{pageIndex}/frame?h={hash}      -> preview with every edit but crop and skew, for drawing a crop over
 GET /export/{sessionId}/{token}.pdf                -> one-shot download URL returned by Export
 GET /                                              -> static SvelteKit build
 ```

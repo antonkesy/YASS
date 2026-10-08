@@ -7,6 +7,13 @@ public enum ImageKind
 {
     Thumb = 0,
     Preview,
+
+    /// <summary>
+    /// The page at preview size with every edit but its crop and skew: what the Crop dialog draws
+    /// its box over. A crop is taken from the scan as it came, so drawing it over a page already
+    /// cropped — or straightened, which crops too — put the box in the wrong place.
+    /// </summary>
+    Frame,
 }
 
 /// <summary>
@@ -39,12 +46,13 @@ public sealed class RenderCache(SessionStore store, ImageRenderer renderer, Conf
 
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         int width = kind == ImageKind.Thumb ? config.Current.Processing.ThumbnailWidth : config.Current.Processing.PreviewMaxWidth;
+        Page rendered = kind == ImageKind.Frame ? page with { Crop = null, Skew = 0 } : page;
         string temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try
         {
             await using (FileStream output = File.Create(temp))
             {
-                await renderer.RenderAsync(SessionPaths.Source(store.Root, session, page), page, session.OptionsUsed.Color, width, output, cancellationToken).ConfigureAwait(false);
+                await renderer.RenderAsync(SessionPaths.Source(store.Root, session, page), rendered, session.OptionsUsed.Color, width, output, cancellationToken).ConfigureAwait(false);
             }
 
             File.Move(temp, path, overwrite: true);

@@ -121,6 +121,40 @@ export function applyOptimistic(session: SessionDto, edit: PageEdit): SessionDto
 	return { ...session, Pages: pages };
 }
 
+/**
+ * A crop as it looks on the page turned upright. A crop is kept in the scan's own coordinates
+ * and taken before the quarter turns, so on a page turned 90° clockwise its left edge is what
+ * shows at the top. The Crop dialog draws in these coordinates and converts back on Apply.
+ */
+export function cropToView(crop: CropBox, rotation: Rotation): CropBox {
+	const { Top, Right, Bottom, Left } = crop;
+	switch (rotation) {
+		case Rotation.R90:
+			return { Top: Left, Right: Top, Bottom: Right, Left: Bottom };
+		case Rotation.R180:
+			return { Top: Bottom, Right: Left, Bottom: Top, Left: Right };
+		case Rotation.R270:
+			return { Top: Right, Right: Bottom, Bottom: Left, Left: Top };
+		default:
+			return { ...crop };
+	}
+}
+
+/** The inverse of {@link cropToView}: a box drawn on the upright page, back in scan coordinates. */
+export function cropFromView(box: CropBox, rotation: Rotation): CropBox {
+	const { Top, Right, Bottom, Left } = box;
+	switch (rotation) {
+		case Rotation.R90:
+			return { Top: Right, Right: Bottom, Bottom: Left, Left: Top };
+		case Rotation.R180:
+			return { Top: Bottom, Right: Left, Bottom: Top, Left: Right };
+		case Rotation.R270:
+			return { Top: Left, Right: Top, Bottom: Right, Left: Bottom };
+		default:
+			return { ...box };
+	}
+}
+
 export const NEUTRAL_ADJUST: PageAdjust = { Brightness: 0, Contrast: 0, Sharpen: 0 };
 
 export function isNeutral(adjust: PageAdjust | undefined): boolean {

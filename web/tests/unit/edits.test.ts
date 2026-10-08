@@ -6,6 +6,8 @@ import {
 	addCleanupEdit,
 	applyOptimistic,
 	commonCleanup,
+	cropFromView,
+	cropToView,
 	deleteEdit,
 	innerScale,
 	removeCleanupEdit,
@@ -138,4 +140,22 @@ describe('adjust, clean-up and skew', () => {
 		expect(innerScale(200, 300, 0)).toBe(1);
 		expect(innerScale(200, 300, 5)).toBeCloseTo(innerScale(200, 300, -5), 12);
 	});
+});
+
+describe('crop coordinates on a turned page', () => {
+	const crop = { Top: 1, Right: 2, Bottom: 3, Left: 4 };
+
+	it("shows the scan's left edge at the top of a page turned right", () => {
+		expect(cropToView(crop, Rotation.R90)).toEqual({ Top: 4, Right: 1, Bottom: 2, Left: 3 });
+		expect(cropToView(crop, Rotation.R180)).toEqual({ Top: 3, Right: 4, Bottom: 1, Left: 2 });
+		expect(cropToView(crop, Rotation.R270)).toEqual({ Top: 2, Right: 3, Bottom: 4, Left: 1 });
+		expect(cropToView(crop, Rotation.R0)).toEqual(crop);
+	});
+
+	it.each([Rotation.R0, Rotation.R90, Rotation.R180, Rotation.R270])(
+		'converts back to the same crop at %s degrees',
+		(rotation) => {
+			expect(cropFromView(cropToView(crop, rotation), rotation)).toEqual(crop);
+		}
+	);
 });
