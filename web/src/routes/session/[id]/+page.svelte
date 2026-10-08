@@ -8,7 +8,7 @@
 	import { cameFrom } from '$lib/navigation';
 	import { getHub, imageUrl, sortedSessions } from '$lib/hub/hub';
 	import { PageFilter, SessionState } from '$lib/hub/generated/Yass.Core.Domain';
-	import type { CropBox, PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
+	import type { CropBox, PageAdjust, PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
 	import {
 		activePageCount,
 		documentName,
@@ -26,11 +26,13 @@
 		restoreEdit,
 		rotateEdit,
 		setCropEdit,
+		setAdjustEdit,
 		setFilterEdit,
 		pageFilterLabels
 	} from '$lib/review/edits';
 	import { clear, prune, toggle } from '$lib/review/selection';
 	import { createPreloader, preloadOrder } from '$lib/review/preload';
+	import AdjustModal from '$lib/components/AdjustModal.svelte';
 	import PageGrid from '$lib/components/PageGrid.svelte';
 	import PageOverview from '$lib/components/PageOverview.svelte';
 	import Toolbar from '$lib/components/Toolbar.svelte';
@@ -67,6 +69,8 @@
 	/** Whether the filmstrip is expanded to the full-screen all-pages overview. */
 	let overview = $state(false);
 
+	/** The pages the Adjust dialog sets, and the one it shows and starts from. */
+	let adjusting = $state<{ pages: ReadonlySet<number>; from: number } | null>(null);
 	let previewIndex = $state<number | null>(null);
 	/** The big preview slides in from whichever side the new page came from. */
 	let stage = $state<HTMLElement | null>(null);
@@ -370,6 +374,13 @@
 		}
 	}
 
+	function applyAdjust(adjust: PageAdjust | undefined) {
+		if (!adjusting) return;
+		const pages = adjusting.pages;
+		adjusting = null;
+		send(setAdjustEdit(adjust, pages));
+	}
+
 	function applyCrop(crop: CropBox | undefined) {
 		const page = cropping !== null ? session?.Pages[cropping] : null;
 		cropping = null;
@@ -441,6 +452,7 @@
 				send(on ? addCleanupEdit(cleanup, targets) : removeCleanupEdit(cleanup, targets))}
 			onexpand={() => (previewIndex = targetPage())}
 			oncrop={() => (cropping = targetPage())}
+			onadjust={() => (adjusting = { pages: new Set(targets), from: targetPage() })}
 			onrescan={rescan}
 			{scanning}
 			onclear={() => (selection = clear())}
@@ -709,6 +721,18 @@
 		busy={merged}
 		onpick={merge}
 		oncancel={() => (merging = false)}
+	/>
+{/if}
+
+{#if adjusting && session?.Pages[adjusting.from]}
+	{@const from = session.Pages[adjusting.from]}
+	<AdjustModal
+		src={imageUrl(id, from.Index, from.Hash, 'preview')}
+		alt="Page {from.Index + 1}"
+		adjust={from.Adjust ?? null}
+		count={adjusting.pages.size}
+		onapply={applyAdjust}
+		oncancel={() => (adjusting = null)}
 	/>
 {/if}
 

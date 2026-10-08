@@ -18,6 +18,7 @@
 		oncleanup,
 		onexpand,
 		oncrop,
+		onadjust,
 		onrescan,
 		scoped = false,
 		onclear,
@@ -42,6 +43,8 @@
 		/** Opens the page the edits point at, full screen. Not an edit, but this is where it lives. */
 		onexpand?: () => void;
 		oncrop?: () => void;
+		/** Opens the tone and sharpness dialog for the page in view or the selection. */
+		onadjust?: () => void;
 		onrescan?: () => void;
 		/**
 		 * Whether this toolbar manages a selection. Only the all-pages view does: the review
@@ -162,6 +165,19 @@
 			>
 				<Icon name="crop" />
 				Crop
+			</button>
+		{/if}
+
+		{#if onadjust && editing}
+			<button
+				type="button"
+				class="text-ink {tool}"
+				onclick={onadjust}
+				aria-label="Adjust brightness, contrast and sharpness"
+				data-testid="adjust-button"
+			>
+				<Icon name="sliders" />
+				Adjust
 			</button>
 		{/if}
 
