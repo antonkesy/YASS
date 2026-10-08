@@ -232,7 +232,7 @@
 		natural height and the page scrolls, which is the right behaviour on a phone.
 	-->
 	<div
-		class="flex flex-wrap items-stretch gap-6 lg:h-[calc(100dvh-var(--app-header-h)-2.5rem)] lg:min-h-0 lg:flex-nowrap"
+		class="flex flex-wrap items-stretch gap-6 lg:h-[calc(100dvh-var(--app-header-h)-var(--app-footer-h)-2.5rem)] lg:min-h-0 lg:flex-nowrap"
 	>
 		<ScanStage
 			status={$scanner}

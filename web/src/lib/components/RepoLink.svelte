@@ -1,6 +1,6 @@
 <script lang="ts">
 	/** The header's one control on the right: the project on GitHub, in a new tab. */
-	const REPO = 'https://github.com/antonkesy/YASS';
+	import { REPO } from '$lib/links';
 </script>
 
 <a

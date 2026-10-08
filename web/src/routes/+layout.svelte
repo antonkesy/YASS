@@ -6,6 +6,7 @@
 	import { screenTransition } from '$lib/motion';
 	import { getHub } from '$lib/hub/hub';
 	import AppHeader from '$lib/components/AppHeader.svelte';
+	import AppFooter from '$lib/components/AppFooter.svelte';
 	import Toast from '$lib/components/Toast.svelte';
 
 	let { children } = $props();
@@ -48,9 +49,16 @@
 	<meta name="theme-color" content="#f5f7fc" />
 </svelte:head>
 
-<div class="min-h-dvh bg-app text-ink">
+<!--
+	A column, so the footer sits at the bottom of a short page. Its children take the column's
+	full width (`*:w-full`): a page's `mx-auto` would otherwise switch off the column's stretch
+	and size the page to its content, which on a phone with a long list of past scans is wider
+	than the screen.
+-->
+<div class="flex min-h-dvh flex-col bg-app text-ink *:w-full">
 	<AppHeader />
 	{@render children()}
+	<AppFooter />
 </div>
 
 <Toast />
