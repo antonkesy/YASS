@@ -1,6 +1,5 @@
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Webp;
-using SixLabors.ImageSharp.Processing;
 using Yass.Core.Domain;
 using Yass.Export;
 using Yass.Server.Config;
@@ -25,11 +24,7 @@ public sealed class ImageRenderer : IDisposable
         try
         {
             using Image image = await Image.LoadAsync(sourcePath, cancellationToken).ConfigureAwait(false);
-            PagePipeline.Apply(image, RenderSpec.Of(page, scanColor));
-            if (image.Width > maxWidth)
-            {
-                image.Mutate(ctx => ctx.Resize(maxWidth, 0));
-            }
+            PagePipeline.Apply(image, RenderSpec.Of(page, scanColor), maxWidth);
 
             var encoder = new WebpEncoder { Quality = 80, FileFormat = WebpFileFormatType.Lossy };
             await image.SaveAsync(destination, encoder, cancellationToken).ConfigureAwait(false);

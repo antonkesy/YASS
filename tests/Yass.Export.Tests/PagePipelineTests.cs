@@ -199,4 +199,31 @@ public class PagePipelineTests
 
         Assert.True(Grey(image, 98, 150) > before);
     }
+
+    [Fact]
+    public void A_preview_is_shrunk_before_the_filters_and_looks_the_same()
+    {
+        using Image<Rgb24> full = Faded();
+        using Image<Rgb24> small = Faded();
+        RenderSpec spec = Spec(rotation: Rotation.R90, adjust: new PageAdjust(20, 10, 0), cleanup: PageCleanup.AutoLevels);
+
+        PagePipeline.Apply(full, spec);
+        PagePipeline.Apply(small, spec, maxWidth: 50);
+
+        // 200x100 turned is 100x200; at 50 wide it is 50x100.
+        Assert.Equal((50, 100), (small.Width, small.Height));
+        // Per-pixel tone survives the shrink: the ramp's ends land on the same values.
+        Assert.InRange(Math.Abs(Grey(small, 25, 1) - Grey(full, 50, 2)), 0, 6);
+        Assert.InRange(Math.Abs(Grey(small, 25, 98) - Grey(full, 50, 197)), 0, 6);
+    }
+
+    [Fact]
+    public void Export_keeps_every_pixel()
+    {
+        using Image<Rgb24> image = Page(2000, 3000);
+
+        PagePipeline.Apply(image, Spec(adjust: new PageAdjust(10, 0, 0)));
+
+        Assert.Equal((2000, 3000), (image.Width, image.Height));
+    }
 }
