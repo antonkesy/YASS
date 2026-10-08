@@ -164,6 +164,10 @@
 	--animate-sweep: sweep 3.2s ease-in-out infinite;
 	--animate-fade-in: fade-in 0.3s both;
 	--animate-pop-in: pop-in 0.25s var(--ease-spring) both;
+	/* A dialog card: rises, scales up past its size by a hair and settles. */
+	--animate-card-in: card-in 0.4s var(--ease-out-soft) both;
+	/* A bottom sheet on a phone: slides the whole way up, on the curve iOS sheets use. */
+	--animate-sheet-up: sheet-up 0.42s cubic-bezier(0.32, 0.72, 0, 1) both;
 	--animate-toast-in: toast-in 0.3s var(--ease-spring) both;
 	--animate-check-in: check-in 0.5s var(--ease-spring) both;
 	--animate-slide-from-left: slide-from-left 0.5s var(--ease-spring) both;
@@ -243,6 +247,30 @@
 		}
 		to {
 			opacity: 1;
+			transform: none;
+		}
+	}
+
+	@keyframes card-in {
+		0% {
+			opacity: 0;
+			transform: translateY(18px) scale(0.94);
+		}
+		55% {
+			opacity: 1;
+			transform: translateY(-2px) scale(1.01);
+		}
+		100% {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	@keyframes sheet-up {
+		from {
+			transform: translateY(100%);
+		}
+		to {
 			transform: none;
 		}
 	}
