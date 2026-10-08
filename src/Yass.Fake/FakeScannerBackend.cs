@@ -22,7 +22,7 @@ public sealed class FakeScannerBackend(FakeScenario scenario) : IScannerBackend
     {
         IReadOnlyList<ScannerDevice> devices = Scenario.NoDevice
             ? []
-            : [.. Scenario.AllDevices.Select(name => new ScannerDevice(name, name))];
+            : [.. Scenario.AllDevices.Select(name => new ScannerDevice(name, name, "fake"))];
         return Task.FromResult(devices);
     }
 

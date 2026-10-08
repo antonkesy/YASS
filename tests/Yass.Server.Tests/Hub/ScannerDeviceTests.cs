@@ -21,6 +21,9 @@ public sealed class ScannerDeviceTests
         Assert.Equal(["YASS Fake ADF", "Epson DS-530", "Canon LiDE 400"], devices.Select(d => d.Name));
         // The fake has no driver identifier to be distinct from what it is called.
         Assert.All(devices, d => Assert.Equal(d.Name, d.Id));
+        // Which driver found it rides along, for the scanner's details in Settings.
+        Assert.All(devices, d => Assert.Equal("fake", d.Driver));
+        Assert.All(devices, d => Assert.Null(d.Connection));
     }
 
     [Fact]

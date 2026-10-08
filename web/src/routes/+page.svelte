@@ -15,7 +15,8 @@
 	import PastScansPanel from '$lib/components/PastScansPanel.svelte';
 	import { settings } from '$lib/settings';
 	import { saveToBrowser } from '$lib/review/download';
-	import { documentMetadata, exportPrefs, historyPrefs } from '$lib/presets';
+	import { documentMetadata, exportPrefs, historyPrefs, scannerPrefs } from '$lib/presets';
+	import { pickable, remember, scannerName } from '$lib/scanners';
 	import { expiredSessions } from '$lib/sessions/retention';
 	import { untrack } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
@@ -61,7 +62,11 @@
 		if (!connected || !(reconnected || changed)) return;
 		client.hub
 			.listDevices()
-			.then((d) => (devices = d))
+			.then((d) => {
+				devices = d;
+				// Remembered, so Settings can still list a scanner once it is unplugged.
+				scannerPrefs.set(remember($scannerPrefs, d));
+			})
 			.catch(() => undefined);
 	});
 
@@ -79,13 +84,22 @@
 	 */
 	const planned = $derived(effective ? { ...effective, ...$settings } : null);
 
+	/** The picker's scanners: this browser's names for them, and none it has hidden. */
+	const offered = $derived(pickable($scannerPrefs, devices, planned?.Device));
+
 	/**
 	 * The chosen scanner as a person reads it. Nothing when none is chosen — the review header's
 	 * status pill names whatever the server would pick — and the bare id for one the server has
 	 * stopped listing, which at least says something is wrong.
 	 */
 	const deviceName = $derived(
-		planned?.Device ? (devices.find((d) => d.Id === planned.Device)?.Name ?? planned.Device) : null
+		planned?.Device
+			? scannerName(
+					$scannerPrefs,
+					planned.Device,
+					devices.find((d) => d.Id === planned.Device)?.Name
+				)
+			: null
 	);
 
 	async function scan() {
@@ -221,7 +235,7 @@
 			status={$scanner}
 			connection={$connection}
 			options={planned}
-			{devices}
+			devices={offered}
 			{deviceName}
 			busy={starting}
 			onscan={scan}

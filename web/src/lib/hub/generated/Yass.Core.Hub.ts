@@ -106,6 +106,10 @@ export type ScannerDeviceDto = {
     Id: string;
     /** Transpiled from string */
     Name: string;
+    /** Transpiled from string? */
+    Driver?: string;
+    /** Transpiled from string? */
+    Connection?: string;
 }
 
 /** Transpiled from Yass.Core.Hub.ExportFormat */
