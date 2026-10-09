@@ -688,3 +688,67 @@ test('the footer links out to GitHub and issues, and keeps the documentation in 
 	await expect(cat).toHaveAttribute('data-frame', '0');
 	await expect(cat).toHaveAttribute('data-frame', '1');
 });
+
+test('the keyboard: pages, edits, full screen, shortcuts and Escape layer by layer', async ({
+	page,
+	isMobile
+}) => {
+	test.skip(isMobile, 'a phone has no keyboard');
+	await scanToReview(page);
+	const stage = (n: number) => page.getByRole('img', { name: `Page ${n}`, exact: true });
+	await expect(stage(1)).toBeVisible();
+
+	// Arrows step through the pages on the stage.
+	await page.keyboard.press('ArrowRight');
+	await expect(stage(2)).toBeVisible();
+	await page.keyboard.press('ArrowLeft');
+	await expect(stage(1)).toBeVisible();
+
+	// R rotates the page in view: it comes back under a new hash.
+	const before = await stage(1).getAttribute('src');
+	await page.keyboard.press('r');
+	await expect.poll(() => stage(1).getAttribute('src')).not.toBe(before);
+
+	// Enter opens it full screen, where the arrows step on; Escape closes only the preview.
+	await page.keyboard.press('Enter');
+	await expect(page.getByTestId('preview')).toBeVisible();
+	await page.keyboard.press('ArrowRight');
+	await expect(page.getByTestId('preview-counter')).toContainText('2 /');
+	// A dialog opened over it takes the first Escape for itself.
+	await page.getByTestId('preview-adjust').click();
+	await expect(page.getByTestId('adjust-modal')).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(page.getByTestId('adjust-modal')).toBeHidden();
+	await expect(page.getByTestId('preview')).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(page.getByTestId('preview')).toBeHidden();
+	await expect(page).toHaveURL(/\/session\//);
+
+	// ? lists the shortcuts; Escape closes the list, not the screen.
+	await page.keyboard.press('?');
+	await expect(page.getByTestId('keyboard-help')).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(page.getByTestId('keyboard-help')).toBeHidden();
+	await expect(page).toHaveURL(/\/session\//);
+
+	// Typing in the name field is typing: no shortcut fires, Escape only leaves the field.
+	await page.getByTestId('name-input').click();
+	await page.keyboard.type('ra');
+	await expect(page.getByTestId('keyboard-help')).toHaveCount(0);
+	await page.keyboard.press('Escape');
+	await expect(page).toHaveURL(/\/session\//);
+
+	// With nothing open, Escape goes back home; from Settings and the docs too.
+	await page.keyboard.press('Escape');
+	await expect(page.getByTestId('scan-button')).toBeVisible();
+	await page.getByRole('button', { name: /Change settings/ }).click();
+	await expect(page).toHaveURL(/\/settings$/);
+	// Escape belongs to the sheet once it is there; the URL changes a beat before it mounts.
+	await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(page).toHaveURL(/\/$/);
+	await page.getByTestId('footer-docs').click();
+	await expect(page.getByTestId('docs-cat')).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(page).toHaveURL(/\/$/);
+});

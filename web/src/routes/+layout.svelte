@@ -4,12 +4,28 @@
 	import { onNavigate } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { screenTransition } from '$lib/motion';
+	import { escape, typing } from '$lib/keys.svelte';
+	import KeyboardHelp from '$lib/components/KeyboardHelp.svelte';
 	import { getHub } from '$lib/hub/hub';
 	import AppHeader from '$lib/components/AppHeader.svelte';
 	import AppFooter from '$lib/components/AppFooter.svelte';
 	import Toast from '$lib/components/Toast.svelte';
 
 	let { children } = $props();
+
+	let shortcuts = $state(false);
+
+	/**
+	 * The one Escape for the whole app: out of a text field first, then the newest open layer
+	 * (see $lib/keys). `?` shows the shortcuts anywhere but in a field.
+	 */
+	function keydown(e: KeyboardEvent) {
+		if (escape(e)) e.preventDefault();
+		else if (e.key === '?' && !typing(e)) {
+			shortcuts = !shortcuts;
+			e.preventDefault();
+		}
+	}
 
 	onMount(() => {
 		const hub = getHub();
@@ -58,7 +74,13 @@
 <div class="flex min-h-dvh flex-col bg-app text-ink *:w-full">
 	<AppHeader />
 	{@render children()}
-	<AppFooter />
+	<AppFooter onshortcuts={() => (shortcuts = true)} />
 </div>
 
 <Toast />
+
+<svelte:window onkeydown={keydown} />
+
+{#if shortcuts}
+	<KeyboardHelp onclose={() => (shortcuts = false)} />
+{/if}

@@ -11,6 +11,7 @@ import TemplateEditor from '$lib/components/TemplateEditor.svelte';
 import AdjustModal from '$lib/components/AdjustModal.svelte';
 import StraightenModal from '$lib/components/StraightenModal.svelte';
 import Preview from '$lib/components/Preview.svelte';
+import { layer } from '$lib/keys.svelte';
 import CropModal from '$lib/components/CropModal.svelte';
 import PresetPills from '$lib/components/PresetPills.svelte';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
@@ -799,14 +800,21 @@ describe('Preview edit bar', () => {
 	it('leaves the keys to a dialog open over it', async () => {
 		const onclose = vi.fn();
 		const onnavigate = vi.fn();
-		const { rerender } = render(Preview, { ...base, onclose, onnavigate, paused: true });
+		render(Preview, { ...base, onclose, onnavigate });
 
-		await fireEvent.keyDown(window, { key: 'Escape' });
+		// Something opens over the preview, as a dialog does: it is the newest layer.
+		const closeDialog = vi.fn();
+		const dialog = layer(closeDialog);
 		await fireEvent.keyDown(window, { key: 'ArrowLeft' });
+		await fireEvent.keyDown(window, { key: 'Escape' });
+		expect(closeDialog).toHaveBeenCalledOnce();
 		expect(onclose).not.toHaveBeenCalled();
 		expect(onnavigate).not.toHaveBeenCalled();
 
-		await rerender({ ...base, onclose, onnavigate, paused: false });
+		// With it gone, the keys are the preview's again.
+		dialog.pop();
+		await fireEvent.keyDown(window, { key: 'ArrowLeft' });
+		expect(onnavigate).toHaveBeenCalled();
 		await fireEvent.keyDown(window, { key: 'Escape' });
 		expect(onclose).toHaveBeenCalled();
 	});
