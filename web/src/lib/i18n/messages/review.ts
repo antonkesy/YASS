@@ -443,5 +443,15 @@ export const review = {
 	},
 	adjust: { en: 'Adjust', de: 'Anpassen', fr: 'Ajuster', es: 'Ajustar' },
 	crop: { en: 'Crop', de: 'Zuschneiden', fr: 'Recadrer', es: 'Recortar' },
-	straighten: { en: 'Straighten', de: 'Ausrichten', fr: 'Redresser', es: 'Enderezar' }
+	straighten: { en: 'Straighten', de: 'Ausrichten', fr: 'Redresser', es: 'Enderezar' },
+	scanned: { en: 'Scanned', de: 'Gescannt', fr: 'Numérisé', es: 'Escaneado' },
+	scanner: { en: 'Scanner', de: 'Scanner', fr: 'Scanner', es: 'Escáner' },
+	scanSettings: { en: 'Settings', de: 'Einstellungen', fr: 'Réglages', es: 'Ajustes' },
+	pdfProperties: {
+		en: 'PDF properties',
+		de: 'PDF-Eigenschaften',
+		fr: 'Propriétés PDF',
+		es: 'Propiedades del PDF'
+	},
+	pdfNone: { en: 'None', de: 'Keine', fr: 'Aucune', es: 'Ninguna' }
 } satisfies Area;

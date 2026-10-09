@@ -16,7 +16,14 @@
 	import PastScansPanel from '$lib/components/PastScansPanel.svelte';
 	import { settings } from '$lib/settings';
 	import { saveToBrowser } from '$lib/review/download';
-	import { documentMetadata, exportPrefs, historyPrefs, scannerPrefs } from '$lib/presets';
+	import {
+		documentMeta,
+		documentMetadata,
+		exportPrefs,
+		historyPrefs,
+		pruneDocumentMeta,
+		scannerPrefs
+	} from '$lib/presets';
 	import { pickable, remember, scannerName } from '$lib/scanners';
 	import { screenTransition } from '$lib/motion';
 	import { expiredSessions } from '$lib/sessions/retention';
@@ -73,6 +80,18 @@
 	});
 
 	const recent = $derived(sortedSessions($sessions));
+
+	/**
+	 * A scan's own PDF properties go with the scan: once the list is in (it arrives whole on
+	 * connect), the properties of scans that are gone are dropped.
+	 */
+	$effect(() => {
+		if ($connection !== 'connected' || $sessions.size === 0) return;
+		const existing = new Set($sessions.keys());
+		const all = untrack(() => $documentMeta);
+		if (Object.keys(all).some((id) => !existing.has(id)))
+			documentMeta.set(pruneDocumentMeta(all, existing));
+	});
 
 	// Taken once on mount: coming back from a session slides in from the left and
 	// highlights that scan; a cold load just fades.

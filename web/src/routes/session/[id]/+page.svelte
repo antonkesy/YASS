@@ -13,9 +13,13 @@
 	import {
 		activePageCount,
 		documentName,
+		colorLabel,
+		exportFormatLabels,
 		formatBytes,
 		formatTime,
-		sessionStateLabel
+		pageSizeLabel,
+		sessionStateLabel,
+		sourceLabel
 	} from '$lib/format';
 	import {
 		addCleanupEdit,
@@ -55,11 +59,26 @@
 		saveToDisk,
 		type SaveTarget
 	} from '$lib/review/download';
-	import { documentMetadata, exportPrefs, reviewPrefs } from '$lib/presets';
+	import {
+		DOCUMENT_META_FIELDS,
+		documentMeta,
+		documentMetadata,
+		exportPrefs,
+		metaFor,
+		reviewPrefs,
+		scannerPrefs,
+		setDocumentMeta,
+		type DocumentMeta
+	} from '$lib/presets';
+	import { scannerName } from '$lib/scanners';
+	import type { MessageKey } from '$lib/i18n/index.svelte';
+	import { ExportFormat } from '$lib/hub/generated/Yass.Core.Hub';
+	import Segmented from '$lib/components/Segmented.svelte';
 
 	const client = getHub();
 	const sessions = client.sessions;
 	const connection = client.connection;
+	const scannerStatus = client.scanner;
 
 	/** The server's output folder, or "" when it has none; null until asked. */
 	let serverFolder = $state<string | null>(null);
@@ -148,6 +167,46 @@
 				: t('review.notEditable')
 	);
 	const shown = $derived(session?.Pages[current] ?? null);
+
+	/** What this scan saves with: Settings' export preferences, its own PDF properties on top. */
+	const docPrefs = $derived(metaFor($exportPrefs, $documentMeta, id));
+	let propertiesOpen = $state(false);
+	const META_LABELS: Record<keyof DocumentMeta, MessageKey> = {
+		author: 'settings.author',
+		subject: 'settings.subject',
+		keywords: 'settings.keywords'
+	};
+	/** The properties as one line, for the closed disclosure. */
+	const metaSummary = $derived(
+		DOCUMENT_META_FIELDS.map((f) => docPrefs[f].trim())
+			.filter(Boolean)
+			.join(' · ')
+	);
+	const formatOptions = $derived(
+		[ExportFormat.Pdf, ExportFormat.Jpg, ExportFormat.Png].map((f) => ({
+			value: String(f),
+			label: exportFormatLabels[f]
+		}))
+	);
+	/** The scanner the scan ran on, by the name this browser gives it. */
+	const scannerLabel = $derived(
+		session?.OptionsUsed.Device
+			? scannerName($scannerPrefs, session.OptionsUsed.Device)
+			: ($scannerStatus?.DeviceName ?? '')
+	);
+	/** The settings the scan ran with, as one line. */
+	const settingsLine = $derived.by(() => {
+		const o = session?.OptionsUsed;
+		if (!o) return '';
+		return [
+			sourceLabel(o.Source),
+			o.Dpi ? t('home.dpi', { n: o.Dpi }) : '',
+			colorLabel(o.Color),
+			pageSizeLabel(o.PageSize)
+		]
+			.filter(Boolean)
+			.join(' · ');
+	});
 	/** The page on the stage has an image up — maybe of an older render of it, during an edit. */
 	const stageReady = $derived(!!shown && stageLoaded?.index === shown.Index);
 	/**
@@ -293,7 +352,7 @@
 			const result = await client.hub.export(id, {
 				Format: $exportPrefs.format,
 				Name: exportName,
-				Metadata: documentMetadata($exportPrefs),
+				Metadata: documentMetadata(docPrefs),
 				ToServer: false
 			});
 			const count = target
@@ -319,7 +378,7 @@
 			const result = await client.hub.export(id, {
 				Format: $exportPrefs.format,
 				Name: exportName,
-				Metadata: documentMetadata($exportPrefs),
+				Metadata: documentMetadata(docPrefs),
 				ToServer: true
 			});
 			const saved = result.Documents.map((d) => d.SavedTo).filter((p): p is string => !!p);
@@ -565,12 +624,18 @@
 	</div>
 {/snippet}
 
-{#snippet fact(label: string, value: string)}
+{#snippet fact(label: string, value: string, wrap = false)}
 	<!-- A row rather than a tile: two words and a figure do not need a card each, and a
-	     250px column has no room for the pair of them side by side. -->
+	     250px column has no room for the pair of them side by side. A long value may wrap
+	     onto a second line rather than be cut off. -->
 	<div class="flex items-baseline justify-between gap-2 py-0.5">
 		<span class="flex-none text-xs text-ink-muted">{label}</span>
-		<span class="truncate text-[13px] font-bold tracking-[-0.01em] tabular-nums">{value}</span>
+		<span
+			class="min-w-0 text-[13px] font-bold tracking-[-0.01em] tabular-nums {wrap
+				? 'text-right'
+				: 'truncate'}"
+			title={value}>{value}</span
+		>
 	</div>
 {/snippet}
 
@@ -820,10 +885,82 @@
 					onserver={saveToServer}
 				/>
 
+				<!-- What the file will be, right where it is saved; Settings → Export holds the same choice. -->
+				<Segmented
+					name="review-format"
+					label={t('settings.fileFormat')}
+					hint={$exportPrefs.format === ExportFormat.Pdf
+						? t('settings.perDocument')
+						: t('settings.perPage')}
+					options={formatOptions}
+					value={String($exportPrefs.format)}
+					onchange={(v) => exportPrefs.set({ ...$exportPrefs, format: Number(v) as ExportFormat })}
+				/>
+
+				{#if $exportPrefs.format === ExportFormat.Pdf}
+					<!--
+						This scan's own PDF properties, starting from the ones Settings gives every scan.
+						Shut by default: a line saying what is set is all most saves need to see.
+					-->
+					<div class="flex flex-col gap-2" data-testid="pdf-properties">
+						<button
+							type="button"
+							class="flex items-center gap-2 rounded-[10px] text-left"
+							aria-expanded={propertiesOpen}
+							onclick={() => (propertiesOpen = !propertiesOpen)}
+							data-testid="pdf-properties-toggle"
+						>
+							<span class="text-xs font-bold tracking-[0.06em] text-ink-muted uppercase"
+								>{t('review.pdfProperties')}</span
+							>
+							<span class="ml-auto min-w-0 truncate text-[12px] text-ink-muted" title={metaSummary}
+								>{metaSummary || t('review.pdfNone')}</span
+							>
+							<span
+								class="flex-none text-ink-muted transition-transform {propertiesOpen
+									? 'rotate-90'
+									: ''}"
+								aria-hidden="true"><Icon name="chevronRight" /></span
+							>
+						</button>
+						{#if propertiesOpen}
+							{#each DOCUMENT_META_FIELDS as field (field)}
+								<label class="flex animate-fade-in flex-col gap-1">
+									<span class="text-xs text-ink-muted">{t(META_LABELS[field])}</span>
+									<input
+										class="field h-9 px-2.5 text-[13px]"
+										type="text"
+										autocomplete="off"
+										value={docPrefs[field]}
+										oninput={(e) =>
+											documentMeta.set(
+												setDocumentMeta(
+													$documentMeta,
+													id,
+													$exportPrefs,
+													field,
+													e.currentTarget.value
+												)
+											)}
+										data-testid="pdf-{field}"
+									/>
+								</label>
+							{/each}
+						{/if}
+					</div>
+				{/if}
+
 				<!-- The facts about the scan, with the page count up on the heading beside them. -->
 				<div class="flex flex-col gap-1" data-testid="scan-section">
 					{@render heading(t('review.headingScan'), pageSummary, 'page-count')}
 					<!-- The scanned pages on disk, not an estimate of the PDF the mockup guesses at. -->
+					{@render fact(t('review.scanned'), formatTime(session.CreatedAt))}
+					{#if scannerLabel}
+						{@render fact(t('review.scanner'), scannerLabel)}
+					{/if}
+					{#if settingsLine}
+						{@render fact(t('review.scanSettings'), settingsLine, true)}
+					{/if}
 					{@render fact(t('review.size'), formatBytes(session.SizeBytes))}
 				</div>
 

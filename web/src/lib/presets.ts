@@ -120,6 +120,49 @@ export function documentMetadata(prefs: ExportPrefs): DocumentMetadataDto | unde
 	};
 }
 
+/** The PDF properties one scan can set for itself, over the ones Settings gives every scan. */
+export type DocumentMeta = Partial<Pick<ExportPrefs, 'author' | 'subject' | 'keywords'>>;
+export const DOCUMENT_META_FIELDS = ['author', 'subject', 'keywords'] as const;
+
+export const DOCUMENT_META_KEY = 'yass.documentMeta';
+
+/** The export preferences one scan saves with: Settings', with its own PDF properties on top. */
+export function metaFor(
+	prefs: ExportPrefs,
+	all: Readonly<Record<string, DocumentMeta>>,
+	sessionId: string
+): ExportPrefs {
+	return { ...prefs, ...all[sessionId] };
+}
+
+/**
+ * One scan's PDF property set to `value`. A value equal to what Settings gives every scan is
+ * no override at all, and a scan left with none is dropped, so the store only holds real ones.
+ */
+export function setDocumentMeta(
+	all: Readonly<Record<string, DocumentMeta>>,
+	sessionId: string,
+	prefs: ExportPrefs,
+	field: keyof DocumentMeta,
+	value: string
+): Record<string, DocumentMeta> {
+	const own: DocumentMeta = { ...all[sessionId] };
+	if (value === prefs[field]) delete own[field];
+	else own[field] = value;
+	const next = { ...all };
+	if (Object.keys(own).length === 0) delete next[sessionId];
+	else next[sessionId] = own;
+	return next;
+}
+
+/** Drops the properties of scans that no longer exist, so the store does not grow forever. */
+export function pruneDocumentMeta(
+	all: Readonly<Record<string, DocumentMeta>>,
+	existing: ReadonlySet<string>
+): Record<string, DocumentMeta> {
+	return Object.fromEntries(Object.entries(all).filter(([id]) => existing.has(id)));
+}
+
 /** Review-screen preferences, next to the export ones so they share the same storage helper. */
 export type ReviewPrefs = {
 	/**
@@ -254,6 +297,9 @@ export const PICKED_KEY = 'yass.pickedPreset';
 export const createPickedPreset = (storage: Storage | undefined) =>
 	persisted<PickedPreset>(storage, PICKED_KEY, { id: null });
 
+export const createDocumentMeta = (storage: Storage | undefined) =>
+	persisted<Record<string, DocumentMeta>>(storage, DOCUMENT_META_KEY, {});
+
 export const createHistoryPrefs = (storage: Storage | undefined) =>
 	persisted<HistoryPrefs>(storage, HISTORY_KEY, defaultHistoryPrefs);
 
@@ -292,4 +338,5 @@ export const pickedPreset = createPickedPreset(storage);
 export const exportPrefs = createExportPrefs(storage);
 export const reviewPrefs = createReviewPrefs(storage);
 export const historyPrefs = createHistoryPrefs(storage);
+export const documentMeta = createDocumentMeta(storage);
 export const scannerPrefs = createScannerPrefs(storage);
