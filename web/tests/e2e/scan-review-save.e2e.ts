@@ -757,43 +757,74 @@ test('the keyboard: pages, edits, full screen, shortcuts and Escape layer by lay
 	await expect(page).toHaveURL(/\/$/);
 });
 
-test('switching presets on the home screen does not move the Scan button', async ({ page }) => {
+test('switching presets on the home screen moves the Scan button smoothly, never in a jump', async ({
+	page
+}) => {
 	await page.goto('/');
 	const scan = page.getByTestId('scan-button');
 	await expect(scan).toBeEnabled();
 	const stage = page.getByTestId('scan-stage');
-	// Measured once things have stopped gliding: the layout must not move, but on its way it may.
-	const top = async () => {
-		await page.waitForFunction(() =>
+	const settled = () =>
+		page.waitForFunction(() =>
 			document
 				.getAnimations()
 				.every(
 					(a) => a.playState !== 'running' || a.effect?.getComputedTiming().iterations === Infinity
 				)
 		);
-		return Math.round((await scan.boundingBox())!.y);
-	};
 
 	// The presets carry different settings — Receipt adds brightness and contrast chips,
-	// Photo drops the feeder — and switching between them used to rewrap the chips.
+	// Photo drops the feeder — so the chips can wrap to more or fewer rows. The area follows
+	// them, and the Scan button under it may move, but only a little each frame.
 	await stage.getByRole('button', { name: 'Document' }).click();
 	await expect(stage.getByRole('button', { name: 'Document' })).toHaveAttribute(
 		'aria-pressed',
 		'true'
 	);
-	const start = await top();
+	await settled();
 	for (const name of ['Receipt', 'Photo', 'Double-sided', 'Document']) {
+		// Follow the button's top every frame from just before the click until it has settled.
+		await page.evaluate(() => {
+			const el = document.querySelector('[data-testid="scan-button"]')!;
+			const ys: number[] = [];
+			(window as unknown as { ys: number[] }).ys = ys;
+			const end = performance.now() + 700;
+			const tick = () => {
+				ys.push(el.getBoundingClientRect().top);
+				if (performance.now() < end) requestAnimationFrame(tick);
+			};
+			tick();
+		});
 		await stage.getByRole('button', { name }).click();
 		await expect(stage.getByRole('button', { name })).toHaveAttribute('aria-pressed', 'true');
-		expect(await top(), `after ${name}`).toBe(start);
+		await page.waitForTimeout(750);
+		const ys = await page.evaluate(() => (window as unknown as { ys: number[] }).ys);
+		const total = Math.abs(ys[ys.length - 1] - ys[0]);
+		const steps = ys.slice(1).map((y, i) => Math.abs(y - ys[i]));
+		// Straight there, never past it and back...
+		expect(
+			steps.reduce((a, b) => a + b, 0),
+			`after ${name}`
+		).toBeLessThanOrEqual(total + 1);
+		// ...and over several frames: a jump would cover the whole way in one.
+		if (total > 4) expect(Math.max(...steps), `after ${name}`).toBeLessThan(total - 1);
 	}
 
-	// Off every preset, the Save as preset pill appears in room already kept for it.
+	// The chips sit right on top of the Scan button: no gap is left for rows that are not there.
+	await settled();
+	const area = (await page.getByTestId('settings-chips-area').boundingBox())!;
+	const row = (await page.getByTestId('settings-chips').boundingBox())!;
+	expect(Math.abs(area.height - row.height)).toBeLessThanOrEqual(1);
+
+	// Off every preset, the Save as preset pill appears in room already kept for it: the same
+	// chips, one value changed, leave the Scan button where it was.
+	const start = Math.round((await scan.boundingBox())!.y);
 	await page.goto('/settings');
 	await page.getByTestId('seg-dpi').getByRole('radio', { name: '150', exact: true }).check();
 	await page.goto('/');
 	await expect(page.getByTestId('preset-save-current')).toBeVisible();
-	expect(await top()).toBe(start);
+	await settled();
+	expect(Math.round((await scan.boundingBox())!.y)).toBe(start);
 });
 
 test('an arrow with no page to go to is not shown, and the page does not move', async ({
