@@ -1,6 +1,8 @@
 using MessagePack;
 using MessagePack.Resolvers;
+using Microsoft.AspNetCore.SignalR;
 using Yass.Core.Config;
+using Yass.Server.Api;
 using Yass.Server.Config;
 using Yass.Server.Export;
 using Yass.Server.Hosting;
@@ -55,6 +57,7 @@ builder.Services.AddSingleton<EditService>();
 builder.Services.AddSingleton<AutoCropService>();
 builder.Services.AddSingleton<DownloadTokens>();
 builder.Services.AddSingleton<ExportService>();
+builder.Services.AddSingleton<YassApi>();
 builder.Services.AddSingleton<SessionRetentionService>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<SessionRetentionService>());
 
@@ -62,7 +65,11 @@ builder.Services
     // On: SignalR prefixes every hub error with "An unexpected error occurred invoking
     // 'X' on the server. <Type>: " regardless, so turning this off would lose the detail
     // without cleaning up the message. The client strips the prefix (see hubError).
-    .AddSignalR(o => o.EnableDetailedErrors = true)
+    .AddSignalR(o =>
+    {
+        o.EnableDetailedErrors = true;
+        o.AddFilter<YassErrorFilter>();
+    })
     .AddMessagePackProtocol(o => o.SerializerOptions = MessagePackSerializerOptions.Standard
         .WithResolver(ContractlessStandardResolver.Instance)
         .WithSecurity(MessagePackSecurity.UntrustedData));
