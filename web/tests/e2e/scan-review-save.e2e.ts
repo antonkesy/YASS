@@ -974,7 +974,7 @@ test('the app follows the system into dark mode, and Settings can pin either', a
 	// Nothing pinned: the system decides.
 	await page.emulateMedia({ colorScheme: 'dark' });
 	await page.goto('/');
-	expect(await scheme()).toEqual({ theme: null, page: 'rgb(0, 0, 0)' });
+	expect(await scheme()).toEqual({ theme: null, page: 'rgb(9, 9, 11)' });
 	await page.emulateMedia({ colorScheme: 'light' });
 	expect((await scheme()).page).toBe('rgb(245, 245, 247)');
 
@@ -983,7 +983,7 @@ test('the app follows the system into dark mode, and Settings can pin either', a
 	const section = page.getByTestId('appearance-section');
 	await section.getByRole('radio', { name: 'Dark' }).check();
 	await page.reload();
-	expect(await scheme()).toMatchObject({ theme: 'dark', page: 'rgb(0, 0, 0)' });
+	expect(await scheme()).toMatchObject({ theme: 'dark', page: 'rgb(9, 9, 11)' });
 	await expect(section.getByRole('radio', { name: 'Dark' })).toBeChecked();
 
 	// Back to Automatic: the pin is gone and the system's light applies again.
@@ -996,7 +996,7 @@ test('the app follows the system into dark mode, and Settings can pin either', a
 	const toggle = page.getByTestId('header-theme');
 	await expect(toggle).toHaveAccessibleName('Switch to dark');
 	await toggle.click();
-	expect(await scheme()).toMatchObject({ theme: 'dark', page: 'rgb(0, 0, 0)' });
+	expect(await scheme()).toMatchObject({ theme: 'dark', page: 'rgb(9, 9, 11)' });
 	await expect(toggle).toHaveAccessibleName('Switch to light');
 	await page.goto('/settings');
 	await expect(section.getByRole('radio', { name: 'Dark' })).toBeChecked();
