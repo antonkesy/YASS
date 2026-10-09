@@ -6,37 +6,63 @@
 	/**
 	 * The documentation. All of it. Two frames of a cat laughing at you, swapped a few times a
 	 * second while the whole cat shakes, and held still for anyone who asked for less motion.
+	 * Each frame is its lines of text, drawn as an SVG picture so it scales with the screen.
 	 */
-	const frames = [
-		String.raw`
-  HA HA!   /\_______/\
-          /  >     <  \
-         |  '       '  |
-         |    .---.    |
-         |    \___/    |
-          \           /
-           '-._____.-'___________
-             |     |   ________ )==-
-             |     |  (____)
-             |_____|          <- you
-              |   |
-             (_) (_)`,
-		String.raw`
-     HA!   /\_______/\    HA HA!
-          /  >     <  \
-         |  '       '  |
-         |   .-----.   |
-         |   \_____/   |
-          \           /
-           '-._____.-'___________
-             |     |   ________ )====-
-             |     |  (____)
-             |_____|          <- you
-              |   |
-             (_) (_)`
+	const frames: string[][] = [
+		[
+			'            /\\                    /\\',
+			'           /  \\__________________/  \\            HA!',
+			'   HA!    /                          \\',
+			'         |     ___            ___     |      HA!',
+			'         |    /   \\          /   \\    |',
+			"  =======(      ''            ''      )=======",
+			'  =======(            .----.          )=======',
+			'         |            \\(__)/          |',
+			"          \\            '--'          /",
+			"           '-.____________________.-'",
+			'              /                  \\',
+			'             /   .------------.   \\______________________',
+			'            |   /              \\   ________________________)======-',
+			'            |  |                |  |      (__)(__)(__)',
+			'            |   \\              /   |',
+			"             \\   '------------'   /                      <-- you",
+			"              '.________________.'",
+			'                (_____)    (_____)'
+		],
+		[
+			'            /\\                    /\\        HA!  HA!',
+			'           /  \\__________________/  \\',
+			' HA!      /                          \\',
+			'         |     ___            ___     |',
+			'         |    /   \\          /   \\    |          HA!',
+			"  =======(      ''            ''      )=======",
+			'  =======(          .--------.        )=======',
+			'         |          \\  (__)  /        |',
+			"          \\          '------'        /",
+			"           '-.____________________.-'",
+			'              /                  \\',
+			'             /   .------------.   \\______________________',
+			'            |   /              \\   ________________________)========-',
+			'            |  |                |  |      (__)(__)(__)',
+			'            |   \\              /   |',
+			"             \\   '------------'   /                      <-- you",
+			"              '.________________.'",
+			'                (_____)    (_____)'
+		]
 	];
 
+	/** Every character cell is this wide and tall in the picture's own units. */
+	const CELL_W = 6;
+	const CELL_H = 11;
+	const cols = Math.max(...frames.flat().map((l) => l.length)) + 6;
+	const rows = Math.max(...frames.map((f) => f.length));
+
 	let frame = $state(0);
+
+	/** The frame on screen, with the pointer's caption in the current language. */
+	const lines = $derived(
+		frames[frame].map((l) => l.replace('<-- you', `<-- ${t('common.docsYou')}`))
+	);
 
 	// Escape goes back home, like the header's back link.
 	useLayer(() => void goto(resolve('/')));
@@ -66,20 +92,46 @@
 		></span>
 	</p>
 
-	<!-- A fixed width in characters, so swapping frames never moves the page around. -->
-	<pre
-		class="cat w-[40ch] max-w-full font-mono text-[11px] leading-[1.25] text-ink-2 sm:text-[14px]"
+	<!--
+		A picture, not a block of text: the SVG scales to the screen as a whole, so the art keeps
+		its shape on a phone. Each line is stretched to exactly its number of character cells
+		(textLength), so the columns line up whatever monospace font the device has.
+	-->
+	<svg
+		class="cat h-auto w-full max-w-[760px] text-ink-2"
+		viewBox="0 0 {cols * CELL_W} {rows * CELL_H + 4}"
 		role="img"
 		aria-label={t('common.docsCat')}
 		data-testid="docs-cat"
-		data-frame={frame}>{frames[frame].replace('<- you', `<- ${t('common.docsYou')}`)}</pre>
+		data-frame={frame}
+	>
+		{#each lines as line, i (i)}
+			{#if line.trim()}
+				<text
+					x="0"
+					y={(i + 1) * CELL_H}
+					font-size="10"
+					font-weight="700"
+					font-family="ui-monospace, Menlo, Consolas, monospace"
+					fill="currentColor"
+					textLength={line.length * CELL_W}
+					lengthAdjust="spacingAndGlyphs">{line}</text
+				>
+			{/if}
+		{/each}
+	</svg>
 </main>
 
 <style>
 	/* Shaking with laughter: a little hop and a wobble, from the feet. */
 	.cat {
-		transform-origin: 40% 95%;
+		transform-origin: 45% 95%;
 		animation: cackle 0.38s ease-in-out infinite;
+	}
+
+	/* Leading spaces are part of the picture. */
+	.cat text {
+		white-space: pre;
 	}
 
 	@keyframes cackle {
