@@ -142,14 +142,16 @@ The window talks to the scanning code inside the same process, and a saved
 document is moved on disk to the file you pick, never passed through the page.
 The only network traffic is to an eSCL scanner, if you use one.
 
-- **Download:** every [GitHub release](https://github.com/antonkesy/YASS/releases)
-  carries self-contained zips for `linux-x64`, `win-x64` and `osx-arm64`, with a
-  `SHA256SUMS`. Unzip and run `Yass.Desktop`
-  (`Yass.Desktop.exe` on Windows). It needs:
-  - **Linux:** WebKitGTK 4.1 (`webkit2gtk-4.1` / `libwebkit2gtk-4.1-0`).
-  - **Windows:** the WebView2 runtime, which ships with Windows 10 and 11.
-  - **macOS:** the build is unsigned, so clear the quarantine flag once with
-    `xattr -dr com.apple.quarantine yass-desktop-*`.
+- **Download** from the [GitHub releases](https://github.com/antonkesy/YASS/releases):
+  - **Linux:** `YASS-<version>-x86_64.AppImage`. Make it executable and run it. It uses the
+    system's WebKitGTK 4.1 (`webkit2gtk-4.1` / `libwebkit2gtk-4.1-0`).
+  - **Windows:** `YASS-<version>-windows-x64-setup.exe`. It installs for your user only, with no
+    admin prompt, and adds a Start menu entry and an uninstaller. It needs the WebView2 runtime,
+    which Windows 10 and 11 already have. SmartScreen warns once, since it is not signed.
+  - **macOS (Apple Silicon):** `YASS-<version>-macos-arm64.zip` holds `YASS.app`; drag it to
+    Applications. It is not notarised, so allow it once under System Settings → Privacy &
+    Security, or run `xattr -dr com.apple.quarantine /Applications/YASS.app`.
+  - Portable zips for Linux and Windows, and a `SHA256SUMS`, are attached too.
 - **Nix:** `nix run github:OWNER/yass#desktop -- --fake`. Off NixOS, a
   Nix-built GUI app needs your GPU driver; `nix develop` sets that up for
   development.

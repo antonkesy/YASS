@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=YASS
+GenericName=Document Scanner
+Comment=Scan, review and save documents
+Exec=Yass.Desktop %U
+Icon=yass
+Terminal=false
+Categories=Graphics;Scanning;Office;
+Keywords=scan;scanner;pdf;document;
+StartupWMClass=Yass.Desktop
