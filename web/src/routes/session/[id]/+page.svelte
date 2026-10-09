@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { autoAnimate } from '$lib/autoAnimate';
+	import { slide } from 'svelte/transition';
+	import { ms } from '$lib/motion';
 	import { untrack } from 'svelte';
 	import { page as route } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -861,6 +864,7 @@
 			-->
 			<aside
 				class="order-3 flex w-full min-w-0 basis-full flex-col gap-3.5 rounded-[24px] bg-surface p-[22px] shadow-panel lg:min-h-0 lg:w-auto lg:basis-(--review-aside-w) lg:overflow-y-auto"
+				{@attach autoAnimate}
 			>
 				{@render heading(t('review.headingName'))}
 
@@ -926,28 +930,34 @@
 								>
 							</button>
 							{#if propertiesOpen}
-								{#each DOCUMENT_META_FIELDS as field (field)}
-									<label class="flex animate-fade-in flex-col gap-1">
-										<span class="text-xs text-ink-muted">{t(META_LABELS[field])}</span>
-										<input
-											class="field h-9 px-2.5 text-[13px]"
-											type="text"
-											autocomplete="off"
-											value={docPrefs[field]}
-											oninput={(e) =>
-												documentMeta.set(
-													setDocumentMeta(
-														$documentMeta,
-														id,
-														$exportPrefs,
-														field,
-														e.currentTarget.value
-													)
-												)}
-											data-testid="pdf-{field}"
-										/>
-									</label>
-								{/each}
+								<div
+									class="flex flex-col gap-2"
+									transition:slide={{ duration: ms(220) }}
+									data-testid="pdf-fields"
+								>
+									{#each DOCUMENT_META_FIELDS as field (field)}
+										<label class="flex flex-col gap-1">
+											<span class="text-xs text-ink-muted">{t(META_LABELS[field])}</span>
+											<input
+												class="field h-9 px-2.5 text-[13px]"
+												type="text"
+												autocomplete="off"
+												value={docPrefs[field]}
+												oninput={(e) =>
+													documentMeta.set(
+														setDocumentMeta(
+															$documentMeta,
+															id,
+															$exportPrefs,
+															field,
+															e.currentTarget.value
+														)
+													)}
+												data-testid="pdf-{field}"
+											/>
+										</label>
+									{/each}
+								</div>
 							{/if}
 						</div>
 					{/if}

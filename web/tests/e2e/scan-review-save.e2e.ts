@@ -762,7 +762,17 @@ test('switching presets on the home screen does not move the Scan button', async
 	const scan = page.getByTestId('scan-button');
 	await expect(scan).toBeEnabled();
 	const stage = page.getByTestId('scan-stage');
-	const top = async () => Math.round((await scan.boundingBox())!.y);
+	// Measured once things have stopped gliding: the layout must not move, but on its way it may.
+	const top = async () => {
+		await page.waitForFunction(() =>
+			document
+				.getAnimations()
+				.every(
+					(a) => a.playState !== 'running' || a.effect?.getComputedTiming().iterations === Infinity
+				)
+		);
+		return Math.round((await scan.boundingBox())!.y);
+	};
 
 	// The presets carry different settings — Receipt adds brightness and contrast chips,
 	// Photo drops the feeder — and switching between them used to rewrap the chips.
