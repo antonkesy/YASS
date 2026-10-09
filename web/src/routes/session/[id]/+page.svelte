@@ -677,13 +677,18 @@
 				{/if}
 
 				{#if shown}
+					<!--
+						At either end of the scan the arrow that has nowhere to go is not shown, but its
+						place is kept (disabled:invisible), so the page stays centred between the two.
+					-->
 					<div class="flex w-full items-center justify-center gap-2 lg:min-h-0 lg:flex-1">
 						<button
 							type="button"
-							class="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-surface shadow-nav transition-[background-color,transform] duration-150 hover:scale-105 hover:bg-accent-wash disabled:pointer-events-none disabled:opacity-35"
+							class="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-surface shadow-nav transition-[background-color,transform] duration-150 hover:scale-105 hover:bg-accent-wash disabled:invisible"
 							onclick={() => step(-1)}
 							disabled={current === 0}
 							aria-label="Previous page"
+							data-testid="stage-prev"
 						>
 							<Icon name="chevronLeft" />
 						</button>
@@ -730,10 +735,11 @@
 
 						<button
 							type="button"
-							class="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-surface shadow-nav transition-[background-color,transform] duration-150 hover:scale-105 hover:bg-accent-wash disabled:pointer-events-none disabled:opacity-35"
+							class="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-surface shadow-nav transition-[background-color,transform] duration-150 hover:scale-105 hover:bg-accent-wash disabled:invisible"
 							onclick={() => step(1)}
 							disabled={current >= session.Pages.length - 1}
 							aria-label="Next page"
+							data-testid="stage-next"
 						>
 							<Icon name="chevronRight" />
 						</button>
