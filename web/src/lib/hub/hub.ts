@@ -2,13 +2,19 @@ import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 import { MessagePackHubProtocol } from '@microsoft/signalr-protocol-msgpack';
 import { browser } from '$app/environment';
 import { base } from '$app/paths';
-import { createBridgeConnection, desktopExternal } from './bridge';
+import {
+	createBridgeConnection,
+	createDesktopHost,
+	desktopExternal,
+	type DesktopHost
+} from './bridge';
 import { createHubClient, type YassHubClient } from './client';
 
 export * from './client';
 export * from './state';
 
 let instance: YassHubClient | null = null;
+let desktop: DesktopHost | null = null;
 
 /**
  * The app-wide hub client. Created on first use in the browser; `start()` is safe to call
@@ -20,7 +26,9 @@ export function getHub(): YassHubClient {
 		if (!browser) throw new Error('The hub is only available in the browser.');
 		const external = desktopExternal();
 		if (external) {
-			instance = createHubClient(createBridgeConnection(external));
+			const connection = createBridgeConnection(external);
+			desktop = createDesktopHost(connection);
+			instance = createHubClient(connection);
 			return instance;
 		}
 		const connection = new HubConnectionBuilder()
@@ -32,6 +40,12 @@ export function getHub(): YassHubClient {
 		instance = createHubClient(connection);
 	}
 	return instance;
+}
+
+/** The desktop app's own calls, or `null` in a browser. */
+export function getDesktop(): DesktopHost | null {
+	getHub();
+	return desktop;
 }
 
 /** URL of a page image; the hash makes it immutable, so the browser caches it forever. */

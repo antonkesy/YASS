@@ -5,7 +5,7 @@
 	import { toast } from '$lib/toast';
 	import { t } from '$lib/i18n/index.svelte';
 	import { cameFrom } from '$lib/navigation';
-	import { getHub, sortedSessions } from '$lib/hub/hub';
+	import { getDesktop, getHub, sortedSessions } from '$lib/hub/hub';
 	import { devicesStale } from '$lib/hub/state';
 	import type {
 		ScannerDeviceDto,
@@ -15,7 +15,12 @@
 	import ScanStage from '$lib/components/ScanStage.svelte';
 	import PastScansPanel from '$lib/components/PastScansPanel.svelte';
 	import { settings } from '$lib/settings';
-	import { saveToBrowser } from '$lib/review/download';
+	import {
+		exportBaseName,
+		fileExtensions,
+		saveNatively,
+		saveToBrowser
+	} from '$lib/review/download';
 	import {
 		documentMeta,
 		documentMetadata,
@@ -31,6 +36,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 
 	const client = getHub();
+	const desktop = getDesktop();
 	const scanner = client.scanner;
 	const connection = client.connection;
 	const sessions = client.sessions;
@@ -148,17 +154,26 @@
 	 */
 	async function downloadAll(ids: string[]) {
 		error = null;
-		working = true;
 		try {
+			// The desktop app asks once for a folder and saves every scan into it instead.
+			const folder = desktop ? await desktop.pickFolder() : null;
+			if (desktop && !folder) return;
+			working = true;
 			let files = 0;
 			for (const id of ids) {
-				files += saveToBrowser(
-					await client.hub.export(id, {
-						Format: $exportPrefs.format,
-						Metadata: documentMetadata($exportPrefs),
-						ToServer: false
-					})
-				);
+				const result = await client.hub.export(id, {
+					Format: $exportPrefs.format,
+					Metadata: documentMetadata($exportPrefs),
+					ToServer: false
+				});
+				if (desktop && folder) {
+					const session = $sessions.get(id);
+					const base = session ? exportBaseName(session, $exportPrefs.nameTemplate) : id;
+					const extension = fileExtensions[$exportPrefs.format];
+					files += (await saveNatively(result, desktop, { folder }, base, extension)).length;
+				} else {
+					files += saveToBrowser(result);
+				}
 			}
 			toast.show(files === 1 ? t('home.downloaded') : t('home.downloadedFiles', { n: files }));
 		} catch (e) {

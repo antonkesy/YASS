@@ -10,7 +10,7 @@
 	import { toast } from '$lib/toast';
 	import { t } from '$lib/i18n/index.svelte';
 	import { cameFrom } from '$lib/navigation';
-	import { getHub, imageUrl, sortedSessions } from '$lib/hub/hub';
+	import { getDesktop, getHub, imageUrl, sortedSessions } from '$lib/hub/hub';
 	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 	import type { CropBox, PageAdjust, PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
 	import {
@@ -58,6 +58,7 @@
 		exportBaseName,
 		fileExtensions,
 		savePicker,
+		saveNatively,
 		saveToBrowser,
 		saveToDisk,
 		type SaveTarget
@@ -79,6 +80,7 @@
 	import Segmented from '$lib/components/Segmented.svelte';
 
 	const client = getHub();
+	const desktop = getDesktop();
 	const sessions = client.sessions;
 	const connection = client.connection;
 	const scannerStatus = client.scanner;
@@ -337,6 +339,11 @@
 			: 'scan';
 		const extension = fileExtensions[$exportPrefs.format];
 
+		if (desktop) {
+			await saveAsOnDesktop(base, extension);
+			return;
+		}
+
 		if (picker) {
 			try {
 				// One scan is one document, so this is always a file rather than a folder.
@@ -369,6 +376,32 @@
 	}
 
 	/**
+	 * The desktop app's Save as…: the native dialog picks the file, and the host moves the
+	 * finished export there. The document never passes through the page.
+	 */
+	async function saveAsOnDesktop(base: string, extension: string) {
+		if (!desktop) return;
+		error = null;
+		try {
+			const file = await desktop.pickSavePath(base + extension);
+			if (!file) return;
+			exporting = true;
+			const result = await client.hub.export(id, {
+				Format: $exportPrefs.format,
+				Name: exportName,
+				Metadata: documentMetadata(docPrefs),
+				ToServer: false
+			});
+			const saved = await saveNatively(result, desktop, { file }, base, extension);
+			toast.show(t('review.savedFiles', { n: saved.length }));
+		} catch (e) {
+			error = hubError(e);
+		} finally {
+			exporting = false;
+		}
+	}
+
+	/**
 	 * Save to server: the same export, written by the server into its configured folder
 	 * instead of handed to the browser. The name is the one Save as… would suggest.
 	 */
@@ -384,11 +417,14 @@
 				ToServer: true
 			});
 			const saved = result.Documents.map((d) => d.SavedTo).filter((p): p is string => !!p);
-			const file = saved[0]?.split('/').pop() ?? '';
+			const file = saved[0]?.split(/[/\\]/).pop() ?? '';
+			// On the desktop the "server" is this machine, and its folder just a folder.
 			toast.show(
 				saved.length === 1
-					? t('review.savedToServerAs', { file })
-					: t('review.savedFilesToServer', { n: saved.length })
+					? t(desktop ? 'review.savedToFolderAs' : 'review.savedToServerAs', { file })
+					: t(desktop ? 'review.savedFilesToFolder' : 'review.savedFilesToServer', {
+							n: saved.length
+						})
 			);
 		} catch (e) {
 			error = hubError(e);
@@ -881,7 +917,7 @@
 					{session}
 					progress={$exportProgress[id] ?? null}
 					busy={exporting}
-					picker={savePicker() !== null}
+					picker={desktop !== null || savePicker() !== null}
 					ondownload={saveAs}
 					serverFolder={$exportPrefs.serverSave && serverFolder ? serverFolder : null}
 					onserver={saveToServer}

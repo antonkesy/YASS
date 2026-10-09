@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { get } from 'svelte/store';
 import { HubConnectionState } from '@microsoft/signalr';
-import { createBridgeConnection, desktopExternal, type DesktopExternal } from '$lib/hub/bridge';
+import {
+	createBridgeConnection,
+	createDesktopHost,
+	desktopExternal,
+	type DesktopExternal
+} from '$lib/hub/bridge';
 import { createHubClient } from '$lib/hub/client';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import { sessionOf } from './fixtures';
@@ -112,5 +117,28 @@ describe('desktopExternal', () => {
 		} finally {
 			Object.defineProperty(window, 'external', { value: undefined, configurable: true });
 		}
+	});
+});
+
+describe('createDesktopHost', () => {
+	it('calls the desktop-only methods by name', async () => {
+		const external = fakeExternal();
+		const host = createDesktopHost(createBridgeConnection(external));
+
+		const picked = host.pickSavePath('scan.pdf');
+		const folder = host.pickFolder();
+		const saved = host.saveExport('/export/s1/t.pdf', '/home/me/scan.pdf', true);
+		expect(external.sent).toEqual([
+			{ id: 1, method: 'PickSavePath', args: ['scan.pdf'] },
+			{ id: 2, method: 'PickFolder', args: [] },
+			{ id: 3, method: 'SaveExport', args: ['/export/s1/t.pdf', '/home/me/scan.pdf', true] }
+		]);
+
+		external.push({ id: 1, result: null });
+		external.push({ id: 2, result: '/home/me' });
+		external.push({ id: 3, result: '/home/me/scan.pdf' });
+		await expect(picked).resolves.toBeNull();
+		await expect(folder).resolves.toBe('/home/me');
+		await expect(saved).resolves.toBe('/home/me/scan.pdf');
 	});
 });

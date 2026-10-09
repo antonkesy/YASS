@@ -2,13 +2,16 @@ import { describe, expect, it, vi } from 'vitest';
 import {
 	cancelled,
 	numberedFileName,
+	numberedPath,
 	exportBaseName,
 	exportFileName,
 	safeFileName,
 	savePicker,
+	saveNatively,
 	saveToDisk,
 	type SaveTarget
 } from '$lib/review/download';
+import type { DesktopHost } from '$lib/hub/bridge';
 import { ExportFormat, type ExportResult } from '$lib/hub/generated/Yass.Core.Hub';
 import { session } from './fixtures';
 
@@ -139,5 +142,57 @@ describe('saving to a picked place', () => {
 				missing
 			)
 		).rejects.toThrow(/404/);
+	});
+});
+
+describe('numberedPath', () => {
+	it('numbers before the extension from the second document on', () => {
+		expect(numberedPath('/home/me/report.pdf', 0)).toBe('/home/me/report.pdf');
+		expect(numberedPath('/home/me/report.pdf', 1)).toBe('/home/me/report-2.pdf');
+		expect(numberedPath('C:\\Scans\\report.pdf', 2)).toBe('C:\\Scans\\report-3.pdf');
+		expect(numberedPath('/home/my.scans/report', 1)).toBe('/home/my.scans/report-2');
+	});
+});
+
+describe('saveNatively', () => {
+	function host() {
+		const calls: [string, string, boolean][] = [];
+		const desktop: DesktopHost = {
+			pickSavePath: async () => null,
+			pickFolder: async () => null,
+			saveExport: async (path, target, overwrite) => {
+				calls.push([path, target, overwrite]);
+				return target;
+			}
+		};
+		return { desktop, calls };
+	}
+
+	it('replaces the picked file and numbers further documents beside it without overwriting', async () => {
+		const { desktop, calls } = host();
+		const saved = await saveNatively(
+			result('/export/s/a.pdf', '/export/s/b.pdf'),
+			desktop,
+			{ file: '/home/me/scan.pdf' },
+			'scan',
+			'.pdf'
+		);
+		expect(calls).toEqual([
+			['/export/s/a.pdf', '/home/me/scan.pdf', true],
+			['/export/s/b.pdf', '/home/me/scan-2.pdf', false]
+		]);
+		expect(saved).toEqual(['/home/me/scan.pdf', '/home/me/scan-2.pdf']);
+	});
+
+	it('names documents into a folder and never overwrites there', async () => {
+		const { desktop, calls } = host();
+		await saveNatively(
+			result('/export/s/a.jpg'),
+			desktop,
+			{ folder: '/tmp/out' },
+			'letter',
+			'.jpg'
+		);
+		expect(calls).toEqual([['/export/s/a.jpg', '/tmp/out/letter.jpg', false]]);
 	});
 });

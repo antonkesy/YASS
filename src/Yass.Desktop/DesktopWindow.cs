@@ -14,11 +14,13 @@ internal static class DesktopWindow
         BridgeNotifier notifier = services.GetRequiredService<BridgeNotifier>();
         IHostApplicationLifetime lifetime = services.GetRequiredService<IHostApplicationLifetime>();
         PhotinoWindow? opened = null;
+        var dialogs = new PhotinoDialogs(() => opened);
+        var desktop = new DesktopApi(dialogs, services.GetRequiredService<Yass.App.Export.ExportDownloads>(), services.GetRequiredService<ILogger<DesktopApi>>());
         var bridge = new BridgeDispatcher(
             services.GetRequiredService<Yass.App.Api.YassApi>(),
             message => opened?.SendWebMessage(message),
             logger,
-            [],
+            [desktop],
             lifetime.ApplicationStopping);
 
         var window = new PhotinoWindow()
@@ -58,5 +60,39 @@ internal static class DesktopWindow
         window.Load(new Uri(AppScheme.Origin + "/"));
         window.WaitForClose();
         notifier.Attach(static _ => { });
+    }
+}
+
+/// <summary>Photino's dialogs, opened on the window's own thread as every toolkit requires.</summary>
+[ExcludeFromCodeCoverage(Justification = "Needs a display and a native webview.")]
+internal sealed class PhotinoDialogs(Func<PhotinoWindow?> window) : IDesktopDialogs
+{
+    public Task<string?> SaveFileAsync(string suggestedPath, string extension) =>
+        OnWindowThread(w => w.ShowSaveFile(
+            "Save as",
+            suggestedPath,
+            string.IsNullOrEmpty(extension) ? [] : [(extension.TrimStart('.').ToUpperInvariant(), ["*" + extension])]));
+
+    public Task<string?> PickFolderAsync(string startFolder) =>
+        OnWindowThread(w => w.ShowOpenFolder("Save into folder", startFolder, multiSelect: false).FirstOrDefault());
+
+    private Task<string?> OnWindowThread(Func<PhotinoWindow, string?> show)
+    {
+        PhotinoWindow w = window() ?? throw new InvalidOperationException("The window is not open.");
+        var done = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        w.Invoke(() =>
+        {
+            try
+            {
+                done.SetResult(show(w));
+            }
+#pragma warning disable CA1031 // Handed to the caller through the task.
+            catch (Exception ex)
+#pragma warning restore CA1031
+            {
+                done.SetException(ex);
+            }
+        });
+        return done.Task;
     }
 }

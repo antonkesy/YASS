@@ -1,3 +1,4 @@
+import type { DesktopHost } from '$lib/hub/bridge';
 import { ExportFormat, type ExportResult, type SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 import { documentName } from '$lib/format';
 import { t } from '$lib/i18n/index.svelte';
@@ -135,4 +136,38 @@ export function saveToBrowser(result: ExportResult): number {
 		started += 1;
 	}
 	return started;
+}
+
+/** `report.pdf` → `report-2.pdf`: where the second document of a split scan goes beside the first. */
+export function numberedPath(path: string, index: number): string {
+	if (index === 0) return path;
+	const slash = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+	const dot = path.lastIndexOf('.');
+	return dot > slash
+		? `${path.slice(0, dot)}-${index + 1}${path.slice(dot)}`
+		: `${path}-${index + 1}`;
+}
+
+/**
+ * The desktop app's save: the host moves each produced file to the chosen file (numbered beside
+ * it when the scan split into several) or into the chosen folder. Returns the paths written.
+ */
+export async function saveNatively(
+	result: ExportResult,
+	desktop: DesktopHost,
+	target: { file: string } | { folder: string },
+	base: string,
+	extension: string
+): Promise<string[]> {
+	const saved: string[] = [];
+	for (const [index, document] of result.Documents.entries()) {
+		const path =
+			'file' in target
+				? numberedPath(target.file, index)
+				: `${target.folder}/${numberedFileName(base, index, extension)}`;
+		saved.push(
+			await desktop.saveExport(document.DownloadPath, path, 'file' in target && index === 0)
+		);
+	}
+	return saved;
 }
