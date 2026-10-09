@@ -23,6 +23,27 @@
 	// rather than guessed at.
 	type Chip = { label: string };
 
+	const chipClass =
+		'flex h-8 max-w-full items-center gap-1.5 rounded-full bg-accent-tint px-3 text-[13px] font-semibold text-accent-deep';
+
+	/**
+	 * The longest label each chip can have, all of them at once: what the area reserves room
+	 * for. The scanner and the format do not change with the preset, so they are the real ones.
+	 */
+	const widest = $derived(
+		[
+			deviceName,
+			'Both sides',
+			'1200 dpi',
+			'Black & white',
+			'Letter',
+			'Auto-deskew',
+			'Skip blank pages',
+			'B -100 / C -100',
+			format
+		].filter((l): l is string => !!l)
+	);
+
 	const chips = $derived.by((): Chip[] => {
 		if (!options) return [];
 		const plain: string[] = [];
@@ -43,17 +64,36 @@
 	});
 </script>
 
-{#if chips.length > 0}
-	<div class="flex max-w-[520px] flex-wrap justify-center gap-2" data-testid="settings-chips">
-		{#each chips as chip (chip.label)}
-			<button
-				type="button"
-				{onclick}
-				title="Change settings"
-				class="flex h-8 max-w-full items-center gap-1.5 rounded-full bg-accent-tint px-3 text-[13px] font-semibold text-accent-deep transition-[background-color,transform] duration-150 hover:-translate-y-px hover:bg-accent-100"
-			>
-				<span class="truncate">{chip.label}</span>
-			</button>
+<!--
+	The chips change with the preset — one adds Auto-deskew and a brightness chip, the next has
+	neither — and the row rewrapped to more or fewer lines, moving the Scan button under it.
+	So the area is as tall as the widest set of chips this scan could show, taken from an
+	invisible copy stacked in the same grid cell, and the real chips sit centred inside it.
+-->
+<div class="grid max-w-[520px] place-items-center" data-testid="settings-chips-area">
+	<div
+		class="invisible col-start-1 row-start-1 flex flex-wrap justify-center gap-2"
+		aria-hidden="true"
+	>
+		{#each widest as label (label)}
+			<span class={chipClass}><span class="truncate">{label}</span></span>
 		{/each}
 	</div>
-{/if}
+	{#if chips.length > 0}
+		<div
+			class="col-start-1 row-start-1 flex flex-wrap justify-center gap-2"
+			data-testid="settings-chips"
+		>
+			{#each chips as chip (chip.label)}
+				<button
+					type="button"
+					{onclick}
+					title="Change settings"
+					class="{chipClass} transition-[background-color,transform] duration-150 hover:-translate-y-px hover:bg-accent-100"
+				>
+					<span class="truncate">{chip.label}</span>
+				</button>
+			{/each}
+		</div>
+	{/if}
+</div>
