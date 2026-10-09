@@ -129,10 +129,51 @@ describe('ScanStage', () => {
 		);
 	});
 
+	it("pops a problem out as a card with what to do, and the scanner's own words under it", () => {
+		const { unmount } = render(ScanStage, {
+			status: {
+				State: ScannerState.NoDevice,
+				DeviceName: undefined,
+				CheckedAt: '',
+				Message: 'Looked with SANE.'
+			},
+			connection: 'connected',
+			options: null,
+			onscan: vi.fn(),
+			onsettings: vi.fn()
+		});
+		const card = screen.getByRole('alert');
+		expect(card).toHaveAttribute('data-tone', 'warning');
+		expect(card).toHaveTextContent('No scanner found');
+		expect(card).toHaveTextContent(/switched on and connected/);
+		expect(screen.getByTestId('scanner-detail')).toHaveTextContent('Looked with SANE.');
+		unmount();
+
+		stage(ScannerState.Error, 'connected', 'Cover open');
+		expect(screen.getByRole('alert')).toHaveAttribute('data-tone', 'danger');
+	});
+
+	it('keeps checking and busy to a quiet line: nothing is wrong yet', () => {
+		stage(ScannerState.Busy);
+		expect(screen.queryByRole('alert')).toBeNull();
+		expect(screen.getByTestId('scanner-trouble')).toHaveTextContent('The scanner is busy');
+	});
+
 	it('blames the connection, not the scanner, when there is none', () => {
-		stage(null, 'connecting');
+		const { unmount } = stage(null, 'connecting');
 		expect(screen.getByTestId('scan-button')).toBeDisabled();
 		expect(screen.getByTestId('scanner-trouble')).toHaveTextContent(/Connecting/);
+		// Every page load connects for a moment: that is no card.
+		expect(screen.queryByRole('alert')).toBeNull();
+		unmount();
+
+		stage(null, 'reconnecting');
+		expect(screen.getByRole('alert')).toHaveTextContent(/Not connected.*reconnects on its own/s);
+	});
+
+	it("says it is checking in its own words, not the server's", () => {
+		stage(ScannerState.Unknown, 'connected', 'Not checked yet.');
+		expect(screen.getByTestId('scanner-trouble')).toHaveTextContent('Still checking the scanner…');
 	});
 });
 

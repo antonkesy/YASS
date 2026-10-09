@@ -47,6 +47,24 @@ export const home = {
 		fr: 'Le scanner signale un problème',
 		es: 'El escáner informa de un problema'
 	},
+	noDeviceHint: {
+		en: 'Make sure it is switched on and connected: by USB to the machine running YASS, or on the same network.',
+		de: 'Prüfe, ob er eingeschaltet und verbunden ist: per USB mit dem Rechner, auf dem YASS läuft, oder im selben Netzwerk.',
+		fr: 'Vérifiez qu’il est allumé et connecté : en USB à la machine qui exécute YASS, ou sur le même réseau.',
+		es: 'Comprueba que esté encendido y conectado: por USB al equipo que ejecuta YASS o en la misma red.'
+	},
+	errorHint: {
+		en: 'Check the scanner itself (paper, cover, cable). It is checked again on its own.',
+		de: 'Prüfe den Scanner selbst (Papier, Deckel, Kabel). Er wird von selbst erneut geprüft.',
+		fr: 'Vérifiez le scanner lui-même (papier, capot, câble). Il est revérifié automatiquement.',
+		es: 'Revisa el propio escáner (papel, tapa, cable). Se vuelve a comprobar solo.'
+	},
+	offlineHint: {
+		en: 'It reconnects on its own as soon as the service can be reached.',
+		de: 'Die Verbindung wird von selbst wiederhergestellt, sobald der Dienst erreichbar ist.',
+		fr: 'La connexion se rétablit d’elle-même dès que le service est joignable.',
+		es: 'Se vuelve a conectar sola en cuanto el servicio esté disponible.'
+	},
 	blockedChecking: {
 		en: 'Still checking the scanner…',
 		de: 'Scanner wird noch geprüft…',
