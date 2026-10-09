@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { fade } from 'svelte/transition';
+	import { ms } from '$lib/motion';
+
 	type Option = { value: string; label: string };
 
 	let {
@@ -22,7 +25,10 @@
 <fieldset class="flex flex-col gap-1.5" data-testid="seg-{name}">
 	<legend class="mb-1.5 text-[13px] font-bold text-ink-2">
 		{label}
-		{#if hint}<span class="font-semibold text-ink-muted"> · {hint}</span>{/if}
+		<!-- A new hint fades in over the old one's place rather than swapping in a blink. -->
+		{#key hint}{#if hint}<span class="font-semibold text-ink-muted" in:fade={{ duration: ms(220) }}>
+					· {hint}</span
+				>{/if}{/key}
 	</legend>
 	<div class="flex rounded-[14px] bg-ctl-track p-1">
 		{#each options as option (option.value)}
