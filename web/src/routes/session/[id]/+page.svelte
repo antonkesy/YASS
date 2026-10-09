@@ -34,6 +34,7 @@
 	import { clear, prune, toggle } from '$lib/review/selection';
 	import { createPreloader, preloadOrder } from '$lib/review/preload';
 	import { screenTransition } from '$lib/motion';
+	import { modified, typing, useLayer } from '$lib/keys.svelte';
 	import AdjustModal from '$lib/components/AdjustModal.svelte';
 	import StraightenModal from '$lib/components/StraightenModal.svelte';
 	import PageGrid from '$lib/components/PageGrid.svelte';
@@ -366,6 +367,68 @@
 	}
 
 	/** Crop and rescan act on the one selected page, or the one on screen. */
+	function deletePages() {
+		// A snapshot, because undo has to put back the pages this click took and not
+		// whatever happens to be on the stage by the time the toast is pressed.
+		const deleting = new Set(targets);
+		send(deleteEdit(deleting));
+		toast.show(`${deleting.size} page${deleting.size === 1 ? '' : 's'} deleted`, () =>
+			send(restoreEdit(deleting))
+		);
+	}
+
+	/** Escape with nothing open goes home, as the header's back link does. */
+	const screen = useLayer(() => {
+		cameFrom.leaving(id);
+		void goto(resolve('/'));
+	});
+
+	/**
+	 * The review screen's keys, only while nothing is open over it and nobody is typing:
+	 * pages with the arrows, the toolbar's edits on single letters, Ctrl/⌘+S for Save as….
+	 */
+	function keydown(e: KeyboardEvent) {
+		if (!session || !screen()?.top || typing(e)) return;
+		if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 's') {
+			e.preventDefault();
+			void saveAs();
+			return;
+		}
+		if (modified(e)) return;
+		const last = session.Pages.length - 1;
+		switch (e.key) {
+			case 'ArrowLeft':
+				current = Math.max(0, current - 1);
+				break;
+			case 'ArrowRight':
+				current = Math.min(last, current + 1);
+				break;
+			case 'Enter':
+				// Enter on a focused button or link presses that, as it always has.
+				if (last < 0 || (e.target as HTMLElement).closest('button, a, [role]')) return;
+				previewIndex = targetPage();
+				break;
+			case 'a':
+			case 'A':
+				if (last < 0) return;
+				overview = true;
+				break;
+			case 'r':
+			case 'R':
+				if (!editable) return;
+				send(rotateEdit(e.shiftKey ? -90 : 90, targets));
+				break;
+			case 'Delete':
+			case 'Backspace':
+				if (!editable || !anyActive) return;
+				deletePages();
+				break;
+			default:
+				return;
+		}
+		e.preventDefault();
+	}
+
 	function targetPage() {
 		if (selection.size === 1) {
 			const only = [...selection][0];
@@ -484,6 +547,8 @@
 	});
 </script>
 
+<svelte:window onkeydown={keydown} />
+
 <svelte:head>
 	<title>{session ? formatTime(session.CreatedAt) : 'Session'} · YASS</title>
 </svelte:head>
@@ -519,15 +584,7 @@
 			{anyActive}
 			disabled={!editable}
 			onrotate={(deg) => send(rotateEdit(deg, targets))}
-			ondelete={() => {
-				// A snapshot, because undo has to put back the pages this click took and not
-				// whatever happens to be on the stage by the time the toast is pressed.
-				const deleting = new Set(targets);
-				send(deleteEdit(deleting));
-				toast.show(`${deleting.size} page${deleting.size === 1 ? '' : 's'} deleted`, () =>
-					send(restoreEdit(deleting))
-				);
-			}}
+			ondelete={deletePages}
 			onrestore={() => send(restoreEdit(targets))}
 			onfilter={(filter) => send(setFilterEdit(filter, targets))}
 			cleanup={targetCleanup}

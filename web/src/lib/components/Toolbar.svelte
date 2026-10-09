@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { escapeCloses } from '$lib/keys.svelte';
 	import { PageCleanup, PageFilter } from '$lib/hub/generated/Yass.Core.Domain';
 	import FilterMenu from './FilterMenu.svelte';
 	import { Icon } from '$lib/icons';
@@ -68,6 +69,10 @@
 
 	let filterOpen = $state(false);
 	let cropOpen = $state(false);
+	escapeCloses(
+		() => cropOpen,
+		() => (cropOpen = false)
+	);
 
 	/**
 	 * Nothing ticked means the page on the stage, the one these buttons sit under. Acting on

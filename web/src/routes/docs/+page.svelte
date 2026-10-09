@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import { useLayer } from '$lib/keys.svelte';
 	/**
 	 * The documentation. All of it. Two frames of a cat laughing at you, swapped a few times a
 	 * second while the whole cat shakes, and held still for anyone who asked for less motion.
@@ -33,6 +36,9 @@
 	];
 
 	let frame = $state(0);
+
+	// Escape goes back home, like the header's back link.
+	useLayer(() => void goto(resolve('/')));
 
 	$effect(() => {
 		if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;

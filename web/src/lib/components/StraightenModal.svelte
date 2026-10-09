@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { useLayer } from '$lib/keys.svelte';
 	import { backdropOut, cardOut } from '$lib/motion';
 	import { untrack } from 'svelte';
 	import { MAX_SKEW, innerScale, roundSkew } from '$lib/review/edits';
@@ -44,12 +45,8 @@
 		dialog?.focus();
 	});
 
-	function keydown(e: KeyboardEvent) {
-		if (e.key !== 'Escape') return;
-		// Kept from reaching the window, where the full-screen preview would close as well.
-		e.stopPropagation();
-		oncancel();
-	}
+	// Escape cancels, through the shared layer stack: only this closes, not the preview under it.
+	useLayer(() => oncancel());
 
 	const nudgeBtn =
 		'flex h-11 w-11 flex-none items-center justify-center rounded-full bg-ctl text-ink transition-colors hover:bg-ctl-hover disabled:pointer-events-none disabled:opacity-40';
@@ -74,7 +71,6 @@
 		aria-label="Straighten page"
 		tabindex="-1"
 		bind:this={dialog}
-		onkeydown={keydown}
 		data-testid="straighten-modal"
 	>
 		<h2 class="text-[20px] font-extrabold">Straighten page</h2>

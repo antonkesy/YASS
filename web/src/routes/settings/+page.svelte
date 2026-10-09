@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import { useLayer } from '$lib/keys.svelte';
 	import { hubError } from '$lib/hub/errors';
 	import { getHub, sortedSessions } from '$lib/hub/hub';
 	import { PageSize, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
@@ -257,6 +258,9 @@
 	function close() {
 		void goto(resolve('/'));
 	}
+
+	// Escape closes the sheet, once nothing on it (a menu, a field) has taken the key first.
+	useLayer(close);
 
 	function setNumber<K extends 'Source' | 'Dpi' | 'Color' | 'PageSize'>(key: K, raw: string) {
 		settings.update(key, raw === DEFAULT ? undefined : (Number(raw) as never));

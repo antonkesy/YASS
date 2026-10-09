@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { escapeCloses } from '$lib/keys.svelte';
 	import { Icon } from '$lib/icons';
 
 	let {
@@ -25,6 +26,10 @@
 	} = $props();
 
 	let open = $state(false);
+	escapeCloses(
+		() => open,
+		() => (open = false)
+	);
 
 	let field = $state<HTMLInputElement | null>(null);
 	/** Where the caret was when the field last lost focus, so a chip inserts in place. */

@@ -1,10 +1,15 @@
 <script lang="ts">
+	import { escapeCloses } from '$lib/keys.svelte';
 	import { sortLabels, sortShortLabels, type SortOrder } from '$lib/sessions/browse';
 	import { Icon } from '$lib/icons';
 
 	let { order, onchange }: { order: SortOrder; onchange: (order: SortOrder) => void } = $props();
 
 	let open = $state(false);
+	escapeCloses(
+		() => open,
+		() => (open = false)
+	);
 	const orders = Object.keys(sortLabels) as SortOrder[];
 </script>
 

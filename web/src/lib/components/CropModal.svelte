@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { useLayer } from '$lib/keys.svelte';
 	import { backdropOut, cardOut } from '$lib/motion';
 	import { untrack } from 'svelte';
 	import { Rotation, type CropBox } from '$lib/hub/generated/Yass.Core.Domain';
@@ -26,6 +27,9 @@
 		onapply: (crop: CropBox | undefined) => void;
 		oncancel: () => void;
 	} = $props();
+
+	// Escape closes this, and only this, while it is open.
+	useLayer(() => oncancel());
 
 	const EDGES = [
 		{ key: 'Top', label: 'Top' },

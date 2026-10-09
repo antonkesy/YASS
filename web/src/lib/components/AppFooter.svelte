@@ -1,6 +1,9 @@
 <script lang="ts">
+	import { escapeCloses } from '$lib/keys.svelte';
 	import { resolve } from '$app/paths';
 	import { ISSUE_TEMPLATES, REPO } from '$lib/links';
+
+	let { onshortcuts }: { onshortcuts?: () => void } = $props();
 
 	/**
 	 * One slim row of links on every route, kept to --app-footer-h so the home and review
@@ -10,6 +13,10 @@
 	const link = 'flex-none font-semibold transition-colors hover:text-accent';
 
 	let reporting = $state(false);
+	escapeCloses(
+		() => reporting,
+		() => (reporting = false)
+	);
 </script>
 
 <footer
@@ -37,6 +44,17 @@
 
 	<span class="flex-1"></span>
 
+	{#if onshortcuts}
+		<!-- A keyboard is a desktop thing; a phone has no use for the list. -->
+		<button
+			type="button"
+			class="{link} hidden sm:block"
+			onclick={onshortcuts}
+			data-testid="footer-shortcuts"
+		>
+			Keyboard shortcuts
+		</button>
+	{/if}
 	<a href={resolve('/docs')} class={link} data-testid="footer-docs">Documentation</a>
 	<!-- One entry, three forms: the issue templates, each opened on its own form. -->
 	<div class="relative flex-none">

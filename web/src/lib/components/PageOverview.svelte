@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { modified, typing, useLayer } from '$lib/keys.svelte';
 	import { tick, untrack, type Snippet } from 'svelte';
 	import type { PageDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { Icon } from '$lib/icons';
@@ -117,9 +118,11 @@
 		dialog?.focus();
 	});
 
+	const overview = useLayer(() => onclose());
+
 	function keydown(e: KeyboardEvent) {
-		if (e.key === 'Escape') onclose();
-		else if (e.key === '+' || e.key === '=') onzoom(zoomTile(shown, 1));
+		if (!overview()?.top || typing(e) || modified(e)) return;
+		if (e.key === '+' || e.key === '=') onzoom(zoomTile(shown, 1));
 		else if (e.key === '-' || e.key === '_') onzoom(zoomTile(shown, -1));
 		else return;
 		e.preventDefault();

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { useLayer } from '$lib/keys.svelte';
 	import type { ScannerStatusDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 	import type { ConnectionState } from '$lib/hub/client';
@@ -22,6 +23,9 @@
 		pinned?: boolean;
 		onclose: () => void;
 	} = $props();
+
+	// Escape closes this, and only this, while it is open.
+	useLayer(() => onclose());
 
 	const offline = $derived(connection !== 'connected');
 	const scanning = $derived(!offline && status?.State === ScannerState.Busy);

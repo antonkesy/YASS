@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { useLayer } from '$lib/keys.svelte';
 	import { PageCleanup, type PageFilter } from '$lib/hub/generated/Yass.Core.Domain';
 	import { cleanupOptions, pageFilters } from '$lib/review/edits';
 	import { Icon } from '$lib/icons';
@@ -19,6 +20,9 @@
 		oncleanup?: (cleanup: PageCleanup, on: boolean) => void;
 		onclose: () => void;
 	} = $props();
+
+	// Escape closes this, and only this, while it is open.
+	useLayer(() => onclose());
 </script>
 
 <!-- Click-catcher first, so anywhere outside the menu closes it. -->

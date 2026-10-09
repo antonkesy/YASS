@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { modified, typing, useLayer } from '$lib/keys.svelte';
 	import type { PageDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import type { PageCleanup, PageFilter } from '$lib/hub/generated/Yass.Core.Domain';
 	import { Icon } from '$lib/icons';
@@ -77,16 +78,11 @@
 		if (direction) onnavigate(step(index, pages.length, direction));
 	}
 
+	const preview = useLayer(() => (zoomed ? (zoomedIndex = -1) : onclose()));
+
 	function keydown(e: KeyboardEvent) {
-		if (!page || paused) return;
-		if (e.key === 'Escape' && filterOpen) {
-			filterOpen = false;
-			e.preventDefault();
-			return;
-		}
-		if (e.key === 'Escape' && zoomed) zoomedIndex = -1;
-		else if (e.key === 'Escape') onclose();
-		else if (e.key === 'ArrowRight') onnavigate(step(index, pages.length, 'left'));
+		if (!page || paused || !preview()?.top || typing(e) || modified(e)) return;
+		if (e.key === 'ArrowRight') onnavigate(step(index, pages.length, 'left'));
 		else if (e.key === 'ArrowLeft') onnavigate(step(index, pages.length, 'right'));
 		else if (e.key === 'z' || e.key === 'Z') toggleZoom();
 		else return;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { useLayer } from '$lib/keys.svelte';
 	import { backdropOut, cardOut } from '$lib/motion';
 	import { untrack } from 'svelte';
 	import type { PageAdjust } from '$lib/hub/generated/Yass.Core.Domain';
@@ -59,12 +60,8 @@
 		dialog?.focus();
 	});
 
-	function keydown(e: KeyboardEvent) {
-		if (e.key !== 'Escape') return;
-		// Kept from reaching the window, where the full-screen preview would close as well.
-		e.stopPropagation();
-		oncancel();
-	}
+	// Escape cancels, through the shared layer stack: only this closes, not the preview under it.
+	useLayer(() => oncancel());
 </script>
 
 <div
@@ -86,7 +83,6 @@
 		aria-label="Adjust {count === 1 ? 'page' : `${count} pages`}"
 		tabindex="-1"
 		bind:this={dialog}
-		onkeydown={keydown}
 		data-testid="adjust-modal"
 	>
 		<h2 class="text-[20px] font-extrabold">

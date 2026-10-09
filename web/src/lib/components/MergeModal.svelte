@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { useLayer } from '$lib/keys.svelte';
 	import { backdropOut, cardOut } from '$lib/motion';
 	import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { imageUrl } from '$lib/hub/hub';
@@ -20,6 +21,9 @@
 		onpick: (id: string) => void;
 		oncancel: () => void;
 	} = $props();
+
+	// Escape closes this, and only this, while it is open.
+	useLayer(() => oncancel());
 </script>
 
 <div
