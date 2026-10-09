@@ -7,6 +7,7 @@ import {
 } from '$lib/hub/generated/Yass.Core.Domain';
 import type { CropBox, PageAdjust, PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
 import type { PageDto, SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
+import { t } from '$lib/i18n/index.svelte';
 
 /** Empty selection means "all pages", mirroring PageEdit.Targets = null on the server. */
 export function targetsOf(selection: ReadonlySet<number>): number[] | undefined {
@@ -195,23 +196,38 @@ export function commonCleanup(pages: readonly PageDto[]): PageCleanup {
 	return pages.reduce((all, p) => all & p.Cleanup, ~0) as PageCleanup;
 }
 
+// Labels are getters so a menu built from these follows a change of language.
 export const cleanupOptions = [
 	{
 		value: PageCleanup.Despeckle,
-		label: 'Despeckle',
-		hint: 'Remove dust and specks'
+		get label() {
+			return t('review.despeckle');
+		},
+		get hint() {
+			return t('review.despeckleHint');
+		}
 	},
 	{
 		value: PageCleanup.AutoLevels,
-		label: 'Auto-levels',
-		hint: 'Make faded scans black on white'
+		get label() {
+			return t('review.autoLevels');
+		},
+		get hint() {
+			return t('review.autoLevelsHint');
+		}
 	}
 ] as const;
 
 export const colorModeLabels: Record<ColorMode, string> = {
-	[ColorMode.Bw]: 'Black & white',
-	[ColorMode.Grayscale]: 'Grayscale',
-	[ColorMode.Color]: 'Color'
+	get [ColorMode.Bw]() {
+		return t('review.blackWhite');
+	},
+	get [ColorMode.Grayscale]() {
+		return t('review.grayscale');
+	},
+	get [ColorMode.Color]() {
+		return t('review.color');
+	}
 };
 
 /**
@@ -219,15 +235,47 @@ export const colorModeLabels: Record<ColorMode, string> = {
  * gradients are the mockup's: half blank page, half what the filter does to it.
  */
 export const pageFilters = [
-	{ value: PageFilter.Original, label: 'Original', swatch: '#fff 50%, #60a5fa 50%' },
-	{ value: PageFilter.Enhance, label: 'Enhance', swatch: '#fff 50%, #2b5cf0 50%' },
-	{ value: PageFilter.Grayscale, label: 'Grayscale', swatch: '#f5f5f5 50%, #98989b 50%' },
-	{ value: PageFilter.Bw, label: 'Black & white', swatch: '#f5f5f5 50%, #111 50%' }
+	{
+		value: PageFilter.Original,
+		get label() {
+			return t('review.original');
+		},
+		swatch: '#fff 50%, #60a5fa 50%'
+	},
+	{
+		value: PageFilter.Enhance,
+		get label() {
+			return t('review.enhance');
+		},
+		swatch: '#fff 50%, #2b5cf0 50%'
+	},
+	{
+		value: PageFilter.Grayscale,
+		get label() {
+			return t('review.grayscale');
+		},
+		swatch: '#f5f5f5 50%, #98989b 50%'
+	},
+	{
+		value: PageFilter.Bw,
+		get label() {
+			return t('review.blackWhite');
+		},
+		swatch: '#f5f5f5 50%, #111 50%'
+	}
 ] as const;
 
 export const pageFilterLabels: Record<PageFilter, string> = {
-	[PageFilter.Original]: 'Original',
-	[PageFilter.Enhance]: 'Enhance',
-	[PageFilter.Grayscale]: 'Grayscale',
-	[PageFilter.Bw]: 'Black & white'
+	get [PageFilter.Original]() {
+		return t('review.original');
+	},
+	get [PageFilter.Enhance]() {
+		return t('review.enhance');
+	},
+	get [PageFilter.Grayscale]() {
+		return t('review.grayscale');
+	},
+	get [PageFilter.Bw]() {
+		return t('review.blackWhite');
+	}
 };

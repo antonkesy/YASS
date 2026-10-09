@@ -6,6 +6,23 @@
 	import StatusPill from './StatusPill.svelte';
 	import { Icon } from '$lib/icons';
 	import { cameFrom } from '$lib/navigation';
+	import { escapeCloses } from '$lib/keys.svelte';
+	import { ISSUE_TEMPLATES } from '$lib/links';
+	import { i18n, LOCALE_NAMES, LOCALES, t } from '$lib/i18n/index.svelte';
+
+	let menu = $state<'language' | 'issue' | null>(null);
+	escapeCloses(
+		() => menu !== null,
+		() => (menu = null)
+	);
+
+	// Icons only, each named by its aria-label and shown as a tooltip on hover.
+	const button =
+		'flex h-10 w-10 flex-none items-center justify-center rounded-[12px] bg-surface text-ink shadow-chip transition-colors hover:bg-accent-wash';
+	const popup =
+		'absolute top-[calc(100%+8px)] right-0 z-31 flex min-w-[200px] animate-pop-in flex-col rounded-[14px] bg-surface p-1.5 text-ink shadow-popover';
+	const item =
+		'flex min-h-[44px] w-full items-center rounded-[10px] px-3 text-left text-[13px] font-bold transition-colors hover:bg-accent-hover50';
 
 	const client = getHub();
 	const scanner = client.scanner;
@@ -42,7 +59,8 @@
 			<a
 				href={resolve('/')}
 				onclick={() => cameFrom.leaving(route.params.id ?? '')}
-				aria-label="Back to home"
+				aria-label={t('common.backHome')}
+				title={t('common.backHome')}
 				class="group flex items-center gap-2.5 rounded-[12px] text-[15px] font-bold text-ink-3 transition-colors hover:text-ink"
 			>
 				<span
@@ -50,7 +68,6 @@
 				>
 					<Icon name="back" />
 				</span>
-				<span class="hidden sm:inline">Back to home</span>
 			</a>
 		{/if}
 	</div>
@@ -67,12 +84,14 @@
 		data-testid="header-centre"
 	>
 		{#if atHome}
-			<!-- The name is the whole of the brand here: no logo, no short form at the left. -->
+			<!-- The name is the whole of the brand here. A phone has the buttons beside it to fit,
+			     so there it goes by its initials. -->
 			<span
 				class="truncate text-[17px] font-extrabold tracking-[-0.01em] text-ink sm:text-[20px]"
 				data-testid="app-name"
 			>
-				Yet Another Scanner Slop
+				<span class="sm:hidden" aria-hidden="true">YASS</span>
+				<span class="max-sm:sr-only">{t('common.appName')}</span>
 			</span>
 		{:else if atReview}
 			<StatusPill
@@ -83,11 +102,97 @@
 		{/if}
 	</div>
 
-	<!--
-		Empty, and kept: the third column balances the first, so the middle stays centred on
-		the window. GitHub lives in the footer.
-	-->
-	<div></div>
+	<!-- Language, documentation, issues: all the app's own chrome, kept to three icons. -->
+	<div class="flex items-center justify-end gap-1.5">
+		{#if menu}
+			<button
+				type="button"
+				class="fixed inset-0 z-30 cursor-default"
+				aria-label={menu === 'language'
+					? t('common.closeLanguageMenu')
+					: t('common.closeIssueMenu')}
+				onclick={() => (menu = null)}
+			></button>
+		{/if}
+
+		<div class="relative">
+			<button
+				type="button"
+				class="{button} gap-0.5 {menu === 'language' ? 'bg-accent-wash text-accent' : ''}"
+				aria-haspopup="menu"
+				aria-expanded={menu === 'language'}
+				aria-label={t('common.language')}
+				title={t('common.language')}
+				onclick={() => (menu = menu === 'language' ? null : 'language')}
+				data-testid="header-language"
+			>
+				<Icon name="globe" />
+			</button>
+			{#if menu === 'language'}
+				<div class={popup} role="menu" data-testid="language-menu">
+					{#each LOCALES as locale (locale)}
+						<button
+							type="button"
+							role="menuitemradio"
+							aria-checked={i18n.locale === locale}
+							lang={locale}
+							class="{item} justify-between gap-3"
+							onclick={() => {
+								i18n.set(locale);
+								menu = null;
+							}}
+							data-testid="language-{locale}"
+						>
+							{LOCALE_NAMES[locale]}
+							{#if i18n.locale === locale}<Icon name="checkSmall" />{/if}
+						</button>
+					{/each}
+				</div>
+			{/if}
+		</div>
+
+		<a
+			href={resolve('/docs')}
+			class={button}
+			aria-label={t('common.documentation')}
+			title={t('common.documentation')}
+			data-testid="header-docs"
+		>
+			<Icon name="book" />
+		</a>
+
+		<div class="relative">
+			<button
+				type="button"
+				class="{button} {menu === 'issue' ? 'bg-accent-wash text-accent' : ''}"
+				aria-haspopup="menu"
+				aria-expanded={menu === 'issue'}
+				aria-label={t('common.reportIssue')}
+				title={t('common.reportIssue')}
+				onclick={() => (menu = menu === 'issue' ? null : 'issue')}
+				data-testid="header-issue"
+			>
+				<Icon name="bug" />
+			</button>
+			{#if menu === 'issue'}
+				<div class={popup} role="menu" data-testid="issue-menu">
+					{#each ISSUE_TEMPLATES as template (template.id)}
+						<a
+							href={template.href}
+							target="_blank"
+							rel="noreferrer noopener external"
+							role="menuitem"
+							class={item}
+							onclick={() => (menu = null)}
+							data-testid="issue-{template.id}"
+						>
+							{t(template.label)}
+						</a>
+					{/each}
+				</div>
+			{/if}
+		</div>
+	</div>
 
 	<!--
 		Sub-page scan progress is not something the scanner reports, so the rail runs

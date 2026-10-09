@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import type { PageDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { imageUrl } from '$lib/hub/hub';
 	import { Icon } from '$lib/icons';
@@ -57,7 +58,9 @@
 		class="relative flex w-full items-center justify-center overflow-hidden rounded-[6px] bg-surface shadow-page"
 		style="aspect-ratio: 1 / 1.414"
 		aria-current={current ? 'true' : undefined}
-		aria-label="Show page {page.Index + 1}{page.Deleted ? ', deleted' : ''}"
+		aria-label={t(page.Deleted ? 'review.showPageDeleted' : 'review.showPage', {
+			n: page.Index + 1
+		})}
 		onclick={() => onshow(page.Index)}
 	>
 		{#if src}
@@ -83,7 +86,7 @@
 				class="pointer-events-none absolute top-1 right-1 rounded-full bg-warning-bg px-1.5 py-0.5 text-[10px] font-extrabold tracking-[0.02em] text-warning-ink"
 				data-testid="blank-badge"
 			>
-				blank
+				{t('review.blank')}
 			</span>
 		{/if}
 
@@ -91,7 +94,7 @@
 			<span
 				class="pointer-events-none absolute inset-x-0 bottom-0 bg-danger/90 py-0.5 text-center text-[10px] font-extrabold tracking-[0.02em] text-white"
 			>
-				deleted
+				{t('review.deleted')}
 			</span>
 		{/if}
 	</button>
@@ -114,7 +117,7 @@
 				type="button"
 				class="-m-1 flex items-center gap-1 rounded-full p-1 transition-colors hover:bg-accent-wash"
 				aria-pressed={selected}
-				aria-label="Select page {page.Index + 1}"
+				aria-label={t('review.selectPage', { n: page.Index + 1 })}
 				data-testid="page-select"
 				onclick={() => ontoggle(page.Index)}
 			>
@@ -128,7 +131,7 @@
 			<button
 				type="button"
 				class="flex h-6 w-6 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-accent-wash hover:text-accent"
-				aria-label="Open page {page.Index + 1}"
+				aria-label={t('review.openPage', { n: page.Index + 1 })}
 				onclick={(e) => {
 					e.stopPropagation();
 					onopen(page.Index);

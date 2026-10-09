@@ -5,7 +5,7 @@
 	import { useLayer } from '$lib/keys.svelte';
 	import { hubError } from '$lib/hub/errors';
 	import { getHub, sortedSessions } from '$lib/hub/hub';
-	import { PageSize, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
+	import { ColorMode, PageSize, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
 	import type { ScannerDeviceDto, ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { editableKeys, scanOverrides, settings, type ScanOverrides } from '$lib/settings';
 	import Segmented from '$lib/components/Segmented.svelte';
@@ -22,6 +22,7 @@
 		exportPrefs,
 		historyPrefs,
 		pickedPreset,
+		presetName,
 		presets,
 		reviewPrefs,
 		scannerPrefs,
@@ -35,6 +36,7 @@
 	import { fileExtensions } from '$lib/review/download';
 	import { expandTemplate, templateTokens, unknownTokens } from '$lib/template';
 	import { colorModeLabels } from '$lib/review/edits';
+	import { t, type MessageKey } from '$lib/i18n/index.svelte';
 
 	const client = getHub();
 	const connection = client.connection;
@@ -79,13 +81,20 @@
 	 * The overview's zoom steps as a row of choices. Named rather than shown in pixels: the
 	 * number means nothing to anyone, and there are only ever a handful of steps.
 	 */
-	const tileSizes = [
-		{ value: 'fit', label: 'Fit' },
+	const tileNames: MessageKey[] = [
+		'settings.tileTiny',
+		'settings.tileSmall',
+		'settings.tileMedium',
+		'settings.tileLarge',
+		'settings.tileHuge'
+	];
+	const tileSizes = $derived([
+		{ value: 'fit', label: t('settings.tileFit') },
 		...TILE_SIZES.map((size, i) => ({
 			value: String(size),
-			label: ['Tiny', 'Small', 'Medium', 'Large', 'Huge'][i] ?? String(size)
+			label: tileNames[i] ? t(tileNames[i]) : String(size)
 		}))
-	];
+	]);
 
 	const overrides = $derived($settings);
 	const changedCount = $derived(
@@ -97,29 +106,57 @@
 	 * What "Default" stands for, said beside the control: a row of segments with Default lit
 	 * otherwise leaves you guessing whether the next scan is 150 dpi or 600.
 	 */
-	const defaultHint = (label: string | undefined) => (label ? `default ${label}` : '');
+	const defaultHint = (label: string | undefined) =>
+		label ? t('settings.defaultHint', { value: label }) : '';
 
 	// "" is the segment that clears the override and falls back to yass.yaml.
 	const DEFAULT = '';
 	const asSegment = (v: number | boolean | undefined) => (v === undefined ? DEFAULT : String(v));
 
-	const sources = [
-		{ value: String(ScanSource.Flatbed), label: 'Flatbed' },
-		{ value: String(ScanSource.Feeder), label: 'Feeder' },
-		{ value: String(ScanSource.Duplex), label: 'Both sides' }
-	];
-	const colors = Object.entries(colorModeLabels).map(([value, label]) => ({ value, label }));
+	const sources = $derived([
+		{ value: String(ScanSource.Flatbed), label: t('settings.flatbed') },
+		{ value: String(ScanSource.Feeder), label: t('settings.feeder') },
+		{ value: String(ScanSource.Duplex), label: t('settings.bothSides') }
+	]);
+	const colors = $derived([
+		{ value: String(ColorMode.Bw), label: t('settings.bw') },
+		{ value: String(ColorMode.Grayscale), label: t('settings.grayscale') },
+		{ value: String(ColorMode.Color), label: t('settings.color') }
+	]);
 	const dpis = [150, 200, 300, 400, 600].map((d) => ({ value: String(d), label: String(d) }));
-	const pageSizes = [
+	const pageSizes = $derived([
 		{ value: String(PageSize.A4), label: 'A4' },
 		{ value: String(PageSize.A5), label: 'A5' },
-		{ value: String(PageSize.Letter), label: 'Letter' },
-		{ value: String(PageSize.Legal), label: 'Legal' }
-	];
+		{ value: String(PageSize.Letter), label: t('settings.letter') },
+		{ value: String(PageSize.Legal), label: t('settings.legal') }
+	]);
 	const withDefault = (options: { value: string; label: string }[]) => [
-		{ value: DEFAULT, label: 'Default' },
+		{ value: DEFAULT, label: t('settings.default') },
 		...options
 	];
+
+	/** The preset icons' names, for whoever hears the icon picker rather than sees it. */
+	const iconNames: Record<PresetIconName, MessageKey> = {
+		star: 'settings.iconStar',
+		file: 'settings.iconFile',
+		copy: 'settings.iconCopy',
+		receipt: 'settings.iconReceipt',
+		image: 'settings.iconImage',
+		briefcase: 'settings.iconBriefcase',
+		heart: 'settings.iconHeart',
+		home: 'settings.iconHome',
+		book: 'settings.iconBook',
+		mail: 'settings.iconMail',
+		tag: 'settings.iconTag',
+		zap: 'settings.iconZap'
+	};
+
+	const unitNames: Record<RetentionUnit, MessageKey> = {
+		minutes: 'settings.minutes',
+		hours: 'settings.hours',
+		days: 'settings.days',
+		months: 'settings.months'
+	};
 
 	/**
 	 * What the next scan will do, over the keys this sheet can set: the server's defaults with
@@ -267,7 +304,7 @@
 	}
 </script>
 
-<svelte:head><title>Settings · YASS</title></svelte:head>
+<svelte:head><title>{t('settings.pageTitle')}</title></svelte:head>
 
 <!--
 	The route stays, but it reads as the mockup's sheet: a centred card on a desktop
@@ -284,28 +321,26 @@
 	class="fixed inset-x-0 bottom-0 z-41 flex max-h-[92%] animate-sheet-up flex-col overflow-hidden rounded-t-[28px] bg-surface shadow-modal sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:max-h-[calc(100%-32px)] sm:w-[min(1080px,calc(100%-40px))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:animate-card-in sm:rounded-[26px]"
 	role="dialog"
 	aria-modal="true"
-	aria-label="Settings"
+	aria-label={t('settings.title')}
 >
 	<header class="flex-none border-b border-line px-[22px] pt-3 pb-4 sm:px-[34px] sm:pt-6">
 		<span class="mx-auto mb-3 block h-1 w-10 rounded-full bg-handle sm:hidden" aria-hidden="true"
 		></span>
 		<div class="flex items-center gap-2">
 			<div class="flex min-w-0 flex-col">
-				<h1 class="text-[20px] font-extrabold tracking-[-0.01em] sm:text-[24px]">Settings</h1>
-				<p class="text-[12px] leading-snug text-ink-muted sm:text-[13px]">
-					Kept in this browser. Default means whatever
-					<code class="font-mono">yass.yaml</code> says.
-				</p>
+				<h1 class="text-[20px] font-extrabold tracking-[-0.01em] sm:text-[24px]">
+					{t('settings.title')}
+				</h1>
 			</div>
 			<div class="flex-1"></div>
 			{#if changed}
 				<span
 					class="flex h-7 items-center gap-1.5 rounded-full bg-accent-tint px-2.5 text-[12px] font-bold whitespace-nowrap text-accent-deep"
-					title="Scan options changed from the defaults for the next scan"
+					title={t('settings.changedTitle')}
 					data-testid="overrides-active"
 				>
 					<span class="h-1.5 w-1.5 rounded-full bg-accent"></span>
-					{changedCount} changed
+					{t('settings.changedCount', { n: changedCount })}
 				</span>
 			{/if}
 			<button
@@ -313,16 +348,16 @@
 				class="h-9 rounded-full px-3 text-[13px] font-bold text-accent transition-colors hover:bg-accent-wash disabled:pointer-events-none disabled:text-ink-faint"
 				onclick={resetSettings}
 				disabled={!changed}
-				title="Put every scan option back to its default"
+				title={t('settings.resetTitle')}
 				data-testid="reset-settings"
 			>
-				Reset
+				{t('settings.reset')}
 			</button>
 			<button
 				type="button"
 				class="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-ctl transition-colors hover:bg-ctl-hover"
 				onclick={close}
-				aria-label="Close settings"
+				aria-label={t('settings.close')}
 			>
 				<Icon name="close" />
 			</button>
@@ -332,12 +367,7 @@
 	<div
 		class="grid min-h-0 flex-1 items-start gap-y-5 overflow-y-auto overscroll-contain px-[22px] py-5 sm:mr-2.5 sm:pr-[24px] sm:pl-[34px] md:py-7"
 	>
-		<SettingsSection
-			title="Scanner"
-			icon="scan"
-			hint="What the next scan asks the scanner for."
-			testid="scanner-section"
-		>
+		<SettingsSection title={t('settings.scanner')} icon="scan" testid="scanner-section">
 			{#if error}
 				<p
 					class="col-span-full rounded-[14px] bg-danger-bg px-4 py-2 font-semibold text-danger"
@@ -346,7 +376,7 @@
 					{error}
 				</p>
 			{:else if !effective}
-				<div class="col-span-full grid gap-3" aria-label="Loading" role="status">
+				<div class="col-span-full grid gap-3" aria-label={t('settings.loading')} role="status">
 					{#each [0, 1, 2] as i (i)}
 						<div class="h-[60px] animate-pulse rounded-[14px] bg-skeleton"></div>
 					{/each}
@@ -357,21 +387,21 @@
 					data-testid="presets"
 				>
 					<div class="flex items-center gap-2">
-						<span class="text-[13px] font-bold text-ink-2">Presets</span>
+						<span class="text-[13px] font-bold text-ink-2">{t('settings.presets')}</span>
 						{#if chosen}
 							<span
 								class="flex items-center gap-1 text-xs font-bold text-success-ink"
 								data-testid="preset-match"
 							>
 								<Icon name="checkSmall" />
-								{chosen.name}
+								{presetName(chosen)}
 							</span>
 						{:else if edited}
 							<span class="text-xs font-bold text-warning-ink" data-testid="preset-edited">
-								“{edited.name}” edited
+								{t('settings.presetEdited', { name: presetName(edited) })}
 							</span>
 						{:else}
-							<span class="text-xs font-bold text-warning-ink">Custom</span>
+							<span class="text-xs font-bold text-warning-ink">{t('settings.custom')}</span>
 						{/if}
 					</div>
 
@@ -386,7 +416,7 @@
 										? 'bg-surface text-accent-deep shadow-ring-outline'
 										: 'bg-surface text-accent-deep shadow-chip hover:-translate-y-px hover:bg-accent-50'}"
 								aria-pressed={chosen?.id === preset.id}
-								title={edited?.id === preset.id ? 'Edited — press to go back to it' : undefined}
+								title={edited?.id === preset.id ? t('settings.presetEditedTitle') : undefined}
 								onclick={() => pickPreset(preset)}
 							>
 								{#if edited?.id === preset.id}
@@ -396,7 +426,7 @@
 									></span>
 								{/if}
 								<Icon name={preset.icon} />
-								{preset.name}
+								{presetName(preset)}
 								<!-- The home screen only offers this one on that scanner, so this sheet — the
 								     one place every preset is listed — has to say which. -->
 								{#if preset.device}
@@ -414,7 +444,7 @@
 								data-testid="preset-new"
 							>
 								<Icon name="plus" />
-								Save as new
+								{t('settings.saveAsNew')}
 							</button>
 						{/if}
 					</div>
@@ -427,7 +457,7 @@
 								<input
 									class="field h-10 min-w-[160px] flex-1 px-3 text-sm"
 									type="text"
-									placeholder="Preset name"
+									placeholder={t('settings.presetNamePlaceholder')}
 									bind:value={draftName}
 									onkeydown={(e) => e.key === 'Enter' && savePreset()}
 									data-testid="preset-name"
@@ -438,7 +468,7 @@
 									class="h-10 rounded-full px-3.5 text-[13px] font-bold text-ink-3 transition-colors hover:bg-ctl"
 									onclick={() => (drafting = false)}
 								>
-									Cancel
+									{t('settings.cancel')}
 								</button>
 								<button
 									type="button"
@@ -447,10 +477,10 @@
 									onclick={savePreset}
 									data-testid="preset-save"
 								>
-									Save
+									{t('settings.save')}
 								</button>
 							</div>
-							<div class="flex flex-wrap gap-1.5" role="group" aria-label="Icon">
+							<div class="flex flex-wrap gap-1.5" role="group" aria-label={t('settings.icon')}>
 								{#each presetIcons as icon (icon)}
 									<button
 										type="button"
@@ -459,7 +489,7 @@
 											? 'bg-accent text-white shadow-swatch'
 											: 'bg-ctl text-ink-2'}"
 										aria-pressed={draftIcon === icon}
-										aria-label={icon}
+										aria-label={t(iconNames[icon])}
 										onclick={() => (draftIcon = icon)}
 									>
 										<Icon name={icon} />
@@ -475,9 +505,9 @@
 										bind:checked={draftShared}
 										data-testid="preset-shared"
 									/>
-									Available for all scanners
+									{t('settings.allScanners')}
 									<span class="font-normal text-ink-muted"
-										>· otherwise only on {deviceLabel(currentDevice)}</span
+										>{t('settings.onlyOn', { name: deviceLabel(currentDevice) })}</span
 									>
 								</label>
 							{/if}
@@ -495,9 +525,11 @@
 										onchange={(e) => sharePreset(target.id, e.currentTarget.checked)}
 										data-testid="preset-scope"
 									/>
-									Available for all scanners
+									{t('settings.allScanners')}
 									<span class="font-normal text-ink-muted"
-										>· otherwise only on {deviceLabel(target.device || currentDevice)}</span
+										>{t('settings.onlyOn', {
+											name: deviceLabel(target.device || currentDevice)
+										})}</span
 									>
 								</label>
 							{/if}
@@ -509,7 +541,7 @@
 									onclick={() => pickPreset(edited)}
 									data-testid="preset-revert"
 								>
-									Revert
+									{t('settings.revert')}
 								</button>
 							{/if}
 							<button
@@ -520,7 +552,7 @@
 								onclick={updatePreset}
 								data-testid="preset-update"
 							>
-								Update “{target.name}”
+								{t('settings.update', { name: presetName(target) })}
 							</button>
 							<button
 								type="button"
@@ -528,7 +560,7 @@
 								onclick={() => deletePreset(target.id)}
 							>
 								<Icon name="trash" />
-								Delete
+								{t('settings.delete')}
 							</button>
 						</div>
 					{/if}
@@ -541,7 +573,7 @@
 				>
 					<Segmented
 						name="source"
-						label="Source"
+						label={t('settings.source')}
 						hint={defaultHint(sourceLabel(effective.Source))}
 						options={withDefault(sources)}
 						value={asSegment(overrides.Source)}
@@ -549,7 +581,7 @@
 					/>
 					<Segmented
 						name="color"
-						label="Colour mode"
+						label={t('settings.colourMode')}
 						hint={defaultHint(colorLabel(effective.Color))}
 						options={withDefault(colors)}
 						value={asSegment(overrides.Color)}
@@ -557,15 +589,17 @@
 					/>
 					<Segmented
 						name="dpi"
-						label="Resolution"
-						hint={effective.Dpi ? `default ${effective.Dpi} dpi` : 'dpi'}
+						label={t('settings.resolution')}
+						hint={effective.Dpi
+							? t('settings.defaultDpi', { dpi: effective.Dpi })
+							: t('settings.dpi')}
 						options={withDefault(dpis)}
 						value={asSegment(overrides.Dpi)}
 						onchange={(v) => setNumber('Dpi', v)}
 					/>
 					<Segmented
 						name="page_size"
-						label="Paper size"
+						label={t('settings.paperSize')}
 						hint={defaultHint(pageSizeLabel(effective.PageSize))}
 						options={withDefault(pageSizes)}
 						value={asSegment(overrides.PageSize)}
@@ -574,11 +608,10 @@
 
 					<!-- What happens to a page after it comes off the scanner. -->
 					<fieldset class="flex flex-col rounded-[16px] bg-app px-3.5 py-1.5">
-						<legend class="sr-only">Clean-up</legend>
+						<legend class="sr-only">{t('settings.cleanUp')}</legend>
 						<Toggle
 							name="blank_page_detection"
-							label="Skip blank pages"
-							hint="Pages that look empty start out deleted"
+							label={t('settings.skipBlank')}
 							checked={overrides.BlankPageDetection ?? effective.BlankPageDetection ?? false}
 							onchange={(v) => settings.update('BlankPageDetection', v)}
 						/>
@@ -590,9 +623,9 @@
 								: 'opacity-50'}"
 						>
 							<span class="flex min-w-0 flex-col">
-								<span class="text-[13px] font-bold text-ink-2">Blank threshold</span>
+								<span class="text-[13px] font-bold text-ink-2">{t('settings.blankThreshold')}</span>
 								<span class="text-xs text-ink-muted">
-									Higher skips more · default {effective.BlankPageThreshold}
+									{t('settings.defaultHint', { value: effective.BlankPageThreshold ?? '' })}
 								</span>
 							</span>
 							<input
@@ -613,19 +646,18 @@
 						<div class="border-t border-line-strong"></div>
 						<Toggle
 							name="auto_deskew"
-							label="Auto-deskew"
-							hint="Straighten pages that went through crooked"
+							label={t('settings.autoDeskew')}
 							checked={overrides.AutoDeskew ?? effective.AutoDeskew ?? false}
 							onchange={(v) => settings.update('AutoDeskew', v)}
 						/>
 					</fieldset>
 
 					<fieldset class="flex flex-col gap-1 rounded-[16px] bg-app px-3.5 py-2.5">
-						<legend class="sr-only">Image adjustments</legend>
-						{#each [['brightness', 'Brightness', 'Brightness'], ['contrast', 'Contrast', 'Contrast']] as const as [key, label, prop] (key)}
+						<legend class="sr-only">{t('settings.imageAdjustments')}</legend>
+						{#each [['brightness', 'settings.brightness', 'Brightness'], ['contrast', 'settings.contrast', 'Contrast']] as const as [key, label, prop] (key)}
 							<Slider
 								name={key}
-								{label}
+								label={t(label)}
 								value={overrides[prop] ?? effective[prop] ?? 0}
 								onchange={(v) => settings.update(prop, v)}
 							/>
@@ -640,12 +672,7 @@
 			for this browser only. Outside the scanner section's loading branch, since none of it
 			needs the server's scan defaults.
 		-->
-		<SettingsSection
-			title="Devices"
-			icon="scan"
-			hint="Name them, hide the ones you never use. Unplugged ones stay listed, faded."
-			testid="scanners-section"
-		>
+		<SettingsSection title={t('settings.devices')} icon="scan" testid="scanners-section">
 			<ScannerList
 				rows={scannerRows($scannerPrefs, devices ?? [], sortedSessions($sessions))}
 				chosen={currentDevice}
@@ -660,18 +687,13 @@
 			document is and what it is called are this browser's business. A server that lets
 			the UI change no scan setting still has to let you name what comes off it.
 		-->
-		<SettingsSection
-			title="Export"
-			icon="download"
-			hint="What kind of file a document is saved as, and where it can go."
-			testid="export-section"
-		>
+		<SettingsSection title={t('settings.export')} icon="download" testid="export-section">
 			<Segmented
 				name="format"
-				label="File format"
+				label={t('settings.fileFormat')}
 				hint={$exportPrefs.format === ExportFormat.Pdf
-					? 'one file per document'
-					: 'one file per page'}
+					? t('settings.perDocument')
+					: t('settings.perPage')}
 				options={[
 					{ value: String(ExportFormat.Pdf), label: exportFormatLabels[ExportFormat.Pdf] },
 					{ value: String(ExportFormat.Jpg), label: exportFormatLabels[ExportFormat.Jpg] },
@@ -688,8 +710,7 @@
 				<div class="flex flex-col rounded-[16px] bg-app px-3.5 py-1.5">
 					<Toggle
 						name="server-save"
-						label="Save to server"
-						hint="Adds a button that saves into the server's folder"
+						label={t('settings.serverSave')}
 						checked={$exportPrefs.serverSave}
 						onchange={(on) => exportPrefs.set({ ...$exportPrefs, serverSave: on })}
 					/>
@@ -709,14 +730,9 @@
 			nothing to do with how the scanner is driven, and they have to stay reachable
 			while that section is still loading or has failed.
 		-->
-		<SettingsSection
-			title="Naming"
-			icon="pencil"
-			hint="What a document is called when nobody has named it."
-			testid="naming-section"
-		>
+		<SettingsSection title={t('settings.naming')} icon="pencil" testid="naming-section">
 			<div class="col-span-full flex flex-col gap-1.5">
-				<span class="text-[13px] font-bold text-ink-2">File name template</span>
+				<span class="text-[13px] font-bold text-ink-2">{t('settings.fileNameTemplate')}</span>
 				<TemplateEditor
 					value={$exportPrefs.nameTemplate}
 					tokens={templateTokens}
@@ -733,26 +749,20 @@
 			What a PDF says about itself in its properties. Kept in this browser like the rest
 			of the export preferences: it is about whose documents these are, not how they scan.
 		-->
-		<SettingsSection
-			title="Metadata"
-			icon="tag"
-			hint="Written into every PDF's properties. The title is always the document's name."
-			testid="metadata-section"
-		>
-			{#each [['author', 'Author', 'Who the documents belong to', 'Left empty, the PDF names nobody.'], ['subject', 'Subject', 'What they are about', 'If every scan from here is about the same thing.'], ['keywords', 'Keywords', 'invoices, tax, 2026', 'Comma-separated, for whatever indexes them.']] as const as [key, label, placeholder, hint] (key)}
+		<SettingsSection title={t('settings.metadata')} icon="tag" testid="metadata-section">
+			{#each [['author', 'settings.author', 'settings.authorPlaceholder'], ['subject', 'settings.subject', 'settings.subjectPlaceholder'], ['keywords', 'settings.keywords', 'settings.keywordsPlaceholder']] as const as [key, label, placeholder] (key)}
 				<label class="flex flex-col gap-1.5">
-					<span class="text-[13px] font-bold text-ink-2">{label}</span>
+					<span class="text-[13px] font-bold text-ink-2">{t(label)}</span>
 					<input
 						class="field h-11 px-3 text-sm placeholder:text-ink-faint"
 						type="text"
 						name="metadata-{key}"
 						autocomplete="off"
-						{placeholder}
+						placeholder={t(placeholder)}
 						value={$exportPrefs[key]}
 						oninput={(e) => exportPrefs.set({ ...$exportPrefs, [key]: e.currentTarget.value })}
 						data-testid="metadata-{key}"
 					/>
-					<span class="text-[11px] text-ink-faint">{hint}</span>
 				</label>
 			{/each}
 		</SettingsSection>
@@ -761,24 +771,16 @@
 			The one preference the review screen keeps, and it had nowhere to be said out loud:
 			the overview's own zoom buttons set it, which you only find by opening the overview.
 		-->
-		<SettingsSection
-			title="Editing"
-			icon="grid"
-			hint="How the review screen behaves while you go through the pages."
-			testid="editing-section"
-		>
+		<SettingsSection title={t('settings.editing')} icon="grid" testid="editing-section">
 			<div class="col-span-full flex flex-col gap-1.5">
 				<Segmented
 					name="overview-tile"
-					label="Page size in the all-pages view"
+					label={t('settings.tileSize')}
 					options={tileSizes}
 					value={String($reviewPrefs.overviewTile)}
 					onchange={(v) =>
 						reviewPrefs.set({ ...$reviewPrefs, overviewTile: v === 'fit' ? 'fit' : Number(v) })}
 				/>
-				<span class="text-[11px] text-ink-faint">
-					Fit puts the whole scan on one screen; the zoom buttons in that view set the rest.
-				</span>
 			</div>
 		</SettingsSection>
 
@@ -786,17 +788,11 @@
 			Past scans live on the server, but when they stop being wanted is this browser's
 			call: whichever browser has this set deletes them as they age out.
 		-->
-		<SettingsSection
-			title="Past scans"
-			icon="archive"
-			hint="Scans stay listed until you delete them, or until this does."
-			testid="history-section"
-		>
+		<SettingsSection title={t('settings.pastScans')} icon="archive" testid="history-section">
 			<div class="col-span-full flex flex-col rounded-[16px] bg-app px-3.5 py-1.5">
 				<Toggle
 					name="auto-clear"
-					label="Delete old scans automatically"
-					hint="Whichever browser has this on does the deleting"
+					label={t('settings.autoClear')}
 					checked={$historyPrefs.autoClear !== null}
 					onchange={(on) =>
 						historyPrefs.set({ autoClear: on ? { amount: 30, unit: 'days' } : null })}
@@ -806,7 +802,7 @@
 					<label
 						class="mb-2 flex animate-fade-in flex-wrap items-center gap-2 border-t border-line-strong pt-2.5 text-[13px] font-bold text-ink-2"
 					>
-						Older than
+						{t('settings.olderThan')}
 						<input
 							class="field h-10 w-16 px-2.5 text-center text-sm tabular-nums"
 							type="number"
@@ -831,7 +827,7 @@
 							data-testid="auto-clear-unit"
 						>
 							{#each retentionUnits as unit (unit)}
-								<option value={unit}>{unit}</option>
+								<option value={unit}>{t(unitNames[unit])}</option>
 							{/each}
 						</select>
 					</label>
@@ -848,7 +844,7 @@
 			class="h-12 w-full rounded-[14px] bg-linear-135 from-accent-light to-accent-grad2 text-[15px] font-extrabold text-white shadow-done transition-shadow duration-200 hover:shadow-export-hover sm:w-[200px]"
 			onclick={close}
 		>
-			Done
+			{t('settings.done')}
 		</button>
 	</footer>
 </div>

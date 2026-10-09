@@ -8,36 +8,37 @@ import {
 import { ScannerState } from './hub/generated/Yass.Core.Scanning';
 import { ExportFormat, type SessionDto } from './hub/generated/Yass.Core.Hub';
 import { expandTemplate } from './template';
+import { i18n, t } from './i18n/index.svelte';
 
 export function sessionStateLabel(state: SessionState): string {
 	switch (state) {
 		case SessionState.Scanning:
-			return 'Scanning';
+			return t('home.stateScanning');
 		case SessionState.Review:
-			return 'Ready to review';
+			return t('home.stateReview');
 		case SessionState.Exporting:
-			return 'Preparing';
+			return t('home.statePreparing');
 		case SessionState.Done:
-			return 'Downloaded';
+			return t('home.statusDownloaded');
 		case SessionState.Failed:
-			return 'Failed';
+			return t('home.stateFailed');
 		default:
-			return 'Idle';
+			return t('home.stateIdle');
 	}
 }
 
 export function scannerStateLabel(state: ScannerState | undefined): string {
 	switch (state) {
 		case ScannerState.Ready:
-			return 'Ready';
+			return t('home.scannerReady');
 		case ScannerState.Busy:
-			return 'Scanning';
+			return t('home.stateScanning');
 		case ScannerState.NoDevice:
-			return 'No scanner';
+			return t('home.scannerNoDevice');
 		case ScannerState.Error:
-			return 'Scanner error';
+			return t('home.scannerError');
 		default:
-			return 'Checking…';
+			return t('home.scannerChecking');
 	}
 }
 
@@ -50,20 +51,20 @@ export function formatTime(iso: string, now: Date = new Date()): string {
 	const date = new Date(iso);
 	if (Number.isNaN(date.getTime())) return iso;
 	const sameDay = date.toDateString() === now.toDateString();
-	const time = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+	const time = date.toLocaleTimeString(i18n.locale, { hour: '2-digit', minute: '2-digit' });
 	return sameDay
 		? time
-		: `${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} ${time}`;
+		: `${date.toLocaleDateString(i18n.locale, { month: 'short', day: 'numeric' })} ${time}`;
 }
 
 export function sourceLabel(source: ScanSource | undefined): string {
 	switch (source) {
 		case ScanSource.Feeder:
-			return 'Feeder';
+			return t('home.sourceFeeder');
 		case ScanSource.Duplex:
-			return 'Feeder, both sides';
+			return t('home.sourceDuplex');
 		case ScanSource.Flatbed:
-			return 'Flatbed';
+			return t('home.sourceFlatbed');
 		default:
 			return '';
 	}
@@ -72,11 +73,11 @@ export function sourceLabel(source: ScanSource | undefined): string {
 export function colorLabel(color: ColorMode | undefined): string {
 	switch (color) {
 		case ColorMode.Bw:
-			return 'Black & white';
+			return t('home.colorBw');
 		case ColorMode.Grayscale:
-			return 'Grayscale';
+			return t('home.colorGrayscale');
 		case ColorMode.Color:
-			return 'Color';
+			return t('home.colorColor');
 		default:
 			return '';
 	}
@@ -89,9 +90,9 @@ export function pageSizeLabel(size: PageSize | undefined): string {
 		case PageSize.A5:
 			return 'A5';
 		case PageSize.Letter:
-			return 'Letter';
+			return t('home.sizeLetter');
 		case PageSize.Legal:
-			return 'Legal';
+			return t('home.sizeLegal');
 		default:
 			return '';
 	}
@@ -134,15 +135,32 @@ export function sessionStatus(session: SessionDto): SessionStatus {
 	}
 }
 
+// Getters, so a label read in markup follows the language.
 export const statusLabels: Record<SessionStatus, string> = {
-	draft: 'Draft',
-	scanning: 'Scanning',
-	exporting: 'Preparing',
-	exported: 'On server',
-	saved: 'Saved',
-	downloaded: 'Downloaded',
-	discarded: 'Discarded',
-	failed: 'Failed'
+	get draft() {
+		return t('home.statusDraft');
+	},
+	get scanning() {
+		return t('home.stateScanning');
+	},
+	get exporting() {
+		return t('home.statePreparing');
+	},
+	get exported() {
+		return t('home.statusExported');
+	},
+	get saved() {
+		return t('home.statusSaved');
+	},
+	get downloaded() {
+		return t('home.statusDownloaded');
+	},
+	get discarded() {
+		return t('home.statusDiscarded');
+	},
+	get failed() {
+		return t('home.stateFailed');
+	}
 };
 
 export const exportFormatLabels: Record<ExportFormat, string> = {

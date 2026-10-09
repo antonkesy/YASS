@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { filterableStatuses, type StatusFilter } from '$lib/sessions/browse';
 	import { statusLabels } from '$lib/format';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let {
 		value,
@@ -28,7 +29,7 @@
 
 {#if shown.length > 0}
 	<div class="flex flex-wrap gap-1.5" data-testid="status-filter">
-		{#each [{ key: 'all' as StatusFilter, label: 'All', count: total }, ...shown.map( (s) => ({ key: s as StatusFilter, label: statusLabels[s], count: counts[s] ?? 0 }) )] as chip (chip.key)}
+		{#each [{ key: 'all' as StatusFilter, label: t('home.all'), count: total }, ...shown.map( (s) => ({ key: s as StatusFilter, label: statusLabels[s], count: counts[s] ?? 0 }) )] as chip (chip.key)}
 			<button
 				type="button"
 				class="flex h-[30px] items-center gap-1.5 rounded-full px-2.5 text-xs font-bold transition-colors {value ===

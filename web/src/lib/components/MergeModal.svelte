@@ -5,6 +5,7 @@
 	import { imageUrl } from '$lib/hub/hub';
 	import { activePageCount, formatTime, sessionTitle } from '$lib/format';
 	import { Icon } from '$lib/icons';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let {
 		sessions,
@@ -33,7 +34,7 @@
 	<button
 		type="button"
 		class="absolute inset-0 cursor-default"
-		aria-label="Cancel"
+		aria-label={t('dialogs.cancel')}
 		onclick={oncancel}
 	></button>
 
@@ -42,20 +43,19 @@
 		out:cardOut|global
 		role="dialog"
 		aria-modal="true"
-		aria-label="Add pages from a past scan"
+		aria-label={t('dialogs.mergeTitle')}
 		data-testid="merge-modal"
 	>
 		<div class="flex flex-col gap-1">
-			<h2 class="text-[20px] font-extrabold">Add pages from a past scan</h2>
+			<h2 class="text-[20px] font-extrabold">{t('dialogs.mergeTitle')}</h2>
 			<p class="text-sm text-ink-muted">
-				Its pages are copied to the end of this scan as their own document. The other scan is left
-				as it is.
+				{t('dialogs.mergeHint')}
 			</p>
 		</div>
 
 		{#if sessions.length === 0}
 			<p class="rounded-[14px] bg-app px-4 py-6 text-center text-sm text-ink-muted">
-				No other scan has pages to add.
+				{t('dialogs.mergeNone')}
 			</p>
 		{:else}
 			<div class="flex flex-col gap-0.5" class:is-muted={busy}>
@@ -82,7 +82,9 @@
 						<span class="flex min-w-0 flex-1 flex-col">
 							<span class="truncate text-sm font-bold">{sessionTitle(session, template)}</span>
 							<span class="text-xs text-ink-muted">
-								{formatTime(session.CreatedAt)} · {activePageCount(session)} pages
+								{formatTime(session.CreatedAt)} · {t('dialogs.pages', {
+									n: activePageCount(session)
+								})}
 							</span>
 						</span>
 						<span
@@ -100,7 +102,7 @@
 			class="h-11 self-end rounded-[14px] bg-ctl px-4 text-sm font-bold text-ink-3 transition-colors hover:bg-ctl-hover"
 			onclick={oncancel}
 		>
-			Cancel
+			{t('dialogs.cancel')}
 		</button>
 	</div>
 </div>

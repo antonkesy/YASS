@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { escapeCloses } from '$lib/keys.svelte';
 	import { PageCleanup, PageFilter } from '$lib/hub/generated/Yass.Core.Domain';
 	import FilterMenu from './FilterMenu.svelte';
@@ -79,7 +80,11 @@
 	 * the whole scan by default was a rotation of everything one button away from a rotation
 	 * of the page someone was looking at, with nothing on screen to tell them apart.
 	 */
-	const scope = $derived(selectedCount === 0 ? 'this page' : `${selectedCount} selected`);
+	const scope = $derived(
+		selectedCount === 0
+			? t('review.actingOnPage')
+			: t('review.actingOnSelected', { n: selectedCount })
+	);
 
 	/**
 	 * Whether the edits point at exactly one page, which is what Crop and Rescan need. Nothing
@@ -98,19 +103,21 @@
 	const canAim = $derived(editing && !scanning && one);
 	const shown = $derived(editing || scoped);
 
+	// Icons only: each button's name is its aria-label, shown as a tooltip on hover. The
+	// words under the icons made the bar two rows deep on a phone.
 	const tool =
-		'flex h-[58px] min-w-[62px] flex-col items-center justify-center gap-1 rounded-[14px] px-2 text-[11px] font-bold transition-colors hover:bg-accent-hover50';
+		'flex h-11 w-11 flex-none items-center justify-center rounded-[14px] transition-colors hover:bg-accent-hover50';
 </script>
 
 {#if shown}<div
 		class="relative flex flex-wrap items-center gap-0.5 rounded-[20px] bg-surface p-1.5 shadow-toolbar"
 		role="toolbar"
-		aria-label="Page edits"
+		aria-label={t('review.pageEdits')}
 		data-testid="toolbar"
 	>
 		{#if scoped}
 			<span class="px-3 text-[13px] font-semibold text-ink-muted" data-testid="toolbar-scope">
-				Acting on {scope}
+				{scope}
 			</span>
 
 			{#if selectedCount > 0}
@@ -119,7 +126,7 @@
 					class="h-9 rounded-full px-3 text-[13px] font-bold text-accent transition-colors hover:bg-accent-wash"
 					onclick={onclear}
 				>
-					Clear
+					{t('review.clear')}
 				</button>
 			{:else if onselectall && total > 1 && editing}
 				<button
@@ -128,7 +135,7 @@
 					onclick={onselectall}
 					data-testid="toolbar-select-all"
 				>
-					All {total}
+					{t('review.allN', { n: total })}
 				</button>
 			{/if}
 
@@ -141,11 +148,11 @@
 				type="button"
 				class="text-ink {tool}"
 				onclick={onexpand}
-				aria-label="Open this page full screen"
+				aria-label={t('review.openFullScreen')}
+				title={t('review.openFullScreen')}
 				data-testid="expand-button"
 			>
 				<Icon name="expand" />
-				Expand
 			</button>
 		{/if}
 
@@ -154,19 +161,19 @@
 				type="button"
 				class="text-ink {tool}"
 				onclick={() => onrotate(-90)}
-				aria-label="Rotate left"
+				aria-label={t('review.rotateLeft')}
+				title={t('review.rotateLeft')}
 			>
 				<Icon name="rotateLeft" />
-				Rotate left
 			</button>
 			<button
 				type="button"
 				class="text-ink {tool}"
 				onclick={() => onrotate(90)}
-				aria-label="Rotate right"
+				aria-label={t('review.rotateRight')}
+				title={t('review.rotateRight')}
 			>
 				<Icon name="rotateRight" />
-				Rotate right
 			</button>
 		{/if}
 
@@ -181,11 +188,11 @@
 				onclick={() => (cropOpen = !cropOpen)}
 				aria-expanded={cropOpen}
 				aria-haspopup="menu"
-				aria-label="Crop and straighten"
+				aria-label={t('review.cropAndStraighten')}
+				title={t('review.cropAndStraighten')}
 				data-testid="crop-button"
 			>
 				<Icon name="crop" />
-				Crop
 			</button>
 		{/if}
 
@@ -194,11 +201,11 @@
 				type="button"
 				class="text-ink {tool}"
 				onclick={onadjust}
-				aria-label="Adjust brightness, contrast and sharpness"
+				aria-label={t('review.adjustLong')}
+				title={t('review.adjustLong')}
 				data-testid="adjust-button"
 			>
 				<Icon name="sliders" />
-				Adjust
 			</button>
 		{/if}
 
@@ -209,11 +216,11 @@
 				onclick={() => (filterOpen = !filterOpen)}
 				aria-expanded={filterOpen}
 				aria-haspopup="menu"
-				aria-label="Filter"
+				aria-label={t('review.filter')}
+				title={t('review.filter')}
 				data-testid="filter-button"
 			>
 				<Icon name="wand" />
-				Filter
 			</button>
 		{/if}
 
@@ -222,11 +229,11 @@
 				type="button"
 				class="text-ink {tool}"
 				onclick={onrescan}
-				aria-label="Rescan this page"
+				aria-label={t('review.rescanPage')}
+				title={t('review.rescanPage')}
 				data-testid="rescan-button"
 			>
 				<Icon name="rescan" />
-				Rescan
 			</button>
 		{/if}
 
@@ -240,10 +247,11 @@
 				type="button"
 				class="text-ink {tool}"
 				onclick={onrestore}
+				aria-label={t('review.restore')}
+				title={t('review.restore')}
 				data-testid="restore-button"
 			>
 				<Icon name="layers" />
-				Restore
 			</button>
 		{/if}
 		{#if editing && anyActive}
@@ -251,10 +259,11 @@
 				type="button"
 				class="text-danger hover:bg-danger-bg! {tool}"
 				onclick={ondelete}
+				aria-label={t('review.delete')}
+				title={t('review.delete')}
 				data-testid="delete-button"
 			>
 				<Icon name="trash" />
-				Delete
 			</button>
 		{/if}
 
@@ -262,7 +271,7 @@
 			<button
 				type="button"
 				class="fixed inset-0 z-30 cursor-default"
-				aria-label="Close crop menu"
+				aria-label={t('review.closeCropMenu')}
 				onclick={() => (cropOpen = false)}
 			></button>
 			<div
@@ -270,7 +279,7 @@
 				role="menu"
 				data-testid="crop-menu"
 			>
-				{#each [{ id: 'crop', label: 'Crop…', icon: 'crop', run: oncrop }, { id: 'straighten', label: 'Straighten…', icon: 'rotateRight', run: onstraighten }] as const as item (item.id)}
+				{#each [{ id: 'crop', label: t('review.cropMenuItem'), icon: 'crop', run: oncrop }, { id: 'straighten', label: t('review.straightenMenuItem'), icon: 'rotateRight', run: onstraighten }] as const as item (item.id)}
 					{#if item.run && one}
 						{@const run = item.run}
 						<button
@@ -303,12 +312,12 @@
 						<Icon name="scissors" />
 						<span class="flex flex-col">
 							<span class="text-sm font-semibold">
-								{autocropping ? 'Finding borders…' : 'Auto-crop borders'}
+								{autocropping ? t('review.findingBorders') : t('review.autoCrop')}
 							</span>
 							<span class="text-[11px] text-ink-muted">
-								Trim the dark frame around {selectedCount > 1
-									? `${selectedCount} pages`
-									: 'this page'}
+								{selectedCount > 1
+									? t('review.trimPages', { n: selectedCount })
+									: t('review.trimThisPage')}
 							</span>
 						</span>
 					</button>

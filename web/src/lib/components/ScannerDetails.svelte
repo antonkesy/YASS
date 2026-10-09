@@ -4,6 +4,7 @@
 	import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 	import type { ConnectionState } from '$lib/hub/client';
 	import { formatTime, scannerStateLabel } from '$lib/format';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let {
 		status,
@@ -32,12 +33,12 @@
 
 	const connectionLabel = $derived(
 		connection === 'connected'
-			? 'Connected'
+			? t('home.connected')
 			: connection === 'connecting'
-				? 'Connecting…'
+				? t('home.connecting')
 				: connection === 'reconnecting'
-					? 'Reconnecting…'
-					: 'Offline'
+					? t('home.reconnecting')
+					: t('home.offline')
 	);
 
 	/**
@@ -46,12 +47,12 @@
 	 */
 	const rows = $derived(
 		[
-			['Server', connectionLabel],
-			['Scanner', name ?? status?.DeviceName ?? null],
-			['State', offline ? null : scannerStateLabel(status?.State)],
-			['Pages so far', scanning && pages !== null ? String(pages) : null],
-			['Details', status?.Message ?? null],
-			['Last checked', status?.CheckedAt ? formatTime(status.CheckedAt) : null]
+			[t('home.detailServer'), connectionLabel],
+			[t('home.scanner'), name ?? status?.DeviceName ?? null],
+			[t('home.detailState'), offline ? null : scannerStateLabel(status?.State)],
+			[t('home.detailPagesSoFar'), scanning && pages !== null ? String(pages) : null],
+			[t('home.detailDetails'), status?.Message ?? null],
+			[t('home.detailLastChecked'), status?.CheckedAt ? formatTime(status.CheckedAt) : null]
 		].filter((row): row is [string, string] => row[1] !== null && row[1] !== '')
 	);
 </script>
@@ -61,17 +62,19 @@
 	<button
 		type="button"
 		class="fixed inset-0 z-30 cursor-default"
-		aria-label="Close scanner details"
+		aria-label={t('home.closeScannerDetails')}
 		onclick={onclose}
 	></button>
 {/if}
 <div
 	class="absolute top-[calc(100%+8px)] left-1/2 z-31 w-max max-w-[min(320px,calc(100vw-32px))] -translate-x-1/2 animate-pop-in rounded-[16px] bg-surface p-4 text-left shadow-menu"
 	role="dialog"
-	aria-label="Scanner details"
+	aria-label={t('home.scannerDetails')}
 	data-testid="scanner-details"
 >
-	<p class="mb-2 text-[11px] font-bold tracking-[0.06em] text-ink-faint uppercase">Scanner</p>
+	<p class="mb-2 text-[11px] font-bold tracking-[0.06em] text-ink-faint uppercase">
+		{t('home.scanner')}
+	</p>
 	<dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-[13px]">
 		{#each rows as [key, value] (key)}
 			<dt class="font-semibold text-ink-muted">{key}</dt>

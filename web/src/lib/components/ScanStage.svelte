@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { pickKeyframes, play } from '$lib/motion';
+	import { t } from '$lib/i18n/index.svelte';
 	import type {
 		ScannerDeviceDto,
 		ScanOptionsDto,
@@ -55,6 +57,20 @@
 	 */
 	let details = $state<'hover' | 'pinned' | null>(null);
 
+	/**
+	 * The scanner pill that lights up bounces, as a preset does when picked. Not on load: a page
+	 * that opens with a scanner already chosen has nothing to answer.
+	 */
+	let settled = false;
+	$effect(() => {
+		settled = true;
+	});
+	function bounceWhenPicked(id: string) {
+		return (el: Element) => {
+			if (shown === id && settled) play(el, pickKeyframes, 420);
+		};
+	}
+
 	/** The scanner the next scan will run on: this browser's pick, or the server's. */
 	const device = $derived(options?.Device || '');
 
@@ -81,7 +97,7 @@
 	 */
 	const listed = $derived(
 		device && !devices.some((d) => d.Id === device)
-			? [...devices, { Id: device, Name: `${device} (not found)` }]
+			? [...devices, { Id: device, Name: t('home.deviceNotFound', { device }) }]
 			: devices
 	);
 
@@ -106,19 +122,19 @@
 	const blocked = $derived(
 		offline
 			? connection === 'connecting'
-				? 'Connecting to the scanner service…'
-				: 'Not connected to the scanner service'
+				? t('home.blockedConnecting')
+				: t('home.blockedOffline')
 			: status?.State === ScannerState.Busy
-				? 'The scanner is busy'
+				? t('home.blockedBusy')
 				: status?.State === ScannerState.NoDevice
-					? 'No scanner found'
+					? t('home.blockedNoDevice')
 					: status?.State === ScannerState.Error
-						? 'The scanner reported a problem'
-						: 'Still checking the scanner…'
+						? t('home.blockedError')
+						: t('home.blockedChecking')
 	);
 
 	const caption = $derived(
-		[pageSizeLabel(options?.PageSize), options?.Dpi ? `${options.Dpi} dpi` : '']
+		[pageSizeLabel(options?.PageSize), options?.Dpi ? t('home.dpi', { n: options.Dpi }) : '']
 			.filter(Boolean)
 			.join(' · ')
 	);
@@ -145,11 +161,13 @@
 	{#if canPickDevice}
 		<!-- Every scanner in a row, the chosen one lit, the same way the presets are picked. -->
 		<div class="flex flex-col items-center gap-2" data-testid="device-picker">
-			<span class="text-[11px] font-bold tracking-[0.08em] text-ink-faint uppercase">Scanner</span>
+			<span class="text-[11px] font-bold tracking-[0.08em] text-ink-faint uppercase"
+				>{t('home.scanner')}</span
+			>
 			<div
 				class="flex flex-wrap justify-center gap-1.5 rounded-[24px] bg-[rgb(238_242_255_/_0.8)] p-[5px]"
 				role="radiogroup"
-				aria-label="Scanner"
+				aria-label={t('home.scanner')}
 				data-testid="device-pills"
 			>
 				{#each listed as scanner (scanner.Id)}
@@ -177,6 +195,7 @@
 								else settings.set({ ...$settings, Device: scanner.Id });
 							}}
 							data-device={scanner.Id}
+							{@attach bounceWhenPicked(scanner.Id)}
 						>
 							<span class="truncate">{scanner.Name}</span>
 						</button>
@@ -219,10 +238,12 @@
 	<button
 		type="button"
 		onclick={onsettings}
-		class="flex h-9 items-center gap-2 rounded-full px-3 text-sm font-bold text-accent transition-colors hover:bg-accent-wash"
+		class="flex h-11 w-11 items-center justify-center rounded-full text-accent transition-colors hover:bg-accent-wash"
+		aria-label={t('home.changeSettings')}
+		title={t('home.changeSettings')}
+		data-testid="change-settings"
 	>
 		<Icon name="sliders" />
-		Change settings
 	</button>
 
 	<ScanButton disabled={!ready || busy} {busy} reason={blocked} onclick={onscan} />

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { modified, typing, useLayer } from '$lib/keys.svelte';
 	import type { PageDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import type { PageCleanup, PageFilter } from '$lib/hub/generated/Yass.Core.Domain';
@@ -44,9 +45,9 @@
 
 	let filterOpen = $state(false);
 	const tools = $derived([
-		{ id: 'adjust', label: 'Adjust', icon: 'sliders', run: onadjust },
-		{ id: 'crop', label: 'Crop', icon: 'crop', run: oncrop },
-		{ id: 'straighten', label: 'Straighten', icon: 'rotateRight', run: onstraighten }
+		{ id: 'adjust', label: t('review.adjust'), icon: 'sliders', run: onadjust },
+		{ id: 'crop', label: t('review.crop'), icon: 'crop', run: oncrop },
+		{ id: 'straighten', label: t('review.straighten'), icon: 'rotateRight', run: onstraighten }
 	] as const);
 
 	const page = $derived(pages[index]);
@@ -105,7 +106,7 @@
 		class="fixed inset-0 z-30 flex flex-col bg-black text-white select-none"
 		role="dialog"
 		aria-modal="true"
-		aria-label="Page {index + 1} of {pages.length}"
+		aria-label={t('review.pageOf', { n: index + 1, total: pages.length })}
 		tabindex="-1"
 		bind:this={dialog}
 		data-testid="preview"
@@ -114,7 +115,7 @@
 			<button
 				type="button"
 				class={navBtn}
-				aria-label="Close preview"
+				aria-label={t('review.closePreview')}
 				onclick={onclose}
 				data-testid="preview-close"
 			>
@@ -128,13 +129,13 @@
 				>
 			</button>
 			<span class="text-sm" data-testid="preview-counter"
-				>{index + 1} / {pages.length}{page.Deleted ? ' · deleted' : ''}</span
+				>{index + 1} / {pages.length}{page.Deleted ? ` · ${t('review.deleted')}` : ''}</span
 			>
 			<span class="ml-auto flex gap-1">
 				<button
 					type="button"
 					class={navBtn}
-					aria-label={zoomed ? 'Fit page to screen' : 'Zoom to full width'}
+					aria-label={zoomed ? t('review.fitToScreen') : t('review.zoomFullWidth')}
 					aria-pressed={zoomed}
 					onclick={toggleZoom}
 					data-testid="preview-zoom"
@@ -154,7 +155,7 @@
 				<button
 					type="button"
 					class={navBtn}
-					aria-label="Rotate left"
+					aria-label={t('review.rotateLeft')}
 					onclick={() => onrotate(index, -90)}
 				>
 					<svg
@@ -169,7 +170,7 @@
 				<button
 					type="button"
 					class={navBtn}
-					aria-label="Rotate right"
+					aria-label={t('review.rotateRight')}
 					onclick={() => onrotate(index, 90)}
 				>
 					<svg
@@ -206,7 +207,7 @@
 				>
 					<img
 						src={imageUrl(sessionId, page.Index, page.Hash, 'preview')}
-						alt="Page {index + 1}"
+						alt={t('review.pageN', { n: index + 1 })}
 						class="transition-transform duration-200 {zoomed
 							? 'h-auto w-full max-w-none cursor-zoom-out'
 							: 'h-full w-full cursor-zoom-in object-contain'} {page.Deleted ? 'opacity-50' : ''}"
@@ -221,7 +222,7 @@
 				<button
 					type="button"
 					class="{navBtn} fixed top-1/2 left-2 -translate-y-1/2"
-					aria-label="Previous page"
+					aria-label={t('review.previousPage')}
 					onclick={() => onnavigate(index - 1)}
 					data-testid="preview-prev"
 				>
@@ -239,7 +240,7 @@
 				<button
 					type="button"
 					class="{navBtn} fixed top-1/2 right-2 -translate-y-1/2"
-					aria-label="Next page"
+					aria-label={t('review.nextPage')}
 					onclick={() => onnavigate(index + 1)}
 					data-testid="preview-next"
 				>
@@ -267,35 +268,37 @@
 				<div
 					class="relative flex gap-0.5 rounded-[18px] bg-white/10 p-1"
 					role="toolbar"
-					aria-label="Edit this page"
+					aria-label={t('review.editThisPage')}
 				>
 					{#each tools as tool (tool.id)}
 						{#if tool.run}
 							{@const run = tool.run}
 							<button
 								type="button"
-								class="flex h-12 min-w-[64px] flex-col items-center justify-center gap-0.5 rounded-[14px] px-2 text-[11px] font-bold text-white transition-colors hover:bg-white/15"
+								class="flex h-12 w-12 items-center justify-center rounded-[14px] text-white transition-colors hover:bg-white/15"
 								onclick={() => run(index)}
+								aria-label={tool.label}
+								title={tool.label}
 								data-testid="preview-{tool.id}"
 							>
 								<Icon name={tool.icon} />
-								{tool.label}
 							</button>
 						{/if}
 					{/each}
 					{#if onfilter}
 						<button
 							type="button"
-							class="flex h-12 min-w-[64px] flex-col items-center justify-center gap-0.5 rounded-[14px] px-2 text-[11px] font-bold text-white transition-colors {filterOpen
+							class="flex h-12 w-12 items-center justify-center rounded-[14px] text-white transition-colors {filterOpen
 								? 'bg-white/20'
 								: 'hover:bg-white/15'}"
 							aria-expanded={filterOpen}
 							aria-haspopup="menu"
 							onclick={() => (filterOpen = !filterOpen)}
+							aria-label={t('review.filter')}
+							title={t('review.filter')}
 							data-testid="preview-filter"
 						>
 							<Icon name="wand" />
-							Filter
 						</button>
 						{#if filterOpen}
 							<FilterMenu

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { escapeCloses } from '$lib/keys.svelte';
 	import { Icon } from '$lib/icons';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let {
 		value,
@@ -59,7 +60,7 @@
 <div class="flex flex-col gap-2">
 	<label class="field flex h-11 items-center gap-2 px-3">
 		<span class="text-ink-faint"><Icon name="template" /></span>
-		<span class="sr-only">File name template</span>
+		<span class="sr-only">{t('settings.fileNameTemplate')}</span>
 		<input
 			bind:this={field}
 			class="min-w-0 flex-1 bg-transparent font-mono text-sm font-medium outline-none"
@@ -84,7 +85,7 @@
 				onclick={() => (open = !open)}
 				data-testid="template-presets"
 			>
-				Ready-made <span class="text-[9px] leading-none">{open ? '▴' : '▾'}</span>
+				{t('settings.readyMade')} <span class="text-[9px] leading-none">{open ? '▴' : '▾'}</span>
 			</button>
 
 			{#if open}
@@ -92,7 +93,7 @@
 				<button
 					type="button"
 					class="fixed inset-0 z-34 cursor-default"
-					aria-label="Close ready-made templates"
+					aria-label={t('settings.closeReadyMade')}
 					onclick={() => (open = false)}
 				></button>
 				<div
@@ -135,7 +136,7 @@
 
 	{#if unknown.length > 0}
 		<p class="text-xs font-semibold text-danger" role="alert" data-testid="template-error">
-			Unknown: {unknown.map((t) => `{${t}}`).join(', ')}
+			{t('settings.unknownTokens', { tokens: unknown.map((u) => `{${u}}`).join(', ') })}
 		</p>
 	{:else if preview}
 		<p
@@ -145,8 +146,4 @@
 			{preview}{extension}
 		</p>
 	{/if}
-
-	<p class="text-[11px] text-ink-faint">
-		Click a tag to add it at the cursor. Scans you have not named are saved with this.
-	</p>
 </div>

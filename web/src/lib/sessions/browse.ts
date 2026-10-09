@@ -1,19 +1,33 @@
 import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 import { sessionStatus, sessionTitle, type SessionStatus } from '$lib/format';
+import { t } from '$lib/i18n/index.svelte';
 
 export type SortOrder = 'newest' | 'oldest' | 'name';
 
+// Getters, so a label read in markup follows the language.
 export const sortLabels: Record<SortOrder, string> = {
-	newest: 'Newest first',
-	oldest: 'Oldest first',
-	name: 'Name A–Z'
+	get newest() {
+		return t('home.sortNewest');
+	},
+	get oldest() {
+		return t('home.sortOldest');
+	},
+	get name() {
+		return t('home.sortName');
+	}
 };
 
 /** The same orders named for the button that opens the menu, where space is tight. */
 export const sortShortLabels: Record<SortOrder, string> = {
-	newest: 'Newest',
-	oldest: 'Oldest',
-	name: 'Name'
+	get newest() {
+		return t('home.sortNewestShort');
+	},
+	get oldest() {
+		return t('home.sortOldestShort');
+	},
+	get name() {
+		return t('home.sortNameShort');
+	}
 };
 
 /**

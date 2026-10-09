@@ -5,6 +5,7 @@
 	import { resolve } from '$app/paths';
 	import { hubError } from '$lib/hub/errors';
 	import { toast } from '$lib/toast';
+	import { t } from '$lib/i18n/index.svelte';
 	import { cameFrom } from '$lib/navigation';
 	import { getHub, imageUrl, sortedSessions } from '$lib/hub/hub';
 	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
@@ -92,7 +93,8 @@
 	/** The big preview slides in from whichever side the new page came from. */
 	let stage = $state<HTMLElement | null>(null);
 	/** Hash of the page whose preview has finished loading onto the stage. */
-	let stageLoaded = $state<string | null>(null);
+	/** What the stage image last finished loading: which page, which render, and its turn. */
+	let stageLoaded = $state<{ index: number; hash: string; rotation: number } | null>(null);
 	// Deliberately the initial value: it tracks which page the stage is showing, and is
 	// updated by the effect below rather than following `current` on its own.
 	let shownAt = untrack(() => current);
@@ -140,12 +142,20 @@
 	/** Why the sidebar's buttons are greyed while the scan is not in review, for their tooltips. */
 	const busyReason = $derived(
 		scanning
-			? 'Wait for the scan to finish'
+			? t('review.waitScan')
 			: session?.State === SessionState.Exporting
-				? 'Wait for the save to finish'
-				: 'This scan can no longer be edited'
+				? t('review.waitSave')
+				: t('review.notEditable')
 	);
 	const shown = $derived(session?.Pages[current] ?? null);
+	/** The page on the stage has an image up — maybe of an older render of it, during an edit. */
+	const stageReady = $derived(!!shown && stageLoaded?.index === shown.Index);
+	/**
+	 * A rotation not yet in the image on screen. The page keeps showing its last render, turned
+	 * by CSS, until the new one has loaded: swapping straight to an empty frame with a spinner
+	 * in front made every rotate blink.
+	 */
+	const stageTurn = $derived(stageReady && shown ? shown.Rotation - stageLoaded!.rotation : 0);
 	// A view transition already slides the screen in; its own entrance would be a second slide.
 	const entrance = screenTransition.active ? '' : 'animate-slide-from-right';
 
@@ -190,9 +200,7 @@
 	 * sat under the download button: it is a fact about the paper, not about the saving.
 	 */
 	const pageSummary = $derived(
-		session
-			? `${activePages} of ${session.Pages.length} page${session.Pages.length === 1 ? '' : 's'}`
-			: ''
+		session ? t('review.pageSummary', { active: activePages, n: session.Pages.length }) : ''
 	);
 
 	/** Other scans that still have pages, newest first, for the merge dialog. */
@@ -218,7 +226,7 @@
 			await client.hub.deleteSession(id);
 			cameFrom.leaving(id);
 			await goto(resolve('/'));
-			toast.show('Scan discarded');
+			toast.show(t('review.scanDiscarded'));
 		} catch (e) {
 			error = hubError(e);
 		}
@@ -291,8 +299,7 @@
 			const count = target
 				? await saveToDisk(result, target, base, extension)
 				: saveToBrowser(result);
-			const verb = target ? 'Saved' : 'Downloaded';
-			toast.show(count === 1 ? verb : `${verb} ${count} files`);
+			toast.show(t(target ? 'review.savedFiles' : 'review.downloadedFiles', { n: count }));
 		} catch (e) {
 			error = hubError(e);
 		} finally {
@@ -318,7 +325,9 @@
 			const saved = result.Documents.map((d) => d.SavedTo).filter((p): p is string => !!p);
 			const file = saved[0]?.split('/').pop() ?? '';
 			toast.show(
-				saved.length === 1 ? `Saved to server as ${file}` : `Saved ${saved.length} files to server`
+				saved.length === 1
+					? t('review.savedToServerAs', { file })
+					: t('review.savedFilesToServer', { n: saved.length })
 			);
 		} catch (e) {
 			error = hubError(e);
@@ -365,9 +374,7 @@
 		// whatever happens to be on the stage by the time the toast is pressed.
 		const deleting = new Set(targets);
 		send(deleteEdit(deleting));
-		toast.show(`${deleting.size} page${deleting.size === 1 ? '' : 's'} deleted`, () =>
-			send(restoreEdit(deleting))
-		);
+		toast.show(t('review.pagesDeleted', { n: deleting.size }), () => send(restoreEdit(deleting)));
 	}
 
 	/** Escape with nothing open goes home, as the header's back link does. */
@@ -469,7 +476,7 @@
 		try {
 			const before = session?.Pages.length ?? 0;
 			const after = await client.hub.mergeSession(id, sourceId);
-			toast.show(`${after.Pages.length - before} pages added`);
+			toast.show(t('review.pagesAdded', { n: after.Pages.length - before }));
 		} catch (e) {
 			error = hubError(e);
 		} finally {
@@ -502,9 +509,9 @@
 				id,
 				before.map((p) => p.index)
 			);
-			if (count === 0) toast.show('No borders found');
+			if (count === 0) toast.show(t('review.noBorders'));
 			else
-				toast.show(`Cropped ${count} page${count === 1 ? '' : 's'}`, () => {
+				toast.show(t('review.croppedPages', { n: count }), () => {
 					for (const p of before) send(setCropEdit(p.crop, new Set([p.index])));
 				});
 		} catch (e) {
@@ -543,7 +550,7 @@
 <svelte:window onkeydown={keydown} />
 
 <svelte:head>
-	<title>{session ? formatTime(session.CreatedAt) : 'Session'} · YASS</title>
+	<title>{session ? formatTime(session.CreatedAt) : t('review.sessionTitle')} · YASS</title>
 </svelte:head>
 
 {#snippet heading(title: string, value = '', testid = '')}
@@ -604,14 +611,14 @@
 	natural height and the page scrolls, which is the right behaviour on a phone.
 -->
 <div
-	class="mx-auto flex max-w-[2200px] {entrance} flex-col px-4 pt-2 pb-7 sm:px-7 lg:h-[calc(100dvh-var(--app-header-h)-var(--app-footer-h))] lg:min-h-0"
+	class="mx-auto flex max-w-[2200px] {entrance} flex-col px-4 pt-2 pb-7 sm:px-7 lg:h-[calc(100dvh-var(--app-header-h))] lg:min-h-0"
 >
 	{#if missing}
 		<p class="rounded-[14px] bg-danger-bg px-4 py-3 font-semibold text-danger" role="alert">
-			This session no longer exists.
+			{t('review.sessionGone')}
 		</p>
 	{:else if !session}
-		<p class="text-ink-muted">Loading…</p>
+		<p class="text-ink-muted">{t('review.loading')}</p>
 	{:else}
 		{#if session.Error}
 			<p
@@ -629,7 +636,10 @@
 
 		<div class="flex min-h-0 flex-wrap items-start gap-5 lg:flex-1 lg:flex-nowrap lg:items-stretch">
 			<!-- Filmstrip: down the left on desktop, above the page on a phone. -->
-			<nav class="order-2 w-full flex-none lg:order-1 lg:min-h-0 lg:w-auto" aria-label="Pages">
+			<nav
+				class="order-2 w-full flex-none lg:order-1 lg:min-h-0 lg:w-auto"
+				aria-label={t('review.pages')}
+			>
 				<PageGrid
 					sessionId={id}
 					pages={session.Pages}
@@ -687,7 +697,7 @@
 							class="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-surface shadow-nav transition-[background-color,transform] duration-150 hover:scale-105 hover:bg-accent-wash disabled:invisible"
 							onclick={() => step(-1)}
 							disabled={current === 0}
-							aria-label="Previous page"
+							aria-label={t('review.previousPage')}
 							data-testid="stage-prev"
 						>
 							<Icon name="chevronLeft" />
@@ -703,26 +713,38 @@
 							bind:this={stage}
 							class="relative w-full max-w-[max(280px,calc((100dvh-230px)/1.414))] flex-1 lg:h-full lg:w-auto lg:max-w-none lg:flex-none"
 							style="aspect-ratio: 1 / 1.414"
-							aria-busy={stageLoaded !== shown.Hash}
+							aria-busy={stageLoaded?.hash !== shown.Hash}
 						>
 							<!-- A fresh element per page: swapping only the src keeps the previous page on
 							     screen until the new one has decoded, which reads as the arrows not working. -->
-							{#key shown.Hash}
-								{@const hash = shown.Hash}
+							<!--
+								A fresh element per page, so the arrows never seem to do nothing; within a
+								page the same element, so an edit keeps the last render up until the new
+								one replaces it.
+							-->
+							{#key shown.Index}
 								<img
-									src={imageUrl(id, shown.Index, hash, 'preview')}
-									alt="Page {shown.Index + 1}"
+									src={imageUrl(id, shown.Index, shown.Hash, 'preview')}
+									alt={t('review.pageN', { n: shown.Index + 1 })}
 									class="h-full w-full rounded-[6px] object-contain drop-shadow-[0_18px_36px_rgb(19_26_43_/_0.14)]"
-									onload={() => (stageLoaded = hash)}
+									style:transform={stageTurn
+										? `rotate(${stageTurn}deg) scale(${Math.abs(stageTurn) % 180 ? 0.707 : 1})`
+										: undefined}
+									onload={() =>
+										(stageLoaded = {
+											index: shown.Index,
+											hash: shown.Hash,
+											rotation: shown.Rotation
+										})}
 								/>
 							{/key}
-							{#if stageLoaded !== shown.Hash}
+							{#if !stageReady}
 								<!-- The preview is rendered on demand, so the empty box sits there for a
 								     moment; the same spinner the thumbnails use says it is on the way. -->
 								<span
 									class="pointer-events-none absolute inset-0 flex items-center justify-center"
 									role="status"
-									aria-label="Loading page {shown.Index + 1}"
+									aria-label={t('review.loadingPage', { n: shown.Index + 1 })}
 									data-testid="stage-loading"
 								>
 									<span
@@ -738,7 +760,7 @@
 							class="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-surface shadow-nav transition-[background-color,transform] duration-150 hover:scale-105 hover:bg-accent-wash disabled:invisible"
 							onclick={() => step(1)}
 							disabled={current >= session.Pages.length - 1}
-							aria-label="Next page"
+							aria-label={t('review.nextPage')}
 							data-testid="stage-next"
 						>
 							<Icon name="chevronRight" />
@@ -758,9 +780,9 @@
 								aria-hidden="true"
 								data-testid="stage-spinner"
 							></span>
-							Waiting for the first page…
+							{t('review.waitingFirstPage')}
 						{:else}
-							No pages
+							{t('review.noPages')}
 						{/if}
 					</div>
 				{/if}
@@ -777,7 +799,7 @@
 			<aside
 				class="order-3 flex w-full min-w-0 basis-full flex-col gap-3.5 rounded-[24px] bg-surface p-[22px] shadow-panel lg:min-h-0 lg:w-auto lg:basis-(--review-aside-w) lg:overflow-y-auto"
 			>
-				{@render heading('Name')}
+				{@render heading(t('review.headingName'))}
 
 				<NameField
 					value={displayName}
@@ -786,7 +808,7 @@
 					onrename={rename}
 				/>
 
-				{@render heading('Save')}
+				{@render heading(t('review.headingSave'))}
 
 				<ExportBar
 					{session}
@@ -800,13 +822,13 @@
 
 				<!-- The facts about the scan, with the page count up on the heading beside them. -->
 				<div class="flex flex-col gap-1" data-testid="scan-section">
-					{@render heading('Scan', pageSummary, 'page-count')}
+					{@render heading(t('review.headingScan'), pageSummary, 'page-count')}
 					<!-- The scanned pages on disk, not an estimate of the PDF the mockup guesses at. -->
-					{@render fact('Size', formatBytes(session.SizeBytes))}
+					{@render fact(t('review.size'), formatBytes(session.SizeBytes))}
 				</div>
 
 				<div class="flex flex-col gap-0.5" data-testid="more-section">
-					{@render heading('More')}
+					{@render heading(t('review.headingMore'))}
 					<!-- A greyed button says why on hover: rule of thumb, no dead control without a reason. -->
 					<button
 						type="button"
@@ -817,7 +839,7 @@
 						data-testid="scan-more-button"
 					>
 						<Icon name="plus" />
-						Scan more pages
+						{t('review.scanMorePages')}
 					</button>
 					<button
 						type="button"
@@ -827,12 +849,12 @@
 						title={!editable
 							? busyReason
 							: mergeable.length === 0
-								? 'No other scan has pages to add'
+								? t('review.noMergeable')
 								: undefined}
 						data-testid="merge-button"
 					>
 						<Icon name="layers" />
-						Add pages from past scan
+						{t('review.addFromPastScan')}
 					</button>
 				</div>
 
@@ -849,7 +871,7 @@
 						data-testid="discard-button"
 					>
 						<Icon name="trash" />
-						{confirmDiscard ? 'Really discard?' : 'Discard scan'}
+						{confirmDiscard ? t('review.reallyDiscard') : t('review.discardScan')}
 					</button>
 				</div>
 			</aside>
@@ -871,7 +893,7 @@
 	{@const from = session.Pages[adjusting.from]}
 	<AdjustModal
 		src={imageUrl(id, from.Index, from.Hash, 'preview')}
-		alt="Page {from.Index + 1}"
+		alt={t('review.pageN', { n: from.Index + 1 })}
 		adjust={from.Adjust ?? null}
 		count={adjusting.pages.size}
 		onapply={applyAdjust}
@@ -883,7 +905,7 @@
 	{@const page = session.Pages[straightening]}
 	<StraightenModal
 		src={imageUrl(id, page.Index, page.Hash, 'preview')}
-		alt="Page {page.Index + 1}"
+		alt={t('review.pageN', { n: page.Index + 1 })}
 		skew={page.Skew}
 		onapply={applySkew}
 		oncancel={() => (straightening = null)}
@@ -894,7 +916,7 @@
 	<CropModal
 		src={imageUrl(id, session.Pages[cropping].Index, session.Pages[cropping].Hash, 'frame')}
 		rotation={session.Pages[cropping].Rotation}
-		alt="Page {session.Pages[cropping].Index + 1}"
+		alt={t('review.pageN', { n: session.Pages[cropping].Index + 1 })}
 		crop={session.Pages[cropping].Crop ?? null}
 		onapply={applyCrop}
 		oncancel={() => (cropping = null)}

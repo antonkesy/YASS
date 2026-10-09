@@ -1,3 +1,5 @@
+import { t } from '$lib/i18n/index.svelte';
+
 /**
  * SignalR wraps every hub error as
  * `An unexpected error occurred invoking 'Method' on the server. HubException: <message>`,
@@ -15,5 +17,5 @@ export function hubError(error: unknown): string {
 	if (!match) return raw;
 
 	const [, type, message] = match;
-	return type === 'HubException' ? message : 'Something went wrong on the server.';
+	return type === 'HubException' ? message : t('dialogs.serverError');
 }

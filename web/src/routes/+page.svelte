@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { hubError } from '$lib/hub/errors';
 	import { toast } from '$lib/toast';
+	import { t } from '$lib/i18n/index.svelte';
 	import { cameFrom } from '$lib/navigation';
 	import { getHub, sortedSessions } from '$lib/hub/hub';
 	import { devicesStale } from '$lib/hub/state';
@@ -140,7 +141,7 @@
 					})
 				);
 			}
-			toast.show(files === 1 ? 'Downloaded' : `Downloaded ${files} files`);
+			toast.show(files === 1 ? t('home.downloaded') : t('home.downloadedFiles', { n: files }));
 		} catch (e) {
 			error = hubError(e);
 		} finally {
@@ -188,7 +189,7 @@
 		working = true;
 		try {
 			for (const id of ids) await client.hub.deleteSession(id);
-			toast.show(`${ids.length} scan${ids.length === 1 ? '' : 's'} deleted`);
+			toast.show(t('home.scansDeleted', { n: ids.length }));
 		} catch (e) {
 			error = hubError(e);
 		} finally {
@@ -200,7 +201,7 @@
 		error = null;
 		try {
 			const gone = await client.hub.clearSessions();
-			toast.show(`${gone} scan${gone === 1 ? '' : 's'} deleted`);
+			toast.show(t('home.scansDeleted', { n: gone }));
 		} catch (e) {
 			error = hubError(e);
 		}
@@ -232,7 +233,7 @@
 		natural height and the page scrolls, which is the right behaviour on a phone.
 	-->
 	<div
-		class="flex flex-wrap items-stretch gap-6 lg:h-[calc(100dvh-var(--app-header-h)-var(--app-footer-h)-2.5rem)] lg:min-h-0 lg:flex-nowrap"
+		class="flex flex-wrap items-stretch gap-6 lg:h-[calc(100dvh-var(--app-header-h)-2.5rem)] lg:min-h-0 lg:flex-nowrap"
 	>
 		<ScanStage
 			status={$scanner}

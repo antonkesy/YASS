@@ -1,5 +1,6 @@
 import { ExportFormat, type ExportResult, type SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 import { documentName } from '$lib/format';
+import { t } from '$lib/i18n/index.svelte';
 
 /**
  * As much of the File System Access API as a save needs. It is typed here because
@@ -93,13 +94,13 @@ export async function saveToDisk(
 ): Promise<number> {
 	const documents = result.Documents;
 	if ('file' in target && documents.length > 1) {
-		throw new Error('This scan is several documents. Pick a folder to save them into.');
+		throw new Error(t('review.severalDocuments'));
 	}
 
 	let written = 0;
 	for (const [index, document] of documents.entries()) {
 		const response = await get(document.DownloadPath);
-		if (!response.ok) throw new Error(`The file could not be fetched (${response.status}).`);
+		if (!response.ok) throw new Error(t('review.fetchFailed', { status: response.status }));
 		const handle =
 			'file' in target
 				? target.file

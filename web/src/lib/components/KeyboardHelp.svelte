@@ -1,45 +1,49 @@
 <script lang="ts">
 	import { useLayer } from '$lib/keys.svelte';
 	import { backdropOut, cardOut } from '$lib/motion';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let { onclose }: { onclose: () => void } = $props();
 
 	useLayer(() => onclose());
 
-	/** What each key does, grouped by where it works. Kept in step with the handlers by hand. */
-	const groups: { title: string; keys: [string[], string][] }[] = [
+	/**
+	 * What each key does, grouped by where it works. Kept in step with the handlers by hand.
+	 * Derived, so a change of language relabels it while it is open.
+	 */
+	const groups: { title: string; keys: [string[], string][] }[] = $derived([
 		{
-			title: 'Everywhere',
+			title: t('dialogs.groupEverywhere'),
 			keys: [
-				[['Esc'], 'Close what is open, or go back'],
-				[['?'], 'Show or hide these shortcuts']
+				[[t('dialogs.keyEsc')], t('dialogs.keyClose')],
+				[['?'], t('dialogs.keyHelp')]
 			]
 		},
 		{
-			title: 'Review',
+			title: t('dialogs.groupReview'),
 			keys: [
-				[['←', '→'], 'Previous / next page'],
-				[['Enter'], 'Open the page full screen'],
-				[['R'], 'Rotate right'],
-				[['Shift', 'R'], 'Rotate left'],
-				[['Del'], 'Delete the page (undo from the toast)'],
-				[['A'], 'All pages'],
-				[['Ctrl', 'S'], 'Save as…'],
-				[['Alt', '←'], 'Move the focused page in the strip']
+				[['←', '→'], t('dialogs.keyPrevNext')],
+				[[t('dialogs.keyEnter')], t('dialogs.keyOpen')],
+				[['R'], t('dialogs.keyRotateRight')],
+				[[t('dialogs.keyShift'), 'R'], t('dialogs.keyRotateLeft')],
+				[[t('dialogs.keyDel')], t('dialogs.keyDelete')],
+				[['A'], t('dialogs.allPages')],
+				[[t('dialogs.keyCtrl'), 'S'], t('dialogs.keySave')],
+				[[t('dialogs.keyAlt'), '←'], t('dialogs.keyMove')]
 			]
 		},
 		{
-			title: 'Full-screen page',
+			title: t('dialogs.groupFullScreen'),
 			keys: [
-				[['←', '→'], 'Previous / next page'],
-				[['Z'], 'Zoom to full width and back']
+				[['←', '→'], t('dialogs.keyPrevNext')],
+				[['Z'], t('dialogs.keyZoom')]
 			]
 		},
 		{
-			title: 'All pages',
-			keys: [[['+', '−'], 'Bigger / smaller pages']]
+			title: t('dialogs.allPages'),
+			keys: [[['+', '−'], t('dialogs.keySize')]]
 		}
-	];
+	]);
 </script>
 
 <div
@@ -49,7 +53,7 @@
 	<button
 		type="button"
 		class="absolute inset-0 cursor-default"
-		aria-label="Close keyboard shortcuts"
+		aria-label={t('dialogs.closeShortcuts')}
 		onclick={onclose}
 	></button>
 	<div
@@ -57,10 +61,10 @@
 		out:cardOut|global
 		role="dialog"
 		aria-modal="true"
-		aria-label="Keyboard shortcuts"
+		aria-label={t('dialogs.shortcutsTitle')}
 		data-testid="keyboard-help"
 	>
-		<h2 class="text-[20px] font-extrabold">Keyboard shortcuts</h2>
+		<h2 class="text-[20px] font-extrabold">{t('dialogs.shortcutsTitle')}</h2>
 		<div class="grid gap-5 sm:grid-cols-2">
 			{#each groups as group (group.title)}
 				<section class="flex flex-col gap-2">

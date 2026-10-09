@@ -32,6 +32,25 @@ export function zoomTile(tile: number, delta: number): number {
 }
 
 /**
+ * {@link zoomTile}, but by what the grid actually shows. Tiles stretch to fill their row
+ * (`minmax(tile, 1fr)`), so a step that leaves the same number in a row changes nothing on
+ * screen — a fitted 183px stepping out to 150 still put two in a row of 380, each 184 wide.
+ * So it keeps stepping until a row holds one more tile (out) or one fewer (in), and stops at
+ * the end of the steps if no step gets there.
+ */
+export function zoomGrid(tile: number, delta: number, width: number, gap: number): number {
+	const perRow = (t: number) => Math.max(1, Math.floor((width + gap) / (t + gap)));
+	const now = perRow(tile);
+	let next = zoomTile(tile, delta);
+	while (delta < 0 ? perRow(next) <= now : perRow(next) >= now) {
+		const further = zoomTile(next, delta);
+		if (further === next) break;
+		next = further;
+	}
+	return next;
+}
+
+/**
  * The widest tile at which `count` of them still fit in one screen, for the size the
  * all-pages view opens at. Not one of {@link TILE_SIZES}: with a handful of pages the
  * biggest step still leaves half the screen empty, and the point of the first open is to

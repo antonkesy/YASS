@@ -6,6 +6,7 @@
 	import { NEUTRAL_ADJUST, isNeutral, toneFactor } from '$lib/review/edits';
 	import { Icon } from '$lib/icons';
 	import Slider from './Slider.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let {
 		src,
@@ -71,7 +72,7 @@
 	<button
 		type="button"
 		class="absolute inset-0 cursor-default"
-		aria-label="Cancel adjust"
+		aria-label={t('dialogs.cancelAdjust')}
 		onclick={oncancel}
 	></button>
 
@@ -80,13 +81,13 @@
 		out:cardOut|global
 		role="dialog"
 		aria-modal="true"
-		aria-label="Adjust {count === 1 ? 'page' : `${count} pages`}"
+		aria-label={t('dialogs.adjustTitle', { n: count })}
 		tabindex="-1"
 		bind:this={dialog}
 		data-testid="adjust-modal"
 	>
 		<h2 class="text-[20px] font-extrabold">
-			Adjust {count === 1 ? 'page' : `${count} pages`}
+			{t('dialogs.adjustTitle', { n: count })}
 		</h2>
 
 		<div class="flex flex-wrap items-start gap-[18px]">
@@ -108,19 +109,19 @@
 			<div class="flex min-w-[220px] flex-1 flex-col gap-2">
 				<Slider
 					name="adjust-brightness"
-					label="Brightness"
+					label={t('dialogs.brightness')}
 					value={draft.Brightness}
 					onchange={(v) => (draft = { ...draft, Brightness: v })}
 				/>
 				<Slider
 					name="adjust-contrast"
-					label="Contrast"
+					label={t('dialogs.contrast')}
 					value={draft.Contrast}
 					onchange={(v) => (draft = { ...draft, Contrast: v })}
 				/>
 				<Slider
 					name="adjust-sharpen"
-					label="Sharpen"
+					label={t('dialogs.sharpen')}
 					min={0}
 					max={100}
 					step={10}
@@ -129,7 +130,7 @@
 				/>
 				{#if count > 1}
 					<p class="text-[11px] text-ink-faint">
-						Starts from the page in view. Apply sets all three on every selected page.
+						{t('dialogs.adjustMany')}
 					</p>
 				{/if}
 			</div>
@@ -143,14 +144,14 @@
 				onclick={() => (draft = { ...NEUTRAL_ADJUST })}
 				data-testid="adjust-reset"
 			>
-				Reset all
+				{t('dialogs.resetAll')}
 			</button>
 			<button
 				type="button"
 				class="h-[46px] rounded-[14px] bg-ctl px-4 text-sm font-bold text-ink-3 transition-colors hover:bg-ctl-hover"
 				onclick={oncancel}
 			>
-				Cancel
+				{t('dialogs.cancel')}
 			</button>
 			<button
 				type="button"
@@ -160,7 +161,7 @@
 				data-testid="adjust-apply"
 			>
 				<Icon name="sliders" />
-				Apply
+				{t('dialogs.apply')}
 			</button>
 		</div>
 	</div>

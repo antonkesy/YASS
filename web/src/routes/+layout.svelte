@@ -8,8 +8,8 @@
 	import KeyboardHelp from '$lib/components/KeyboardHelp.svelte';
 	import { getHub } from '$lib/hub/hub';
 	import AppHeader from '$lib/components/AppHeader.svelte';
-	import AppFooter from '$lib/components/AppFooter.svelte';
 	import Toast from '$lib/components/Toast.svelte';
+	import { i18n } from '$lib/i18n/index.svelte';
 
 	let { children } = $props();
 
@@ -26,6 +26,11 @@
 			e.preventDefault();
 		}
 	}
+
+	// The page starts as `lang="en"` (app.html); this keeps it on the language the UI is in.
+	$effect(() => {
+		document.documentElement.lang = i18n.locale;
+	});
 
 	onMount(() => {
 		const hub = getHub();
@@ -66,15 +71,14 @@
 </svelte:head>
 
 <!--
-	A column, so the footer sits at the bottom of a short page. Its children take the column's
-	full width (`*:w-full`): a page's `mx-auto` would otherwise switch off the column's stretch
-	and size the page to its content, which on a phone with a long list of past scans is wider
-	than the screen.
+	A column, so a short page (the documentation) can fill the window below the header. Its
+	children take the column's full width (`*:w-full`): a page's `mx-auto` would otherwise
+	switch off the column's stretch and size the page to its content, which on a phone with a
+	long list of past scans is wider than the screen.
 -->
 <div class="flex min-h-dvh flex-col bg-app text-ink *:w-full">
 	<AppHeader />
 	{@render children()}
-	<AppFooter onshortcuts={() => (shortcuts = true)} />
 </div>
 
 <Toast />
