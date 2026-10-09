@@ -5,14 +5,16 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<title>YASS</title>
 		<!--
-			Light or dark as this browser pinned it in Settings, before anything is painted; with
-			nothing pinned the system decides. Key and values as in $lib/appearance.svelte.ts.
+			Light or dark before anything is painted: light unless this browser chose dark, or
+			automatic (the system decides). Key and values as in $lib/appearance.svelte.ts.
 		-->
 		<script>
+			var mode = 'light';
 			try {
-				var mode = localStorage.getItem('yass.appearance');
-				if (mode === 'light' || mode === 'dark') document.documentElement.dataset.theme = mode;
+				mode = localStorage.getItem('yass.appearance') || 'light';
 			} catch (e) {}
+			if (mode !== 'auto')
+				document.documentElement.dataset.theme = mode === 'dark' ? 'dark' : 'light';
 		</script>
 		%sveltekit.head%
 	</head>

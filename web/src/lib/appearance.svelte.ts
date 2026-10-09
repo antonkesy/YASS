@@ -1,9 +1,9 @@
 /**
- * Light or dark. By default the UI follows the system, the way Apple's apps do; a browser can
- * pin one instead, from Settings. The colours themselves are `light-dark()` pairs in
+ * Light or dark. The UI is light unless this browser chose otherwise in Settings: dark, or
+ * automatic, which follows the system. The colours themselves are `light-dark()` pairs in
  * layout.css, picked by `color-scheme`: this module only says which scheme is wanted, as
- * `data-theme` on <html>. app.html applies a pinned choice before first paint, so a dark
- * browser never flashes light.
+ * `data-theme` on <html> (none for automatic). app.html applies the choice before first
+ * paint, so nothing flashes the other scheme.
  */
 
 export const APPEARANCES = ['auto', 'light', 'dark'] as const;
@@ -11,6 +11,9 @@ export type Appearance = (typeof APPEARANCES)[number];
 
 /** Read by the inline script in app.html too: keep the two in step. */
 export const APPEARANCE_KEY = 'yass.appearance';
+
+/** What a browser that never chose gets. Not stored: the key's absence means this. */
+export const DEFAULT_APPEARANCE: Appearance = 'light';
 
 function isAppearance(value: unknown): value is Appearance {
 	return typeof value === 'string' && (APPEARANCES as readonly string[]).includes(value);
@@ -21,9 +24,9 @@ function initial(): Appearance {
 		const stored = localStorage.getItem(APPEARANCE_KEY);
 		if (isAppearance(stored)) return stored;
 	} catch {
-		// private mode or no storage: follow the system
+		// private mode or no storage: the default
 	}
-	return 'auto';
+	return DEFAULT_APPEARANCE;
 }
 
 /** Sets the scheme on the page itself: nothing for auto, so the system's applies. */
@@ -33,7 +36,7 @@ function apply(mode: Appearance) {
 	else document.documentElement.dataset.theme = mode;
 }
 
-let current = $state<Appearance>(typeof window === 'undefined' ? 'auto' : initial());
+let current = $state<Appearance>(typeof window === 'undefined' ? DEFAULT_APPEARANCE : initial());
 
 /** Whether the system asks for dark, kept up to date as it changes (at sunset, say). */
 const query =
@@ -51,20 +54,15 @@ export const appearance = {
 	get dark(): boolean {
 		return current === 'auto' ? systemDark : current === 'dark';
 	},
-	/**
-	 * The other look from the one on screen. Where that is what the system asks for anyway,
-	 * the choice goes back to automatic rather than pinning it, so the switch never leaves
-	 * a browser stuck on a scheme it would have had regardless.
-	 */
+	/** The other look from the one on screen, chosen outright (automatic is Settings' to pick). */
 	toggle() {
-		const dark = !this.dark;
-		this.set(dark === systemDark ? 'auto' : dark ? 'dark' : 'light');
+		this.set(this.dark ? 'light' : 'dark');
 	},
 	set(mode: Appearance) {
 		current = mode;
 		apply(mode);
 		try {
-			if (mode === 'auto') localStorage.removeItem(APPEARANCE_KEY);
+			if (mode === DEFAULT_APPEARANCE) localStorage.removeItem(APPEARANCE_KEY);
 			else localStorage.setItem(APPEARANCE_KEY, mode);
 		} catch {
 			// keep it for this visit at least
