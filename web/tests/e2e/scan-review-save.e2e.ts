@@ -639,8 +639,20 @@ test('scanners can be renamed, hidden and inspected, and an unplugged one stays 
 	await expect(picker.getByRole('radio', { name: 'Epson DS-530' })).toHaveCount(0);
 });
 
-test('the header holds the language, the documentation and issue reporting', async ({ page }) => {
+test('the header holds the language, the documentation and issue reporting', async ({
+	page,
+	isMobile
+}) => {
+	// A phone folds the three into one ⋯ menu; a wider screen shows each as its own button.
+	const open = async (menu: 'issue' | 'language') => {
+		if (isMobile) await page.getByTestId('header-more').click();
+		else await page.getByTestId(`header-${menu}`).click();
+	};
 	await page.goto('/');
+	if (isMobile) {
+		for (const id of ['header-language', 'header-docs', 'header-issue'])
+			await expect(page.getByTestId(id)).toBeHidden();
+	} else await expect(page.getByTestId('header-more')).toBeHidden();
 	// After a whole run Past scans holds long names; none may widen the page past the screen.
 	await expect(page.getByTestId('past-scans')).toBeVisible();
 	expect(
@@ -650,7 +662,7 @@ test('the header holds the language, the documentation and issue reporting', asy
 	).toBeLessThanOrEqual(0);
 
 	// Report an issue opens a menu of the issue forms, each going straight to its own.
-	await page.getByTestId('header-issue').click();
+	await open('issue');
 	const forms = {
 		bug: 'bug_report.yml',
 		feature: 'feature_request.yml',
@@ -665,11 +677,13 @@ test('the header holds the language, the documentation and issue reporting', asy
 		await expect(item).toHaveAttribute('target', '_blank');
 	}
 	await page.keyboard.press('Escape');
-	await expect(page.getByTestId('issue-menu')).toHaveCount(0);
+	await expect(page.getByTestId('issue-bug')).toHaveCount(0);
 
 	// The documentation is a page of the app's own, opened in the same tab.
-	await expect(page.getByTestId('header-docs')).not.toHaveAttribute('target');
-	await page.getByTestId('header-docs').click();
+	if (isMobile) await page.getByTestId('header-more').click();
+	const docs = page.getByTestId(isMobile ? 'menu-docs' : 'header-docs');
+	await expect(docs).not.toHaveAttribute('target');
+	await docs.click();
 	await expect(page).toHaveURL(/\/docs$/);
 	await expect(page.getByTestId('docs-quote')).toHaveText(
 		'You thought this &#@! would be documented?!?'
@@ -680,7 +694,7 @@ test('the header holds the language, the documentation and issue reporting', asy
 	await expect(cat).toHaveAttribute('data-frame', '1');
 
 	// The language menu switches the whole UI, and the choice outlives a reload.
-	await page.getByTestId('header-language').click();
+	await open('language');
 	await page.getByTestId('language-de').click();
 	await expect(page.getByTestId('docs-quote')).toHaveText(
 		'Du dachtest, dieser &#@! wäre dokumentiert?!?'
@@ -688,7 +702,7 @@ test('the header holds the language, the documentation and issue reporting', asy
 	await expect(page.locator('html')).toHaveAttribute('lang', 'de');
 	await page.reload();
 	await expect(page.getByTestId('docs-quote')).toContainText('dokumentiert');
-	await page.getByTestId('header-language').click();
+	await open('language');
 	await page.getByTestId('language-en').click();
 	await expect(page.getByTestId('docs-quote')).toContainText('documented');
 });
@@ -942,4 +956,20 @@ test('the app follows the system into dark mode, and Settings can pin either', a
 	await section.getByRole('radio', { name: 'Automatic' }).check();
 	await page.reload();
 	expect(await scheme()).toMatchObject({ theme: null, page: 'rgb(245, 245, 247)' });
+
+	// The header's switch flips to the other look: dark over a light system is pinned...
+	await page.goto('/');
+	const toggle = page.getByTestId('header-theme');
+	await expect(toggle).toHaveAccessibleName('Switch to dark');
+	await toggle.click();
+	expect(await scheme()).toMatchObject({ theme: 'dark', page: 'rgb(0, 0, 0)' });
+	await expect(toggle).toHaveAccessibleName('Switch to light');
+	await page.goto('/settings');
+	await expect(section.getByRole('radio', { name: 'Dark' })).toBeChecked();
+	// ...and switching back to what the system asks for anyway unpins it.
+	await page.goto('/');
+	await toggle.click();
+	expect(await scheme()).toMatchObject({ theme: null, page: 'rgb(245, 245, 247)' });
+	await page.goto('/settings');
+	await expect(section.getByRole('radio', { name: 'Automatic' })).toBeChecked();
 });

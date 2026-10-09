@@ -35,9 +35,30 @@ function apply(mode: Appearance) {
 
 let current = $state<Appearance>(typeof window === 'undefined' ? 'auto' : initial());
 
+/** Whether the system asks for dark, kept up to date as it changes (at sunset, say). */
+const query =
+	typeof window !== 'undefined' && window.matchMedia
+		? window.matchMedia('(prefers-color-scheme: dark)')
+		: null;
+let systemDark = $state(query?.matches ?? false);
+query?.addEventListener('change', (e) => (systemDark = e.matches));
+
 export const appearance = {
 	get mode(): Appearance {
 		return current;
+	},
+	/** Whether the UI is dark right now, whichever way that was decided. */
+	get dark(): boolean {
+		return current === 'auto' ? systemDark : current === 'dark';
+	},
+	/**
+	 * The other look from the one on screen. Where that is what the system asks for anyway,
+	 * the choice goes back to automatic rather than pinning it, so the switch never leaves
+	 * a browser stuck on a scheme it would have had regardless.
+	 */
+	toggle() {
+		const dark = !this.dark;
+		this.set(dark === systemDark ? 'auto' : dark ? 'dark' : 'light');
 	},
 	set(mode: Appearance) {
 		current = mode;
