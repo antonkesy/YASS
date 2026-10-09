@@ -849,7 +849,7 @@
 	>
 		<button
 			type="button"
-			class="h-12 w-full rounded-[14px] bg-linear-135 from-accent-light to-accent-grad2 text-[15px] font-extrabold text-white shadow-done transition-shadow duration-200 hover:shadow-export-hover sm:w-[200px]"
+			class="h-12 w-full rounded-[14px] bg-accent text-[15px] font-extrabold text-white shadow-done transition-[background-color,box-shadow] duration-200 hover:bg-accent-hover hover:shadow-export-hover sm:w-[200px]"
 			onclick={close}
 		>
 			{t('settings.done')}
