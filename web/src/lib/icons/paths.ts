@@ -217,16 +217,18 @@ export const icons = {
 	},
 	bug: {
 		shapes: [
-			// Centred in the box, head to tail 2.5–21, so it sits level with the icons beside it.
-			p('M9 7V5.5a3 3 0 0 1 6 0V7'),
-			rect(7, 7, 10, 14, 5),
-			p('M12 11v10'),
-			p('M3 14h4'),
-			p('M17 14h4'),
-			p('M4 8l3 2'),
-			p('M20 8l-3 2'),
-			p('M4 20l3-2'),
-			p('M20 20l-3-2')
+			// Head to tail 3.5–22: a unit below the box's centre, because a body that tapers
+			// to a rounded tip carries its weight high and looks raised when centred exactly.
+			// Ending on 22, as the book does, it reads level with the icons beside it.
+			p('M9 8V6.5a3 3 0 0 1 6 0V8'),
+			rect(7, 8, 10, 14, 5),
+			p('M12 12v10'),
+			p('M3 15h4'),
+			p('M17 15h4'),
+			p('M4 9l3 2'),
+			p('M20 9l-3 2'),
+			p('M4 21l3-2'),
+			p('M20 21l-3-2')
 		],
 		size: 16
 	},
