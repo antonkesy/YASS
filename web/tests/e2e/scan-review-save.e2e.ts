@@ -964,46 +964,43 @@ test("the save card shows the scan, picks the format and sets this scan's PDF pr
 	await expect(page.getByTestId('metadata-author')).toHaveValue('');
 });
 
-test('the app follows the system into dark mode, and Settings can pin either', async ({ page }) => {
+test('the app is light until chosen otherwise, and Automatic follows the system', async ({
+	page
+}) => {
 	const scheme = () =>
 		page.evaluate(() => ({
 			theme: document.documentElement.dataset.theme ?? null,
 			page: getComputedStyle(document.body).backgroundColor
 		}));
 
-	// Nothing pinned: the system decides.
+	// Nothing chosen: light, even on a dark system.
 	await page.emulateMedia({ colorScheme: 'dark' });
 	await page.goto('/');
+	expect(await scheme()).toEqual({ theme: 'light', page: 'rgb(245, 245, 247)' });
+	await page.goto('/settings');
+	const section = page.getByTestId('appearance-section');
+	await expect(section.getByRole('radio', { name: 'Light' })).toBeChecked();
+
+	// Automatic hands it to the system, and outlives a reload.
+	await section.getByRole('radio', { name: 'Automatic' }).check();
+	await page.reload();
 	expect(await scheme()).toEqual({ theme: null, page: 'rgb(9, 9, 11)' });
 	await page.emulateMedia({ colorScheme: 'light' });
 	expect((await scheme()).page).toBe('rgb(245, 245, 247)');
+	await expect(section.getByRole('radio', { name: 'Automatic' })).toBeChecked();
 
-	// Pinned dark wins over a light system, and outlives a reload.
-	await page.goto('/settings');
-	const section = page.getByTestId('appearance-section');
+	// Dark wins over a light system.
 	await section.getByRole('radio', { name: 'Dark' }).check();
 	await page.reload();
 	expect(await scheme()).toMatchObject({ theme: 'dark', page: 'rgb(9, 9, 11)' });
-	await expect(section.getByRole('radio', { name: 'Dark' })).toBeChecked();
 
-	// Back to Automatic: the pin is gone and the system's light applies again.
-	await section.getByRole('radio', { name: 'Automatic' }).check();
-	await page.reload();
-	expect(await scheme()).toMatchObject({ theme: null, page: 'rgb(245, 245, 247)' });
-
-	// The header's switch flips to the other look: dark over a light system is pinned...
+	// The header's switch flips to the other look and says so in Settings.
 	await page.goto('/');
 	const toggle = page.getByTestId('header-theme');
-	await expect(toggle).toHaveAccessibleName('Switch to dark');
-	await toggle.click();
-	expect(await scheme()).toMatchObject({ theme: 'dark', page: 'rgb(9, 9, 11)' });
 	await expect(toggle).toHaveAccessibleName('Switch to light');
-	await page.goto('/settings');
-	await expect(section.getByRole('radio', { name: 'Dark' })).toBeChecked();
-	// ...and switching back to what the system asks for anyway unpins it.
-	await page.goto('/');
 	await toggle.click();
-	expect(await scheme()).toMatchObject({ theme: null, page: 'rgb(245, 245, 247)' });
+	expect(await scheme()).toMatchObject({ theme: 'light', page: 'rgb(245, 245, 247)' });
+	await expect(toggle).toHaveAccessibleName('Switch to dark');
 	await page.goto('/settings');
-	await expect(section.getByRole('radio', { name: 'Automatic' })).toBeChecked();
+	await expect(section.getByRole('radio', { name: 'Light' })).toBeChecked();
 });
