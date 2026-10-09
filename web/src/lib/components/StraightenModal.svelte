@@ -54,7 +54,7 @@
 </script>
 
 <div
-	class="fixed inset-0 z-50 flex animate-fade-in items-center justify-center bg-[rgb(19_26_43_/_0.38)] p-4 backdrop-blur-[3px]"
+	class="fixed inset-0 z-50 flex animate-fade-in items-center justify-center bg-[rgb(0_0_0_/_0.38)] p-4 backdrop-blur-[3px]"
 	out:backdropOut|global
 >
 	<button
@@ -94,7 +94,7 @@
 				<!-- A fixed grid to line the text up against while the page turns under it. -->
 				<div
 					class="pointer-events-none absolute inset-0"
-					style="background-image: linear-gradient(to right, rgb(43 99 240 / 0.35) 1px, transparent 1px), linear-gradient(to bottom, rgb(43 99 240 / 0.35) 1px, transparent 1px); background-size: 10% 10%"
+					style="background-image: linear-gradient(to right, rgb(0 122 255 / 0.35) 1px, transparent 1px), linear-gradient(to bottom, rgb(0 122 255 / 0.35) 1px, transparent 1px); background-size: 10% 10%"
 					aria-hidden="true"
 				></div>
 			</div>

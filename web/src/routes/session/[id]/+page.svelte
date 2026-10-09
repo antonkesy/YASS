@@ -792,7 +792,7 @@
 								<img
 									src={imageUrl(id, shown.Index, shown.Hash, 'preview')}
 									alt={t('review.pageN', { n: shown.Index + 1 })}
-									class="h-full w-full rounded-[6px] object-contain drop-shadow-[0_18px_36px_rgb(19_26_43_/_0.14)]"
+									class="h-full w-full rounded-[6px] object-contain drop-shadow-[0_18px_36px_rgb(0_0_0_/_0.14)]"
 									style:transform={stageTurn
 										? `rotate(${stageTurn}deg) scale(${Math.abs(stageTurn) % 180 ? 0.707 : 1})`
 										: undefined}

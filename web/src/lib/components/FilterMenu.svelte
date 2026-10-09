@@ -52,7 +52,7 @@
 			}}
 		>
 			<span
-				class="h-7 w-[22px] flex-none rounded-[5px] shadow-[0_0_0_1px_rgb(19_26_43_/_0.1)]"
+				class="h-7 w-[22px] flex-none rounded-[5px] shadow-[0_0_0_1px_rgb(0_0_0_/_0.1)]"
 				style="background: linear-gradient(135deg, {option.swatch})"
 				aria-hidden="true"
 			></span>
