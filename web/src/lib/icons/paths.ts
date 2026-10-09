@@ -217,15 +217,16 @@ export const icons = {
 	},
 	bug: {
 		shapes: [
-			p('M8 6V4.5a4 4 0 0 1 8 0V6'),
-			rect(7, 6, 10, 13, 5),
-			p('M12 10v9'),
-			p('M3 13h4'),
-			p('M17 13h4'),
-			p('M4 7l3 2'),
-			p('M20 7l-3 2'),
-			p('M4 19l3-2'),
-			p('M20 19l-3-2')
+			// Centred in the box, head to tail 2.5–21, so it sits level with the icons beside it.
+			p('M9 7V5.5a3 3 0 0 1 6 0V7'),
+			rect(7, 7, 10, 14, 5),
+			p('M12 11v10'),
+			p('M3 14h4'),
+			p('M17 14h4'),
+			p('M4 8l3 2'),
+			p('M20 8l-3 2'),
+			p('M4 20l3-2'),
+			p('M20 20l-3-2')
 		],
 		size: 16
 	},
