@@ -116,4 +116,33 @@ public class OptionMapperTests
         Assert.Null(OptionMapper.SelectDevice(devices, "brother"));
         Assert.Null(OptionMapper.SelectDevice([], ""));
     }
+
+    [Theory]
+    [InlineData("v4l:/dev/video0")]
+    [InlineData("gphoto2:usb:002,005")]
+    [InlineData("GPHOTO2:usb:")]
+    [InlineData("dc240:/dev/ttyS0")]
+    [InlineData("qcam")]
+    public void Sane_camera_backends_are_cameras(string id) =>
+        Assert.True(OptionMapper.IsCamera(new ScanDevice(Driver.Sane, id, "cam")));
+
+    [Theory]
+    [InlineData(Driver.Sane, "epsonds:libusb:001:002")]
+    [InlineData(Driver.Sane, "airscan:e0:Canon")]
+    [InlineData(Driver.Sane, "v4lish:0")]
+    [InlineData(Driver.Escl, "v4l:not-a-sane-id")]
+    [InlineData(Driver.Wia, "{6BDD1FC6}\\0000")]
+    public void Scanners_are_not_cameras(Driver driver, string id) =>
+        Assert.False(OptionMapper.IsCamera(new ScanDevice(driver, id, "scanner")));
+
+    [Fact]
+    public void Cameras_are_left_out_of_the_device_list_in_order()
+    {
+        var scanner = new ScanDevice(Driver.Sane, "epsonds:libusb:001:002", "DS-530II");
+        var webcam = new ScanDevice(Driver.Sane, "v4l:/dev/video0", "Integrated Camera");
+        var other = new ScanDevice(Driver.Sane, "pixma:04A91234", "Canon PIXMA");
+
+        Assert.Equal([scanner, other], OptionMapper.ScannersOnly([webcam, scanner, other]));
+        Assert.Same(scanner, OptionMapper.SelectDevice(OptionMapper.ScannersOnly([webcam, scanner]), ""));
+    }
 }

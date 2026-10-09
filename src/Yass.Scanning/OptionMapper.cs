@@ -104,4 +104,29 @@ public static class OptionMapper
                 d.ID.Contains(configured, StringComparison.OrdinalIgnoreCase) ||
                 d.Name.Contains(configured, StringComparison.OrdinalIgnoreCase));
     }
+
+    /// <summary>
+    /// SANE backends that drive cameras rather than scanners: webcams (<c>v4l</c>), digital
+    /// cameras (<c>gphoto2</c> and the old per-model ones) and a microscope camera. A camera is
+    /// not a scan source here, so their devices are never offered.
+    /// </summary>
+    public static readonly IReadOnlySet<string> CameraBackends =
+        new HashSet<string>(["v4l", "gphoto2", "dc210", "dc240", "dc25", "dmc", "qcam", "stv680"], StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Whether a device is a camera: a SANE id is <c>backend:address</c>.</summary>
+    public static bool IsCamera(ScanDevice device)
+    {
+        ArgumentNullException.ThrowIfNull(device);
+        if (device.Driver != Driver.Sane)
+        {
+            return false;
+        }
+
+        int colon = device.ID.IndexOf(':', StringComparison.Ordinal);
+        return CameraBackends.Contains(colon < 0 ? device.ID : device.ID[..colon]);
+    }
+
+    /// <summary>The devices that can scan, cameras left out.</summary>
+    public static IReadOnlyList<ScanDevice> ScannersOnly(IEnumerable<ScanDevice> devices) =>
+        [.. devices.Where(d => !IsCamera(d))];
 }
