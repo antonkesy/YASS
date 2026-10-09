@@ -3,7 +3,6 @@
 	import { page as route } from '$app/state';
 	import { getHub, sortedSessions } from '$lib/hub/hub';
 	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
-	import RepoLink from './RepoLink.svelte';
 	import StatusPill from './StatusPill.svelte';
 	import { Icon } from '$lib/icons';
 	import { cameFrom } from '$lib/navigation';
@@ -84,9 +83,11 @@
 		{/if}
 	</div>
 
-	<div class="flex justify-end">
-		<RepoLink />
-	</div>
+	<!--
+		Empty, and kept: the third column balances the first, so the middle stays centred on
+		the window. GitHub lives in the footer.
+	-->
+	<div></div>
 
 	<!--
 		Sub-page scan progress is not something the scanner reports, so the rail runs

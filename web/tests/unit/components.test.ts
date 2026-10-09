@@ -7,7 +7,6 @@ import PageThumb from '$lib/components/PageThumb.svelte';
 import ScanStage from '$lib/components/ScanStage.svelte';
 import SettingsChips from '$lib/components/SettingsChips.svelte';
 import SortMenu from '$lib/components/SortMenu.svelte';
-import RepoLink from '$lib/components/RepoLink.svelte';
 import TemplateEditor from '$lib/components/TemplateEditor.svelte';
 import AdjustModal from '$lib/components/AdjustModal.svelte';
 import StraightenModal from '$lib/components/StraightenModal.svelte';
@@ -635,18 +634,6 @@ describe('SortMenu', () => {
 		expect(screen.getByTestId('sort-button')).toHaveTextContent(/Newest/);
 		await rerender({ order: 'name', onchange });
 		expect(screen.getByTestId('sort-button')).toHaveTextContent(/Name/);
-	});
-});
-
-describe('RepoLink', () => {
-	it('links out to the repository in a new tab, and marks the link external', () => {
-		render(RepoLink);
-		const link = screen.getByRole('link', { name: /GitHub/ });
-		expect(link).toHaveAttribute('href', 'https://github.com/antonkesy/YASS');
-		// rel=external keeps SvelteKit's router out of the way, and is what lets this
-		// pass svelte/no-navigation-without-resolve without loosening the rule.
-		expect(link.getAttribute('rel')).toContain('external');
-		expect(link).toHaveAttribute('target', '_blank');
 	});
 });
 
