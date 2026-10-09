@@ -194,18 +194,17 @@
 			? scannerName($scannerPrefs, session.OptionsUsed.Device)
 			: ($scannerStatus?.DeviceName ?? '')
 	);
-	/** The settings the scan ran with, as one line. */
-	const settingsLine = $derived.by(() => {
+	/** The settings the scan ran with, each on its own tile; one the scan did not record is left out. */
+	const scanSettings = $derived.by((): [MessageKey, string][] => {
 		const o = session?.OptionsUsed;
-		if (!o) return '';
-		return [
-			sourceLabel(o.Source),
-			o.Dpi ? t('home.dpi', { n: o.Dpi }) : '',
-			colorLabel(o.Color),
-			pageSizeLabel(o.PageSize)
-		]
-			.filter(Boolean)
-			.join(' · ');
+		if (!o) return [];
+		const all: [MessageKey, string][] = [
+			['settings.source', sourceLabel(o.Source)],
+			['settings.resolution', o.Dpi ? t('home.dpi', { n: o.Dpi }) : ''],
+			['settings.colourMode', colorLabel(o.Color)],
+			['settings.paperSize', pageSizeLabel(o.PageSize)]
+		];
+		return all.filter(([, value]) => value);
 	});
 	/** The page on the stage has an image up — maybe of an older render of it, during an edit. */
 	const stageReady = $derived(!!shown && stageLoaded?.index === shown.Index);
@@ -624,17 +623,16 @@
 	</div>
 {/snippet}
 
-{#snippet fact(label: string, value: string, wrap = false)}
-	<!-- A row rather than a tile: two words and a figure do not need a card each, and a
-	     250px column has no room for the pair of them side by side. A long value may wrap
-	     onto a second line rather than be cut off. -->
-	<div class="flex items-baseline justify-between gap-2 py-0.5">
-		<span class="flex-none text-xs text-ink-muted">{label}</span>
-		<span
-			class="min-w-0 text-[13px] font-bold tracking-[-0.01em] tabular-nums {wrap
-				? 'text-right'
-				: 'truncate'}"
-			title={value}>{value}</span
+{#snippet tile(label: string, value: string, wide = false)}
+	<!-- Label over value, two to a row: the facts of a scan read at a glance in a narrow card. -->
+	<div
+		class="flex min-w-0 flex-col gap-0.5 rounded-[12px] bg-app px-2.5 py-2 {wide
+			? 'col-span-2'
+			: ''}"
+	>
+		<span class="truncate text-[11px] text-ink-muted">{label}</span>
+		<span class="truncate text-[13px] font-bold tracking-[-0.01em] tabular-nums" title={value}
+			>{value}</span
 		>
 	</div>
 {/snippet}
@@ -885,83 +883,90 @@
 					onserver={saveToServer}
 				/>
 
-				<!-- What the file will be, right where it is saved; Settings → Export holds the same choice. -->
-				<Segmented
-					name="review-format"
-					label={t('settings.fileFormat')}
-					hint={$exportPrefs.format === ExportFormat.Pdf
-						? t('settings.perDocument')
-						: t('settings.perPage')}
-					options={formatOptions}
-					value={String($exportPrefs.format)}
-					onchange={(v) => exportPrefs.set({ ...$exportPrefs, format: Number(v) as ExportFormat })}
-				/>
+				<!-- What the file will be, together under the button that saves it. -->
+				<div class="flex flex-col gap-3 rounded-[16px] bg-app p-3" data-testid="file-options">
+					<!-- Settings → Export holds the same choice; switching here switches it there. -->
+					<Segmented
+						name="review-format"
+						label={t('settings.fileFormat')}
+						hint={$exportPrefs.format === ExportFormat.Pdf
+							? t('settings.perDocument')
+							: t('settings.perPage')}
+						options={formatOptions}
+						value={String($exportPrefs.format)}
+						onchange={(v) =>
+							exportPrefs.set({ ...$exportPrefs, format: Number(v) as ExportFormat })}
+					/>
 
-				{#if $exportPrefs.format === ExportFormat.Pdf}
-					<!--
-						This scan's own PDF properties, starting from the ones Settings gives every scan.
-						Shut by default: a line saying what is set is all most saves need to see.
-					-->
-					<div class="flex flex-col gap-2" data-testid="pdf-properties">
-						<button
-							type="button"
-							class="flex items-center gap-2 rounded-[10px] text-left"
-							aria-expanded={propertiesOpen}
-							onclick={() => (propertiesOpen = !propertiesOpen)}
-							data-testid="pdf-properties-toggle"
-						>
-							<span class="text-xs font-bold tracking-[0.06em] text-ink-muted uppercase"
-								>{t('review.pdfProperties')}</span
+					{#if $exportPrefs.format === ExportFormat.Pdf}
+						<!--
+							This scan's own PDF properties, starting from the ones Settings gives every scan.
+							Shut by default: a line saying what is set is all most saves need to see.
+						-->
+						<div class="flex flex-col gap-2" data-testid="pdf-properties">
+							<button
+								type="button"
+								class="flex items-center gap-2 rounded-[10px] text-left"
+								aria-expanded={propertiesOpen}
+								onclick={() => (propertiesOpen = !propertiesOpen)}
+								data-testid="pdf-properties-toggle"
 							>
-							<span class="ml-auto min-w-0 truncate text-[12px] text-ink-muted" title={metaSummary}
-								>{metaSummary || t('review.pdfNone')}</span
-							>
-							<span
-								class="flex-none text-ink-muted transition-transform {propertiesOpen
-									? 'rotate-90'
-									: ''}"
-								aria-hidden="true"><Icon name="chevronRight" /></span
-							>
-						</button>
-						{#if propertiesOpen}
-							{#each DOCUMENT_META_FIELDS as field (field)}
-								<label class="flex animate-fade-in flex-col gap-1">
-									<span class="text-xs text-ink-muted">{t(META_LABELS[field])}</span>
-									<input
-										class="field h-9 px-2.5 text-[13px]"
-										type="text"
-										autocomplete="off"
-										value={docPrefs[field]}
-										oninput={(e) =>
-											documentMeta.set(
-												setDocumentMeta(
-													$documentMeta,
-													id,
-													$exportPrefs,
-													field,
-													e.currentTarget.value
-												)
-											)}
-										data-testid="pdf-{field}"
-									/>
-								</label>
-							{/each}
-						{/if}
-					</div>
-				{/if}
+								<span class="text-xs font-bold tracking-[0.06em] text-ink-muted uppercase"
+									>{t('review.pdfProperties')}</span
+								>
+								<span
+									class="ml-auto min-w-0 truncate text-[12px] text-ink-muted"
+									title={metaSummary}>{metaSummary || t('review.pdfNone')}</span
+								>
+								<span
+									class="flex-none text-ink-muted transition-transform {propertiesOpen
+										? 'rotate-90'
+										: ''}"
+									aria-hidden="true"><Icon name="chevronRight" /></span
+								>
+							</button>
+							{#if propertiesOpen}
+								{#each DOCUMENT_META_FIELDS as field (field)}
+									<label class="flex animate-fade-in flex-col gap-1">
+										<span class="text-xs text-ink-muted">{t(META_LABELS[field])}</span>
+										<input
+											class="field h-9 px-2.5 text-[13px]"
+											type="text"
+											autocomplete="off"
+											value={docPrefs[field]}
+											oninput={(e) =>
+												documentMeta.set(
+													setDocumentMeta(
+														$documentMeta,
+														id,
+														$exportPrefs,
+														field,
+														e.currentTarget.value
+													)
+												)}
+											data-testid="pdf-{field}"
+										/>
+									</label>
+								{/each}
+							{/if}
+						</div>
+					{/if}
+				</div>
 
 				<!-- The facts about the scan, with the page count up on the heading beside them. -->
-				<div class="flex flex-col gap-1" data-testid="scan-section">
+				<div class="flex flex-col gap-1.5" data-testid="scan-section">
 					{@render heading(t('review.headingScan'), pageSummary, 'page-count')}
-					<!-- The scanned pages on disk, not an estimate of the PDF the mockup guesses at. -->
-					{@render fact(t('review.scanned'), formatTime(session.CreatedAt))}
-					{#if scannerLabel}
-						{@render fact(t('review.scanner'), scannerLabel)}
-					{/if}
-					{#if settingsLine}
-						{@render fact(t('review.scanSettings'), settingsLine, true)}
-					{/if}
-					{@render fact(t('review.size'), formatBytes(session.SizeBytes))}
+					<div class="mt-1 grid grid-cols-2 gap-1.5">
+						{@render tile(t('review.scanned'), formatTime(session.CreatedAt))}
+						<!-- The scanned pages on disk, not an estimate of the PDF the mockup guesses at. -->
+						{@render tile(t('review.size'), formatBytes(session.SizeBytes))}
+						{#if scannerLabel}
+							{@render tile(t('review.scanner'), scannerLabel, true)}
+						{/if}
+						{#each scanSettings as [label, value] (label)}
+							{@render tile(t(label), value)}
+						{/each}
+					</div>
 				</div>
 
 				<div class="flex flex-col gap-0.5" data-testid="more-section">
