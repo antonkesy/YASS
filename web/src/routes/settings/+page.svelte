@@ -416,10 +416,10 @@
 								type="button"
 								class="relative flex h-[38px] items-center gap-2 rounded-full px-3.5 text-[13px] font-bold transition-all duration-200 {chosen?.id ===
 								preset.id
-									? 'bg-accent text-white shadow-preset'
+									? 'bg-surface text-ink shadow-seg'
 									: edited?.id === preset.id
-										? 'bg-surface text-accent-deep shadow-ring-outline'
-										: 'bg-surface text-accent-deep shadow-chip hover:-translate-y-px hover:bg-accent-50'}"
+										? 'text-ink-2 shadow-ring-outline hover:text-ink'
+										: 'text-ink-2 hover:bg-ctl-hover hover:text-ink'}"
 								aria-pressed={chosen?.id === preset.id}
 								title={edited?.id === preset.id ? t('settings.presetEditedTitle') : undefined}
 								onclick={() => pickPreset(preset)}

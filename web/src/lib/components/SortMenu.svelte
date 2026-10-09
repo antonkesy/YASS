@@ -42,7 +42,7 @@
 			role="menu"
 			data-testid="sort-menu"
 		>
-			<p class="px-2.5 py-1.5 text-[11px] font-bold tracking-[0.06em] text-ink-faint uppercase">
+			<p class="px-2.5 py-1.5 text-[12px] font-semibold text-ink-faint">
 				{t('home.sortBy')}
 			</p>
 			{#each orders as value (value)}

@@ -63,8 +63,7 @@
 	{#if oncleanup}
 		<!-- On top of whichever filter is picked, so these tick on and off rather than choose. -->
 		<div class="mx-1 my-1.5 h-px bg-line" role="separator"></div>
-		<span
-			class="block px-2.5 pt-0.5 pb-1 text-[11px] font-bold tracking-[0.06em] text-ink-faint uppercase"
+		<span class="block px-2.5 pt-0.5 pb-1 text-[12px] font-semibold text-ink-faint"
 			>{t('review.cleanUp')}</span
 		>
 		{#each cleanupOptions as option (option.value)}

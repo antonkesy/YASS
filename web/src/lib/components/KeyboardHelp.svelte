@@ -68,7 +68,7 @@
 		<div class="grid gap-5 sm:grid-cols-2">
 			{#each groups as group (group.title)}
 				<section class="flex flex-col gap-2">
-					<h3 class="text-[11px] font-bold tracking-[0.06em] text-ink-faint uppercase">
+					<h3 class="text-[12px] font-semibold text-ink-faint">
 						{group.title}
 					</h3>
 					<dl class="flex flex-col gap-1.5">

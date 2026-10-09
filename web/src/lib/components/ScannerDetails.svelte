@@ -72,7 +72,7 @@
 	aria-label={t('home.scannerDetails')}
 	data-testid="scanner-details"
 >
-	<p class="mb-2 text-[11px] font-bold tracking-[0.06em] text-ink-faint uppercase">
+	<p class="mb-2 text-[12px] font-semibold text-ink-faint">
 		{t('home.scanner')}
 	</p>
 	<dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-[13px]">

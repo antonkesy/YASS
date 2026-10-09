@@ -47,9 +47,7 @@
 	-->
 	<div class="grid h-8 w-full grid-cols-[1fr_auto_1fr] items-center gap-2">
 		<span></span>
-		<span class="text-[11px] font-bold tracking-[0.08em] text-ink-faint uppercase"
-			>{t('home.preset')}</span
-		>
+		<span class="text-[13px] font-semibold text-ink-muted">{t('home.preset')}</span>
 		{#if modified}
 			<button
 				type="button"
@@ -63,18 +61,16 @@
 			</button>
 		{/if}
 	</div>
-	<div
-		class="flex flex-wrap justify-center gap-1.5 rounded-[24px] bg-[rgb(238_242_255_/_0.8)] p-[5px]"
-	>
+	<div class="flex flex-wrap justify-center gap-1.5 rounded-[24px] bg-ctl-track p-[4px]">
 		{#each presets as preset (preset.id)}
 			<button
 				type="button"
-				class="relative flex h-[38px] items-center gap-2 rounded-full px-3.5 text-[13px] font-bold transition-[background-color,color,box-shadow,transform] duration-200 ease-spring hover:-translate-y-px active:scale-[0.97] {active ===
+				class="relative flex h-[38px] items-center gap-2 rounded-full px-3.5 text-[13px] font-bold transition-[background-color,color,box-shadow,transform] duration-200 ease-spring active:scale-[0.97] {active ===
 				preset.id
-					? 'bg-accent text-white shadow-preset'
+					? 'bg-surface text-ink shadow-seg'
 					: edited === preset.id
-						? 'bg-surface text-accent-deep shadow-ring-outline'
-						: 'bg-surface text-accent-deep shadow-chip'}"
+						? 'text-ink-2 shadow-ring-outline hover:text-ink'
+						: 'text-ink-2 hover:text-ink'}"
 				aria-pressed={active === preset.id}
 				title={edited === preset.id ? t('home.presetEdited') : undefined}
 				onclick={() => onpick(preset.id)}

@@ -142,8 +142,7 @@
 </script>
 
 <section
-	class="flex min-h-0 animate-fade-in flex-col items-center justify-center gap-[clamp(8px,1.4vh,18px)] overflow-y-auto rounded-[28px] px-5 py-8 shadow-stage sm:px-8 sm:py-[clamp(1rem,2.6vh,3rem)]"
-	style="background: radial-gradient(120% 80% at 50% 0%, var(--color-accent-wash2) 0%, var(--color-surface) 60%)"
+	class="flex min-h-0 animate-fade-in flex-col items-center justify-center gap-[clamp(8px,1.4vh,18px)] overflow-y-auto rounded-[28px] bg-surface px-5 py-8 shadow-stage sm:px-8 sm:py-[clamp(1rem,2.6vh,3rem)]"
 	style:flex="2 1 520px"
 	data-testid="scan-stage"
 	{@attach autoAnimate}
@@ -163,11 +162,9 @@
 	{#if canPickDevice}
 		<!-- Every scanner in a row, the chosen one lit, the same way the presets are picked. -->
 		<div class="flex flex-col items-center gap-2" data-testid="device-picker">
-			<span class="text-[11px] font-bold tracking-[0.08em] text-ink-faint uppercase"
-				>{t('home.scanner')}</span
-			>
+			<span class="text-[13px] font-semibold text-ink-muted">{t('home.scanner')}</span>
 			<div
-				class="flex flex-wrap justify-center gap-1.5 rounded-[24px] bg-[rgb(238_242_255_/_0.8)] p-[5px]"
+				class="flex flex-wrap justify-center gap-1.5 rounded-[24px] bg-ctl-track p-[4px]"
 				role="radiogroup"
 				aria-label={t('home.scanner')}
 				data-testid="device-pills"
@@ -188,9 +185,9 @@
 						<button
 							type="button"
 							role="radio"
-							class="flex h-[38px] max-w-[min(340px,80vw)] items-center rounded-full px-3.5 text-[13px] font-bold transition-[background-color,color,box-shadow,transform] duration-200 ease-spring hover:-translate-y-px active:scale-[0.97] {lit
-								? 'bg-accent text-white shadow-preset'
-								: 'bg-surface text-accent-deep shadow-chip'}"
+							class="flex h-[38px] max-w-[min(340px,80vw)] items-center rounded-full px-3.5 text-[13px] font-bold transition-[background-color,color,box-shadow,transform] duration-200 ease-spring active:scale-[0.97] {lit
+								? 'bg-surface text-ink shadow-seg'
+								: 'text-ink-2 hover:text-ink'}"
 							aria-checked={lit}
 							onclick={() => {
 								if (lit) details = details === 'pinned' ? null : 'pinned';
