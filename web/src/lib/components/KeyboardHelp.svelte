@@ -47,7 +47,7 @@
 </script>
 
 <div
-	class="fixed inset-0 z-60 flex animate-fade-in items-center justify-center bg-[rgb(19_26_43_/_0.38)] p-4 backdrop-blur-[3px]"
+	class="fixed inset-0 z-60 flex animate-fade-in items-center justify-center bg-[rgb(0_0_0_/_0.38)] p-4 backdrop-blur-[3px]"
 	out:backdropOut|global
 >
 	<button
@@ -78,7 +78,7 @@
 								<dd class="flex flex-none gap-1">
 									{#each keys as key (key)}
 										<kbd
-											class="min-w-[26px] rounded-[7px] bg-ctl px-1.5 py-0.5 text-center font-mono text-[12px] font-bold text-ink shadow-[inset_0_-1.5px_0_rgb(19_26_43_/_0.12)]"
+											class="min-w-[26px] rounded-[7px] bg-ctl px-1.5 py-0.5 text-center font-mono text-[12px] font-bold text-ink shadow-[inset_0_-1.5px_0_rgb(0_0_0_/_0.12)]"
 											>{key}</kbd
 										>
 									{/each}

@@ -313,7 +313,7 @@
 	The route stays, but it reads as the mockup's sheet: a centred card on a desktop
 	and a bottom sheet on a phone, over a dimmed page.
 -->
-<div class="fixed inset-0 z-40 animate-fade-in bg-[rgb(19_26_43_/_0.35)] backdrop-blur-[3px]"></div>
+<div class="fixed inset-0 z-40 animate-fade-in bg-[rgb(0_0_0_/_0.35)] backdrop-blur-[3px]"></div>
 
 <!--
 	Header and footer stay put while the middle scrolls, so Close, Reset and Done are never

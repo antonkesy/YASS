@@ -28,7 +28,7 @@
 </script>
 
 <div
-	class="fixed inset-0 z-50 flex animate-fade-in items-center justify-center bg-[rgb(19_26_43_/_0.38)] p-4 backdrop-blur-[3px]"
+	class="fixed inset-0 z-50 flex animate-fade-in items-center justify-center bg-[rgb(0_0_0_/_0.38)] p-4 backdrop-blur-[3px]"
 	out:backdropOut|global
 >
 	<button

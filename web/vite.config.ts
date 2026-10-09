@@ -23,8 +23,8 @@ export default defineConfig({
 				name: 'YASS',
 				short_name: 'YASS',
 				description: 'Yet Another Slop Scanner',
-				theme_color: '#f5f7fc',
-				background_color: '#f5f7fc',
+				theme_color: '#f5f5f7',
+				background_color: '#f5f5f7',
 				display: 'standalone',
 				start_url: '/',
 				icons: [

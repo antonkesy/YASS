@@ -1,27 +1,28 @@
 @import 'tailwindcss';
 
 /*
- * Manrope, self-hosted. A home server may have no internet, and SPEC.md §8 asks for
- * first paint under a second over LAN, so the font ships with the app instead of
- * coming from Google Fonts. One variable file per subset covers weights 400–800.
+ * Apple devices get their own system face (SF), first in --font-sans. Everything else gets
+ * Inter, the closest open match, self-hosted: a home server may have no internet, and
+ * SPEC.md §8 asks for first paint under a second over LAN, so the font ships with the app
+ * instead of coming from a font service. One variable file per subset covers weights 100–900.
  */
 @font-face {
-	font-family: 'Manrope';
+	font-family: 'Inter';
 	font-style: normal;
-	font-weight: 200 800;
+	font-weight: 100 900;
 	font-display: swap;
-	src: url('/fonts/manrope-latin.woff2') format('woff2');
+	src: url('/fonts/inter-latin.woff2') format('woff2');
 	unicode-range:
 		U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
 		U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-	font-family: 'Manrope';
+	font-family: 'Inter';
 	font-style: normal;
-	font-weight: 200 800;
+	font-weight: 100 900;
 	font-display: swap;
-	src: url('/fonts/manrope-latin-ext.woff2') format('woff2');
+	src: url('/fonts/inter-latin-ext.woff2') format('woff2');
 	unicode-range:
 		U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
 		U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
@@ -29,79 +30,84 @@
 }
 
 /*
- * Design tokens, lifted from "Scanner Stage v2.dc.html". Every value here is a literal
- * from that mockup; when something looks arbitrary, it is because the mockup chose it.
+ * Design tokens. The layout and spacing come from "Scanner Stage v2.dc.html"; the colours,
+ * type and elevation follow Apple's: system blue and the system greys, near-black ink,
+ * hairlines rather than tinted washes, and shadows that lift a surface without colouring it.
  */
 @theme {
 	/* Ground and surfaces */
-	--color-ground: #e9edf5;
-	--color-app: #f5f7fc;
+	--color-ground: #ececf0;
+	--color-app: #f5f5f7;
 	--color-surface: #ffffff;
-	--color-header: rgb(245 247 252 / 0.82);
+	--color-header: rgb(245 245 247 / 0.72);
 
 	/* Ink */
-	--color-ink: #131a2b;
-	--color-ink-2: #3b4459;
-	--color-ink-3: #4b5468;
-	--color-ink-muted: #667089;
-	--color-ink-faint: #8791a8;
+	--color-ink: #1d1d1f;
+	--color-ink-2: #3a3a3c;
+	--color-ink-3: #48484a;
+	--color-ink-muted: #6e6e73;
+	--color-ink-faint: #8e8e93;
 
 	/* Lines and neutral controls */
-	--color-line: #edf0f6;
-	--color-line-strong: #e1e5ee;
-	--color-ctl: #f1f3f8;
-	--color-ctl-hover: #e3e7f0;
-	--color-ctl-track: #eef1f7;
-	--color-ctl-active: #e6eaf2;
+	--color-line: #ebebef;
+	--color-line-strong: #d9d9de;
+	--color-ctl: #f2f2f5;
+	--color-ctl-hover: #e8e8ed;
+	--color-ctl-track: #eeeef1;
+	--color-ctl-active: #e3e3e8;
 
 	/* Accent */
-	--color-accent: #2b63f0;
-	--color-accent-hover: #1c46c4;
-	--color-accent-grad2: #2b5cf0;
-	--color-accent-light: #3b82f6;
-	--color-accent-sky: #38bdf8;
-	--color-accent-deep: #1c3fae;
-	--color-accent-50: #eef3ff;
-	--color-accent-100: #dce6ff;
-	--color-accent-wash: #eaf0ff;
-	--color-accent-wash2: #e3ebff;
-	--color-accent-tint: #eef2ff;
-	--color-accent-hover50: #f1f5ff;
-	--color-accent-ring: #93b4ff;
-	--color-accent-dash: #b9c6e4;
-	--color-accent-stack: #dfe7fb;
-	--color-accent-stack2: #dfe5f2;
+	--color-accent: #007aff;
+	--color-accent-hover: #0066d6;
+	--color-accent-grad2: #007aff;
+	--color-accent-light: #007aff;
+	--color-accent-sky: #5ac8fa;
+	--color-accent-deep: #0062cc;
+	--color-accent-50: #eef5ff;
+	--color-accent-100: #dcebff;
+	--color-accent-wash: #ebf4ff;
+	--color-accent-wash2: #e5f0ff;
+	--color-accent-tint: #eef5ff;
+	--color-accent-hover50: #f2f7ff;
+	--color-accent-ring: #8ec2ff;
+	--color-accent-dash: #b8cde6;
+	--color-accent-stack: #e6ebf3;
+	--color-accent-stack2: #e3e6ec;
 
 	/* Semantic */
-	--color-success: #22c55e;
-	--color-success-ink: #157a3c;
-	--color-success-bg: #e8f8ee;
-	--color-success-bg2: #e3f7ea;
-	--color-warning: #f59e0b;
-	--color-warning-ink: #9a5800;
-	--color-warning-bg: #fff4db;
-	--color-danger: #c42b2b;
-	--color-danger-solid: #dc2f2f;
-	--color-danger-bg: #fdecec;
-	--color-downloaded: #3b82f6;
-	--color-downloaded-bg: #e6f0ff;
-	--color-saved: #14b8a6;
-	--color-saved-ink: #0f766e;
-	--color-saved-bg: #dff7f5;
-	--color-discarded: #9aa3b8;
-	--color-discarded-ink: #5b6477;
-	--color-discarded-bg: #eef0f4;
+	--color-success: #34c759;
+	--color-success-ink: #1f8a3b;
+	--color-success-bg: #e9f8ed;
+	--color-success-bg2: #e3f6e8;
+	--color-warning: #ff9500;
+	--color-warning-ink: #a35a00;
+	--color-warning-bg: #fff3e0;
+	--color-danger: #d70015;
+	--color-danger-solid: #ff3b30;
+	--color-danger-bg: #ffeceb;
+	--color-downloaded: #007aff;
+	--color-downloaded-bg: #e6f1ff;
+	--color-saved: #30b0c7;
+	--color-saved-ink: #0e7c8f;
+	--color-saved-bg: #e0f5f8;
+	--color-discarded: #8e8e93;
+	--color-discarded-ink: #636366;
+	--color-discarded-bg: #f0f0f2;
 	/* The one accent that only appears on the dark toast. */
-	--color-toast-undo: #7fb0ff;
+	--color-toast-undo: #64a8ff;
 
 	/* Incidental */
-	--color-skeleton: #e6ebf5;
-	--color-checkbox: #c5cddd;
-	--color-toggle-off: #d3d9e6;
-	--color-handle: #d6dbe6;
+	--color-skeleton: #ececf0;
+	--color-checkbox: #c7c7cc;
+	--color-toggle-off: #e5e5ea;
+	--color-handle: #d1d1d6;
 
 	/* Type */
-	--font-sans: 'Manrope', system-ui, sans-serif;
+	--font-sans: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+	/* Apple's weights run lighter: semibold for labels, bold for titles, nothing heavier. */
+	--font-weight-semibold: 500;
+	--font-weight-bold: 600;
+	--font-weight-extrabold: 700;
 	--font-mono: ui-monospace, Menlo, monospace;
 
 	/* Radii, named by their pixel value — the mockup uses ten distinct steps */
@@ -120,37 +126,37 @@
 	--radius-28: 28px;
 
 	/* Elevation */
-	--shadow-card: 0 1px 2px rgb(19 26 43 / 0.05), 0 12px 40px rgb(19 26 43 / 0.05);
-	--shadow-stage: 0 1px 2px rgb(19 26 43 / 0.05), 0 12px 40px rgb(43 99 240 / 0.08);
-	--shadow-panel: 0 1px 2px rgb(19 26 43 / 0.05), 0 8px 28px rgb(19 26 43 / 0.05);
-	--shadow-toolbar: 0 2px 6px rgb(19 26 43 / 0.05), 0 12px 32px rgb(19 26 43 / 0.08);
-	--shadow-chip: 0 1px 2px rgb(19 26 43 / 0.08);
-	--shadow-nav: 0 2px 8px rgb(19 26 43 / 0.08);
-	--shadow-seg: 0 1px 3px rgb(19 26 43 / 0.12);
-	--shadow-knob: 0 1px 3px rgb(19 26 43 / 0.25);
-	--shadow-checkbox: 0 2px 6px rgb(19 26 43 / 0.18);
-	--shadow-menu: 0 16px 40px rgb(19 26 43 / 0.16), 0 0 0 1px rgb(19 26 43 / 0.04);
-	--shadow-popover: 0 20px 50px rgb(19 26 43 / 0.2), 0 0 0 1px rgb(19 26 43 / 0.05);
-	--shadow-modal: 0 24px 60px rgb(19 26 43 / 0.25);
-	--shadow-toast: 0 12px 32px rgb(19 26 43 / 0.3);
-	--shadow-scan: 0 10px 30px rgb(43 99 240 / 0.38), inset 0 1px 0 rgb(255 255 255 / 0.25);
-	--shadow-scan-hover: 0 16px 38px rgb(43 99 240 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.25);
-	--shadow-export: 0 8px 22px rgb(43 99 240 / 0.32);
-	--shadow-export-hover: 0 12px 28px rgb(43 99 240 / 0.4);
-	--shadow-done: 0 8px 22px rgb(43 99 240 / 0.3);
-	--shadow-destructive: 0 8px 20px rgb(220 47 47 / 0.28);
-	--shadow-preset: 0 6px 16px rgb(43 99 240 / 0.35);
-	--shadow-swatch: 0 4px 12px rgb(43 99 240 / 0.35);
-	--shadow-hero: 0 18px 40px rgb(43 99 240 / 0.18), 0 0 0 1px rgb(43 99 240 / 0.08);
-	--shadow-hero-mid: 0 2px 6px rgb(43 99 240 / 0.08);
-	--shadow-sweep: 0 0 16px 6px rgb(56 189 248 / 0.7);
-	--shadow-check-bubble: 0 6px 16px rgb(34 197 94 / 0.35);
+	--shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 6px 24px rgb(0 0 0 / 0.04);
+	--shadow-stage: 0 1px 2px rgb(0 0 0 / 0.04), 0 6px 24px rgb(0 0 0 / 0.04);
+	--shadow-panel: 0 1px 2px rgb(0 0 0 / 0.04), 0 6px 24px rgb(0 0 0 / 0.04);
+	--shadow-toolbar: 0 0 0 0.5px rgb(0 0 0 / 0.06), 0 8px 30px rgb(0 0 0 / 0.1);
+	--shadow-chip: 0 0 0 0.5px rgb(0 0 0 / 0.06), 0 1px 2px rgb(0 0 0 / 0.05);
+	--shadow-nav: 0 0 0 0.5px rgb(0 0 0 / 0.06), 0 2px 8px rgb(0 0 0 / 0.08);
+	--shadow-seg: 0 0 0 0.5px rgb(0 0 0 / 0.04), 0 2px 6px rgb(0 0 0 / 0.1);
+	--shadow-knob: 0 1px 3px rgb(0 0 0 / 0.25);
+	--shadow-checkbox: 0 2px 6px rgb(0 0 0 / 0.18);
+	--shadow-menu: 0 16px 40px rgb(0 0 0 / 0.16), 0 0 0 1px rgb(0 0 0 / 0.04);
+	--shadow-popover: 0 20px 50px rgb(0 0 0 / 0.2), 0 0 0 1px rgb(0 0 0 / 0.05);
+	--shadow-modal: 0 24px 60px rgb(0 0 0 / 0.25);
+	--shadow-toast: 0 12px 32px rgb(0 0 0 / 0.3);
+	--shadow-scan: 0 1px 2px rgb(0 0 0 / 0.08);
+	--shadow-scan-hover: 0 4px 14px rgb(0 122 255 / 0.25);
+	--shadow-export: 0 1px 2px rgb(0 0 0 / 0.08);
+	--shadow-export-hover: 0 4px 12px rgb(0 122 255 / 0.22);
+	--shadow-done: 0 1px 2px rgb(0 0 0 / 0.08);
+	--shadow-destructive: 0 1px 2px rgb(0 0 0 / 0.08);
+	--shadow-preset: 0 0 0 0.5px rgb(0 0 0 / 0.04), 0 2px 6px rgb(0 0 0 / 0.1);
+	--shadow-swatch: 0 4px 12px rgb(0 122 255 / 0.35);
+	--shadow-hero: 0 18px 40px rgb(0 122 255 / 0.18), 0 0 0 1px rgb(0 122 255 / 0.08);
+	--shadow-hero-mid: 0 2px 6px rgb(0 122 255 / 0.08);
+	--shadow-sweep: 0 0 16px 6px rgb(90 200 250 / 0.7);
+	--shadow-check-bubble: 0 6px 16px rgb(52 199 89 / 0.35);
 	--shadow-page: 0 1px 2px rgb(43 43 45 / 0.14), 0 0 0 1px rgb(29 31 32 / 0.07);
 
 	/* Rings are drawn with inset shadow, not border, so they never shift layout */
-	--shadow-ring-selected: inset 0 0 0 2px #2b63f0;
-	--shadow-ring-outline: inset 0 0 0 1.5px #93b4ff;
-	--shadow-ring-pending: inset 0 0 0 2px #93b4ff;
+	--shadow-ring-selected: inset 0 0 0 2px #007aff;
+	--shadow-ring-outline: inset 0 0 0 1.5px #8ec2ff;
+	--shadow-ring-pending: inset 0 0 0 2px #8ec2ff;
 
 	/* Easing */
 	--ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -181,25 +187,25 @@
 
 	@keyframes pulse-ready {
 		0% {
-			box-shadow: 0 0 0 0 rgb(34 197 94 / 0.55);
+			box-shadow: 0 0 0 0 rgb(52 199 89 / 0.55);
 		}
 		70% {
-			box-shadow: 0 0 0 7px rgb(34 197 94 / 0);
+			box-shadow: 0 0 0 7px rgb(52 199 89 / 0);
 		}
 		100% {
-			box-shadow: 0 0 0 0 rgb(34 197 94 / 0);
+			box-shadow: 0 0 0 0 rgb(52 199 89 / 0);
 		}
 	}
 
 	@keyframes pulse-busy {
 		0% {
-			box-shadow: 0 0 0 0 rgb(43 99 240 / 0.55);
+			box-shadow: 0 0 0 0 rgb(0 122 255 / 0.55);
 		}
 		70% {
-			box-shadow: 0 0 0 7px rgb(43 99 240 / 0);
+			box-shadow: 0 0 0 7px rgb(0 122 255 / 0);
 		}
 		100% {
-			box-shadow: 0 0 0 0 rgb(43 99 240 / 0);
+			box-shadow: 0 0 0 0 rgb(0 122 255 / 0);
 		}
 	}
 
@@ -350,10 +356,10 @@
 
 	@keyframes land-glow {
 		0% {
-			box-shadow: 0 0 0 0 rgb(43 99 240 / 0.55);
+			box-shadow: 0 0 0 0 rgb(0 122 255 / 0.55);
 		}
 		100% {
-			box-shadow: 0 0 0 16px rgb(43 99 240 / 0);
+			box-shadow: 0 0 0 16px rgb(0 122 255 / 0);
 		}
 	}
 
@@ -495,7 +501,7 @@
 	background: var(--color-surface);
 	box-shadow:
 		var(--shadow-knob),
-		0 0 0 1px rgb(19 26 43 / 0.06);
+		0 0 0 1px rgb(0 0 0 / 0.06);
 	transition: transform 0.15s var(--ease-spring);
 }
 .yass-range::-moz-range-thumb {
@@ -506,7 +512,7 @@
 	background: var(--color-surface);
 	box-shadow:
 		var(--shadow-knob),
-		0 0 0 1px rgb(19 26 43 / 0.06);
+		0 0 0 1px rgb(0 0 0 / 0.06);
 }
 .yass-range:active::-webkit-slider-thumb {
 	transform: scale(1.12);
