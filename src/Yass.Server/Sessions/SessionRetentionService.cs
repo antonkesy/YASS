@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.SignalR;
 using Yass.Core.Domain;
 using Yass.Core.Hub;
 using Yass.Server.Config;
@@ -11,7 +10,7 @@ public sealed class SessionRetentionService(
     SessionStore store,
     ConfigStore config,
     ScanService scans,
-    IHubContext<YassHub, IYassClient> hub,
+    IClientNotifier hub,
     TimeProvider time,
     ILogger<SessionRetentionService> logger) : BackgroundService
 {
@@ -52,7 +51,7 @@ public sealed class SessionRetentionService(
             if (store.Delete(session.Id))
             {
                 logger.LogInformation("Deleted expired session {Session}", session.Id);
-                await hub.Clients.All.SessionChanged(new SessionDto(session.Id, session.CreatedAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture), SessionState.Done, [], Scanning.EffectiveOptions.ToDto(session.OptionsUsed), "expired", session.Name, [], 0)).ConfigureAwait(false);
+                await hub.All.SessionChanged(new SessionDto(session.Id, session.CreatedAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture), SessionState.Done, [], Scanning.EffectiveOptions.ToDto(session.OptionsUsed), "expired", session.Name, [], 0)).ConfigureAwait(false);
             }
         }
     }

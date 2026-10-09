@@ -35,6 +35,7 @@ builder.WebHost.UseUrls("http://" + config.Server.Listen);
 builder.Services.AddSingleton(startup);
 builder.Services.AddSingleton(sp => new ConfigStore(config, startup.ConfigPath, sp.GetRequiredService<ILogger<ConfigStore>>()));
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<IClientNotifier, SignalRNotifier>();
 BackendRegistration.Add(builder.Services, startup);
 
 builder.Services.AddSingleton<EffectiveOptions>();

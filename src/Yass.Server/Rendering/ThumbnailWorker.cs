@@ -1,7 +1,5 @@
 using System.Threading.Channels;
-using Microsoft.AspNetCore.SignalR;
 using Yass.Core.Domain;
-using Yass.Core.Hub;
 using Yass.Server.Hub;
 using Yass.Server.Sessions;
 
@@ -12,7 +10,7 @@ public sealed class ThumbnailWorker(
     RenderCache cache,
     SessionStore store,
     SessionMapper mapper,
-    IHubContext<YassHub, IYassClient> hub,
+    IClientNotifier hub,
     ILogger<ThumbnailWorker> logger) : BackgroundService, IPageSink
 {
     private readonly Channel<(string SessionId, Page Page)> _queue =
@@ -55,7 +53,7 @@ public sealed class ThumbnailWorker(
                 Page? current = session.Pages.FirstOrDefault(p => p.SourceFile == page.SourceFile);
                 if (current is not null)
                 {
-                    await hub.Clients.All.PageUpdated(sessionId, mapper.ToDto(session, current)).ConfigureAwait(false);
+                    await hub.All.PageUpdated(sessionId, mapper.ToDto(session, current)).ConfigureAwait(false);
                 }
             }
         }

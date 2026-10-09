@@ -1,5 +1,4 @@
 using System.Globalization;
-using Microsoft.AspNetCore.SignalR;
 using Yass.Core.Config;
 using Yass.Core.Domain;
 using Yass.Core.Export;
@@ -23,7 +22,7 @@ public sealed class ExportService(
     DownloadTokens tokens,
     ConfigStore config,
     TimeProvider time,
-    IHubContext<YassHub, IYassClient> hub,
+    IClientNotifier hub,
     ILogger<ExportService> logger)
 {
     /// <summary>The PDF's own properties: its name as the title, and whatever the browser's settings say for the rest.</summary>
@@ -75,7 +74,7 @@ public sealed class ExportService(
 
             return s with { State = SessionState.Exporting, Error = null };
         });
-        await hub.Clients.All.SessionChanged(mapper.ToDto(session)).ConfigureAwait(false);
+        await hub.All.SessionChanged(mapper.ToDto(session)).ConfigureAwait(false);
 
         string extension = request.Format switch
         {
@@ -101,7 +100,7 @@ public sealed class ExportService(
         var progress = new Progress<int>(percent =>
         {
             int overall = (int)((finished + percent / 100.0) / documentPages.Length * 100);
-            _ = hub.Clients.All.ExportProgress(sessionId, Math.Clamp(overall, 0, 100));
+            _ = hub.All.ExportProgress(sessionId, Math.Clamp(overall, 0, 100));
         });
         PdfConfig pdf = output.Pdf;
 
@@ -181,16 +180,16 @@ public sealed class ExportService(
                 produced.Count,
                 totalPages);
 
-            await hub.Clients.All.ExportProgress(sessionId, 100).ConfigureAwait(false);
+            await hub.All.ExportProgress(sessionId, 100).ConfigureAwait(false);
             Session done = store.Update(sessionId, s => (s with { State = SessionState.Done }).With(recorded));
-            await hub.Clients.All.SessionChanged(mapper.ToDto(done)).ConfigureAwait(false);
+            await hub.All.SessionChanged(mapper.ToDto(done)).ConfigureAwait(false);
             return result;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             logger.LogError(ex, "Export of {Session} failed", sessionId);
             Session failed = store.Update(sessionId, s => s with { State = SessionState.Review, Error = ex.Message });
-            await hub.Clients.All.SessionChanged(mapper.ToDto(failed)).ConfigureAwait(false);
+            await hub.All.SessionChanged(mapper.ToDto(failed)).ConfigureAwait(false);
             throw;
         }
         finally

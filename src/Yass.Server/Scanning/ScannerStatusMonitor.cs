@@ -1,5 +1,4 @@
 using System.Globalization;
-using Microsoft.AspNetCore.SignalR;
 using Yass.Core.Hub;
 using Yass.Core.Scanning;
 using Yass.Server.Config;
@@ -10,7 +9,7 @@ namespace Yass.Server.Scanning;
 /// <summary>Polls <see cref="IScannerBackend.GetStatusAsync"/> and pushes <c>ScannerStatusChanged</c> when the answer changes.</summary>
 public sealed class ScannerStatusMonitor(
     IScannerBackend backend,
-    IHubContext<YassHub, IYassClient> hub,
+    IClientNotifier hub,
     ConfigStore config,
     TimeProvider time,
     ILogger<ScannerStatusMonitor> logger) : BackgroundService
@@ -67,6 +66,6 @@ public sealed class ScannerStatusMonitor(
         var dto = new ScannerStatusDto(status.State, status.DeviceName, status.Message, time.GetUtcNow().ToString("O", CultureInfo.InvariantCulture));
         Volatile.Write(ref _current, dto);
         logger.LogInformation("Scanner status: {State} {Device} {Message}", dto.State, dto.DeviceName, dto.Message);
-        await hub.Clients.All.ScannerStatusChanged(dto).ConfigureAwait(false);
+        await hub.All.ScannerStatusChanged(dto).ConfigureAwait(false);
     }
 }

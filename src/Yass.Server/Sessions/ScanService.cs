@@ -1,7 +1,5 @@
 using System.Collections.Concurrent;
-using Microsoft.AspNetCore.SignalR;
 using Yass.Core.Domain;
-using Yass.Core.Hub;
 using Yass.Core.Scanning;
 using Yass.Server.Hub;
 using Yass.Server.Scanning;
@@ -18,7 +16,7 @@ public sealed class ScanService(
     SessionStore store,
     SessionMapper mapper,
     IPageSink sink,
-    IHubContext<YassHub, IYassClient> hub,
+    IClientNotifier hub,
     ScannerStatusMonitor status,
     TimeProvider time,
     ILogger<ScanService> logger)
@@ -127,7 +125,7 @@ public sealed class ScanService(
         });
 
         sink.Enqueue(after, updated!);
-        await hub.Clients.All.PageUpdated(sessionId, mapper.ToDto(after, updated!)).ConfigureAwait(false);
+        await hub.All.PageUpdated(sessionId, mapper.ToDto(after, updated!)).ConfigureAwait(false);
         logger.LogInformation("Rescanned page {Page} of session {Session}", pageIndex, sessionId);
         return updated!;
     }
@@ -174,7 +172,7 @@ public sealed class ScanService(
                     return s with { Pages = [.. s.Pages, added] };
                 });
 
-                await hub.Clients.All.PageAdded(sessionId, mapper.ToDto(session, added!)).ConfigureAwait(false);
+                await hub.All.PageAdded(sessionId, mapper.ToDto(session, added!)).ConfigureAwait(false);
                 sink.Enqueue(session, added!);
             }
         }
@@ -203,7 +201,7 @@ public sealed class ScanService(
             State = error is null || s.Pages.Count > 0 ? SessionState.Review : SessionState.Failed,
             Error = error,
         });
-        await hub.Clients.All.SessionChanged(mapper.ToDto(finished)).ConfigureAwait(false);
+        await hub.All.SessionChanged(mapper.ToDto(finished)).ConfigureAwait(false);
         await status.RefreshAsync(CancellationToken.None).ConfigureAwait(false);
     }
 }
