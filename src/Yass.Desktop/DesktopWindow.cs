@@ -13,6 +13,13 @@ internal static class DesktopWindow
         AppScheme scheme = services.GetRequiredService<AppScheme>();
         BridgeNotifier notifier = services.GetRequiredService<BridgeNotifier>();
         IHostApplicationLifetime lifetime = services.GetRequiredService<IHostApplicationLifetime>();
+        PhotinoWindow? opened = null;
+        var bridge = new BridgeDispatcher(
+            services.GetRequiredService<Yass.App.Api.YassApi>(),
+            message => opened?.SendWebMessage(message),
+            logger,
+            [],
+            lifetime.ApplicationStopping);
 
         var window = new PhotinoWindow()
             .SetTitle("YASS")
@@ -40,8 +47,10 @@ internal static class DesktopWindow
                     contentType = "text/plain";
                     return new MemoryStream();
                 }
-            });
+            })
+            .RegisterWebMessageReceivedHandler((_, message) => bridge.Receive(message));
 
+        opened = window;
         notifier.Attach(window.SendWebMessage);
         using CancellationTokenRegistration closeOnStop = lifetime.ApplicationStopping.Register(() => window.Invoke(window.Close));
 
