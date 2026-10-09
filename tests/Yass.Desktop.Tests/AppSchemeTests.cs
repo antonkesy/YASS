@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+using Yass.App.Rendering;
 using Yass.Core.Hub;
 
 namespace Yass.Desktop.Tests;
@@ -78,6 +80,22 @@ public sealed class AppSchemeTests : IAsyncLifetime
         Assert.Null(Get($"/img/{session.Id}/0/thumb?h={new string('0', page.Hash.Length)}"));
         Assert.Null(Get($"/img/{session.Id}/0/poster?h={page.Hash}"));
         Assert.Null(Get($"/img/{session.Id}/x/thumb?h={page.Hash}"));
+    }
+
+    [Fact]
+    public async Task Previews_are_rendered_before_the_webview_asks()
+    {
+        SessionDto session = await _desktop.ScanAsync();
+        RenderCache cache = _desktop.Services.GetRequiredService<RenderCache>();
+
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        foreach (PageDto page in session.Pages)
+        {
+            while (!File.Exists(cache.PathFor(session.Id, page.Hash, ImageKind.Preview)))
+            {
+                await Task.Delay(50, timeout.Token);
+            }
+        }
     }
 
     [Fact]

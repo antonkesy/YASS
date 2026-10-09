@@ -43,6 +43,7 @@ public sealed class DesktopHarness : IAsyncDisposable
         builder.Services.AddYassApp(config, new StartupOptions(Path.Combine(Root, "yass.yaml"), Fake: true, FakeScenario: null));
         builder.Services.AddSingleton<IScannerBackend>(new FakeScannerBackend(scenario ?? FakeScenario.Pages(3, 2)));
         builder.Services.AddSingleton<IDocumentWriter, FakeDocumentWriter>();
+        builder.Services.AddSingleton(new RenderAhead(Previews: true));
         Notifier = new BridgeNotifier();
         Notifier.Attach(Record);
         builder.Services.AddSingleton(Notifier);

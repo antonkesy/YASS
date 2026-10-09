@@ -7,6 +7,8 @@
     <OutputType>WinExe</OutputType>
     <AssemblyName>Yass.Desktop</AssemblyName>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <!-- Precompiled when published for a runtime, so the window comes up without waiting on the JIT. -->
+    <PublishReadyToRun>true</PublishReadyToRun>
   </PropertyGroup>
 
   <ItemGroup>
