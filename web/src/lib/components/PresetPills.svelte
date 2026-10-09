@@ -23,7 +23,28 @@
 </script>
 
 <div class="flex flex-col items-center gap-2">
-	<span class="text-[11px] font-bold tracking-[0.08em] text-ink-faint uppercase">Preset</span>
+	<!--
+		The heading line carries the Save as preset link, beside the label rather than in the row
+		of presets: there it came and went with a pill of its own, rewrapping the row and moving
+		everything under it. This line is a fixed height with or without it, and the label stays
+		centred on its own column.
+	-->
+	<div class="grid h-8 w-full grid-cols-[1fr_auto_1fr] items-center gap-2">
+		<span></span>
+		<span class="text-[11px] font-bold tracking-[0.08em] text-ink-faint uppercase">Preset</span>
+		{#if modified}
+			<button
+				type="button"
+				class="flex h-8 animate-fade-in items-center gap-1 justify-self-start rounded-full px-2 text-[12px] font-bold whitespace-nowrap text-accent transition-colors hover:bg-accent-wash"
+				onclick={onsave}
+				title="These settings match no preset; save them as one"
+				data-testid="preset-save-current"
+			>
+				<Icon name="plus" />
+				Save as preset
+			</button>
+		{/if}
+	</div>
 	<div
 		class="flex flex-wrap justify-center gap-1.5 rounded-[24px] bg-[rgb(238_242_255_/_0.8)] p-[5px]"
 	>
@@ -50,22 +71,5 @@
 				{preset.name}
 			</button>
 		{/each}
-
-		<!--
-			Settings that match no preset are not a problem to flag, just a chance to keep them:
-			one plain action, shaped like the "Save as new" button in Settings, where it leads.
-		-->
-		{#if modified}
-			<button
-				type="button"
-				class="flex h-[38px] animate-pop-in items-center gap-1.5 rounded-full border-[1.5px] border-dashed border-accent-dash px-3.5 text-[13px] font-bold text-accent transition-colors hover:border-accent hover:bg-surface"
-				onclick={onsave}
-				title="These settings match no preset; save them as one"
-				data-testid="preset-save-current"
-			>
-				<Icon name="plus" />
-				Save as preset
-			</button>
-		{/if}
 	</div>
 </div>

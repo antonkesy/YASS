@@ -752,3 +752,32 @@ test('the keyboard: pages, edits, full screen, shortcuts and Escape layer by lay
 	await page.keyboard.press('Escape');
 	await expect(page).toHaveURL(/\/$/);
 });
+
+test('switching presets on the home screen does not move the Scan button', async ({ page }) => {
+	await page.goto('/');
+	const scan = page.getByTestId('scan-button');
+	await expect(scan).toBeEnabled();
+	const stage = page.getByTestId('scan-stage');
+	const top = async () => Math.round((await scan.boundingBox())!.y);
+
+	// The presets carry different settings — Receipt adds brightness and contrast chips,
+	// Photo drops the feeder — and switching between them used to rewrap the chips.
+	await stage.getByRole('button', { name: 'Document' }).click();
+	await expect(stage.getByRole('button', { name: 'Document' })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	const start = await top();
+	for (const name of ['Receipt', 'Photo', 'Double-sided', 'Document']) {
+		await stage.getByRole('button', { name }).click();
+		await expect(stage.getByRole('button', { name })).toHaveAttribute('aria-pressed', 'true');
+		expect(await top(), `after ${name}`).toBe(start);
+	}
+
+	// Off every preset, the Save as preset pill appears in room already kept for it.
+	await page.goto('/settings');
+	await page.getByTestId('seg-dpi').getByRole('radio', { name: '150', exact: true }).check();
+	await page.goto('/');
+	await expect(page.getByTestId('preset-save-current')).toBeVisible();
+	expect(await top()).toBe(start);
+});
