@@ -130,7 +130,7 @@
 	style:flex="2 1 520px"
 	data-testid="scan-stage"
 >
-	<PaperStack {caption} />
+	<PaperStack {caption} pulse={chosen?.id ?? 'custom'} />
 
 	<!-- Nothing when all is well: whatever the scanner has to say is a problem to show. -->
 	{#if !ready}

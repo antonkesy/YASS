@@ -7,7 +7,7 @@ import type { TransitionConfig } from 'svelte/transition';
  * Svelte transition. Kept short: closing should feel immediate, just not abrupt.
  */
 
-function reduced(): boolean {
+export function reduced(): boolean {
 	return (
 		typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
 	);
@@ -41,3 +41,32 @@ export const screenTransition = {
 		return sliding;
 	}
 };
+
+/** A duration in milliseconds, or none at all for anyone who asked for less motion. */
+export function ms(duration: number): number {
+	return reduced() ? 0 : duration;
+}
+
+/**
+ * Plays a one-off animation on an element that is already on screen — a pick, a nudge —
+ * through the Web Animations API, so it never fights the element's own CSS animations.
+ */
+export function play(el: Element, keyframes: Keyframe[], duration: number): void {
+	if (reduced() || typeof el.animate !== 'function') return;
+	el.animate(keyframes, { duration, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' });
+}
+
+/** A pressed pill lighting up: squeezed, then a little past its size, then settled. */
+export const pickKeyframes: Keyframe[] = [
+	{ transform: 'scale(0.92)' },
+	{ transform: 'scale(1.07)', offset: 0.55 },
+	{ transform: 'scale(1)' }
+];
+
+/** The paper on the stage taking in new settings: a small hop and tilt, and back. */
+export const hopKeyframes: Keyframe[] = [
+	{ transform: 'translateY(0) rotate(0)' },
+	{ transform: 'translateY(-10px) rotate(-2deg)', offset: 0.4 },
+	{ transform: 'translateY(2px) rotate(0.5deg)', offset: 0.75 },
+	{ transform: 'translateY(0) rotate(0)' }
+];

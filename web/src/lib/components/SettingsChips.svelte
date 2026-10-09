@@ -1,4 +1,8 @@
 <script lang="ts">
+	import { flip } from 'svelte/animate';
+	import { backOut, cubicOut } from 'svelte/easing';
+	import { fly, scale } from 'svelte/transition';
+	import { ms } from '$lib/motion';
 	import type { ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { colorLabel, pageSizeLabel, sourceLabel } from '$lib/format';
 
@@ -21,7 +25,7 @@
 
 	// Only what the scan will actually use; anything the server did not report is left out
 	// rather than guessed at.
-	type Chip = { label: string };
+	type Chip = { kind: string; label: string };
 
 	const chipClass =
 		'flex h-8 max-w-full items-center gap-1.5 rounded-full bg-accent-tint px-3 text-[13px] font-semibold text-accent-deep';
@@ -44,23 +48,32 @@
 		].filter((l): l is string => !!l)
 	);
 
+	/**
+	 * Keyed by what the chip is about, not by its text: Feeder becoming Flatbed is the same
+	 * chip with a new value, which slides in place, rather than one chip going and another
+	 * arriving.
+	 */
 	const chips = $derived.by((): Chip[] => {
 		if (!options) return [];
-		const plain: string[] = [];
-		if (deviceName) plain.push(deviceName);
-		const source = sourceLabel(options.Source);
-		if (source) plain.push(source);
-		if (options.Dpi) plain.push(`${options.Dpi} dpi`);
-		const color = colorLabel(options.Color);
-		if (color) plain.push(color);
-		const size = pageSizeLabel(options.PageSize);
-		if (size) plain.push(size);
-		if (options.AutoDeskew) plain.push('Auto-deskew');
-		if (options.BlankPageDetection) plain.push('Skip blank pages');
-		if (options.Brightness || options.Contrast)
-			plain.push(`B ${options.Brightness ?? 0} / C ${options.Contrast ?? 0}`);
-		if (format) plain.push(format);
-		return plain.map((label): Chip => ({ label }));
+		const all: [string, string | null | undefined][] = [
+			['device', deviceName],
+			['source', sourceLabel(options.Source)],
+			['dpi', options.Dpi ? `${options.Dpi} dpi` : null],
+			['color', colorLabel(options.Color)],
+			['size', pageSizeLabel(options.PageSize)],
+			['deskew', options.AutoDeskew ? 'Auto-deskew' : null],
+			['blank', options.BlankPageDetection ? 'Skip blank pages' : null],
+			[
+				'tone',
+				options.Brightness || options.Contrast
+					? `B ${options.Brightness ?? 0} / C ${options.Contrast ?? 0}`
+					: null
+			],
+			['format', format]
+		];
+		return all
+			.filter((c): c is [string, string] => !!c[1])
+			.map(([kind, label]): Chip => ({ kind, label }));
 	});
 </script>
 
@@ -84,14 +97,29 @@
 			class="col-start-1 row-start-1 flex flex-wrap justify-center gap-2"
 			data-testid="settings-chips"
 		>
-			{#each chips as chip (chip.label)}
+			{#each chips as chip (chip.kind)}
+				<!--
+					The others glide to their new places; one that arrives scales in. One that goes
+					leaves at once: lingering, it would overflow the room kept for the row.
+				-->
 				<button
 					type="button"
 					{onclick}
 					title="Change settings"
 					class="{chipClass} transition-[background-color,transform] duration-150 hover:-translate-y-px hover:bg-accent-100"
+					animate:flip={{ duration: ms(260), easing: cubicOut }}
+					in:scale={{ start: 0.7, duration: ms(240), easing: backOut }}
 				>
-					<span class="truncate">{chip.label}</span>
+					<!-- A new value for the same setting slides up into place. -->
+					<span class="grid overflow-hidden">
+						{#key chip.label}
+							<span
+								class="col-start-1 row-start-1 truncate"
+								in:fly={{ y: 10, duration: ms(220), easing: cubicOut }}
+								out:fly={{ y: -10, duration: ms(160) }}>{chip.label}</span
+							>
+						{/key}
+					</span>
 				</button>
 			{/each}
 		</div>
