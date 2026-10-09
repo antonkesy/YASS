@@ -11,7 +11,10 @@ import {
 	documentMetadata,
 	defaultPresets,
 	matchesPreset,
+	metaFor,
 	presetsFor,
+	pruneDocumentMeta,
+	setDocumentMeta,
 	type Preset
 } from '$lib/presets';
 import { get } from 'svelte/store';
@@ -178,5 +181,26 @@ describe('documentMetadata', () => {
 		const prefs = get(createExportPrefs(storage as unknown as Storage));
 		expect(prefs.author).toBe('');
 		expect(documentMetadata(prefs)).toBeUndefined();
+	});
+});
+
+describe("a scan's own PDF properties", () => {
+	const prefs = { ...defaultExportPrefs, author: 'Anton' };
+
+	it("start from Settings and take the scan's own on top", () => {
+		const all = setDocumentMeta({}, 's1', prefs, 'subject', 'Taxes');
+		expect(metaFor(prefs, all, 's1')).toMatchObject({ author: 'Anton', subject: 'Taxes' });
+		expect(metaFor(prefs, all, 's2')).toMatchObject({ author: 'Anton', subject: '' });
+	});
+
+	it('keep nothing that only repeats Settings', () => {
+		let all = setDocumentMeta({}, 's1', prefs, 'author', 'Someone');
+		all = setDocumentMeta(all, 's1', prefs, 'author', 'Anton');
+		expect(all).toEqual({});
+	});
+
+	it('go when their scan does', () => {
+		const all = { s1: { subject: 'a' }, gone: { subject: 'b' } };
+		expect(pruneDocumentMeta(all, new Set(['s1']))).toEqual({ s1: { subject: 'a' } });
 	});
 });

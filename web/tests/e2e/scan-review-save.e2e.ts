@@ -838,3 +838,39 @@ test('rotating keeps the page on screen, turned, until the new render is in', as
 		false
 	);
 });
+
+test("the save card shows the scan, picks the format and sets this scan's PDF properties", async ({
+	page
+}) => {
+	await withoutSavePicker(page);
+	await scanToReview(page);
+
+	// What the scan is: when, on what, with which settings.
+	const facts = page.getByTestId('scan-section');
+	await expect(facts).toContainText('Scanned');
+	await expect(facts).toContainText('Scanner');
+	await expect(facts).toContainText('300 dpi');
+
+	// The format right here, the same choice Settings holds; PDF properties only for a PDF.
+	const format = page.getByTestId('seg-review-format');
+	await format.getByRole('radio', { name: 'JPG' }).check();
+	await expect(page.getByTestId('document-name')).toContainText('.jpg');
+	await expect(page.getByTestId('pdf-properties')).toHaveCount(0);
+	await format.getByRole('radio', { name: 'PDF' }).check();
+
+	// This scan's own author, and it lands in the file.
+	await page.getByTestId('pdf-properties-toggle').click();
+	await page.getByTestId('pdf-author').fill('Jane Doe');
+	await expect(page.getByTestId('pdf-properties-toggle')).toContainText('Jane Doe');
+	const download = page.waitForEvent('download');
+	await page.getByTestId('download-button').click();
+	const file = await (await download).path();
+	expect(readFileSync(file).toString('latin1')).toContain('/Author (Jane Doe)');
+
+	// Settings followed the format switch, and kept its own (empty) author.
+	await page.goto('/settings');
+	await expect(
+		page.getByTestId('export-section').getByRole('radio', { name: 'PDF' })
+	).toBeChecked();
+	await expect(page.getByTestId('metadata-author')).toHaveValue('');
+});
