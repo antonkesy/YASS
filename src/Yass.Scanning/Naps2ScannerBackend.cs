@@ -156,10 +156,16 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
 
             try
             {
-                List<ScanDevice> devices = await _controller
+                List<ScanDevice> found = await _controller
                     .GetDeviceList(new NAPS2.Scan.ScanOptions { Driver = OptionMapper.MapDriver(config.Driver) })
                     .WaitAsync(cancellationToken)
                     .ConfigureAwait(false);
+                IReadOnlyList<ScanDevice> devices = OptionMapper.ScannersOnly(found);
+                if (devices.Count < found.Count)
+                {
+                    _logger.LogDebug("Ignoring cameras: {Cameras}", string.Join(", ", found.Where(OptionMapper.IsCamera).Select(d => $"{d.Name} [{d.ID}]")));
+                }
+
                 ScanDevice? device = OptionMapper.SelectDevice(devices, config.Device);
                 if (device is null && devices.Count > 0)
                 {
