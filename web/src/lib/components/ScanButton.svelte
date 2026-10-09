@@ -27,7 +27,7 @@
 >
 	<button
 		type="button"
-		class="flex h-16 w-full items-center justify-center gap-3 rounded-[18px] bg-linear-135 from-accent-light to-accent-grad2 text-[20px] font-extrabold tracking-[-0.01em] text-white shadow-scan transition-[transform,box-shadow] duration-200 ease-spring hover:-translate-y-0.5 hover:shadow-scan-hover active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40"
+		class="flex h-16 w-full items-center justify-center gap-3 rounded-[18px] bg-accent text-[20px] font-extrabold tracking-[-0.01em] text-white shadow-scan transition-[transform,box-shadow,background-color,opacity] duration-200 ease-spring hover:bg-accent-hover hover:shadow-scan-hover active:scale-[0.98] active:opacity-90 disabled:pointer-events-none disabled:opacity-40"
 		{disabled}
 		aria-busy={busy}
 		{onclick}

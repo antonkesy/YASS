@@ -139,7 +139,7 @@
 			</button>
 			<button
 				type="button"
-				class="flex h-[46px] items-center gap-2 rounded-[14px] bg-linear-135 from-accent-light to-accent-grad2 px-5 text-[15px] font-extrabold text-white shadow-export transition-shadow disabled:pointer-events-none disabled:opacity-40"
+				class="flex h-[46px] items-center gap-2 rounded-[14px] bg-accent px-5 text-[15px] font-extrabold text-white shadow-export transition-[background-color,box-shadow] hover:bg-accent-hover disabled:pointer-events-none disabled:opacity-40"
 				disabled={impossible}
 				onclick={() => onapply(empty ? undefined : cropFromView(box, turn))}
 				data-testid="crop-apply"

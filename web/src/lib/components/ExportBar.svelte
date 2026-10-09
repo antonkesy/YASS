@@ -40,7 +40,7 @@
 	);
 
 	const primary =
-		'flex h-[50px] items-center justify-center gap-2 rounded-[14px] bg-linear-135 from-accent-light to-accent-grad2 text-[15px] font-extrabold text-white shadow-export transition-[transform,box-shadow] duration-200 hover:-translate-y-px hover:shadow-export-hover disabled:pointer-events-none disabled:opacity-40';
+		'flex h-[50px] items-center justify-center gap-2 rounded-[14px] bg-accent hover:bg-accent-hover text-[15px] font-extrabold text-white shadow-export transition-[transform,box-shadow,background-color] duration-200 hover:shadow-export-hover active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40';
 </script>
 
 <div class="flex min-w-0 flex-col gap-3.5" data-testid="bottom-bar">
