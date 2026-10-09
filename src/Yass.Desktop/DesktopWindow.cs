@@ -30,9 +30,11 @@ internal static class DesktopWindow
             // WebView2 keeps its profile here instead of beside the executable, which may not be writable.
             .SetTemporaryFilesPath(DesktopDefaults.WebViewDataDirectory())
             .SetUseOsDefaultSize(false)
+            // Opens maximized; this is the size it restores to, centred.
             .SetSize(1280, 860)
             .SetMinSize(360, 480)
             .Center()
+            .SetMaximized(true)
             .SetContextMenuEnabled(false)
             .SetDevToolsEnabled(Environment.GetEnvironmentVariable("YASS_DEVTOOLS") is "1" or "true")
             .RegisterCustomSchemeHandler(scheme.Origin.Scheme, (object sender, string _, string url, out string contentType) =>
