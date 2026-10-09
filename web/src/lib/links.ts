@@ -1,3 +1,3 @@
-/** The project on GitHub: the header's link, the footer's, and where issues are filed. */
+/** The project on GitHub, and where issues are filed: both linked from the footer. */
 export const REPO = 'https://github.com/antonkesy/YASS';
 export const NEW_ISSUE = `${REPO}/issues/new`;
