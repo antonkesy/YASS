@@ -1,0 +1,62 @@
+name: release
+
+# release-please keeps a release PR open on main, with the next version (from the
+# Conventional Commits since the last tag) and its changelog. Merging that PR tags the
+# commit vX.Y.Z and publishes the GitHub release; the assets job then builds the desktop
+# app at that tag and attaches it.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: release PR, tag and release
+    runs-on: ubuntu-latest
+    outputs:
+      created: ${{ steps.release.outputs.release_created }}
+      tag: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          # GITHUB_TOKEN works, but a PR it opens does not start ci.yml. A fine-grained PAT
+          # (contents + pull requests: write) in RELEASE_PLEASE_TOKEN makes CI run on the release PR.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  assets:
+    name: attach desktop builds
+    needs: release-please
+    if: needs.release-please.outputs.created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release-please.outputs.tag }}
+      - uses: cachix/install-nix-action@v31
+      - uses: DeterminateSystems/magic-nix-cache-action@v15
+      - name: Build web
+        run: nix develop -c bash -c 'pnpm --dir web install --frozen-lockfile && pnpm --dir web build'
+      # As in ci.yml: Microsoft's own SDK, since the dev shell's Linux runtime only runs on Nix.
+      - name: Publish desktop zips
+        run: >-
+          docker run --rm -v "$PWD:/src" -w /src mcr.microsoft.com/dotnet/sdk:10.0-alpine sh -c
+          'apk add --no-cache pandoc-cli typst poppler-utils font-dejavu python3 &&
+          TYPST_FONT_PATHS=/usr/share/fonts scripts/publish-desktop.sh dist'
+      - name: Checksums
+        # The container wrote dist/ as root.
+        run: sudo chown -R "$(id -u):$(id -g)" dist && cd dist && sha256sum ./*.zip > SHA256SUMS
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ needs.release-please.outputs.tag }}" dist/*.zip dist/SHA256SUMS --clobber

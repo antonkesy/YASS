@@ -142,8 +142,9 @@ The window talks to the scanning code inside the same process, and a saved
 document is moved on disk to the file you pick, never passed through the page.
 The only network traffic is to an eSCL scanner, if you use one.
 
-- **Download:** the CI `desktop` job publishes self-contained zips for
-  `linux-x64`, `win-x64` and `osx-arm64`. Unzip and run `Yass.Desktop`
+- **Download:** every [GitHub release](https://github.com/antonkesy/YASS/releases)
+  carries self-contained zips for `linux-x64`, `win-x64` and `osx-arm64`, with a
+  `SHA256SUMS`. Unzip and run `Yass.Desktop`
   (`Yass.Desktop.exe` on Windows). It needs:
   - **Linux:** WebKitGTK 4.1 (`webkit2gtk-4.1` / `libwebkit2gtk-4.1-0`).
   - **Windows:** the WebView2 runtime, which ships with Windows 10 and 11.
@@ -258,7 +259,10 @@ pnpm --dir web hub:generate          # regenerate TS hub client from the C# cont
 
 The commit plan, stack decisions and domain model are in [SPEC.md](SPEC.md);
 deviations are recorded in [`docs/decisions/`](docs/decisions/). Commits follow
-Conventional Commits; releases are cut by release-please.
+Conventional Commits; releases are cut by release-please: it keeps a release PR
+open on `main` with the next version and changelog, and merging it tags `vX.Y.Z`,
+publishes the GitHub release and attaches the desktop zips
+([`release.yml`](.github/workflows/release.yml)).
 
 Layout: `src/Yass.Core` (domain, config, hub contract), `Yass.Scanning`
 (NAPS2 adapter), `Yass.Export` (PDF and image writing, name templating),
