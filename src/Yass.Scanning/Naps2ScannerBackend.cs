@@ -47,7 +47,7 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
         }
 
         return device is null
-            ? new ScannerStatus(ScannerState.NoDevice, null, NoDeviceMessage())
+            ? new ScannerStatus(ScannerState.NoDevice, null, NoDeviceDetail())
             : new ScannerStatus(ScannerState.Ready, device.Name, null);
     }
 
@@ -221,11 +221,19 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
         }
     }
 
-    private string NoDeviceMessage()
+    /// <summary>Why no scanner was found, as a scan's error: a sentence that stands on its own.</summary>
+    private string NoDeviceMessage() => "No scanner found. " + NoDeviceDetail();
+
+    /// <summary>
+    /// What was looked for and how, for the status: the screen names the problem itself
+    /// ("No scanner found") and shows this under it.
+    /// </summary>
+    private string NoDeviceDetail()
     {
         ScannerConfig config = _config();
+        string with = OptionMapper.DriverLabel(config.Driver);
         return string.IsNullOrWhiteSpace(config.Device)
-            ? $"No scanner found (driver: {config.Driver})."
-            : $"No scanner matching '{config.Device}' (driver: {config.Driver}).";
+            ? $"Looked with {with}."
+            : $"Nothing matches \u201c{config.Device}\u201d. Looked with {with}.";
     }
 }

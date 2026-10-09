@@ -167,4 +167,14 @@ public class OptionMapperTests
         Assert.False(OptionMapper.IsCamera(webcam));
         Assert.Equal([scanner], OptionMapper.ScannersOnly([webcam, scanner], cameras));
     }
+
+    [Theory]
+    [InlineData(ScannerDriver.Auto, false, false, "SANE")]
+    [InlineData(ScannerDriver.Auto, true, false, "WIA")]
+    [InlineData(ScannerDriver.Auto, false, true, "eSCL (network scanners)")]
+    [InlineData(ScannerDriver.Escl, false, false, "eSCL (network scanners)")]
+    [InlineData(ScannerDriver.Wia, false, false, "WIA")]
+    [InlineData(ScannerDriver.Sane, true, false, "SANE")]
+    public void Drivers_are_named_for_people_and_auto_for_what_it_resolves_to(ScannerDriver driver, bool windows, bool macOS, string label) =>
+        Assert.Equal(label, OptionMapper.DriverLabel(driver, windows, macOS));
 }

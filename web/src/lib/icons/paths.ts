@@ -215,6 +215,14 @@ export const icons = {
 		],
 		size: 16
 	},
+	// A warning sign: a rounded triangle with the mark in it, for something to look at.
+	alert: {
+		shapes: [
+			p('M10.3 4.2a2 2 0 0 1 3.4 0l7.6 13.2a2 2 0 0 1-1.7 3H4.4a2 2 0 0 1-1.7-3z'),
+			p('M12 9.5v4.25'),
+			p('M12 17.1h.01')
+		]
+	},
 	bug: {
 		shapes: [
 			// Head to tail 3.5–22: a unit below the box's centre, because a body that tapers

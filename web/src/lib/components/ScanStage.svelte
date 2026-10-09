@@ -26,6 +26,7 @@
 	import SettingsChips from './SettingsChips.svelte';
 	import { Icon } from '$lib/icons';
 	import ScannerDetails from './ScannerDetails.svelte';
+	import ScannerNotice from './ScannerNotice.svelte';
 
 	let {
 		status,
@@ -134,6 +135,34 @@
 						: t('home.blockedChecking')
 	);
 
+	/** The card for a problem, or null when the scanner is only checking or busy. */
+	const trouble = $derived<{
+		tone: 'warning' | 'danger';
+		title: string;
+		hint: string;
+		detail: string | null;
+	} | null>(
+		// Connecting is what every page load does for a moment, not a problem to pop out;
+		// a connection that failed or dropped is.
+		offline && connection !== 'connecting'
+			? { tone: 'warning', title: blocked, hint: t('home.offlineHint'), detail: null }
+			: status?.State === ScannerState.NoDevice
+				? {
+						tone: 'warning',
+						title: blocked,
+						hint: t('home.noDeviceHint'),
+						detail: status.Message ?? null
+					}
+				: status?.State === ScannerState.Error
+					? {
+							tone: 'danger',
+							title: blocked,
+							hint: t('home.errorHint'),
+							detail: status.Message ?? null
+						}
+					: null
+	);
+
 	const caption = $derived(
 		[pageSizeLabel(options?.PageSize), options?.Dpi ? t('home.dpi', { n: options.Dpi }) : '']
 			.filter(Boolean)
@@ -149,14 +178,24 @@
 >
 	<PaperStack {caption} pulse={chosen?.id ?? 'custom'} />
 
-	<!-- Nothing when all is well: whatever the scanner has to say is a problem to show. -->
+	<!--
+		Nothing when all is well. A problem (no scanner, no connection, a fault) pops out as a
+		card, again whenever it changes; checking or busy is not one, and stays a quiet line.
+	-->
 	{#if !ready}
-		<p
-			class="max-w-[420px] text-center text-[13px] font-semibold text-ink-muted"
-			data-testid="scanner-trouble"
-		>
-			{status?.Message || blocked}
-		</p>
+		{#key trouble?.tone + blocked}
+			{#if trouble}
+				<ScannerNotice {...trouble} />
+			{:else}
+				<!-- Our own words: the server's for these ("Not checked yet.") are not translated. -->
+				<p
+					class="max-w-[420px] text-center text-[13px] font-semibold text-ink-muted"
+					data-testid="scanner-trouble"
+				>
+					{blocked}
+				</p>
+			{/if}
+		{/key}
 	{/if}
 
 	{#if canPickDevice}

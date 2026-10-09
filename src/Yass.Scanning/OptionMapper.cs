@@ -135,4 +135,17 @@ public static class OptionMapper
     /// <summary>The devices that can scan, cameras left out.</summary>
     public static IReadOnlyList<ScanDevice> ScannersOnly(IEnumerable<ScanDevice> devices, IReadOnlySet<string>? wiaCameras = null) =>
         [.. devices.Where(d => !IsCamera(d, wiaCameras))];
+
+    /// <summary>The driver a search ran with, named for a person: what <c>auto</c> resolves to on this machine.</summary>
+    public static string DriverLabel(ScannerDriver driver) => DriverLabel(driver, OperatingSystem.IsWindows(), OperatingSystem.IsMacOS());
+
+    public static string DriverLabel(ScannerDriver driver, bool windows, bool macOS) => driver switch
+    {
+        ScannerDriver.Sane => "SANE",
+        ScannerDriver.Escl => "eSCL (network scanners)",
+        ScannerDriver.Wia => "WIA",
+        _ when windows => "WIA",
+        _ when macOS => "eSCL (network scanners)",
+        _ => "SANE",
+    };
 }
