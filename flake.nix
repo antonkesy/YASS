@@ -79,6 +79,11 @@
             typst
             poppler-utils
             dejavu_fonts
+            # scripts/render-icons.sh and scripts/package-desktop.sh (ADR-016)
+            imagemagick
+            libicns
+            nsis
+            rcodesign
           ];
 
           TYPST_FONT_PATHS = "${pkgs.dejavu_fonts}/share/fonts";

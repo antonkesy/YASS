@@ -1,0 +1,5 @@
+#!/bin/sh
+# AppImage entry point: the self-contained app lives in usr/lib/yass. WebKitGTK 4.1 comes from
+# the system, as every WebKitGTK app's does; it is not bundled.
+here=$(dirname "$(readlink -f "$0")")
+exec "$here/usr/lib/yass/Yass.Desktop" "$@"

@@ -113,12 +113,17 @@ jobs:
           docker run --rm -v "$PWD:/src" -w /src mcr.microsoft.com/dotnet/sdk:10.0-alpine sh -c
           'apk add --no-cache pandoc-cli typst poppler-utils font-dejavu python3 &&
           TYPST_FONT_PATHS=/usr/share/fonts scripts/publish-desktop.sh dist'
+      # The same native packages a release attaches (ADR-016), so a broken one shows here first.
+      - name: Native packages
+        run: sudo chown -R "$(id -u):$(id -g)" dist && nix develop -c scripts/package-desktop.sh dist
       - name: Nix package
         run: nix build .#desktop
       - uses: actions/upload-artifact@v7
         with:
           name: yass-desktop
-          path: dist/*.zip
+          path: |
+            dist/YASS-*
+            dist/*.zip
           retention-days: 14
 
   desktop-macos:
