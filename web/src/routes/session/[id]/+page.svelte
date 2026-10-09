@@ -402,6 +402,28 @@
 	}
 
 	/**
+	 * Stops the feeder. The server keeps every page already scanned and moves the session to
+	 * review; the SessionChanged that follows is what takes the stop button away.
+	 */
+	let stopping = $state(false);
+	async function stopScan() {
+		error = null;
+		stopping = true;
+		try {
+			await client.hub.stopScan(id);
+		} catch (e) {
+			error = hubError(e);
+			stopping = false;
+		}
+	}
+	$effect(() => {
+		if (stopping && !scanning) {
+			stopping = false;
+			toast.show(t('review.scanStopped'));
+		}
+	});
+
+	/**
 	 * Save to server: the same export, written by the server into its configured folder
 	 * instead of handed to the browser. The name is the one Save as… would suggest.
 	 */
@@ -921,6 +943,8 @@
 					ondownload={saveAs}
 					serverFolder={$exportPrefs.serverSave && serverFolder ? serverFolder : null}
 					onserver={saveToServer}
+					onstop={stopScan}
+					{stopping}
 				/>
 
 				<!-- What the file will be, together under the button that saves it. -->

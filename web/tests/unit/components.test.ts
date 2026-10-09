@@ -506,6 +506,31 @@ describe('Toolbar', () => {
 });
 
 describe('ExportBar', () => {
+	it('swaps saving for a stop button while the scan runs, and holds it while stopping', async () => {
+		const onstop = vi.fn();
+		const { rerender } = render(ExportBar, {
+			session: session(SessionState.Scanning),
+			ondownload: vi.fn(),
+			onstop
+		});
+		expect(screen.queryByTestId('download-button')).toBeNull();
+		await fireEvent.click(screen.getByTestId('stop-scan-button'));
+		expect(onstop).toHaveBeenCalledOnce();
+
+		await rerender({
+			session: session(SessionState.Scanning),
+			ondownload: vi.fn(),
+			onstop,
+			stopping: true
+		});
+		expect(screen.getByTestId('stop-scan-button')).toBeDisabled();
+		expect(screen.getByTestId('stop-scan-button')).toHaveTextContent('Stopping…');
+
+		await rerender({ session: session(SessionState.Review, 3), ondownload: vi.fn(), onstop });
+		expect(screen.queryByTestId('stop-scan-button')).toBeNull();
+		expect(screen.getByTestId('download-button')).toBeInTheDocument();
+	});
+
 	it('says what the one download button will do, and asks for a place when it can', async () => {
 		const ondownload = vi.fn();
 		const { rerender } = render(ExportBar, { session: session(), ondownload });
