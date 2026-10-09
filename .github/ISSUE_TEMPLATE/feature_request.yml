@@ -1,0 +1,37 @@
+name: Feature request
+description: Suggest something YASS could do, or do better.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideas are welcome. Describing the problem you are trying to solve is more useful than
+        the exact button you want: there may be a simpler way to get you there.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The situation, and what gets in the way today.
+      placeholder: I scan receipts every week and have to rename each one by hand.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+      description: How you imagine it working.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+      description: Workarounds you use now, or other tools that do it well.
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Before you send it
+      options:
+        - label: I searched the existing issues and this is not already requested.
+          required: true

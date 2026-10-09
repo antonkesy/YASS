@@ -1,0 +1,74 @@
+name: Scanner support
+description: A scanner is not found, or does not scan properly.
+title: "[Scanner]: "
+labels: ["scanner support"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        YASS drives scanners through NAPS2, which speaks SANE (USB and network backends on Linux)
+        and eSCL (AirScan, most network scanners from the last decade). A scanner SANE or eSCL can
+        reach should work; when one does not, the details below say where it stops.
+
+        **Settings → Scanners** in YASS lists every scanner it has seen, with its driver, address
+        and device id under the arrow beside each one. Copy those in if your scanner shows up there.
+  - type: input
+    id: model
+    attributes:
+      label: Scanner make and model
+      placeholder: Brother ADS-1700W
+    validations:
+      required: true
+  - type: dropdown
+    id: connection
+    attributes:
+      label: How is it connected?
+      options:
+        - USB (SANE)
+        - Network, eSCL / AirScan
+        - Network, SANE backend (e.g. epsonds, brother4)
+        - Not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: state
+    attributes:
+      label: What happens?
+      options:
+        - YASS does not find it at all
+        - YASS finds it, but scanning fails
+        - It scans, but something is wrong (pages, colour, size, feeder, duplex…)
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: What you tried and what you saw. For a scan that goes wrong, the settings you used (source, dpi, colour, paper size).
+    validations:
+      required: true
+  - type: textarea
+    id: scanimage
+    attributes:
+      label: "Output of `scanimage -L` (and `airscan-discover` for a network scanner)"
+      description: Run on the machine YASS runs on — inside the container for Docker. This shows whether SANE itself can see the scanner.
+      render: text
+  - type: textarea
+    id: scanners-settings
+    attributes:
+      label: What Settings → Scanners shows for it
+      description: Driver, address and device id, if YASS lists it.
+      render: text
+  - type: textarea
+    id: logs
+    attributes:
+      label: Server log
+      description: The log around a scan attempt, with `logging.level` set to `debug`.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: YASS version and how you run it
+      placeholder: v0.4.0 in Docker with /dev/bus/usb passed through
+    validations:
+      required: true

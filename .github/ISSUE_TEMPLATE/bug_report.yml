@@ -1,0 +1,72 @@
+name: Bug report
+description: Something in YASS does not work the way it should.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. A bug that can be reproduced gets fixed; the fields below are
+        what it takes to reproduce one. If your scanner is not found or not supported at all,
+        use the **Scanner support** template instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you saw, and what you expected to see instead.
+      placeholder: Pressing Save to server shows "Export failed" and no file appears.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The shortest way to make it happen again.
+      placeholder: |
+        1. Scan two pages from the feeder
+        2. Rotate the second page
+        3. Press Save as…
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: YASS version
+      description: The release, image tag or commit you are running.
+      placeholder: v0.4.0 / ghcr.io/…:latest / commit 8c9d879
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How do you run it?
+      options:
+        - Docker / Docker Compose
+        - NixOS module
+        - From source
+        - Demo (--fake)
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: scanner
+    attributes:
+      label: Scanner
+      description: Make and model, and how it is connected (USB/SANE or network/eSCL). "None" if it happens without one.
+      placeholder: Epson DS-530, USB (SANE)
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and device
+      placeholder: Firefox 131 on Android, Safari on iPhone 15
+  - type: textarea
+    id: logs
+    attributes:
+      label: Server log
+      description: Anything relevant from the server's log around the time it happened. Set `logging.level` to `debug` for more.
+      render: text
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Screenshots, your yass.yaml (remove anything private), or what you already tried.
