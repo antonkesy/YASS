@@ -156,8 +156,9 @@ The only network traffic is to an eSCL scanner, if you use one.
   Nix-built GUI app needs your GPU driver; `nix develop` sets that up for
   development.
 - **From source:** `pnpm --dir web build`, then
-  `YASS_WEBROOT=$PWD/web/build dotnet run --project src/Yass.Desktop -- --fake`
-  inside `nix develop`.
+  `YASS_WEBROOT=$PWD/web/build with-desktop-libs dotnet run --project src/Yass.Desktop -- --fake`
+  inside `nix develop`, or just `just desktop`. `with-desktop-libs` puts WebKitGTK on the
+  library path for that one command only.
 
 **Config.** The same `yass.yaml`, read from your per-user config folder:
 `~/.config/yass/` on Linux, `%APPDATA%\yass\` on Windows, or

@@ -26,6 +26,28 @@
           inherit version;
           src = pkgs.lib.cleanSource ./.;
         };
+        # Runs one command with what Photino (Yass.Desktop) loads from the dev shell: WebKitGTK,
+        # GTK and an EGL driver, plus the schemas GTK's file dialogs read. Scoped to that one
+        # command rather than the shell, so nothing else picks up nix's GUI libraries.
+        withDesktopLibs = pkgs.writeShellScriptBin "with-desktop-libs" ''
+          export LD_LIBRARY_PATH="${
+            pkgs.lib.makeLibraryPath (
+              with pkgs;
+              [
+                webkitgtk_4_1
+                gtk3
+                glib
+                libnotify
+                mesa
+                stdenv.cc.cc.lib
+              ]
+            )
+          }''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+          # Off NixOS the nix EGL loader cannot find the system's driver.
+          export __EGL_VENDOR_LIBRARY_DIRS="''${__EGL_VENDOR_LIBRARY_DIRS:-${pkgs.mesa}/share/glvnd/egl_vendor.d}"
+          export XDG_DATA_DIRS="${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:''${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+          exec "$@"
+        '';
       in
       {
         formatter = pkgs.nixfmt;
@@ -84,6 +106,7 @@
             libicns
             nsis
             rcodesign
+            withDesktopLibs # with-desktop-libs dotnet run --project src/Yass.Desktop
           ];
 
           TYPST_FONT_PATHS = "${pkgs.dejavu_fonts}/share/fonts";
@@ -94,27 +117,14 @@
           # Worker nodes and the build server outlive the command and hold pipes open.
           MSBUILDDISABLENODEREUSE = "1";
           DOTNET_CLI_USE_MSBUILD_SERVER = "0";
-          # NAPS2 dlopens libsane; Photino (Yass.Desktop) dlopens WebKitGTK and GTK.
-          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath (
-            with pkgs;
-            [
-              sane-backends
-              webkitgtk_4_1
-              gtk3
-              glib
-              libnotify
-              mesa
-              stdenv.cc.cc.lib
-            ]
-          );
+          # NAPS2 dlopens libsane. The desktop app's GUI libraries are not here but in
+          # with-desktop-libs: on this path they would load into every program the shell runs,
+          # and Playwright's Chromium, built for the host's glibc, cannot take nix's.
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ pkgs.sane-backends ];
           SANE_CONFIG_DIR = "${pkgs.sane-backends}/etc/sane.d";
 
           shellHook = ''
             export PATH="$HOME/.dotnet/tools:$PATH"
-            # WebKitGTK needs an EGL driver; off NixOS the nix one cannot find the system's.
-            export __EGL_VENDOR_LIBRARY_DIRS="''${__EGL_VENDOR_LIBRARY_DIRS:-${pkgs.mesa}/share/glvnd/egl_vendor.d}"
-            # GTK's file dialogs (Yass.Desktop's save and folder pickers) read these schemas.
-            export XDG_DATA_DIRS="${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:''${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
           '';
         };
       }

@@ -8,7 +8,7 @@ dev := if env("IN_NIX_SHELL", "") != "" { "" } else { "nix develop -c" }
 
 # The desktop app against the simulated scanner. Pass a scenario, or "" for a real scanner.
 desktop scenario="pages=3,blank=2": web
-    YASS_WEBROOT="$PWD/web/build" {{ dev }} dotnet run --project src/Yass.Desktop -- {{ if scenario == "" { "" } else { "--fake '" + scenario + "'" } }}
+    YASS_WEBROOT="$PWD/web/build" {{ dev }} with-desktop-libs dotnet run --project src/Yass.Desktop -- {{ if scenario == "" { "" } else { "--fake '" + scenario + "'" } }}
 
 # The server against the simulated scanner, on http://localhost:8080.
 server scenario="pages=3,blank=2": web
