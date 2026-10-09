@@ -5,11 +5,11 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Yass.App.Config;
 using Yass.Core.Config;
 using Yass.Core.Export;
 using Yass.Core.Scanning;
 using Yass.Fake;
-using Yass.Server.Config;
 
 namespace Yass.Server.Tests;
 

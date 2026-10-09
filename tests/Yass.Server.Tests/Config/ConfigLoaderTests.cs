@@ -1,8 +1,8 @@
 using System.Collections;
+using Yass.App.Config;
+using Yass.App.Hosting;
 using Yass.Core.Config;
 using Yass.Core.Domain;
-using Yass.Server.Config;
-using Yass.Server.Hosting;
 
 namespace Yass.Server.Tests.Config;
 

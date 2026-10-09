@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.SignalR;
+using Yass.App.Api;
 using Yass.Core.Hub;
 
 namespace Yass.Server.Hub;
