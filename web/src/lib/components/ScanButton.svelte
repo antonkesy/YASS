@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Icon } from '$lib/icons';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let {
 		disabled = false,
@@ -33,6 +34,6 @@
 		data-testid="scan-button"
 	>
 		<Icon name="scan" />
-		{busy ? 'Scanning…' : 'Scan'}
+		{busy ? t('home.scanningEllipsis') : t('home.scan')}
 	</button>
 </span>

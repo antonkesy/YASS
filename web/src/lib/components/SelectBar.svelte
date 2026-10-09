@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Icon } from '$lib/icons';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let {
 		count,
@@ -49,7 +50,7 @@
 	data-testid="select-bar"
 >
 	<span class="text-sm font-extrabold tabular-nums">
-		{count > 0 ? `${count} selected` : 'Select scans'}
+		{count > 0 ? t('home.selectedCount', { n: count }) : t('home.selectScans')}
 	</span>
 
 	<button
@@ -57,7 +58,7 @@
 		class="h-[26px] rounded-full bg-white/15 px-2.5 text-xs font-bold transition-colors hover:bg-white/25"
 		onclick={all ? onselectnone : onselectall}
 	>
-		{all ? 'Select none' : 'Select all'}
+		{all ? t('home.selectNone') : t('home.selectAll')}
 	</button>
 
 	<div class="flex-1"></div>
@@ -67,7 +68,7 @@
 		class={iconButton}
 		disabled={none || busy}
 		onclick={ondownload}
-		aria-label="Download selected"
+		aria-label={t('home.downloadSelected')}
 		data-testid="bulk-download"
 	>
 		<Icon name="download" />
@@ -81,7 +82,7 @@
 			onblur={() => (confirmDelete = false)}
 			data-testid="bulk-delete"
 		>
-			Delete {count}?
+			{t('home.confirmDeleteCount', { n: count })}
 		</button>
 	{:else}
 		<button
@@ -89,7 +90,7 @@
 			class={iconButton}
 			disabled={none || busy}
 			onclick={remove}
-			aria-label="Delete selected"
+			aria-label={t('home.deleteSelected')}
 			data-testid="bulk-delete"
 		>
 			<Icon name="trash" />
@@ -102,6 +103,6 @@
 		onclick={ondone}
 		data-testid="select-done"
 	>
-		Done
+		{t('home.done')}
 	</button>
 </div>

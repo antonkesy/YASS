@@ -5,6 +5,7 @@
 	import { Rotation, type CropBox } from '$lib/hub/generated/Yass.Core.Domain';
 	import { cropFromView, cropToView } from '$lib/review/edits';
 	import { Icon } from '$lib/icons';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let {
 		src,
@@ -32,10 +33,10 @@
 	useLayer(() => oncancel());
 
 	const EDGES = [
-		{ key: 'Top', label: 'Top' },
-		{ key: 'Right', label: 'Right' },
-		{ key: 'Bottom', label: 'Bottom' },
-		{ key: 'Left', label: 'Left' }
+		{ key: 'Top', label: 'dialogs.edgeTop' },
+		{ key: 'Right', label: 'dialogs.edgeRight' },
+		{ key: 'Bottom', label: 'dialogs.edgeBottom' },
+		{ key: 'Left', label: 'dialogs.edgeLeft' }
 	] as const;
 
 	// Seeded once and then owned by the dialog: the sliders are a draft, not a mirror.
@@ -65,7 +66,7 @@
 	<button
 		type="button"
 		class="absolute inset-0 cursor-default"
-		aria-label="Cancel crop"
+		aria-label={t('dialogs.cancelCrop')}
 		onclick={oncancel}
 	></button>
 
@@ -74,10 +75,10 @@
 		out:cardOut|global
 		role="dialog"
 		aria-modal="true"
-		aria-label="Crop page"
+		aria-label={t('dialogs.cropTitle')}
 		data-testid="crop-modal"
 	>
-		<h2 class="text-[20px] font-extrabold">Crop page</h2>
+		<h2 class="text-[20px] font-extrabold">{t('dialogs.cropTitle')}</h2>
 
 		<div class="flex flex-wrap items-start gap-[18px]">
 			<div class="relative mx-auto w-full max-w-[250px] flex-none">
@@ -96,7 +97,7 @@
 				{#each EDGES as edge (edge.key)}
 					<label class="flex flex-col gap-1">
 						<span class="flex justify-between text-[13px] font-bold text-ink-2">
-							{edge.label}
+							{t(edge.label)}
 							<span class="text-ink-muted tabular-nums">{box[edge.key]}%</span>
 						</span>
 						<input
@@ -117,14 +118,14 @@
 					class="h-8 self-start rounded-full px-3 text-[13px] font-bold text-accent transition-colors hover:bg-accent-wash"
 					onclick={() => (box = { Top: 0, Right: 0, Bottom: 0, Left: 0 })}
 				>
-					Reset
+					{t('dialogs.reset')}
 				</button>
 			</div>
 		</div>
 
 		{#if impossible}
 			<p class="rounded-[12px] bg-danger-bg px-3 py-2 text-xs font-bold text-danger" role="alert">
-				A crop has to leave at least 5% of the page on each axis.
+				{t('dialogs.cropImpossible')}
 			</p>
 		{/if}
 
@@ -134,7 +135,7 @@
 				class="h-[46px] rounded-[14px] bg-ctl px-4 text-sm font-bold text-ink-3 transition-colors hover:bg-ctl-hover"
 				onclick={oncancel}
 			>
-				Cancel
+				{t('dialogs.cancel')}
 			</button>
 			<button
 				type="button"
@@ -144,7 +145,7 @@
 				data-testid="crop-apply"
 			>
 				<Icon name="crop" />
-				{empty ? 'Remove crop' : 'Apply crop'}
+				{empty ? t('dialogs.removeCrop') : t('dialogs.applyCrop')}
 			</button>
 		</div>
 	</div>

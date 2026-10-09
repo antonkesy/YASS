@@ -11,6 +11,7 @@
 	} from '$lib/format';
 	import SessionStatusPill from './SessionStatusPill.svelte';
 	import SelectCheckbox from './SelectCheckbox.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let {
 		session,
@@ -36,7 +37,7 @@
 	// an unnamed scan is titled by it, and saying it twice a line apart said nothing new.
 	const meta = $derived(
 		[
-			`${pages} ${pages === 1 ? 'page' : 'pages'}`,
+			t('home.pageCount', { n: pages }),
 			formatBytes(session.SizeBytes),
 			documentName(session, template) ? formatTime(session.CreatedAt) : null
 		]

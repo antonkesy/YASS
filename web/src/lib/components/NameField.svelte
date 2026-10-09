@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { Icon } from '$lib/icons';
 
 	let {
@@ -42,7 +43,7 @@
 	<span class="text-ink-faint"><Icon name="pencil" /></span>
 
 	<label class="flex min-w-0 flex-1 items-center">
-		<span class="sr-only">Document name</span>
+		<span class="sr-only">{t('review.documentName')}</span>
 		<input
 			bind:this={field}
 			class="min-w-0 flex-1 bg-transparent text-base font-extrabold tracking-[-0.01em] outline-none"

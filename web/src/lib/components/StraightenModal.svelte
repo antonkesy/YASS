@@ -5,6 +5,7 @@
 	import { MAX_SKEW, innerScale, roundSkew } from '$lib/review/edits';
 	import { Icon } from '$lib/icons';
 	import Slider from './Slider.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let {
 		src,
@@ -59,7 +60,7 @@
 	<button
 		type="button"
 		class="absolute inset-0 cursor-default"
-		aria-label="Cancel straighten"
+		aria-label={t('dialogs.cancelStraighten')}
 		onclick={oncancel}
 	></button>
 
@@ -68,12 +69,12 @@
 		out:cardOut|global
 		role="dialog"
 		aria-modal="true"
-		aria-label="Straighten page"
+		aria-label={t('dialogs.straightenTitle')}
 		tabindex="-1"
 		bind:this={dialog}
 		data-testid="straighten-modal"
 	>
-		<h2 class="text-[20px] font-extrabold">Straighten page</h2>
+		<h2 class="text-[20px] font-extrabold">{t('dialogs.straightenTitle')}</h2>
 
 		<div class="flex flex-wrap items-start gap-[18px]">
 			<div
@@ -101,7 +102,7 @@
 			<div class="flex min-w-[220px] flex-1 flex-col gap-3">
 				<Slider
 					name="straighten"
-					label="Angle"
+					label={t('dialogs.angle')}
 					min={-MAX_SKEW}
 					max={MAX_SKEW}
 					step={0.1}
@@ -114,28 +115,25 @@
 						class={nudgeBtn}
 						onclick={() => nudge(-0.1)}
 						disabled={draft <= -MAX_SKEW}
-						aria-label="Turn a tenth of a degree anticlockwise"
+						aria-label={t('dialogs.turnAnticlockwise')}
 						data-testid="straighten-left"
 					>
 						<Icon name="rotateLeft" />
 					</button>
 					<span class="flex-1 text-center text-[12px] text-ink-muted">
-						Line the text up with the grid
+						{t('dialogs.lineUp')}
 					</span>
 					<button
 						type="button"
 						class={nudgeBtn}
 						onclick={() => nudge(0.1)}
 						disabled={draft >= MAX_SKEW}
-						aria-label="Turn a tenth of a degree clockwise"
+						aria-label={t('dialogs.turnClockwise')}
 						data-testid="straighten-right"
 					>
 						<Icon name="rotateRight" />
 					</button>
 				</div>
-				<p class="text-[11px] text-ink-faint">
-					The edges are trimmed so no corners show; a few degrees costs very little.
-				</p>
 			</div>
 		</div>
 
@@ -145,7 +143,7 @@
 				class="h-[46px] rounded-[14px] bg-ctl px-4 text-sm font-bold text-ink-3 transition-colors hover:bg-ctl-hover"
 				onclick={oncancel}
 			>
-				Cancel
+				{t('dialogs.cancel')}
 			</button>
 			<button
 				type="button"
@@ -154,7 +152,7 @@
 				onclick={() => onapply(draft)}
 				data-testid="straighten-apply"
 			>
-				Apply
+				{t('dialogs.apply')}
 			</button>
 		</div>
 	</div>

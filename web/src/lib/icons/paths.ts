@@ -193,6 +193,42 @@ export const icons = {
 		size: 16
 	},
 	search: { shapes: [circle(11, 11, 8), p('m21 21-4.3-4.3')], size: 16 },
+	/** The header's language menu. */
+	globe: {
+		shapes: [
+			circle(12, 12, 9),
+			p('M3 12h18'),
+			p('M12 3a14 14 0 0 1 0 18'),
+			p('M12 3a14 14 0 0 0 0 18')
+		],
+		size: 16
+	},
+	/** Not in the mockup either: keyboard shortcuts and issue reporting. */
+	keyboard: {
+		shapes: [
+			rect(2, 6, 20, 12, 2),
+			p('M6 10h.01'),
+			p('M10 10h.01'),
+			p('M14 10h.01'),
+			p('M18 10h.01'),
+			p('M7 14h10')
+		],
+		size: 16
+	},
+	bug: {
+		shapes: [
+			p('M8 6V4.5a4 4 0 0 1 8 0V6'),
+			rect(7, 6, 10, 13, 5),
+			p('M12 10v9'),
+			p('M3 13h4'),
+			p('M17 13h4'),
+			p('M4 7l3 2'),
+			p('M20 7l-3 2'),
+			p('M4 19l3-2'),
+			p('M20 19l-3-2')
+		],
+		size: 16
+	},
 	/** Not in the mockup, which has no full-screen page view; this app does. */
 	expand: { shapes: [p('M15 3h6v6'), p('M9 21H3v-6'), p('M21 3l-7 7'), p('M3 21l7-7')] },
 	/** Nor a full-screen overview, which zooms every thumbnail at once. */

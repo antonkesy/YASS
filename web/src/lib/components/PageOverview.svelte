@@ -1,9 +1,10 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { modified, typing, useLayer } from '$lib/keys.svelte';
 	import { tick, untrack, type Snippet } from 'svelte';
 	import type { PageDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { Icon } from '$lib/icons';
-	import { DEFAULT_TILE, fitTile, TILE_SIZES, zoomTile } from '$lib/review/overview';
+	import { DEFAULT_TILE, fitTile, TILE_SIZES, zoomGrid, zoomTile } from '$lib/review/overview';
 	import PageGrid from './PageGrid.svelte';
 
 	let {
@@ -120,10 +121,21 @@
 
 	const overview = useLayer(() => onclose());
 
+	/** One zoom step that the grid will actually show, measured off the grid as it is now. */
+	function zoom(delta: number) {
+		const grid = gridEl;
+		const style = grid ? getComputedStyle(grid) : null;
+		const width =
+			grid && style ? grid.clientWidth - px(style.paddingLeft) - px(style.paddingRight) : 0;
+		// Not laid out yet, nothing to count columns in: a plain step.
+		if (!style || width <= 0) return onzoom(zoomTile(shown, delta));
+		onzoom(zoomGrid(shown, delta, width, px(style.columnGap)));
+	}
+
 	function keydown(e: KeyboardEvent) {
 		if (!overview()?.top || typing(e) || modified(e)) return;
-		if (e.key === '+' || e.key === '=') onzoom(zoomTile(shown, 1));
-		else if (e.key === '-' || e.key === '_') onzoom(zoomTile(shown, -1));
+		if (e.key === '+' || e.key === '=') zoom(1);
+		else if (e.key === '-' || e.key === '_') zoom(-1);
 		else return;
 		e.preventDefault();
 	}
@@ -139,7 +151,7 @@
 	class="fixed inset-0 z-25 flex flex-col bg-app"
 	role="dialog"
 	aria-modal="true"
-	aria-label="All pages"
+	aria-label={t('review.allPages')}
 	tabindex="-1"
 	bind:this={dialog}
 	onkeydown={keydown}
@@ -151,17 +163,16 @@
 		<button
 			type="button"
 			class={round}
-			aria-label="Close overview"
+			aria-label={t('review.closeOverview')}
 			onclick={onclose}
 			data-testid="overview-close"
 		>
 			<Icon name="close" size={16} />
 		</button>
-		<p class="text-[15px] font-extrabold tracking-[-0.01em]">All pages</p>
+		<p class="text-[15px] font-extrabold tracking-[-0.01em]">{t('review.allPages')}</p>
 		<span class="rounded-full bg-app px-2.5 py-1 text-xs font-bold text-ink-muted tabular-nums">
-			{pages.length}
-			{pages.length === 1 ? 'page' : 'pages'}{selection.size > 0
-				? ` · ${selection.size} selected`
+			{t('review.pageCount', { n: pages.length })}{selection.size > 0
+				? ` · ${t('review.nSelected', { n: selection.size })}`
 				: ''}
 		</span>
 
@@ -175,15 +186,15 @@
 				data-testid="overview-select-all"
 			>
 				<Icon name="check" size={14} />
-				Select all
+				{t('review.selectAll')}
 			</button>
 			<span class="flex items-center gap-1 rounded-full bg-app p-0.5">
 				<button
 					type="button"
 					class="{round} h-8 w-8 bg-transparent"
-					aria-label="Zoom out"
+					aria-label={t('review.zoomOut')}
 					disabled={shown <= TILE_SIZES[0]}
-					onclick={() => onzoom(zoomTile(shown, -1))}
+					onclick={() => zoom(-1)}
 					data-testid="overview-zoom-out"
 				>
 					<Icon name="zoomOut" />
@@ -191,9 +202,9 @@
 				<button
 					type="button"
 					class="{round} h-8 w-8 bg-transparent"
-					aria-label="Zoom in"
+					aria-label={t('review.zoomIn')}
 					disabled={shown >= TILE_SIZES[TILE_SIZES.length - 1]}
-					onclick={() => onzoom(zoomTile(shown, 1))}
+					onclick={() => zoom(1)}
 					data-testid="overview-zoom-in"
 				>
 					<Icon name="zoomIn" />
@@ -202,7 +213,7 @@
 		</span>
 
 		<p class="w-full text-xs text-ink-muted">
-			Drag a page to reorder it · tap to show it · tick to select
+			{t('review.overviewHint')}
 		</p>
 	</header>
 

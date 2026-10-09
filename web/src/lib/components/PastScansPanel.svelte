@@ -2,6 +2,7 @@
 	import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { browse, statusCounts, type SortOrder, type StatusFilter } from '$lib/sessions/browse';
 	import { formatBytes } from '$lib/format';
+	import { t } from '$lib/i18n/index.svelte';
 	import { exportPrefs } from '$lib/presets';
 	import SessionRow from './SessionRow.svelte';
 	import SessionTile from './SessionTile.svelte';
@@ -81,10 +82,14 @@
 >
 	<div class="flex items-center gap-2">
 		<!-- No count up here: the foot of the panel says how many, and the empty state says none. -->
-		<h2 class="text-[19px] font-extrabold tracking-[-0.01em]">Past scans</h2>
+		<h2 class="text-[19px] font-extrabold tracking-[-0.01em]">{t('home.pastScans')}</h2>
 		<div class="flex-1"></div>
-		<div class="flex gap-0 rounded-[12px] bg-ctl-track p-[3px]" role="group" aria-label="View">
-			{#each [{ key: 'grid', icon: 'grid', label: 'Grid' }, { key: 'list', icon: 'list', label: 'List' }] as const as option (option.key)}
+		<div
+			class="flex gap-0 rounded-[12px] bg-ctl-track p-[3px]"
+			role="group"
+			aria-label={t('home.view')}
+		>
+			{#each [{ key: 'grid', icon: 'grid', label: t('home.gridView') }, { key: 'list', icon: 'list', label: t('home.listView') }] as const as option (option.key)}
 				<button
 					type="button"
 					class="flex h-[30px] w-[34px] items-center justify-center rounded-[9px] transition-all duration-200 {view ===
@@ -92,7 +97,7 @@
 						? 'bg-surface text-accent shadow-seg'
 						: 'text-ink-muted'}"
 					aria-pressed={view === option.key}
-					aria-label="{option.label} view"
+					aria-label={option.label}
 					onclick={() => (view = option.key)}
 				>
 					<Icon name={option.icon} />
@@ -124,11 +129,11 @@
 			-->
 			<label class="flex h-[38px] min-w-0 flex-1 items-center gap-2 rounded-[12px] bg-ctl px-3">
 				<span class="text-ink-faint"><Icon name="search" /></span>
-				<span class="sr-only">Search past scans</span>
+				<span class="sr-only">{t('home.searchPastScans')}</span>
 				<input
 					class="w-0 min-w-0 flex-1 bg-transparent text-sm font-medium outline-none"
 					type="search"
-					placeholder="Search scans"
+					placeholder={t('home.searchScans')}
 					bind:value={query}
 					data-testid="session-search"
 				/>
@@ -140,7 +145,7 @@
 				onclick={() => (selecting = true)}
 				data-testid="select-button"
 			>
-				Select
+				{t('home.select')}
 			</button>
 		</div>
 	{/if}
@@ -159,15 +164,15 @@
 		{#if shown.length === 0}
 			<EmptyState
 				title={sessions.length === 0
-					? 'No past scans yet'
+					? t('home.emptyTitle')
 					: query.trim()
-						? 'No matches'
-						: 'Nothing with this status'}
+						? t('home.noMatches')
+						: t('home.noStatusMatches')}
 				body={sessions.length === 0
-					? 'Every scan is saved here automatically.'
+					? t('home.emptyBody')
 					: query.trim()
-						? `Nothing named “${query.trim()}”.`
-						: 'Try another status filter.'}
+						? t('home.noMatchesBody', { query: query.trim() })
+						: t('home.noStatusMatchesBody')}
 			/>
 		{:else if view === 'grid'}
 			<div
@@ -211,8 +216,7 @@
 	{#if sessions.length > 0}
 		<div class="mt-auto flex items-center gap-2 border-t border-line pt-3">
 			<p class="text-xs text-ink-muted">
-				{sessions.length}
-				{sessions.length === 1 ? 'scan' : 'scans'} · {formatBytes(bytes)}
+				{t('home.scanCount', { n: sessions.length })} · {formatBytes(bytes)}
 			</p>
 			<div class="flex-1"></div>
 			{#if onclear}
@@ -225,7 +229,7 @@
 					onblur={() => (confirmClear = false)}
 					data-testid="clear-all"
 				>
-					{confirmClear ? 'Delete every scan?' : 'Clear all'}
+					{confirmClear ? t('home.confirmClearAll') : t('home.clearAll')}
 				</button>
 			{/if}
 		</div>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { formatTime } from '$lib/format';
 	import { Icon } from '$lib/icons';
+	import { t } from '$lib/i18n/index.svelte';
 	import type { ScannerRow } from '$lib/scanners';
 
 	let {
@@ -37,14 +38,17 @@
 	function facts(row: ScannerRow): [string, string][] {
 		return (
 			[
-				['Driver name', row.labelled ? row.original : null],
-				['Driver', row.driver ?? null],
-				['Address', row.connection ?? null],
-				['Device id', row.id],
-				['First seen here', row.firstSeen ? formatTime(row.firstSeen) : null],
-				['Last seen', row.connected ? 'Now' : row.lastSeen ? formatTime(row.lastSeen) : null],
-				['Scans', row.scans > 0 ? String(row.scans) : null],
-				['Last scan', row.lastUsed ? formatTime(row.lastUsed) : null]
+				[t('settings.factDriverName'), row.labelled ? row.original : null],
+				[t('settings.factDriver'), row.driver ?? null],
+				[t('settings.factAddress'), row.connection ?? null],
+				[t('settings.factDeviceId'), row.id],
+				[t('settings.factFirstSeen'), row.firstSeen ? formatTime(row.firstSeen) : null],
+				[
+					t('settings.factLastSeen'),
+					row.connected ? t('settings.factNow') : row.lastSeen ? formatTime(row.lastSeen) : null
+				],
+				[t('settings.factScans'), row.scans > 0 ? String(row.scans) : null],
+				[t('settings.factLastScan'), row.lastUsed ? formatTime(row.lastUsed) : null]
 			] as [string, string | null][]
 		).filter((f): f is [string, string] => f[1] !== null && f[1] !== '');
 	}
@@ -55,8 +59,7 @@
 
 {#if rows.length === 0}
 	<p class="col-span-full rounded-[16px] bg-app px-4 py-3 text-[13px] text-ink-muted">
-		No scanner has been seen yet. Once the server finds one it is listed here, and stays listed
-		while it is unplugged.
+		{t('settings.noScanners')}
 	</p>
 {:else}
 	<ul class="col-span-full flex flex-col gap-2" data-testid="scanner-list">
@@ -83,7 +86,7 @@
 						{#if editing === row.id}
 							<input
 								class="field h-9 px-2.5 text-sm font-bold"
-								aria-label="Name for {row.original}"
+								aria-label={t('settings.nameFor', { name: row.original })}
 								bind:value={draft}
 								onkeydown={(e) => {
 									if (e.key === 'Enter') commit(row.id);
@@ -103,16 +106,16 @@
 								{#if row.hidden}
 									<span
 										class="flex-none rounded-full bg-ctl px-2 py-0.5 text-[10px] font-bold tracking-[0.04em] text-ink-muted uppercase"
-										>Hidden</span
+										>{t('settings.hidden')}</span
 									>
 								{/if}
 							</span>
 						{/if}
 						<span class="truncate text-xs text-ink-muted">
-							{row.connected ? 'Connected' : 'Not connected'}{row.driver
+							{row.connected ? t('settings.connected') : t('settings.notConnected')}{row.driver
 								? ` · ${row.driver}`
 								: ''}{!row.connected && row.lastSeen
-								? ` · last seen ${formatTime(row.lastSeen)}`
+								? ` · ${t('settings.lastSeenAt', { time: formatTime(row.lastSeen) })}`
 								: ''}{row.labelled ? ` · ${row.original}` : ''}
 						</span>
 					</div>
@@ -122,12 +125,12 @@
 							type="button"
 							class="{action} text-accent hover:bg-accent-wash"
 							onclick={() => startRename(row)}
-							aria-label="Rename {row.name}"
+							aria-label={t('settings.renameLabel', { name: row.name })}
 							data-testid="scanner-rename"
 						>
 							<Icon name="pencil" />
 							<!-- The word only where there is room: on a phone it would squeeze the name. -->
-							<span class="hidden sm:inline">Rename</span>
+							<span class="hidden sm:inline">{t('settings.rename')}</span>
 						</button>
 						<button
 							type="button"
@@ -135,14 +138,14 @@
 							onclick={() => onhide(row.id, !row.hidden)}
 							disabled={!row.hidden && row.id === chosen}
 							title={!row.hidden && row.id === chosen
-								? 'This is the scanner the next scan runs on'
+								? t('settings.chosenTitle')
 								: row.hidden
-									? 'Show it in the home screen’s scanner picker again'
-									: 'Leave it out of the home screen’s scanner picker'}
+									? t('settings.showTitle')
+									: t('settings.hideTitle')}
 							aria-pressed={row.hidden}
 							data-testid="scanner-hide"
 						>
-							{row.hidden ? 'Show' : 'Hide'}
+							{row.hidden ? t('settings.show') : t('settings.hide')}
 						</button>
 						<button
 							type="button"
@@ -150,7 +153,7 @@
 								? 'rotate-90'
 								: ''}"
 							aria-expanded={expanded}
-							aria-label="Details for {row.name}"
+							aria-label={t('settings.detailsFor', { name: row.name })}
 							onclick={() => (open = expanded ? null : row.id)}
 							data-testid="scanner-details-toggle"
 						>
@@ -179,7 +182,7 @@
 								data-testid="scanner-forget"
 							>
 								<Icon name="trash" />
-								Forget this scanner
+								{t('settings.forget')}
 							</button>
 						{/if}
 					</div>

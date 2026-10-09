@@ -13,6 +13,7 @@
 	} from '$lib/format';
 	import SessionStatusPill from './SessionStatusPill.svelte';
 	import SelectCheckbox from './SelectCheckbox.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import { Icon } from '$lib/icons';
 
 	let {
@@ -48,7 +49,7 @@
 	const meta = $derived(
 		[
 			documentName(session, template) ? formatTime(session.CreatedAt) : null,
-			`${pages} ${pages === 1 ? 'page' : 'pages'}`,
+			t('home.pageCount', { n: pages }),
 			formatBytes(session.SizeBytes)
 		]
 			.filter(Boolean)
@@ -60,10 +61,10 @@
 		path
 			? `→ ${path}`
 			: status === 'discarded'
-				? 'Discarded'
+				? t('home.statusDiscarded')
 				: status === 'downloaded'
-					? 'Downloaded to this browser'
-					: 'Not downloaded yet'
+					? t('home.downloadedToBrowser')
+					: t('home.notDownloaded')
 	);
 
 	const shell =
@@ -120,7 +121,7 @@
 					type="button"
 					class="flex h-8 w-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-accent-wash hover:text-accent"
 					onclick={() => ondownload(session.Id)}
-					aria-label="Download {title}"
+					aria-label={t('home.downloadNamed', { title })}
 					data-testid="row-download"
 				>
 					<Icon name="download" size={16} />
@@ -131,7 +132,7 @@
 					type="button"
 					class="flex h-8 w-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-danger-bg hover:text-danger"
 					onclick={() => ondelete(session.Id)}
-					aria-label="Delete {title}"
+					aria-label={t('home.deleteNamed', { title })}
 					data-testid="row-delete"
 				>
 					<Icon name="trash" size={16} />

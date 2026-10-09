@@ -3,6 +3,7 @@
 	import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 	import type { ConnectionState } from '$lib/hub/client';
 	import { scannerStateLabel } from '$lib/format';
+	import { t } from '$lib/i18n/index.svelte';
 	import ScannerDetails from './ScannerDetails.svelte';
 
 	let {
@@ -25,10 +26,10 @@
 	const label = $derived(
 		offline
 			? connection === 'connecting'
-				? 'Connecting…'
-				: 'Offline'
+				? t('home.connecting')
+				: t('home.offline')
 			: scanning && pages
-				? `Scanning · ${pages} ${pages === 1 ? 'page' : 'pages'}`
+				? t('home.scanningPages', { n: pages })
 				: scannerStateLabel(status?.State)
 	);
 
@@ -60,7 +61,7 @@
 		class="inline-flex h-[34px] items-center gap-2 rounded-full bg-surface py-0 pr-[14px] pl-3 text-[13px] font-semibold text-ink shadow-chip transition-colors hover:bg-accent-wash"
 		aria-expanded={open === 'pinned'}
 		aria-haspopup="dialog"
-		aria-label="Scanner details"
+		aria-label={t('home.scannerDetails')}
 		onclick={() => (open = open === 'pinned' ? null : 'pinned')}
 		data-testid="status-pill"
 	>

@@ -639,9 +639,7 @@ test('scanners can be renamed, hidden and inspected, and an unplugged one stays 
 	await expect(picker.getByRole('radio', { name: 'Epson DS-530' })).toHaveCount(0);
 });
 
-test('the footer links out to GitHub and issues, and keeps the documentation in the app', async ({
-	page
-}) => {
+test('the header holds the language, the documentation and issue reporting', async ({ page }) => {
 	await page.goto('/');
 	// After a whole run Past scans holds long names; none may widen the page past the screen.
 	await expect(page.getByTestId('past-scans')).toBeVisible();
@@ -650,13 +648,9 @@ test('the footer links out to GitHub and issues, and keeps the documentation in 
 			() => document.documentElement.scrollWidth - document.documentElement.clientWidth
 		)
 	).toBeLessThanOrEqual(0);
-	const footer = page.getByTestId('app-footer');
-	await expect(footer.getByTestId('footer-github')).toHaveAttribute(
-		'href',
-		'https://github.com/antonkesy/YASS'
-	);
+
 	// Report an issue opens a menu of the issue forms, each going straight to its own.
-	await footer.getByTestId('footer-issue').click();
+	await page.getByTestId('header-issue').click();
 	const forms = {
 		bug: 'bug_report.yml',
 		feature: 'feature_request.yml',
@@ -670,16 +664,12 @@ test('the footer links out to GitHub and issues, and keeps the documentation in 
 		);
 		await expect(item).toHaveAttribute('target', '_blank');
 	}
-	await page.getByRole('button', { name: 'Close issue menu' }).click({ position: { x: 5, y: 5 } });
+	await page.keyboard.press('Escape');
 	await expect(page.getByTestId('issue-menu')).toHaveCount(0);
-	// The documentation is a page of the app's own, opened in the same tab.
-	await expect(footer.getByTestId('footer-docs')).not.toHaveAttribute('target');
 
-	// After a whole run the past-scans list is long and its thumbnails keep arriving, which
-	// moves the footer about; let it settle before aiming at a link at the bottom of the page.
-	await page.waitForLoadState('networkidle');
-	await footer.getByTestId('footer-docs').scrollIntoViewIfNeeded();
-	await footer.getByTestId('footer-docs').click();
+	// The documentation is a page of the app's own, opened in the same tab.
+	await expect(page.getByTestId('header-docs')).not.toHaveAttribute('target');
+	await page.getByTestId('header-docs').click();
 	await expect(page).toHaveURL(/\/docs$/);
 	await expect(page.getByTestId('docs-quote')).toHaveText(
 		'You thought this &#@! would be documented?!?'
@@ -688,6 +678,19 @@ test('the footer links out to GitHub and issues, and keeps the documentation in 
 	const cat = page.getByTestId('docs-cat');
 	await expect(cat).toHaveAttribute('data-frame', '0');
 	await expect(cat).toHaveAttribute('data-frame', '1');
+
+	// The language menu switches the whole UI, and the choice outlives a reload.
+	await page.getByTestId('header-language').click();
+	await page.getByTestId('language-de').click();
+	await expect(page.getByTestId('docs-quote')).toHaveText(
+		'Du dachtest, dieser &#@! wäre dokumentiert?!?'
+	);
+	await expect(page.locator('html')).toHaveAttribute('lang', 'de');
+	await page.reload();
+	await expect(page.getByTestId('docs-quote')).toContainText('dokumentiert');
+	await page.getByTestId('header-language').click();
+	await page.getByTestId('language-en').click();
+	await expect(page.getByTestId('docs-quote')).toContainText('documented');
 });
 
 test('the keyboard: pages, edits, full screen, shortcuts and Escape layer by layer', async ({
@@ -748,7 +751,7 @@ test('the keyboard: pages, edits, full screen, shortcuts and Escape layer by lay
 	await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(page).toHaveURL(/\/$/);
-	await page.getByTestId('footer-docs').click();
+	await page.getByTestId('header-docs').click();
 	await expect(page.getByTestId('docs-cat')).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(page).toHaveURL(/\/$/);
@@ -809,4 +812,29 @@ test('an arrow with no page to go to is not shown, and the page does not move', 
 	await expect(next).toBeHidden();
 	await expect(prev).toBeVisible();
 	expect(await frame()).toEqual(first);
+});
+
+test('rotating keeps the page on screen, turned, until the new render is in', async ({ page }) => {
+	await scanToReview(page);
+	const stage = page.getByRole('img', { name: 'Page 1', exact: true });
+	await expect(stage).toBeVisible();
+	await expect(page.getByTestId('stage-loading')).toHaveCount(0);
+	const before = await stage.getAttribute('src');
+
+	// Watch from the click on: no spinner may come up in front of the page at any point.
+	await page.evaluate(() => {
+		const w = window as unknown as { sawSpinner: boolean };
+		w.sawSpinner = false;
+		new MutationObserver(() => {
+			if (document.querySelector('[data-testid=stage-loading]')) w.sawSpinner = true;
+		}).observe(document.body, { childList: true, subtree: true });
+	});
+	await page.getByRole('button', { name: 'Rotate right' }).click();
+
+	await expect.poll(() => stage.getAttribute('src')).not.toBe(before);
+	// Once the new render is in, it is upright as rendered: no CSS turn left on it.
+	await expect.poll(() => stage.evaluate((el) => (el as HTMLElement).style.transform)).toBe('');
+	expect(await page.evaluate(() => (window as unknown as { sawSpinner: boolean }).sawSpinner)).toBe(
+		false
+	);
 });

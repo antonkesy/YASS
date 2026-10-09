@@ -5,6 +5,8 @@
 	import { ms } from '$lib/motion';
 	import type { ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { colorLabel, pageSizeLabel, sourceLabel } from '$lib/format';
+	import { ColorMode, PageSize, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let {
 		options,
@@ -32,21 +34,26 @@
 
 	/**
 	 * The longest label each chip can have, all of them at once: what the area reserves room
-	 * for. The scanner and the format do not change with the preset, so they are the real ones.
+	 * for. The scanner and the format do not change with the preset, so they are the real ones;
+	 * the rest are the longest each setting reads in the current language.
 	 */
 	const widest = $derived(
 		[
 			deviceName,
-			'Both sides',
-			'1200 dpi',
-			'Black & white',
-			'Letter',
-			'Auto-deskew',
-			'Skip blank pages',
-			'B -100 / C -100',
+			longest([ScanSource.Feeder, ScanSource.Duplex, ScanSource.Flatbed].map(sourceLabel)),
+			t('home.dpi', { n: 1200 }),
+			longest([ColorMode.Bw, ColorMode.Grayscale, ColorMode.Color].map(colorLabel)),
+			longest([PageSize.A4, PageSize.A5, PageSize.Letter, PageSize.Legal].map(pageSizeLabel)),
+			t('home.autoDeskew'),
+			t('home.skipBlankPages'),
+			t('home.tone', { b: -100, c: -100 }),
 			format
 		].filter((l): l is string => !!l)
 	);
+
+	function longest(labels: string[]): string {
+		return labels.reduce((a, b) => (b.length > a.length ? b : a), '');
+	}
 
 	/**
 	 * Keyed by what the chip is about, not by its text: Feeder becoming Flatbed is the same
@@ -58,15 +65,15 @@
 		const all: [string, string | null | undefined][] = [
 			['device', deviceName],
 			['source', sourceLabel(options.Source)],
-			['dpi', options.Dpi ? `${options.Dpi} dpi` : null],
+			['dpi', options.Dpi ? t('home.dpi', { n: options.Dpi }) : null],
 			['color', colorLabel(options.Color)],
 			['size', pageSizeLabel(options.PageSize)],
-			['deskew', options.AutoDeskew ? 'Auto-deskew' : null],
-			['blank', options.BlankPageDetection ? 'Skip blank pages' : null],
+			['deskew', options.AutoDeskew ? t('home.autoDeskew') : null],
+			['blank', options.BlankPageDetection ? t('home.skipBlankPages') : null],
 			[
 				'tone',
 				options.Brightness || options.Contrast
-					? `B ${options.Brightness ?? 0} / C ${options.Contrast ?? 0}`
+					? t('home.tone', { b: options.Brightness ?? 0, c: options.Contrast ?? 0 })
 					: null
 			],
 			['format', format]
@@ -105,7 +112,7 @@
 				<button
 					type="button"
 					{onclick}
-					title="Change settings"
+					title={t('home.changeSettings')}
 					class="{chipClass} transition-[background-color,transform] duration-150 hover:-translate-y-px hover:bg-accent-100"
 					animate:flip={{ duration: ms(260), easing: cubicOut }}
 					in:scale={{ start: 0.7, duration: ms(240), easing: backOut }}

@@ -1,3 +1,4 @@
+import { t, type MessageKey } from './i18n/index.svelte';
 import { writable } from 'svelte/store';
 import { ColorMode, PageSize, ScanSource } from './hub/generated/Yass.Core.Domain';
 import { ExportFormat, type DocumentMetadataDto } from './hub/generated/Yass.Core.Hub';
@@ -24,6 +25,24 @@ export type Preset = {
 };
 
 export const PRESETS_KEY = 'yass.presets';
+
+/**
+ * A preset's name in the UI's language. The built-in presets are stored by their English
+ * names; one still carrying that name is shown translated, while one the user renamed, and
+ * every preset the user made, shows as they named it.
+ */
+export function presetName(preset: Pick<Preset, 'id' | 'name'>): string {
+	const builtIn = defaultPresets.find((p) => p.id === preset.id);
+	if (!builtIn || builtIn.name !== preset.name) return preset.name;
+	return t(BUILT_IN_NAMES[preset.id]);
+}
+
+const BUILT_IN_NAMES: Record<string, MessageKey> = {
+	document: 'common.presetDocument',
+	'double-sided': 'common.presetDoubleSided',
+	receipt: 'common.presetReceipt',
+	photo: 'common.presetPhoto'
+};
 
 /** What a fresh browser starts with. The names match the mockup's. */
 export const defaultPresets: Preset[] = [

@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { detectSwipe, step } from '$lib/review/swipe';
 import { EDGE_SPEED, edgeScroll, isIdentity, moveIndex, slotAt } from '$lib/review/reorder';
-import { DEFAULT_TILE, fitTile, TILE_SIZES, tileStep, zoomTile } from '$lib/review/overview';
+import {
+	DEFAULT_TILE,
+	fitTile,
+	TILE_SIZES,
+	tileStep,
+	zoomGrid,
+	zoomTile
+} from '$lib/review/overview';
 
 describe('swipe', () => {
 	it('needs a mostly horizontal move past the threshold', () => {
@@ -110,5 +117,33 @@ describe('fitting the overview to the screen', () => {
 		expect(fitTile({ ...tile, count: 0, width: 1384, height: 689 })).toBe(DEFAULT_TILE);
 		expect(fitTile({ ...tile, count: 3, width: 0, height: 0 })).toBe(DEFAULT_TILE);
 		expect(fitTile({ ...tile, slope: 0, count: 3, width: 1384, height: 689 })).toBe(DEFAULT_TILE);
+	});
+});
+
+describe('zooming by what the grid shows', () => {
+	// A phone's grid: 380 wide, 12px gaps. Tiles stretch to fill a row, so only the number per
+	// row changes what is on screen.
+	const W = 380;
+	const G = 12;
+
+	it('keeps zooming out until a row holds one more tile', () => {
+		// Fitted at 183: two a row. 150 would still be two a row, each 184 wide — no change.
+		expect(zoomGrid(183, -1, W, G)).toBe(110);
+	});
+
+	it('keeps zooming in until a row holds one fewer tile', () => {
+		// 80 is four a row; 110 is three — a real change, so one step is enough.
+		expect(zoomGrid(80, 1, W, G)).toBe(110);
+		// 150 is two a row, as is 183: on to 210, which is one.
+		expect(zoomGrid(150, 1, W, G)).toBe(210);
+	});
+
+	it('stops at the end of the steps', () => {
+		expect(zoomGrid(80, -1, W, G)).toBe(TILE_SIZES[0]);
+		expect(zoomGrid(290, 1, W, G)).toBe(290);
+	});
+
+	it('is a plain step where every step changes the row', () => {
+		expect(zoomGrid(150, -1, 2000, G)).toBe(zoomTile(150, -1));
 	});
 });

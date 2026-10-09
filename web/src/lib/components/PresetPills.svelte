@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { pickKeyframes, play } from '$lib/motion';
-	import type { Preset } from '$lib/presets';
+	import { t } from '$lib/i18n/index.svelte';
+	import { presetName, type Preset } from '$lib/presets';
 	import { Icon } from '$lib/icons';
 
 	let {
@@ -46,17 +47,19 @@
 	-->
 	<div class="grid h-8 w-full grid-cols-[1fr_auto_1fr] items-center gap-2">
 		<span></span>
-		<span class="text-[11px] font-bold tracking-[0.08em] text-ink-faint uppercase">Preset</span>
+		<span class="text-[11px] font-bold tracking-[0.08em] text-ink-faint uppercase"
+			>{t('home.preset')}</span
+		>
 		{#if modified}
 			<button
 				type="button"
 				class="flex h-8 animate-fade-in items-center gap-1 justify-self-start rounded-full px-2 text-[12px] font-bold whitespace-nowrap text-accent transition-colors hover:bg-accent-wash"
 				onclick={onsave}
-				title="These settings match no preset; save them as one"
+				title={t('home.saveAsPresetHint')}
 				data-testid="preset-save-current"
 			>
 				<Icon name="plus" />
-				Save as preset
+				{t('home.saveAsPreset')}
 			</button>
 		{/if}
 	</div>
@@ -73,7 +76,7 @@
 						? 'bg-surface text-accent-deep shadow-ring-outline'
 						: 'bg-surface text-accent-deep shadow-chip'}"
 				aria-pressed={active === preset.id}
-				title={edited === preset.id ? 'Edited — press to go back to it' : undefined}
+				title={edited === preset.id ? t('home.presetEdited') : undefined}
 				onclick={() => onpick(preset.id)}
 				{@attach bounceWhenPicked(preset.id)}
 			>
@@ -84,7 +87,7 @@
 					></span>
 				{/if}
 				<Icon name={preset.icon} />
-				{preset.name}
+				{presetName(preset)}
 			</button>
 		{/each}
 	</div>

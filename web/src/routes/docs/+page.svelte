@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { useLayer } from '$lib/keys.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	/**
 	 * The documentation. All of it. Two frames of a cat laughing at you, swapped a few times a
 	 * second while the whole cat shakes, and held still for anyone who asked for less motion.
@@ -47,7 +48,7 @@
 	});
 </script>
 
-<svelte:head><title>Documentation · YASS</title></svelte:head>
+<svelte:head><title>{t('common.docsTitle')} · YASS</title></svelte:head>
 
 <main
 	class="flex flex-1 flex-col items-center justify-center gap-5 px-4 py-10"
@@ -57,7 +58,7 @@
 		class="relative max-w-[min(560px,100%)] rounded-[22px] bg-surface px-6 py-4 text-center text-[17px] font-extrabold tracking-[-0.01em] text-ink shadow-card sm:text-[20px]"
 		data-testid="docs-quote"
 	>
-		You thought this &amp;#@! would be documented?!?
+		{t('common.docsQuote')}
 		<!-- The bubble's tail, pointing down at the cat doing the talking. -->
 		<span
 			class="absolute -bottom-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 bg-surface"
@@ -69,9 +70,9 @@
 	<pre
 		class="cat w-[40ch] max-w-full font-mono text-[11px] leading-[1.25] text-ink-2 sm:text-[14px]"
 		role="img"
-		aria-label="A cat laughing and pointing at you"
+		aria-label={t('common.docsCat')}
 		data-testid="docs-cat"
-		data-frame={frame}>{frames[frame]}</pre>
+		data-frame={frame}>{frames[frame].replace('<- you', `<- ${t('common.docsYou')}`)}</pre>
 </main>
 
 <style>

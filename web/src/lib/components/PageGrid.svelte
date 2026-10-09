@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import type { PageDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { Icon } from '$lib/icons';
 	import { edgeScroll, isIdentity, moveIndex, slotAt } from '$lib/review/reorder';
@@ -351,7 +352,7 @@
 			data-testid="overview-open"
 		>
 			<Icon name="expand" size={14} />
-			All pages
+			{t('review.allPages')}
 		</button>
 	{/if}
 
@@ -362,7 +363,7 @@
 			: undefined}
 		role="listbox"
 		aria-multiselectable={overview}
-		aria-label="Pages. Drag to reorder, or use Alt+Arrow keys."
+		aria-label={t('review.gridLabel')}
 		tabindex="-1"
 		bind:this={grid}
 		onpointerdown={pointerdown}
@@ -408,7 +409,7 @@
 			<div
 				class="{cell} rounded-[14px] bg-accent-50 shadow-ring-pending"
 				style="aspect-ratio: 1 / 1.2"
-				aria-label="Scanning the next page"
+				aria-label={t('review.scanningNext')}
 			></div>
 		{/if}
 
@@ -421,7 +422,7 @@
 				style="aspect-ratio: 1 / 1.2"
 			>
 				<Icon name="plus" size={16} />
-				Scan more
+				{t('review.scanMore')}
 			</button>
 		{/if}
 	</div>

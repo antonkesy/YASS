@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { t, i18n } from '$lib/i18n/index.svelte';
+
 	let {
 		name,
 		label,
@@ -35,9 +37,12 @@
 					type="button"
 					class="h-7 rounded-full px-2 text-[11px] font-bold text-accent transition-colors hover:bg-accent-wash"
 					onclick={() => onchange(origin)}
-					aria-label="Reset {label.toLowerCase()}"
+					aria-label={t('settings.resetLabel', {
+						// German capitalises its nouns, so the label stays as it is there.
+						label: i18n.locale === 'de' ? label : label.toLowerCase()
+					})}
 				>
-					Reset
+					{t('settings.reset')}
 				</button>
 			{/if}
 			<span

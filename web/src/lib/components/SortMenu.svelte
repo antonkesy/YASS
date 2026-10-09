@@ -2,6 +2,7 @@
 	import { escapeCloses } from '$lib/keys.svelte';
 	import { sortLabels, sortShortLabels, type SortOrder } from '$lib/sessions/browse';
 	import { Icon } from '$lib/icons';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let { order, onchange }: { order: SortOrder; onchange: (order: SortOrder) => void } = $props();
 
@@ -33,7 +34,7 @@
 		<button
 			type="button"
 			class="fixed inset-0 z-30 cursor-default"
-			aria-label="Close sort menu"
+			aria-label={t('home.closeSortMenu')}
 			onclick={() => (open = false)}
 		></button>
 		<div
@@ -42,7 +43,7 @@
 			data-testid="sort-menu"
 		>
 			<p class="px-2.5 py-1.5 text-[11px] font-bold tracking-[0.06em] text-ink-faint uppercase">
-				Sort by
+				{t('home.sortBy')}
 			</p>
 			{#each orders as value (value)}
 				<button

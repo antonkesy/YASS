@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 	import { activePageCount } from '$lib/format';
@@ -52,12 +53,12 @@
 				>
 					<Icon name="exportTo" />
 				</span>
-				<span class="text-sm font-extrabold text-ink">Preparing…</span>
+				<span class="text-sm font-extrabold text-ink">{t('review.preparing')}</span>
 				<span class="ml-auto text-[13px] font-bold text-ink-muted tabular-nums">
 					{progress ?? 0}%
 				</span>
 			</div>
-			<ProgressBar percent={progress} label="Export progress" />
+			<ProgressBar percent={progress} label={t('review.exportProgress')} />
 		</div>
 	{:else}
 		<!--
@@ -72,7 +73,7 @@
 			data-testid="download-button"
 		>
 			<Icon name="download" />
-			{picker ? 'Save as…' : 'Download'}
+			{picker ? t('review.saveAs') : t('review.download')}
 		</button>
 		{#if serverFolder && onserver}
 			<!-- A second way out, not a replacement: the download is still one click. -->
@@ -81,11 +82,11 @@
 				class="flex h-[46px] w-full items-center justify-center gap-2 rounded-[14px] bg-accent-tint text-[14px] font-extrabold text-accent-deep transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-40"
 				onclick={onserver}
 				disabled={!canExport}
-				title="Save into {serverFolder} on the server"
+				title={t('review.saveInto', { folder: serverFolder })}
 				data-testid="server-save-button"
 			>
 				<Icon name="folder" />
-				Save to server
+				{t('review.saveToServer')}
 			</button>
 		{/if}
 	{/if}

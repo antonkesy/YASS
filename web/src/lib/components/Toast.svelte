@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { toast } from '$lib/toast';
+	import { t } from '$lib/i18n/index.svelte';
 </script>
 
 {#if $toast}
@@ -21,7 +22,7 @@
 					}}
 					data-testid="toast-undo"
 				>
-					Undo
+					{t('dialogs.undo')}
 				</button>
 			{/if}
 		</div>

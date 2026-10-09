@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import { useLayer } from '$lib/keys.svelte';
 	import { PageCleanup, type PageFilter } from '$lib/hub/generated/Yass.Core.Domain';
 	import { cleanupOptions, pageFilters } from '$lib/review/edits';
@@ -29,7 +30,7 @@
 <button
 	type="button"
 	class="fixed inset-0 z-30 cursor-default"
-	aria-label="Close filter menu"
+	aria-label={t('review.closeFilterMenu')}
 	onclick={onclose}
 ></button>
 <div
@@ -64,7 +65,7 @@
 		<div class="mx-1 my-1.5 h-px bg-line" role="separator"></div>
 		<span
 			class="block px-2.5 pt-0.5 pb-1 text-[11px] font-bold tracking-[0.06em] text-ink-faint uppercase"
-			>Clean up</span
+			>{t('review.cleanUp')}</span
 		>
 		{#each cleanupOptions as option (option.value)}
 			{@const on = (cleanup & option.value) === option.value}
