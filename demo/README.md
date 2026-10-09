@@ -27,13 +27,18 @@ YASS_PORT=9000 docker compose up --build
    whole templates.
 4. **Save as…** — the PDF is handed to your browser, through its save dialog
    where it offers one and as a plain download where it does not.
-5. **Past scans** — every scan is listed with its status, searchable and
+5. **Save to server** — switch it on in Settings, and the review screen gets a
+   second button that writes the document into the server's one output folder.
+   In the demo that is [`output/`](output) next to this file: watch the PDF
+   appear there. A name that is taken gets `-2`, `-3`… rather than overwriting.
+6. **Past scans** — every scan is listed with its status, searchable and
    sortable, with a select mode for bulk download and delete.
-6. **Settings** — presets, source, dpi, colour, page size, blank-page detection,
+7. **Settings** — presets, source, dpi, colour, page size, blank-page detection,
    file format and the name template. All stored in the browser, not on the server.
 
 `Ctrl-C` stops it; `docker compose down` removes the container. Scan sessions
-live in the container's `/tmp`, so nothing survives except what you downloaded.
+live in the container's `/tmp`, so nothing survives except what you downloaded
+or saved to `output/`.
 
 Hacking on YASS itself? `docker compose watch` runs the same container and
 rebuilds it whenever something under `src/`, `web/` or the `Dockerfile`
@@ -79,8 +84,21 @@ scanner. Keys, comma-separated:
 So `command: ["--fake", "pages=20,blank=2;5;9,error=12,delay=1s"]` gives a long,
 slow scan that jams part-way — useful for exercising the error and progress UI.
 
-Everything else lives in [`yass.yaml`](yass.yaml); non-`server` keys reload at
-runtime, so you can edit it and hit reload without restarting the container.
+Everything else lives in [`yass.yaml`](yass.yaml) — `output.directory` is the
+folder Save to server writes to; set it to `""` to turn the button off.
+Non-`server` keys reload at runtime, so you can edit it and hit reload without
+restarting the container.
+
+## If Save to server fails
+
+The container runs as user 1000 so that it can write into `output/` and you
+can open what it writes. If your user has another id (`id -u`), say so:
+
+```sh
+YASS_UID=$(id -u) YASS_GID=$(id -g) docker compose up --build
+```
+
+or put both in `demo/.env`, like the port below.
 
 ## If port 8080 is taken
 

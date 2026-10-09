@@ -21,6 +21,9 @@ scanner:
     auto_deskew: false
 
 output:
+  # "Save to server" writes here; compose mounts it from demo/output/ on the host, so a
+  # saved document shows up there. Each browser switches the button on in Settings.
+  directory: /data/output
   pdf:
     compression: jpeg
     jpeg_quality: 75
