@@ -36,27 +36,27 @@
  */
 @theme {
 	/* Ground and surfaces */
-	--color-ground: light-dark(#ececf0, #000000);
+	--color-ground: light-dark(#ececf0, #09090b);
 	/* Behind everything: the window itself. */
-	--color-page: light-dark(#f5f5f7, #000000);
+	--color-page: light-dark(#f5f5f7, #09090b);
 	/* A well inside a card — a group of settings, the name field — a step off the surface. */
-	--color-app: light-dark(#f5f5f7, #262628);
-	--color-surface: light-dark(#ffffff, #1c1c1e);
-	--color-header: light-dark(rgb(245 245 247 / 0.72), rgb(0 0 0 / 0.72));
+	--color-app: light-dark(#f5f5f7, #2a2a2e);
+	--color-surface: light-dark(#ffffff, #1b1b1f);
+	--color-header: light-dark(rgb(245 245 247 / 0.72), rgb(9 9 11 / 0.72));
 
 	/* Ink */
 	--color-ink: light-dark(#1d1d1f, #f5f5f7);
 	--color-ink-2: light-dark(#3a3a3c, #e5e5ea);
 	--color-ink-3: light-dark(#48484a, #d1d1d6);
-	--color-ink-muted: light-dark(#6e6e73, #a1a1a6);
-	--color-ink-faint: light-dark(#8e8e93, #8e8e93);
+	--color-ink-muted: light-dark(#6e6e73, #b0b0b6);
+	--color-ink-faint: light-dark(#8e8e93, #98989e);
 
 	/* Lines and neutral controls */
-	--color-line: light-dark(#ebebef, #2c2c2e);
-	--color-line-strong: light-dark(#d9d9de, #3a3a3c);
-	--color-ctl: light-dark(#f2f2f5, #333336);
-	--color-ctl-hover: light-dark(#e8e8ed, #3f3f42);
-	--color-ctl-track: light-dark(#eeeef1, #333336);
+	--color-line: light-dark(#ebebef, #34343a);
+	--color-line-strong: light-dark(#d9d9de, #46464c);
+	--color-ctl: light-dark(#f2f2f5, #36363b);
+	--color-ctl-hover: light-dark(#e8e8ed, #424248);
+	--color-ctl-track: light-dark(#eeeef1, #323237);
 	--color-ctl-active: light-dark(#e3e3e8, #48484a);
 
 	/* Accent */
@@ -66,36 +66,36 @@
 	--color-accent-light: light-dark(#007aff, #0a84ff);
 	--color-accent-sky: light-dark(#5ac8fa, #64d2ff);
 	--color-accent-deep: light-dark(#0062cc, #64a8ff);
-	--color-accent-50: light-dark(#eef5ff, #0f2744);
-	--color-accent-100: light-dark(#dcebff, #153559);
-	--color-accent-wash: light-dark(#ebf4ff, #0f2540);
-	--color-accent-wash2: light-dark(#e5f0ff, #12304f);
-	--color-accent-tint: light-dark(#eef5ff, #0f2744);
-	--color-accent-hover50: light-dark(#f2f7ff, #0d2036);
+	--color-accent-50: light-dark(#eef5ff, #14315a);
+	--color-accent-100: light-dark(#dcebff, #1b3f6e);
+	--color-accent-wash: light-dark(#ebf4ff, #132e52);
+	--color-accent-wash2: light-dark(#e5f0ff, #173863);
+	--color-accent-tint: light-dark(#eef5ff, #163661);
+	--color-accent-hover50: light-dark(#f2f7ff, #112a4a);
 	--color-accent-ring: light-dark(#8ec2ff, #3d8bff);
-	--color-accent-dash: light-dark(#b8cde6, #2f4a6b);
-	--color-accent-stack: light-dark(#e6ebf3, #2c2c2e);
-	--color-accent-stack2: light-dark(#e3e6ec, #242426);
+	--color-accent-dash: light-dark(#b8cde6, #3d5f88);
+	--color-accent-stack: light-dark(#e6ebf3, #33333a);
+	--color-accent-stack2: light-dark(#e3e6ec, #2a2a30);
 
 	/* Semantic */
 	--color-success: light-dark(#34c759, #30d158);
 	--color-success-ink: light-dark(#1f8a3b, #30d158);
-	--color-success-bg: light-dark(#e9f8ed, #0e2d18);
+	--color-success-bg: light-dark(#e9f8ed, #123a20);
 	--color-success-bg2: light-dark(#e3f6e8, #123620);
 	--color-warning: light-dark(#ff9500, #ff9f0a);
 	--color-warning-ink: light-dark(#a35a00, #ffb340);
-	--color-warning-bg: light-dark(#fff3e0, #3a2606);
+	--color-warning-bg: light-dark(#fff3e0, #472f0a);
 	--color-danger: light-dark(#d70015, #ff6961);
 	--color-danger-solid: light-dark(#ff3b30, #ff453a);
-	--color-danger-bg: light-dark(#ffeceb, #3b1512);
+	--color-danger-bg: light-dark(#ffeceb, #4a1b17);
 	--color-downloaded: light-dark(#007aff, #0a84ff);
-	--color-downloaded-bg: light-dark(#e6f1ff, #0f2744);
+	--color-downloaded-bg: light-dark(#e6f1ff, #163661);
 	--color-saved: light-dark(#30b0c7, #40c8e0);
 	--color-saved-ink: light-dark(#0e7c8f, #5ad8ee);
-	--color-saved-bg: light-dark(#e0f5f8, #0c2f36);
+	--color-saved-bg: light-dark(#e0f5f8, #103b44);
 	--color-discarded: light-dark(#8e8e93, #8e8e93);
 	--color-discarded-ink: light-dark(#636366, #aeaeb2);
-	--color-discarded-bg: light-dark(#f0f0f2, #2c2c2e);
+	--color-discarded-bg: light-dark(#f0f0f2, #34343a);
 	/* A selected segment: white on the grey track, and in the dark lighter than its track. */
 	--color-seg: light-dark(#ffffff, #5a5a5e);
 	/* The toast: near-black, and in the dark a raised grey rather than turning light. */
@@ -104,7 +104,7 @@
 	--color-toast-undo: light-dark(#64a8ff, #64a8ff);
 
 	/* Incidental */
-	--color-skeleton: light-dark(#ececf0, #2c2c2e);
+	--color-skeleton: light-dark(#ececf0, #2f2f35);
 	--color-checkbox: light-dark(#c7c7cc, #636366);
 	--color-toggle-off: light-dark(#e5e5ea, #39393d);
 	--color-handle: light-dark(#d1d1d6, #48484a);
@@ -134,31 +134,31 @@
 
 	/* Elevation */
 	--shadow-card:
-		0 0 0 0.5px light-dark(transparent, rgb(255 255 255 / 0.08)), 0 1px 2px rgb(0 0 0 / 0.04),
+		0 0 0 0.5px light-dark(transparent, rgb(255 255 255 / 0.13)), 0 1px 2px rgb(0 0 0 / 0.04),
 		0 6px 24px rgb(0 0 0 / 0.04);
 	--shadow-stage:
-		0 0 0 0.5px light-dark(transparent, rgb(255 255 255 / 0.08)), 0 1px 2px rgb(0 0 0 / 0.04),
+		0 0 0 0.5px light-dark(transparent, rgb(255 255 255 / 0.13)), 0 1px 2px rgb(0 0 0 / 0.04),
 		0 6px 24px rgb(0 0 0 / 0.04);
 	--shadow-panel:
-		0 0 0 0.5px light-dark(transparent, rgb(255 255 255 / 0.08)), 0 1px 2px rgb(0 0 0 / 0.04),
+		0 0 0 0.5px light-dark(transparent, rgb(255 255 255 / 0.13)), 0 1px 2px rgb(0 0 0 / 0.04),
 		0 6px 24px rgb(0 0 0 / 0.04);
 	--shadow-toolbar:
-		0 0 0 0.5px light-dark(rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.1)), 0 8px 30px rgb(0 0 0 / 0.1);
+		0 0 0 0.5px light-dark(rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.15)), 0 8px 30px rgb(0 0 0 / 0.1);
 	--shadow-chip:
-		0 0 0 0.5px light-dark(rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.1)), 0 1px 2px rgb(0 0 0 / 0.05);
+		0 0 0 0.5px light-dark(rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.15)), 0 1px 2px rgb(0 0 0 / 0.05);
 	--shadow-nav:
-		0 0 0 0.5px light-dark(rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.1)), 0 2px 8px rgb(0 0 0 / 0.08);
+		0 0 0 0.5px light-dark(rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.15)), 0 2px 8px rgb(0 0 0 / 0.08);
 	--shadow-seg: 0 0 0 0.5px rgb(0 0 0 / 0.04), 0 2px 6px rgb(0 0 0 / 0.1);
 	--shadow-knob: 0 1px 3px rgb(0 0 0 / 0.25);
 	--shadow-checkbox: 0 2px 6px rgb(0 0 0 / 0.18);
 	--shadow-menu:
-		0 0 0 0.5px light-dark(transparent, rgb(255 255 255 / 0.08)), 0 16px 40px rgb(0 0 0 / 0.16),
+		0 0 0 0.5px light-dark(transparent, rgb(255 255 255 / 0.13)), 0 16px 40px rgb(0 0 0 / 0.16),
 		0 0 0 1px rgb(0 0 0 / 0.04);
 	--shadow-popover:
-		0 0 0 0.5px light-dark(transparent, rgb(255 255 255 / 0.08)), 0 20px 50px rgb(0 0 0 / 0.2),
+		0 0 0 0.5px light-dark(transparent, rgb(255 255 255 / 0.13)), 0 20px 50px rgb(0 0 0 / 0.2),
 		0 0 0 1px rgb(0 0 0 / 0.05);
 	--shadow-modal:
-		0 0 0 0.5px light-dark(transparent, rgb(255 255 255 / 0.08)), 0 24px 60px rgb(0 0 0 / 0.25);
+		0 0 0 0.5px light-dark(transparent, rgb(255 255 255 / 0.13)), 0 24px 60px rgb(0 0 0 / 0.25);
 	--shadow-toast: 0 12px 32px rgb(0 0 0 / 0.3);
 	--shadow-scan: 0 1px 2px rgb(0 0 0 / 0.08);
 	--shadow-scan-hover: 0 4px 14px rgb(0 122 255 / 0.25);
