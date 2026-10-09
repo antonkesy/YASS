@@ -27,6 +27,8 @@ internal static class DesktopWindow
             .SetTitle("YASS")
             // Linux and Windows show it in the title bar and task switcher; macOS takes the .app's.
             .SetIconFile(WindowIcon())
+            // WebView2 keeps its profile here instead of beside the executable, which may not be writable.
+            .SetTemporaryFilesPath(DesktopDefaults.WebViewDataDirectory())
             .SetUseOsDefaultSize(false)
             .SetSize(1280, 860)
             .SetMinSize(360, 480)
@@ -57,17 +59,27 @@ internal static class DesktopWindow
 
         opened = window;
         notifier.Attach(window.SendWebMessage);
-        using CancellationTokenRegistration closeOnStop = lifetime.ApplicationStopping.Register(() => window.Invoke(window.Close));
+        using CancellationTokenRegistration closeOnStop = lifetime.ApplicationStopping.Register(() =>
+        {
+            logger.LogInformation("The app is stopping; closing the window");
+            window.Invoke(window.Close);
+        });
 
+        logger.LogInformation("Opening the window ({Origin})", AppScheme.Origin);
         window.Load(new Uri(AppScheme.Origin + "/"));
         window.WaitForClose();
         notifier.Attach(static _ => { });
     }
 
-    /// <summary>The PWA's own icon from the web build; empty (no icon) when the build has none.</summary>
+    /// <summary>
+    /// Windows loads a window icon from an .ico only (shipped beside the executable); elsewhere the
+    /// web build's PNG. Empty, for no icon, when neither is there.
+    /// </summary>
     private static string WindowIcon()
     {
-        string icon = Path.Combine(Yass.App.Hosting.WebRoot.Resolve(), "icons", "icon-512.png");
+        string icon = OperatingSystem.IsWindows()
+            ? Path.Combine(AppContext.BaseDirectory, "yass.ico")
+            : Path.Combine(Yass.App.Hosting.WebRoot.Resolve(), "icons", "icon-512.png");
         return File.Exists(icon) ? icon : "";
     }
 }

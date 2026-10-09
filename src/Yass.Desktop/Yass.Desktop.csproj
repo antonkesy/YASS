@@ -11,6 +11,8 @@
     <PublishReadyToRun>true</PublishReadyToRun>
     <!-- The .exe's own icon on Windows; elsewhere the package carries it (scripts/package-desktop.sh). -->
     <ApplicationIcon>../../assets/logo/yass.ico</ApplicationIcon>
+    <!-- LibraryImport (DesktopLog's message box) generates unsafe marshalling code. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,6 +28,11 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Photino.NET" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The window's own icon on Windows, which only loads one from an .ico. -->
+    <None Include="../../assets/logo/yass.ico" Link="yass.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

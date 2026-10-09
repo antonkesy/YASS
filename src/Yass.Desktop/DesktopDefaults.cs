@@ -13,6 +13,10 @@ public static class DesktopDefaults
     public static string SessionsDirectory() =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData, Environment.SpecialFolderOption.DoNotVerify), "yass", "sessions");
 
+    /// <summary>WebView2's profile and cache: <c>yass/webview</c> in the per-user data folder.</summary>
+    public static string WebViewDataDirectory() =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData, Environment.SpecialFolderOption.DoNotVerify), "yass", "webview");
+
     /// <summary>
     /// Where the server's built-in values assume a container or a small home server, the desktop's
     /// own; a value the file sets is kept.
