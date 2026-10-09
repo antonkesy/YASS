@@ -78,7 +78,7 @@ server:
   listen: "0.0.0.0:8080"      # LAN bind; NO AUTH — never expose publicly
   base_path: "/"
 scanner:
-  driver: auto                # auto | sane | escl | wia | apple  (auto: sane on Linux, wia on Windows, apple on macOS; plus escl)
+  driver: auto                # auto | sane | escl | wia  (auto: SANE on Linux, WIA on Windows, eSCL on macOS)
   device: ""                  # NAPS2 device id or substring; empty = first found
   poll_interval_seconds: 5
   defaults:
@@ -248,7 +248,7 @@ feat(desktop): json message bridge for hub calls and events
 test(desktop): bridge dispatcher round-trip tests
 feat(web): message-bridge transport selected at runtime
 feat(web): native save dialogs on desktop
-feat(scanning): wia and apple drivers
+feat(scanning): wia driver and escl as the macos default
 perf(desktop): local-first defaults
 feat(nix): yass-desktop package
 ci: build and release desktop for linux, windows and macos

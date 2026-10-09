@@ -149,7 +149,7 @@ values stop startup and name the offending key.
 |---|---|---|
 | `server.listen` | `0.0.0.0:8080` | Bind address. **No auth: use a LAN address.** Not reloadable. |
 | `server.base_path` | `/` | Path prefix when served under a sub-path. |
-| `scanner.driver` | `auto` | `auto`, `sane` or `escl`. |
+| `scanner.driver` | `auto` | `auto`, `sane`, `escl` or `wia`. `auto` is SANE on Linux, WIA on Windows and eSCL on macOS. |
 | `scanner.device` | `""` | NAPS2 device id or a substring of id/name; empty = first found. |
 | `scanner.poll_interval_seconds` | `5` | Scanner readiness poll. |
 | `scanner.defaults.source` | `feeder` | `flatbed`, `feeder` or `duplex`. |

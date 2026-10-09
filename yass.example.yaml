@@ -9,7 +9,7 @@ server:
   base_path: "/"
 
 scanner:
-  driver: auto # auto | sane | escl
+  driver: auto # auto | sane | escl | wia  (auto: SANE on Linux, WIA on Windows, eSCL on macOS)
   device: "" # NAPS2 device id or substring; empty = first found
   poll_interval_seconds: 5
   defaults:

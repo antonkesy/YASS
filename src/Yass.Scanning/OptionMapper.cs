@@ -13,10 +13,19 @@ public static class OptionMapper
     /// <summary>NAPS2 brightness/contrast run -1000..1000; ours -100..100.</summary>
     public const int BrightnessContrastScale = 10;
 
-    public static Driver MapDriver(ScannerDriver driver) => driver switch
+    public static Driver MapDriver(ScannerDriver driver) => MapDriver(driver, OperatingSystem.IsMacOS());
+
+    /// <param name="driver"></param>
+    /// <param name="macOS">
+    /// NAPS2's default there is its Apple driver, which only exists in a <c>-macos</c> build of the SDK;
+    /// eSCL is what a plain .NET build can scan with.
+    /// </param>
+    public static Driver MapDriver(ScannerDriver driver, bool macOS) => driver switch
     {
         ScannerDriver.Sane => Driver.Sane,
         ScannerDriver.Escl => Driver.Escl,
+        ScannerDriver.Wia => Driver.Wia,
+        _ when macOS => Driver.Escl,
         _ => Driver.Default,
     };
 
