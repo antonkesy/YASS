@@ -1,0 +1,57 @@
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Webp;
+using Yass.App.Config;
+using Yass.Core.Domain;
+using Yass.Export;
+
+namespace Yass.App.Rendering;
+
+/// <summary>Turns a source PNG plus edits into a WebP of bounded width. At most <c>max_concurrent_renders</c> bitmaps are decoded at once.</summary>
+public sealed class ImageRenderer : IDisposable
+{
+    private readonly SemaphoreSlim _slots;
+
+    public ImageRenderer(ConfigStore config)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+        _slots = new SemaphoreSlim(config.Current.Processing.MaxConcurrentRenders);
+    }
+
+    public async Task RenderAsync(string sourcePath, Page page, ColorMode scanColor, int maxWidth, Stream destination, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+        await _slots.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            using Image image = await Image.LoadAsync(sourcePath, cancellationToken).ConfigureAwait(false);
+            PagePipeline.Apply(image, RenderSpec.Of(page, scanColor), maxWidth);
+
+            var encoder = new WebpEncoder { Quality = 80, FileFormat = WebpFileFormatType.Lossy };
+            await image.SaveAsync(destination, encoder, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _slots.Release();
+        }
+    }
+
+    /// <summary>
+    /// Looks for a scanner's dark frame around the page in a source file, taking a render slot
+    /// like any other job that decodes a full page.
+    /// </summary>
+    public async Task<CropBox?> DetectBordersAsync(string sourcePath, CancellationToken cancellationToken)
+    {
+        await _slots.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            using Image image = await Image.LoadAsync(sourcePath, cancellationToken).ConfigureAwait(false);
+            return BorderDetector.Detect(image);
+        }
+        finally
+        {
+            _slots.Release();
+        }
+    }
+
+    public void Dispose() => _slots.Dispose();
+}

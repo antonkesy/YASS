@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
+using Yass.App.Api;
 using Yass.Core.Domain;
 using Yass.Core.Hub;
-using Yass.Server.Api;
 
 namespace Yass.Server.Hub;
 

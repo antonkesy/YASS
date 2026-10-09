@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Everything both hosts share (ADR-014). Microsoft.Extensions.* only: no ASP.NET Core or SignalR types. -->
+
+  <ItemGroup>
+    <!-- Hosting, logging and DI come from the shared framework the hosts already run on, not from new packages. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Microsoft.Extensions.DependencyInjection" />
+    <Using Include="Microsoft.Extensions.Hosting" />
+    <Using Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Yass.Core/Yass.Core.csproj" />
+    <ProjectReference Include="../Yass.Export/Yass.Export.csproj" />
+    <ProjectReference Include="../Yass.Fake/Yass.Fake.csproj" />
+    <ProjectReference Include="../Yass.Scanning/Yass.Scanning.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SixLabors.ImageSharp" />
+    <PackageReference Include="YamlDotNet" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Yass.Server.Tests" />
+  </ItemGroup>
+
+</Project>

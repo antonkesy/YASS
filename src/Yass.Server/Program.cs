@@ -1,15 +1,16 @@
 using MessagePack;
 using MessagePack.Resolvers;
 using Microsoft.AspNetCore.SignalR;
+using Yass.App;
+using Yass.App.Api;
+using Yass.App.Config;
+using Yass.App.Export;
+using Yass.App.Hosting;
 using Yass.Core.Config;
-using Yass.Server.Api;
-using Yass.Server.Config;
 using Yass.Server.Export;
 using Yass.Server.Hosting;
 using Yass.Server.Hub;
 using Yass.Server.Rendering;
-using Yass.Server.Scanning;
-using Yass.Server.Sessions;
 
 StartupOptions startup = StartupOptions.Parse(args);
 
@@ -28,38 +29,15 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
     Args = args,
     ContentRootPath = AppContext.BaseDirectory,
-    WebRootPath = StaticFrontend.ResolveWebRoot(),
+    WebRootPath = WebRoot.Resolve(),
 });
 
 LoggingSetup.Configure(builder.Logging, config.Logging);
 builder.WebHost.UseUrls("http://" + config.Server.Listen);
 
-builder.Services.AddSingleton(startup);
-builder.Services.AddSingleton(sp => new ConfigStore(config, startup.ConfigPath, sp.GetRequiredService<ILogger<ConfigStore>>()));
-builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddYassApp(config, startup);
 builder.Services.AddSingleton<IClientNotifier, SignalRNotifier>();
-BackendRegistration.Add(builder.Services, startup);
-
-builder.Services.AddSingleton<EffectiveOptions>();
-builder.Services.AddSingleton<ScannerStatusMonitor>();
-builder.Services.AddHostedService(sp => sp.GetRequiredService<ScannerStatusMonitor>());
-
-builder.Services.AddSingleton<SessionStore>();
-builder.Services.AddSingleton<SessionMapper>();
-builder.Services.AddSingleton<ImageRenderer>();
-builder.Services.AddSingleton<RenderCache>();
-builder.Services.AddSingleton<IThumbnailStatus>(sp => sp.GetRequiredService<RenderCache>());
-builder.Services.AddSingleton<ThumbnailWorker>();
-builder.Services.AddSingleton<IPageSink>(sp => sp.GetRequiredService<ThumbnailWorker>());
-builder.Services.AddHostedService(sp => sp.GetRequiredService<ThumbnailWorker>());
-builder.Services.AddSingleton<ScanService>();
-builder.Services.AddSingleton<EditService>();
-builder.Services.AddSingleton<AutoCropService>();
-builder.Services.AddSingleton<DownloadTokens>();
-builder.Services.AddSingleton<ExportService>();
-builder.Services.AddSingleton<YassApi>();
-builder.Services.AddSingleton<SessionRetentionService>();
-builder.Services.AddHostedService(sp => sp.GetRequiredService<SessionRetentionService>());
+builder.Services.AddSingleton<IDownloadPaths>(new DownloadPaths(config.Server.BasePath));
 
 builder.Services
     // On: SignalR prefixes every hub error with "An unexpected error occurred invoking

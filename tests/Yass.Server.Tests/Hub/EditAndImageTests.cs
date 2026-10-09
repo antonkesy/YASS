@@ -5,10 +5,10 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using Yass.App.Sessions;
 using Yass.Core.Domain;
 using Yass.Core.Hub;
 using Yass.Fake;
-using Yass.Server.Sessions;
 
 namespace Yass.Server.Tests.Hub;
 
