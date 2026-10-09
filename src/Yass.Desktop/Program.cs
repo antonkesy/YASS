@@ -18,6 +18,23 @@ public static class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        DesktopLog.RedirectWhenWindowless();
+        AppDomain.CurrentDomain.UnhandledException += (_, e) => DesktopLog.Fatal(e.ExceptionObject.ToString() ?? "Unknown error");
+        try
+        {
+            return Run(args);
+        }
+#pragma warning disable CA1031 // The last stop: say what went wrong rather than vanish.
+        catch (Exception ex)
+#pragma warning restore CA1031
+        {
+            DesktopLog.Fatal(ex.ToString());
+            return 1;
+        }
+    }
+
+    private static int Run(string[] args)
+    {
         StartupOptions startup = StartupOptions.Parse(args, DesktopDefaults.ConfigPath());
 
         YassConfig config;
@@ -27,7 +44,7 @@ public static class Program
         }
         catch (ConfigValidationException ex)
         {
-            Console.Error.WriteLine(ex.Message);
+            DesktopLog.Fatal($"{startup.ConfigPath}: {ex.Message}");
             return 2;
         }
 
@@ -38,6 +55,9 @@ public static class Program
         });
 
         LoggingSetup.Configure(builder.Logging, config.Logging);
+        // A background service that fails (the scanner probe, say) is logged and the window stays
+        // open; the host's default would stop the app, and with it close the window.
+        builder.Services.Configure<HostOptions>(o => o.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore);
 
         var notifier = new BridgeNotifier();
         string sessions = DesktopDefaults.SessionsDirectory();
@@ -69,6 +89,7 @@ public static class Program
         try
         {
             DesktopWindow.Run(host.Services, logger);
+            logger.LogInformation("Window closed");
         }
         finally
         {
