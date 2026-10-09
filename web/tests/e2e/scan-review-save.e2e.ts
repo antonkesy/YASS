@@ -654,11 +654,23 @@ test('the footer links out to GitHub and issues, and keeps the documentation in 
 		'href',
 		'https://github.com/antonkesy/YASS'
 	);
-	await expect(footer.getByTestId('footer-issue')).toHaveAttribute(
-		'href',
-		'https://github.com/antonkesy/YASS/issues/new'
-	);
-	await expect(footer.getByTestId('footer-issue')).toHaveAttribute('target', '_blank');
+	// Report an issue opens a menu of the issue forms, each going straight to its own.
+	await footer.getByTestId('footer-issue').click();
+	const forms = {
+		bug: 'bug_report.yml',
+		feature: 'feature_request.yml',
+		scanner: 'scanner_support.yml'
+	};
+	for (const [id, file] of Object.entries(forms)) {
+		const item = page.getByTestId(`issue-${id}`);
+		await expect(item).toHaveAttribute(
+			'href',
+			`https://github.com/antonkesy/YASS/issues/new?template=${file}`
+		);
+		await expect(item).toHaveAttribute('target', '_blank');
+	}
+	await page.getByRole('button', { name: 'Close issue menu' }).click({ position: { x: 5, y: 5 } });
+	await expect(page.getByTestId('issue-menu')).toHaveCount(0);
 	// The documentation is a page of the app's own, opened in the same tab.
 	await expect(footer.getByTestId('footer-docs')).not.toHaveAttribute('target');
 

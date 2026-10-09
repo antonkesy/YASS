@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { NEW_ISSUE, REPO } from '$lib/links';
+	import { ISSUE_TEMPLATES, REPO } from '$lib/links';
 
 	/**
 	 * One slim row of links on every route, kept to --app-footer-h so the home and review
@@ -8,6 +8,8 @@
 	 * for GitHub in a new tab; the documentation is a page of the app's own.
 	 */
 	const link = 'flex-none font-semibold transition-colors hover:text-accent';
+
+	let reporting = $state(false);
 </script>
 
 <footer
@@ -36,13 +38,46 @@
 	<span class="flex-1"></span>
 
 	<a href={resolve('/docs')} class={link} data-testid="footer-docs">Documentation</a>
-	<a
-		href={NEW_ISSUE}
-		target="_blank"
-		rel="noreferrer noopener external"
-		class={link}
-		data-testid="footer-issue"
-	>
-		Report an issue
-	</a>
+	<!-- One entry, three forms: the issue templates, each opened on its own form. -->
+	<div class="relative flex-none">
+		<button
+			type="button"
+			class="{link} flex items-center gap-1 {reporting ? 'text-accent' : ''}"
+			aria-expanded={reporting}
+			aria-haspopup="menu"
+			onclick={() => (reporting = !reporting)}
+			data-testid="footer-issue"
+		>
+			Report an issue
+			<span class="text-[9px] leading-none">{reporting ? '▾' : '▴'}</span>
+		</button>
+		{#if reporting}
+			<button
+				type="button"
+				class="fixed inset-0 z-30 cursor-default"
+				aria-label="Close issue menu"
+				onclick={() => (reporting = false)}
+			></button>
+			<div
+				class="absolute right-0 bottom-[calc(100%+8px)] z-31 flex min-w-[240px] animate-pop-in flex-col rounded-[14px] bg-surface p-1.5 text-ink shadow-popover"
+				role="menu"
+				data-testid="issue-menu"
+			>
+				{#each ISSUE_TEMPLATES as template (template.id)}
+					<a
+						href={template.href}
+						target="_blank"
+						rel="noreferrer noopener external"
+						role="menuitem"
+						class="flex min-h-[44px] flex-col justify-center rounded-[10px] px-3 py-1.5 transition-colors hover:bg-accent-hover50"
+						onclick={() => (reporting = false)}
+						data-testid="issue-{template.id}"
+					>
+						<span class="text-[13px] font-bold">{template.label}</span>
+						<span class="text-[11px] text-ink-muted">{template.hint}</span>
+					</a>
+				{/each}
+			</div>
+		{/if}
+	</div>
 </footer>
