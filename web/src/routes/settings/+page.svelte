@@ -318,7 +318,7 @@
 	the edge, so the scrollbar does not run through the rounded corners.
 -->
 <div
-	class="fixed inset-x-0 bottom-0 z-41 flex max-h-[92%] animate-sheet-up flex-col overflow-hidden rounded-t-[28px] bg-surface shadow-modal sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:max-h-[calc(100%-32px)] sm:w-[min(1080px,calc(100%-40px))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:animate-card-in sm:rounded-[26px]"
+	class="fixed inset-x-0 bottom-0 z-41 flex max-h-[92%] animate-sheet-up flex-col overflow-hidden rounded-t-[28px] bg-surface shadow-modal sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:h-[calc(100%-48px)] sm:max-h-none sm:w-[min(1320px,calc(100%-48px))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:animate-card-in sm:rounded-[26px]"
 	role="dialog"
 	aria-modal="true"
 	aria-label={t('settings.title')}
