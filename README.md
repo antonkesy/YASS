@@ -5,6 +5,8 @@
 Headless scanning service for a home server. Attach a scanner (USB/SANE or
 network/eSCL), open the mobile-first web UI, scan until the feeder is empty,
 review the pages, and download the PDF to whatever device you are holding.
+The same app also runs as a [desktop program](#desktop-app) with no network
+port at all.
 
 > ## ⚠️ No authentication — LAN only
 >
@@ -130,6 +132,45 @@ docker run --rm -p 8080:8080 yass --fake
 
 `nix run github:OWNER/yass -- --fake` starts the simulated scanner locally.
 
+### Desktop app
+
+The same app also runs as a desktop program on Linux, Windows and macOS, for a
+scanner plugged into the computer you are sitting at. It shows the same screens
+in a native window ([Photino](https://www.tryphotino.io/): WebKitGTK, WebView2
+or WKWebView) and **opens no network port at all, not even on localhost**.
+The window talks to the scanning code inside the same process, and a saved
+document is moved on disk to the file you pick, never passed through the page.
+The only network traffic is to an eSCL scanner, if you use one.
+
+- **Download:** the CI `desktop` job publishes self-contained zips for
+  `linux-x64`, `win-x64` and `osx-arm64`. Unzip and run `Yass.Desktop`
+  (`Yass.Desktop.exe` on Windows). It needs:
+  - **Linux:** WebKitGTK 4.1 (`webkit2gtk-4.1` / `libwebkit2gtk-4.1-0`).
+  - **Windows:** the WebView2 runtime, which ships with Windows 10 and 11.
+  - **macOS:** the build is unsigned, so clear the quarantine flag once with
+    `xattr -dr com.apple.quarantine yass-desktop-*`.
+- **Nix:** `nix run github:OWNER/yass#desktop -- --fake`. Off NixOS, a
+  Nix-built GUI app needs your GPU driver; `nix develop` sets that up for
+  development.
+- **From source:** `pnpm --dir web build`, then
+  `YASS_WEBROOT=$PWD/web/build dotnet run --project src/Yass.Desktop -- --fake`
+  inside `nix develop`.
+
+**Config.** The same `yass.yaml`, read from your per-user config folder:
+`~/.config/yass/` on Linux, `%APPDATA%\yass\` on Windows, or
+`~/Library/Application Support/yass/` on macOS. The file is optional, and
+`--config PATH` points elsewhere. `server:` is ignored. Sessions go to the
+per-user data folder unless `sessions.directory` is set, and renders use up to
+four cores unless `processing.max_concurrent_renders` says otherwise.
+
+**Saving.** *Save as…* opens the system's save dialog, and *Download all*
+asks for a folder. *Save to folder* is *Save to server* under another name:
+it saves into `output.directory`.
+
+**Scanners.** `scanner.driver: auto` is SANE on Linux, WIA on Windows and eSCL
+on macOS. NAPS2's Apple driver needs a macOS-only build of the SDK, so USB
+scanners on a Mac only work if they speak eSCL ([ADR-004](docs/decisions/ADR-004-naps2-api-adaptation.md)).
+
 ### From source
 
 ```sh
@@ -206,7 +247,7 @@ Open it and rename it whenever you like; the list follows.
 ```sh
 nix develop
 pre-commit install
-dotnet test                          # xUnit: core, scanning, export, server (WebApplicationFactory)
+dotnet test                          # xUnit: core, scanning, export, server (WebApplicationFactory), desktop (bridge)
 pnpm --dir web test                  # vitest
 pnpm --dir web test:e2e              # Playwright, desktop + Pixel 7, against `--fake`
 pnpm --dir web hub:generate          # regenerate TS hub client from the C# contract
@@ -218,8 +259,12 @@ Conventional Commits; releases are cut by release-please.
 
 Layout: `src/Yass.Core` (domain, config, hub contract), `Yass.Scanning`
 (NAPS2 adapter), `Yass.Export` (PDF and image writing, name templating),
-`Yass.Server` (host, hub, image endpoints), `Yass.Fake` (simulated scanner),
-`web/` (SvelteKit PWA), `nix/` (package, NixOS module).
+`Yass.App` (everything both hosts share: sessions, scan loop, rendering,
+export, `YassApi`), `Yass.Server` (web host: SignalR hub, image endpoints),
+`Yass.Desktop` (desktop host: Photino window, `yass://` scheme, message
+bridge), `Yass.Fake` (simulated scanner), `web/` (SvelteKit PWA, one build for
+both hosts), `nix/` (packages, NixOS module). `scripts/publish-desktop.sh`
+builds the desktop zips.
 
 ## License
 
