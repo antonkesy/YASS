@@ -68,6 +68,7 @@
             pnpm
             sane-backends
             pre-commit
+            just # justfile: just desktop, just server, just check
             nixfmt
             git
             python3 # scripts/coverage-gate.py
