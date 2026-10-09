@@ -1,13 +1,18 @@
 name: release
 
-# release-please keeps a release PR open on main, with the next version (from the
-# Conventional Commits since the last tag) and its changelog. Merging that PR tags the
-# commit vX.Y.Z and publishes the GitHub release; the assets job then builds the desktop
-# app at that tag and attaches it.
+# Two ways to a release:
+# - release-please keeps a release PR open on main, with the next version (from the
+#   Conventional Commits since the last tag) and its changelog. Merging that PR tags the
+#   commit vX.Y.Z and publishes the GitHub release.
+# - Pushing a tag v* by hand publishes a release for it straight away, with generated notes;
+#   one with a suffix (v0.1.0-alpha.1, v0.2.0-rc.1) is marked a pre-release. This is how an
+#   alpha or a release candidate goes out without touching release-please's version.
+# Either way the assets job then builds the desktop app at that tag and attaches it.
 
 on:
   push:
     branches: [main]
+    tags: ["v*"]
 
 permissions:
   contents: write
@@ -20,6 +25,7 @@ concurrency:
 jobs:
   release-please:
     name: release PR, tag and release
+    if: github.ref_type == 'branch'
     runs-on: ubuntu-latest
     outputs:
       created: ${{ steps.release.outputs.release_created }}
@@ -37,12 +43,25 @@ jobs:
   assets:
     name: attach desktop builds
     needs: release-please
-    if: needs.release-please.outputs.created == 'true'
+    # On a tag push release-please is skipped, which would skip this too without !cancelled().
+    if: ${{ !cancelled() && (needs.release-please.outputs.created == 'true' || github.ref_type == 'tag') }}
     runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.ref_type == 'tag' && github.ref_name || needs.release-please.outputs.tag }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ needs.release-please.outputs.tag }}
+          ref: ${{ env.TAG }}
+      - name: Create the release for a pushed tag
+        if: github.ref_type == 'tag'
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release $TAG already exists"
+          else
+            case "$TAG" in *-*) pre=--prerelease ;; *) pre= ;; esac
+            gh release create "$TAG" --verify-tag --generate-notes --title "$TAG" $pre
+          fi
       - uses: cachix/install-nix-action@v31
       - uses: DeterminateSystems/magic-nix-cache-action@v15
       - name: Build web
@@ -50,13 +69,11 @@ jobs:
       # As in ci.yml: Microsoft's own SDK, since the dev shell's Linux runtime only runs on Nix.
       - name: Publish desktop zips
         run: >-
-          docker run --rm -v "$PWD:/src" -w /src mcr.microsoft.com/dotnet/sdk:10.0-alpine sh -c
+          docker run --rm -v "$PWD:/src" -w /src -e YASS_VERSION="${TAG#v}" mcr.microsoft.com/dotnet/sdk:10.0-alpine sh -c
           'apk add --no-cache pandoc-cli typst poppler-utils font-dejavu python3 &&
           TYPST_FONT_PATHS=/usr/share/fonts scripts/publish-desktop.sh dist'
       - name: Checksums
         # The container wrote dist/ as root.
         run: sudo chown -R "$(id -u):$(id -g)" dist && cd dist && sha256sum ./*.zip > SHA256SUMS
       - name: Attach to the release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ needs.release-please.outputs.tag }}" dist/*.zip dist/SHA256SUMS --clobber
+        run: gh release upload "$TAG" dist/*.zip dist/SHA256SUMS --clobber

@@ -19,7 +19,8 @@ root=$(cd "$(dirname "$0")/.." && pwd)
 [ -f "$root/web/build/index.html" ] || { echo "web/build is missing; run pnpm --dir web build" >&2; exit 1; }
 mkdir -p "$out"
 out=$(cd "$out" && pwd)
-version=$(cat "$root/version.txt")
+# The release tag's version when there is one (an alpha is not in version.txt).
+version=${YASS_VERSION:-$(cat "$root/version.txt")}
 
 for rid in "$@"; do
   case "$rid" in
