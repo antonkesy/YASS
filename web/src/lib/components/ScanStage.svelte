@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { autoAnimate } from '$lib/autoAnimate';
 	import { pickKeyframes, play } from '$lib/motion';
 	import { t } from '$lib/i18n/index.svelte';
 	import type {
@@ -145,6 +146,7 @@
 	style="background: radial-gradient(120% 80% at 50% 0%, var(--color-accent-wash2) 0%, var(--color-surface) 60%)"
 	style:flex="2 1 520px"
 	data-testid="scan-stage"
+	{@attach autoAnimate}
 >
 	<PaperStack {caption} pulse={chosen?.id ?? 'custom'} />
 

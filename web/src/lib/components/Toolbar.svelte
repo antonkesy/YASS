@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { autoAnimate } from '$lib/autoAnimate';
 	import { t } from '$lib/i18n/index.svelte';
 	import { escapeCloses } from '$lib/keys.svelte';
 	import { PageCleanup, PageFilter } from '$lib/hub/generated/Yass.Core.Domain';
@@ -113,6 +114,7 @@
 		class="relative flex flex-wrap items-center gap-0.5 rounded-[20px] bg-surface p-1.5 shadow-toolbar"
 		role="toolbar"
 		aria-label={t('review.pageEdits')}
+		{@attach autoAnimate}
 		data-testid="toolbar"
 	>
 		{#if scoped}

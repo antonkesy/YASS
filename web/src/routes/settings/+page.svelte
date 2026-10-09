@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { autoAnimate } from '$lib/autoAnimate';
+	import { fade, slide } from 'svelte/transition';
+	import { ms } from '$lib/motion';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
@@ -336,6 +339,7 @@
 			{#if changed}
 				<span
 					class="flex h-7 items-center gap-1.5 rounded-full bg-accent-tint px-2.5 text-[12px] font-bold whitespace-nowrap text-accent-deep"
+					transition:fade={{ duration: ms(180) }}
 					title={t('settings.changedTitle')}
 					data-testid="overrides-active"
 				>
@@ -366,6 +370,7 @@
 
 	<div
 		class="grid min-h-0 flex-1 items-start gap-y-5 overflow-y-auto overscroll-contain px-[22px] py-5 sm:mr-2.5 sm:pr-[24px] sm:pl-[34px] md:py-7"
+		{@attach autoAnimate}
 	>
 		<SettingsSection title={t('settings.scanner')} icon="scan" testid="scanner-section">
 			{#if error}
@@ -451,7 +456,8 @@
 
 					{#if drafting}
 						<div
-							class="flex animate-pop-in flex-col gap-3 rounded-[14px] bg-surface p-3 shadow-chip"
+							class="flex flex-col gap-3 rounded-[14px] bg-surface p-3 shadow-chip"
+							transition:slide={{ duration: ms(220) }}
 						>
 							<div class="flex flex-wrap gap-2">
 								<input
@@ -515,6 +521,7 @@
 					{:else if target}
 						<div
 							class="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-line-strong pt-2.5"
+							transition:slide={{ duration: ms(220) }}
 						>
 							{#if currentDevice || target.device}
 								<label class="flex flex-wrap items-center gap-2 text-xs font-semibold text-ink-2">
@@ -800,7 +807,8 @@
 				{#if $historyPrefs.autoClear}
 					{@const rule = $historyPrefs.autoClear}
 					<label
-						class="mb-2 flex animate-fade-in flex-wrap items-center gap-2 border-t border-line-strong pt-2.5 text-[13px] font-bold text-ink-2"
+						class="mb-2 flex flex-wrap items-center gap-2 border-t border-line-strong pt-2.5 text-[13px] font-bold text-ink-2"
+						transition:slide={{ duration: ms(220) }}
 					>
 						{t('settings.olderThan')}
 						<input

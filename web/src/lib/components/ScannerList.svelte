@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { autoAnimate } from '$lib/autoAnimate';
+	import { slide } from 'svelte/transition';
+	import { ms } from '$lib/motion';
 	import { formatTime } from '$lib/format';
 	import { Icon } from '$lib/icons';
 	import { t } from '$lib/i18n/index.svelte';
@@ -62,7 +65,7 @@
 		{t('settings.noScanners')}
 	</p>
 {:else}
-	<ul class="col-span-full flex flex-col gap-2" data-testid="scanner-list">
+	<ul class="col-span-full flex flex-col gap-2" data-testid="scanner-list" {@attach autoAnimate}>
 		{#each rows as row (row.id)}
 			{@const expanded = open === row.id}
 			<li
@@ -163,7 +166,10 @@
 				</div>
 
 				{#if expanded}
-					<div class="mt-2.5 animate-fade-in border-t border-line-strong pt-2.5">
+					<div
+						class="mt-2.5 border-t border-line-strong pt-2.5"
+						transition:slide={{ duration: ms(220) }}
+					>
 						<dl
 							class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[12px]"
 							data-testid="scanner-facts"
