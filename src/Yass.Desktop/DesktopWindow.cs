@@ -36,6 +36,7 @@ internal static class DesktopWindow
                     SchemeResponse? response = Uri.TryCreate(url, UriKind.Absolute, out Uri? uri)
                         ? scheme.Resolve(uri, lifetime.ApplicationStopping)
                         : null;
+                    logger.LogDebug("{Url} -> {Type}", url, response?.ContentType ?? "nothing");
                     contentType = response?.ContentType ?? "text/plain";
                     return response?.Body ?? new MemoryStream();
                 }
