@@ -29,7 +29,7 @@
 	type Chip = { kind: string; label: string };
 
 	const chipClass =
-		'flex h-8 max-w-full items-center gap-1.5 rounded-full bg-accent-tint px-3 text-[13px] font-semibold text-accent-deep';
+		'flex h-8 max-w-full items-center gap-1.5 rounded-full bg-ctl px-3 text-[13px] font-semibold text-ink-2';
 
 	/** How tall the chips' rows are; the area around them follows it over a moment. */
 	let rowHeight = $state(0);
@@ -83,7 +83,7 @@
 	style:height={rowHeight ? `${rowHeight}px` : undefined}
 	data-testid="settings-chips-area"
 >
-	<!-- A pixel of room above and below, so a chip lifting on hover is not clipped. -->
+	<!-- A little room above and below, so a chip's focus ring is not clipped. -->
 	<div
 		class="flex flex-wrap justify-center gap-2 py-1"
 		{@attach trackHeight}
@@ -98,7 +98,7 @@
 				type="button"
 				{onclick}
 				title={t('home.changeSettings')}
-				class="{chipClass} transition-[background-color,transform] duration-150 hover:-translate-y-px hover:bg-accent-100"
+				class="{chipClass} transition-colors duration-150 hover:bg-ctl-hover hover:text-ink"
 				animate:flip={{ duration: ms(260), easing: cubicOut }}
 				in:scale={{ start: 0.7, duration: ms(240), easing: backOut }}
 			>

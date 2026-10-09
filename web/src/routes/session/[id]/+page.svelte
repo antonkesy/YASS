@@ -616,7 +616,7 @@
 
 {#snippet heading(title: string, value = '', testid = '')}
 	<div class="flex items-baseline gap-2">
-		<span class="text-xs font-bold tracking-[0.06em] text-ink-muted uppercase">{title}</span>
+		<span class="text-[13px] font-semibold text-ink-muted">{title}</span>
 		{#if value}
 			<span
 				class="ml-auto min-w-0 truncate text-[13px] font-semibold text-ink-muted"
@@ -920,7 +920,7 @@
 								onclick={() => (propertiesOpen = !propertiesOpen)}
 								data-testid="pdf-properties-toggle"
 							>
-								<span class="text-xs font-bold tracking-[0.06em] text-ink-muted uppercase"
+								<span class="text-[13px] font-semibold text-ink-muted"
 									>{t('review.pdfProperties')}</span
 								>
 								<span

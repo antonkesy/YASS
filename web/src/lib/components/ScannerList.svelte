@@ -108,7 +108,7 @@
 								>
 								{#if row.hidden}
 									<span
-										class="flex-none rounded-full bg-ctl px-2 py-0.5 text-[10px] font-bold tracking-[0.04em] text-ink-muted uppercase"
+										class="flex-none rounded-full bg-ctl px-2 py-0.5 text-[11px] font-semibold text-ink-muted"
 										>{t('settings.hidden')}</span
 									>
 								{/if}
