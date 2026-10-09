@@ -888,7 +888,7 @@
 				/>
 
 				<!-- What the file will be, together under the button that saves it. -->
-				<div class="flex flex-col gap-3 rounded-[16px] bg-app p-3" data-testid="file-options">
+				<div class="flex flex-col rounded-[16px] bg-app p-3" data-testid="file-options">
 					<!-- Settings → Export holds the same choice; switching here switches it there. -->
 					<Segmented
 						name="review-format"
@@ -907,7 +907,12 @@
 							This scan's own PDF properties, starting from the ones Settings gives every scan.
 							Shut by default: a line saying what is set is all most saves need to see.
 						-->
-						<div class="flex flex-col gap-2" data-testid="pdf-properties">
+						<!-- The gap above is its own padding, so it opens and shuts with it. -->
+						<div
+							class="flex flex-col gap-2 pt-3"
+							transition:slide={{ duration: ms(220) }}
+							data-testid="pdf-properties"
+						>
 							<button
 								type="button"
 								class="flex items-center gap-2 rounded-[10px] text-left"
