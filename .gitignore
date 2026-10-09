@@ -37,3 +37,6 @@ result-*
 .vscode/
 *.swp
 .DS_Store
+
+# scripts/publish-desktop.sh output
+/dist/
