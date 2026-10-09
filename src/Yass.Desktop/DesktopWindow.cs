@@ -25,6 +25,8 @@ internal static class DesktopWindow
 
         var window = new PhotinoWindow()
             .SetTitle("YASS")
+            // Linux and Windows show it in the title bar and task switcher; macOS takes the .app's.
+            .SetIconFile(WindowIcon())
             .SetUseOsDefaultSize(false)
             .SetSize(1280, 860)
             .SetMinSize(360, 480)
@@ -60,6 +62,13 @@ internal static class DesktopWindow
         window.Load(new Uri(AppScheme.Origin + "/"));
         window.WaitForClose();
         notifier.Attach(static _ => { });
+    }
+
+    /// <summary>The PWA's own icon from the web build; empty (no icon) when the build has none.</summary>
+    private static string WindowIcon()
+    {
+        string icon = Path.Combine(Yass.App.Hosting.WebRoot.Resolve(), "icons", "icon-512.png");
+        return File.Exists(icon) ? icon : "";
     }
 }
 
