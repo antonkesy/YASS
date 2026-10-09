@@ -67,7 +67,7 @@ public static class Program
         builder.Services.AddSingleton(notifier);
         builder.Services.AddSingleton<IClientNotifier>(notifier);
         builder.Services.AddSingleton<IDownloadPaths>(new DownloadPaths());
-        builder.Services.AddSingleton(sp => new AppScheme(WebRoot.Resolve(), sp.GetRequiredService<ImageSource>(), sp.GetRequiredService<ExportDownloads>()));
+        builder.Services.AddSingleton(sp => new AppScheme(WebRoot.Resolve(), sp.GetRequiredService<ImageSource>(), sp.GetRequiredService<ExportDownloads>(), AppOrigin.ForThisPlatform()));
 
         using IHost host = builder.Build();
         ILogger logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Yass.Desktop");

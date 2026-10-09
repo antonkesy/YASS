@@ -36,3 +36,16 @@ Rejected:
   `showSaveFilePicker`, so the desktop saves through the native dialog and a host-side file move.
 - Photino.NET's last release was January 2025. If it stalls further, the bridge and scheme
   handler are small enough to move to another webview wrapper; the frontend does not change.
+
+## Amended 2026-10-10: Windows loads the app from `https://yass.localhost`
+
+On Windows the window stayed black. Photino 4.0 registers no custom scheme with WebView2's
+environment: it only catches every request through a `*` `WebResourceRequested` filter and passes
+the ones whose scheme it knows to the handler. WebView2 will not navigate to an unregistered
+scheme, so `yass://app/` never loads.
+
+On Windows the app is therefore `https://yass.localhost/`. `https` is registered as the handler's
+scheme, and the handler answers that one host from the same `AppScheme`. For any other https URL
+it gives no answer, and the webview fetches that itself. Elsewhere the app stays at `yass://app/`:
+WebKitGTK and WKWebView do not let an app take over `https`. Nothing listens on a socket in
+either case, since WebView2 hands the request to the handler before going to the network.

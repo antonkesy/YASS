@@ -7,14 +7,39 @@ namespace Yass.Desktop;
 public sealed record SchemeResponse(Stream Body, string ContentType);
 
 /// <summary>
-/// <c>yass://app/...</c>: the same paths the server serves over HTTP, read straight off disk.
+/// Where the app is loaded from. <c>yass://app</c>, except on Windows: Photino does not register
+/// a custom scheme with WebView2, which then will not navigate to it and shows a blank window.
+/// There the app is <c>https://yass.localhost</c>, answered by the same handler (WebView2 hands
+/// every request to it before any network; nothing listens on a socket either way).
+/// </summary>
+public sealed record AppOrigin(string Scheme, string Host)
+{
+    public static readonly AppOrigin Custom = new("yass", "app");
+
+    public static readonly AppOrigin Windows = new("https", "yass.localhost");
+
+    public static AppOrigin ForThisPlatform() => OperatingSystem.IsWindows() ? Windows : Custom;
+
+    /// <summary>The page the window opens: <c>yass://app/</c> or <c>https://yass.localhost/</c>.</summary>
+    public Uri Root => new($"{Scheme}://{Host}/");
+
+    public bool Owns(Uri uri)
+    {
+        ArgumentNullException.ThrowIfNull(uri);
+        return uri.IsAbsoluteUri
+            && string.Equals(uri.Scheme, Scheme, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(uri.Host, Host, StringComparison.OrdinalIgnoreCase);
+    }
+}
+
+/// <summary>
+/// <c>yass://app/...</c> (see <see cref="AppOrigin"/>): the same paths the server serves over HTTP, read straight off disk.
 /// The static build, <c>/img/{session}/{page}/{kind}?h=</c> and <c>/export/{session}/{file}</c>;
 /// anything else that is not a file is a client-side route and gets <c>index.html</c>.
 /// </summary>
-public sealed class AppScheme(string webRoot, ImageSource images, ExportDownloads downloads)
+public sealed class AppScheme(string webRoot, ImageSource images, ExportDownloads downloads, AppOrigin origin)
 {
-    public const string Scheme = "yass";
-    public const string Origin = "yass://app";
+    public AppOrigin Origin { get; } = origin;
 
     private static readonly Dictionary<string, string> ContentTypes = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -34,11 +59,14 @@ public sealed class AppScheme(string webRoot, ImageSource images, ExportDownload
 
     private readonly string _root = Path.GetFullPath(webRoot);
 
-    /// <summary><c>null</c> when nothing is there, which the window turns into an empty 404-like answer.</summary>
+    /// <summary>
+    /// <c>null</c> when nothing is there, which the window turns into an empty answer, or when the
+    /// URL is not the app's own (on Windows another https host), which the webview then fetches itself.
+    /// </summary>
     public SchemeResponse? Resolve(Uri uri, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(uri);
-        if (!uri.IsAbsoluteUri || uri.Scheme != Scheme)
+        if (!Origin.Owns(uri))
         {
             return null;
         }

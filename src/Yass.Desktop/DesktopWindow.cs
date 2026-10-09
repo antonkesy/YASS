@@ -35,13 +35,19 @@ internal static class DesktopWindow
             .Center()
             .SetContextMenuEnabled(false)
             .SetDevToolsEnabled(Environment.GetEnvironmentVariable("YASS_DEVTOOLS") is "1" or "true")
-            .RegisterCustomSchemeHandler(AppScheme.Scheme, (object sender, string _, string url, out string contentType) =>
+            .RegisterCustomSchemeHandler(scheme.Origin.Scheme, (object sender, string _, string url, out string contentType) =>
             {
                 try
                 {
-                    SchemeResponse? response = Uri.TryCreate(url, UriKind.Absolute, out Uri? uri)
-                        ? scheme.Resolve(uri, lifetime.ApplicationStopping)
-                        : null;
+                    if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri) || !scheme.Origin.Owns(uri))
+                    {
+                        // Not the app's own: on Windows any https URL comes through here. No
+                        // answer lets the webview fetch it itself.
+                        contentType = "";
+                        return null!;
+                    }
+
+                    SchemeResponse? response = scheme.Resolve(uri, lifetime.ApplicationStopping);
                     logger.LogDebug("{Url} -> {Type}", url, response?.ContentType ?? "nothing");
                     contentType = response?.ContentType ?? "text/plain";
                     return response?.Body ?? new MemoryStream();
@@ -65,8 +71,8 @@ internal static class DesktopWindow
             window.Invoke(window.Close);
         });
 
-        logger.LogInformation("Opening the window ({Origin})", AppScheme.Origin);
-        window.Load(new Uri(AppScheme.Origin + "/"));
+        logger.LogInformation("Opening the window ({Origin})", scheme.Origin.Root);
+        window.Load(scheme.Origin.Root);
         window.WaitForClose();
         notifier.Attach(static _ => { });
     }
