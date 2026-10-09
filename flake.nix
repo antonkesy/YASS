@@ -1,5 +1,5 @@
 {
-  description = "YASS - Yet Another Scanner Slop";
+  description = "YASS - Yet Another Slop Scanner";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";

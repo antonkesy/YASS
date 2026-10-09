@@ -22,7 +22,7 @@ export default defineConfig({
 			manifest: {
 				name: 'YASS',
 				short_name: 'YASS',
-				description: 'Yet Another Scanner Slop',
+				description: 'Yet Another Slop Scanner',
 				theme_color: '#f5f7fc',
 				background_color: '#f5f7fc',
 				display: 'standalone',
