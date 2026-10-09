@@ -94,7 +94,7 @@
 					type="button"
 					class="flex h-[30px] w-[34px] items-center justify-center rounded-[9px] transition-all duration-200 {view ===
 					option.key
-						? 'bg-surface text-accent shadow-seg'
+						? 'bg-seg text-accent shadow-seg'
 						: 'text-ink-muted'}"
 					aria-pressed={view === option.key}
 					aria-label={option.label}

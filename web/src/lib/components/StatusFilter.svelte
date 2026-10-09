@@ -34,7 +34,7 @@
 				type="button"
 				class="flex h-[30px] items-center gap-1.5 rounded-full px-2.5 text-xs font-bold transition-colors {value ===
 				chip.key
-					? 'bg-ink text-white'
+					? 'bg-ink text-surface'
 					: 'bg-ctl text-ink-2 hover:bg-ctl-hover'}"
 				aria-pressed={value === chip.key}
 				onclick={() => onchange(chip.key)}

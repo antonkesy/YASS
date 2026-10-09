@@ -40,6 +40,7 @@
 	import { expandTemplate, templateTokens, unknownTokens } from '$lib/template';
 	import { colorModeLabels } from '$lib/review/edits';
 	import { t, type MessageKey } from '$lib/i18n/index.svelte';
+	import { appearance, type Appearance } from '$lib/appearance.svelte';
 
 	const client = getHub();
 	const connection = client.connection;
@@ -97,6 +98,12 @@
 			value: String(size),
 			label: tileNames[i] ? t(tileNames[i]) : String(size)
 		}))
+	]);
+
+	const appearances = $derived([
+		{ value: 'auto', label: t('settings.appearanceAuto') },
+		{ value: 'light', label: t('settings.appearanceLight') },
+		{ value: 'dark', label: t('settings.appearanceDark') }
 	]);
 
 	const overrides = $derived($settings);
@@ -416,7 +423,7 @@
 								type="button"
 								class="relative flex h-[38px] items-center gap-2 rounded-full px-3.5 text-[13px] font-bold transition-all duration-200 {chosen?.id ===
 								preset.id
-									? 'bg-surface text-ink shadow-seg'
+									? 'bg-seg text-ink shadow-seg'
 									: edited?.id === preset.id
 										? 'text-ink-2 shadow-ring-outline hover:text-ink'
 										: 'text-ink-2 hover:bg-ctl-hover hover:text-ink'}"
@@ -787,6 +794,20 @@
 					value={String($reviewPrefs.overviewTile)}
 					onchange={(v) =>
 						reviewPrefs.set({ ...$reviewPrefs, overviewTile: v === 'fit' ? 'fit' : Number(v) })}
+				/>
+			</div>
+		</SettingsSection>
+
+		<!-- Light, dark, or whatever this device is set to: kept by this browser alone. -->
+		<SettingsSection title={t('settings.appearance')} icon="contrast" testid="appearance-section">
+			<div class="col-span-full flex flex-col gap-1.5">
+				<Segmented
+					name="appearance"
+					label={t('settings.appearance')}
+					hint={t('settings.appearanceHint')}
+					options={appearances}
+					value={appearance.mode}
+					onchange={(v) => appearance.set(v as Appearance)}
 				/>
 			</div>
 		</SettingsSection>

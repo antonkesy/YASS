@@ -186,7 +186,7 @@
 							type="button"
 							role="radio"
 							class="flex h-[38px] max-w-[min(340px,80vw)] items-center rounded-full px-3.5 text-[13px] font-bold transition-[background-color,color,box-shadow,transform] duration-200 ease-spring active:scale-[0.97] {lit
-								? 'bg-surface text-ink shadow-seg'
+								? 'bg-seg text-ink shadow-seg'
 								: 'text-ink-2 hover:text-ink'}"
 							aria-checked={lit}
 							onclick={() => {

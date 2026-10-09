@@ -148,7 +148,7 @@
 
 <!-- Above the app header, below the single-page preview this view can open. -->
 <div
-	class="fixed inset-0 z-25 flex flex-col bg-app"
+	class="fixed inset-0 z-25 flex flex-col bg-page"
 	role="dialog"
 	aria-modal="true"
 	aria-label={t('review.allPages')}

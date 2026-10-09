@@ -324,7 +324,9 @@ export const icons = {
 			)
 		],
 		size: 15
-	}
+	},
+	/** Light or dark: a circle, one half of it marked. */
+	contrast: { shapes: [circle(12, 12, 10), p('M12 18a6 6 0 0 0 0-12v12z')] }
 } as const satisfies Record<string, IconSpec>;
 
 export type IconName = keyof typeof icons;

@@ -67,7 +67,7 @@
 				type="button"
 				class="relative flex h-[38px] items-center gap-2 rounded-full px-3.5 text-[13px] font-bold transition-[background-color,color,box-shadow,transform] duration-200 ease-spring active:scale-[0.97] {active ===
 				preset.id
-					? 'bg-surface text-ink shadow-seg'
+					? 'bg-seg text-ink shadow-seg'
 					: edited === preset.id
 						? 'text-ink-2 shadow-ring-outline hover:text-ink'
 						: 'text-ink-2 hover:text-ink'}"

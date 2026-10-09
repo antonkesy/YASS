@@ -345,6 +345,17 @@ export const settings = {
 	tileLarge: { en: 'Large', de: 'Groß', fr: 'Grand', es: 'Grande' },
 	tileHuge: { en: 'Huge', de: 'Riesig', fr: 'Énorme', es: 'Enorme' },
 
+	appearance: { en: 'Appearance', de: 'Darstellung', fr: 'Apparence', es: 'Apariencia' },
+	appearanceHint: {
+		en: 'Automatic follows this device',
+		de: 'Automatisch folgt diesem Gerät',
+		fr: 'Automatique suit cet appareil',
+		es: 'Automático sigue a este dispositivo'
+	},
+	appearanceAuto: { en: 'Automatic', de: 'Automatisch', fr: 'Automatique', es: 'Automático' },
+	appearanceLight: { en: 'Light', de: 'Hell', fr: 'Clair', es: 'Claro' },
+	appearanceDark: { en: 'Dark', de: 'Dunkel', fr: 'Sombre', es: 'Oscuro' },
+
 	pastScans: {
 		en: 'Past scans',
 		de: 'Frühere Scans',
