@@ -24,8 +24,9 @@ public sealed class DesktopHarness : IAsyncDisposable
     private readonly IHost _host;
     private readonly List<string> _sent = [];
 
-    public DesktopHarness(FakeScenario? scenario = null)
+    public DesktopHarness(FakeScenario? scenario = null, AppOrigin? origin = null)
     {
+        Origin = origin ?? AppOrigin.Custom;
         Root = Path.Combine(Path.GetTempPath(), "yass-desktop-tests", Guid.NewGuid().ToString("N"));
         WebRoot = Path.Combine(Root, "web");
         Directory.CreateDirectory(Path.Combine(WebRoot, "_app"));
@@ -49,12 +50,14 @@ public sealed class DesktopHarness : IAsyncDisposable
         builder.Services.AddSingleton(Notifier);
         builder.Services.AddSingleton<IClientNotifier>(Notifier);
         builder.Services.AddSingleton<IDownloadPaths>(new DownloadPaths());
-        builder.Services.AddSingleton(sp => new AppScheme(WebRoot, sp.GetRequiredService<ImageSource>(), sp.GetRequiredService<ExportDownloads>()));
+        builder.Services.AddSingleton(sp => new AppScheme(WebRoot, sp.GetRequiredService<ImageSource>(), sp.GetRequiredService<ExportDownloads>(), Origin));
         _host = builder.Build();
         _host.Start();
     }
 
     public string Root { get; }
+
+    public AppOrigin Origin { get; }
 
     public string WebRoot { get; }
 

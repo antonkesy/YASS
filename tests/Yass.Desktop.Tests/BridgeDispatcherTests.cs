@@ -73,7 +73,7 @@ public sealed class BridgeDispatcherTests : IAsyncLifetime
         JsonElement exported = await ResultAsync(nameof(IYassHub.Export), scanned.Id, new { Format = 0, ToServer = false });
         string path = exported.GetProperty(nameof(ExportResult.Documents))[0].GetProperty(nameof(ExportedDocumentDto.DownloadPath)).GetString()!;
         Assert.StartsWith($"/export/{scanned.Id}/", path, StringComparison.Ordinal);
-        Assert.NotNull(_desktop.Scheme.Resolve(new Uri(AppScheme.Origin + path)));
+        Assert.NotNull(_desktop.Scheme.Resolve(new Uri(_desktop.Scheme.Origin.Root, path)));
     }
 
     [Fact]

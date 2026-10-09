@@ -16,7 +16,7 @@ public sealed class AppSchemeTests : IAsyncLifetime
 
     public ValueTask DisposeAsync() => _desktop.DisposeAsync();
 
-    private SchemeResponse? Get(string pathAndQuery) => _desktop.Scheme.Resolve(new Uri(AppScheme.Origin + pathAndQuery));
+    private SchemeResponse? Get(string pathAndQuery) => _desktop.Scheme.Resolve(new Uri(_desktop.Scheme.Origin.Root, pathAndQuery));
 
     private static string Text(SchemeResponse response)
     {
@@ -115,5 +115,27 @@ public sealed class AppSchemeTests : IAsyncLifetime
         }
 
         Assert.Null(Get(path));
+    }
+
+    [Fact]
+    public async Task On_windows_the_app_is_an_https_host_and_other_hosts_are_left_alone()
+    {
+        await using var windows = new DesktopHarness(origin: AppOrigin.Windows);
+        SchemeResponse index = Assert.IsType<SchemeResponse>(windows.Scheme.Resolve(new Uri("https://yass.localhost/")));
+        Assert.StartsWith("text/html", index.ContentType, StringComparison.Ordinal);
+        await index.Body.DisposeAsync();
+
+        Assert.Null(windows.Scheme.Resolve(new Uri("https://example.com/")));
+        Assert.Null(windows.Scheme.Resolve(new Uri("yass://app/")));
+        Assert.Null(_desktop.Scheme.Resolve(new Uri("https://yass.localhost/")));
+    }
+
+    [Fact]
+    public void Each_platform_gets_its_origin()
+    {
+        Assert.Equal(new Uri("yass://app/"), AppOrigin.Custom.Root);
+        Assert.Equal(new Uri("https://yass.localhost/"), AppOrigin.Windows.Root);
+        Assert.Equal(OperatingSystem.IsWindows() ? AppOrigin.Windows : AppOrigin.Custom, AppOrigin.ForThisPlatform());
+        Assert.True(AppOrigin.Windows.Owns(new Uri("HTTPS://YASS.LOCALHOST/img/x")));
     }
 }
