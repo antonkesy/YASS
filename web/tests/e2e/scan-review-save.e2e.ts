@@ -317,10 +317,30 @@ test('a running scan can be stopped, and keeps the pages it has made', async ({ 
 	await page.getByTestId('scan-button').click();
 	await expect(page).toHaveURL(/\/session\/[A-Za-z0-9-]+$/);
 
-	// Three pages 400 ms apart: the stop lands well before the feeder would run dry.
-	await page.getByTestId('stop-scan-button').click();
+	// A phone gets a second Stop at the top, where the save panel's own is out of reach;
+	// side by side only the panel's shows.
+	const mobile = (page.viewportSize()?.width ?? 0) < 1024;
+	const stop = page.getByTestId(mobile ? 'stop-scan-top' : 'stop-scan-button');
+	await expect(page.getByTestId('stop-scan-top')).toBeVisible({ visible: mobile });
+	if (mobile) await expect(stop).toBeInViewport();
+
+	// The screen slides in over a third of a second, and taps meant for the old screen's
+	// snapshot go nowhere. Click once it has landed: three pages 400 ms apart leave time
+	// to stop before the feeder runs dry, but not for click retries' back-off.
+	await page.waitForFunction(() =>
+		document
+			.getAnimations()
+			.every(
+				(a) =>
+					!String((a.effect as KeyframeEffect | null)?.pseudoElement ?? '').startsWith(
+						'::view-transition'
+					)
+			)
+	);
+	await stop.click();
 	await expect(page.getByText('Scan stopped. The pages so far are kept.')).toBeVisible();
 	await expect(page.getByTestId('stop-scan-button')).toHaveCount(0);
+	await expect(page.getByTestId('stop-scan-top')).toHaveCount(0);
 	await expect(page.getByTestId('download-button')).toBeVisible();
 	expect(await page.getByTestId('page-thumb').count()).toBeLessThan(3);
 });

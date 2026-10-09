@@ -6,6 +6,7 @@
 	import { Icon } from '$lib/icons';
 	import { isDesktop } from '$lib/hub/bridge';
 	import ProgressBar from './ProgressBar.svelte';
+	import StopScanButton from './StopScanButton.svelte';
 
 	let {
 		session,
@@ -53,16 +54,7 @@
 <div class="flex min-w-0 flex-col gap-3.5" data-testid="bottom-bar">
 	{#if scanning && onstop}
 		<!-- Nothing can be saved mid-scan, so the button that would save stops it instead. -->
-		<button
-			type="button"
-			class="flex h-[50px] w-full items-center justify-center gap-2 rounded-[14px] bg-accent-tint text-[15px] font-extrabold text-accent-deep transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-60"
-			onclick={onstop}
-			disabled={stopping}
-			data-testid="stop-scan-button"
-		>
-			<Icon name="close" />
-			{stopping ? t('review.stoppingScan') : t('review.stopScan')}
-		</button>
+		<StopScanButton {onstop} {stopping} />
 	{:else if exporting}
 		<!-- The mockup swaps the button for a progress card while the document is being built. -->
 		<div class="flex animate-pop-in flex-col gap-2 rounded-[16px] bg-accent-hover50 p-3.5">

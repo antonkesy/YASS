@@ -53,6 +53,7 @@
 	import NameField from '$lib/components/NameField.svelte';
 	import CropModal from '$lib/components/CropModal.svelte';
 	import MergeModal from '$lib/components/MergeModal.svelte';
+	import StopScanButton from '$lib/components/StopScanButton.svelte';
 	import {
 		cancelled,
 		exportBaseName,
@@ -786,9 +787,19 @@
 				<!--
 					The row holds the state chip once a save has started: the save is running, it
 					failed, it is saved — things the screen does not otherwise say. Scanning gets
-					no chip and no Stop: the header's scanner pill already says so, with the page
-					count, and in review the row goes too rather than leaving a gap above the page.
+					no chip: the header's scanner pill already says so, with the page count, and in
+					review the row goes too rather than leaving a gap above the page.
 				-->
+				{#if scanning}
+					<!--
+						On a phone the save panel, and the Stop in it, is below the page and the
+						strip; this one is where the thumb already is. Side by side the panel's own
+						is in view, so this one goes.
+					-->
+					<div class="w-full max-w-[420px] lg:hidden">
+						<StopScanButton onstop={stopScan} {stopping} testid="stop-scan-top" />
+					</div>
+				{/if}
 				{#if session.State !== SessionState.Review && !scanning}
 					<div class="flex w-full flex-wrap items-center justify-center gap-2">
 						<span
