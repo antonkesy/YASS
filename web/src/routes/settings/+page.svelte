@@ -641,7 +641,7 @@
 			needs the server's scan defaults.
 		-->
 		<SettingsSection
-			title="Scanners"
+			title="Devices"
 			icon="scan"
 			hint="Name them, hide the ones you never use. Unplugged ones stay listed, faded."
 			testid="scanners-section"

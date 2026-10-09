@@ -10,7 +10,7 @@ body:
         and eSCL (AirScan, most network scanners from the last decade). A scanner SANE or eSCL can
         reach should work; when one does not, the details below say where it stops.
 
-        **Settings → Scanners** in YASS lists every scanner it has seen, with its driver, address
+        **Settings → Devices** in YASS lists every scanner it has seen, with its driver, address
         and device id under the arrow beside each one. Copy those in if your scanner shows up there.
   - type: input
     id: model
@@ -56,7 +56,7 @@ body:
   - type: textarea
     id: scanners-settings
     attributes:
-      label: What Settings → Scanners shows for it
+      label: What Settings → Devices shows for it
       description: Driver, address and device id, if YASS lists it.
       render: text
   - type: textarea
