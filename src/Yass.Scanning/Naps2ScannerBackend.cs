@@ -115,6 +115,32 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
         }
     }
 
+    private static readonly IReadOnlySet<string> EmptyIds = new HashSet<string>();
+
+    /// <summary>
+    /// The WIA devices that are cameras. If WIA cannot say, none are filtered: a camera in the list
+    /// is a nuisance, an empty list because of a failed lookup would stop every scan.
+    /// </summary>
+    private IReadOnlySet<string> WiaCameras()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return EmptyIds;
+        }
+
+        try
+        {
+            return WiaDeviceKinds.CameraIds(TimeSpan.FromSeconds(10));
+        }
+#pragma warning disable CA1031 // See above: a failed lookup must not cost the scanners.
+        catch (Exception ex)
+#pragma warning restore CA1031
+        {
+            _logger.LogWarning(ex, "Could not ask WIA which devices are cameras; listing them all");
+            return EmptyIds;
+        }
+    }
+
     public void Dispose()
     {
         _context.Dispose();
@@ -160,10 +186,11 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
                     .GetDeviceList(new NAPS2.Scan.ScanOptions { Driver = OptionMapper.MapDriver(config.Driver) })
                     .WaitAsync(cancellationToken)
                     .ConfigureAwait(false);
-                IReadOnlyList<ScanDevice> devices = OptionMapper.ScannersOnly(found);
+                IReadOnlySet<string> wiaCameras = found.Any(d => d.Driver == Driver.Wia) ? WiaCameras() : EmptyIds;
+                IReadOnlyList<ScanDevice> devices = OptionMapper.ScannersOnly(found, wiaCameras);
                 if (devices.Count < found.Count)
                 {
-                    _logger.LogDebug("Ignoring cameras: {Cameras}", string.Join(", ", found.Where(OptionMapper.IsCamera).Select(d => $"{d.Name} [{d.ID}]")));
+                    _logger.LogDebug("Ignoring cameras: {Cameras}", string.Join(", ", found.Where(d => OptionMapper.IsCamera(d, wiaCameras)).Select(d => $"{d.Name} [{d.ID}]")));
                 }
 
                 ScanDevice? device = OptionMapper.SelectDevice(devices, config.Device);

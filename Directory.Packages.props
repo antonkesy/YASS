@@ -10,6 +10,7 @@
     <PackageVersion Include="NAPS2.Images.ImageSharp" Version="1.2.1" />
     <PackageVersion Include="Photino.NET" Version="4.0.16" />
     <PackageVersion Include="NAPS2.Sdk" Version="1.2.1" />
+    <PackageVersion Include="NAPS2.Wia" Version="2.0.3" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />

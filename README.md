@@ -231,8 +231,8 @@ Open it and rename it whenever you like; the list follows.
   so use `network_mode: host` in Docker. Many modern scanners support this
   without any driver.
 - `scanner.device` accepts a substring, e.g. `epsonds` or `DS-530`.
-- **Cameras are never scan sources.** Webcams and digital cameras that SANE
-  lists (`v4l`, `gphoto2` and the like) are left out of the scanner list, so a
+- **Cameras are never scan sources.** Webcams and digital cameras that SANE or WIA
+  lists (`v4l`, `gphoto2`, WIA cameras and the like) are left out of the scanner list, so a
   laptop's built-in camera does not show up as a scanner.
 
 ## HTTP surface

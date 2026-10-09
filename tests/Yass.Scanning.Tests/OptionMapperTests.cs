@@ -145,4 +145,26 @@ public class OptionMapperTests
         Assert.Equal([scanner, other], OptionMapper.ScannersOnly([webcam, scanner, other]));
         Assert.Same(scanner, OptionMapper.SelectDevice(OptionMapper.ScannersOnly([webcam, scanner]), ""));
     }
+
+    [Theory]
+    [InlineData(0x0001_0000, false)] // scanner
+    [InlineData(0x0001_0003, false)] // scanner, with a subtype in the low word
+    [InlineData(0x0002_0000, true)] // digital camera
+    [InlineData(0x0003_0001, true)] // streaming video (webcam)
+    [InlineData(0, false)]
+    public void Wia_device_types_name_cameras_by_their_high_word(int type, bool camera) =>
+        Assert.Equal(camera, WiaDeviceKinds.IsCamera(type));
+
+    [Fact]
+    public void Wia_devices_are_cameras_when_wia_says_so()
+    {
+        var scanner = new ScanDevice(Driver.Wia, "{6BDD1FC6-810F-11D0-BEC7-08002BE2092F}\\0000", "Epson DS-530");
+        var webcam = new ScanDevice(Driver.Wia, "{6BDD1FC6-810F-11D0-BEC7-08002BE2092F}\\0001", "Integrated Webcam");
+        IReadOnlySet<string> cameras = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { webcam.ID.ToLowerInvariant() };
+
+        Assert.True(OptionMapper.IsCamera(webcam, cameras));
+        Assert.False(OptionMapper.IsCamera(scanner, cameras));
+        Assert.False(OptionMapper.IsCamera(webcam));
+        Assert.Equal([scanner], OptionMapper.ScannersOnly([webcam, scanner], cameras));
+    }
 }

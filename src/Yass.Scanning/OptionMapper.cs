@@ -113,20 +113,26 @@ public static class OptionMapper
     public static readonly IReadOnlySet<string> CameraBackends =
         new HashSet<string>(["v4l", "gphoto2", "dc210", "dc240", "dc25", "dmc", "qcam", "stv680"], StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Whether a device is a camera: a SANE id is <c>backend:address</c>.</summary>
-    public static bool IsCamera(ScanDevice device)
+    /// <summary>
+    /// Whether a device is a camera. A SANE id is <c>backend:address</c>, so the backend says; a
+    /// WIA id says nothing, so <paramref name="wiaCameras"/> lists the ones WIA calls cameras.
+    /// </summary>
+    public static bool IsCamera(ScanDevice device, IReadOnlySet<string>? wiaCameras = null)
     {
         ArgumentNullException.ThrowIfNull(device);
-        if (device.Driver != Driver.Sane)
+        switch (device.Driver)
         {
-            return false;
+            case Driver.Sane:
+                int colon = device.ID.IndexOf(':', StringComparison.Ordinal);
+                return CameraBackends.Contains(colon < 0 ? device.ID : device.ID[..colon]);
+            case Driver.Wia:
+                return wiaCameras?.Contains(device.ID) == true;
+            default:
+                return false;
         }
-
-        int colon = device.ID.IndexOf(':', StringComparison.Ordinal);
-        return CameraBackends.Contains(colon < 0 ? device.ID : device.ID[..colon]);
     }
 
     /// <summary>The devices that can scan, cameras left out.</summary>
-    public static IReadOnlyList<ScanDevice> ScannersOnly(IEnumerable<ScanDevice> devices) =>
-        [.. devices.Where(d => !IsCamera(d))];
+    public static IReadOnlyList<ScanDevice> ScannersOnly(IEnumerable<ScanDevice> devices, IReadOnlySet<string>? wiaCameras = null) =>
+        [.. devices.Where(d => !IsCamera(d, wiaCameras))];
 }
