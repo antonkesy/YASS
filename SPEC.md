@@ -8,6 +8,11 @@ Base prompt / project specification for a coding agent. Read fully before writin
 
 YASS is a headless scanning service for a home server on Linux (bare metal, NixOS, Docker). A scanner is attached to the host (USB/SANE or network/eSCL). YASS exposes a small web UI where a user can see scanner readiness, start a scan that runs until the feeder is empty, review pages in a preview (rotate / delete / color mode, per page or for all), and download the result as a PDF (or one image per page) to the device at hand — or, where `output.directory` is configured, save it into that one folder on the server (e.g. a paperless-ngx consume folder). The server writes documents nowhere else. Everything is configured through a single file. Backend is .NET with **NAPS2.Sdk**; frontend is a **SvelteKit** mobile-first PWA. **There is no authentication**: the service is trusted-LAN only and must never be exposed to the internet (document this prominently in the README).
 
+The same code ships as two deployments (ADR-014):
+
+1. **Server** (`Yass.Server`): the service above. It runs on the machine the scanner is attached to, a home server or just localhost, and any browser on the LAN uses it.
+2. **Desktop** (`Yass.Desktop`): one native app for Linux, Windows and macOS. The same UI runs in a native webview inside the .NET process (Photino.NET, ADR-015). **It opens no listening socket, not even on loopback**: hub calls go over the webview's message bridge, and images and documents over a `yass://` scheme. The only network traffic is to an eSCL scanner, if one is used. The focus is speed: nothing is serialized onto a socket, and a saved document moves on disk without passing through JavaScript.
+
 ## 2. Guiding principle — DECIDED
 
 **Use existing tools; write as little bespoke code as possible.** Before implementing anything, check whether NAPS2.Sdk, ASP.NET Core, ImageSharp, SvelteKit, or an established package already does it. Bespoke code is only for the domain (sessions, edits, config) and glue.
@@ -28,10 +33,11 @@ YASS is a headless scanning service for a home server on Linux (bare metal, NixO
 | Lint/format | `dotnet format` + analyzers (`TreatWarningsAsErrors`), `eslint`, `prettier`, `svelte-check`; **`pre-commit`** framework | |
 | Commits/releases | **Conventional Commits** enforced by `conventional-pre-commit`; **`release-please`** for changelog + tags | |
 | CI | **GitHub Actions** — `ci.yml`, `release.yml` (`nix build`) | |
-| Packaging | **Nix flake** (dev shell, package, docker image via `dockerTools`, NixOS module `services.yass`) + plain multi-stage `Dockerfile` | |
+| Desktop shell | **Photino.NET** 4.x (ADR-015): WebKitGTK 4.1 on Linux, WebView2 on Windows, WKWebView on macOS | Hosts the same `web/` build in-process. `window.external.sendMessage` carries hub calls as JSON; a custom `yass://` scheme serves the app, `/img` and `/export`. Native save and folder dialogs. |
+| Packaging | **Nix flake** (dev shell, server and desktop packages, docker image via `dockerTools`, NixOS module `services.yass`) + plain multi-stage `Dockerfile`; desktop zips for linux-x64, win-x64 and osx-arm64 from CI | |
 | Storage | Filesystem only; session = directory with `session.json` + `page-NNN.png` | |
 
-**Not in v1:** auth of any kind, OCR (paperless does it), multi-scanner UI, cloud upload, barcode splitting, Tauri wrapper.
+**Not in v1:** auth of any kind, OCR (paperless does it), multi-scanner UI, cloud upload, barcode splitting, TWAIN, signed or notarized desktop installers.
 
 ## 4. Repository layout — DECIDED
 
@@ -50,9 +56,11 @@ yass/
 │   ├── Yass.Core/        # domain records, IScannerBackend, IDocumentWriter, hub contracts (IYassHub/IYassClient)
 │   ├── Yass.Scanning/    # NAPS2 adapter
 │   ├── Yass.Export/      # PDF and images via NAPS2 exporters, filename templating
-│   ├── Yass.Server/      # host: SignalR hub, HTTP image endpoints, static frontend, /healthz
+│   ├── Yass.App/         # host-agnostic app: config, sessions, scan loop, rendering, export, YassApi, IClientNotifier
+│   ├── Yass.Server/      # server host: SignalR hub, HTTP image endpoints, static frontend, /healthz
+│   ├── Yass.Desktop/     # desktop host: Photino window, yass:// scheme, JSON message bridge
 │   └── Yass.Fake/        # FakeScannerBackend + fixtures (tests and `--fake` dev mode)
-├── tests/Yass.{Core,Scanning,Export,Server}.Tests/
+├── tests/Yass.{Core,Scanning,Export,Server,Desktop}.Tests/
 ├── web/                   # SvelteKit
 │   ├── src/lib/hub/       # generated hub types + one thin `hub.ts` wrapper (svelte store of connection state)
 │   ├── src/lib/components/
@@ -61,7 +69,7 @@ yass/
 └── assets/logo/
 ```
 
-Rule: `Yass.Core` references nothing outside the BCL (plus `Microsoft.AspNetCore.SignalR.Core` abstractions for the hub interfaces).
+Rule: `Yass.Core` references nothing outside the BCL (plus `Microsoft.AspNetCore.SignalR.Core` abstractions for the hub interfaces). `Yass.App` references no ASP.NET Core or SignalR, only `Microsoft.Extensions.*`; the hosts hold the transports and nothing else.
 
 ## 5. Configuration — DECIDED
 
@@ -70,7 +78,7 @@ server:
   listen: "0.0.0.0:8080"      # LAN bind; NO AUTH — never expose publicly
   base_path: "/"
 scanner:
-  driver: auto                # auto | sane | escl
+  driver: auto                # auto | sane | escl | wia | apple  (auto: sane on Linux, wia on Windows, apple on macOS; plus escl)
   device: ""                  # NAPS2 device id or substring; empty = first found
   poll_interval_seconds: 5
   defaults:
@@ -103,6 +111,8 @@ logging:
 ```
 
 `ReloadConfig` hub method re-reads non-`server` keys.
+
+The desktop app reads the same file from the per-user config folder (`yass/yass.yaml` under `Environment.SpecialFolder.ApplicationData`), and the file may be absent. It ignores `server`, and keeps sessions under `LocalApplicationData/yass/sessions` unless `sessions.directory` is set.
 
 ## 6. Domain model — DECIDED
 
@@ -158,6 +168,15 @@ GET /export/{sessionId}/{token}.pdf                -> one-shot download URL retu
 GET /                                              -> static SvelteKit build
 ```
 
+**Desktop transport** (same contract, no socket):
+
+```
+JS -> host   {"id": n, "method": "StartScan", "args": [...]}         // any IYassHub method, plus the desktop-only
+host -> JS   {"id": n, "result": ...} | {"id": n, "error": "msg"}     // PickSavePath, PickFolder, SaveExport
+host -> JS   {"event": "PageAdded", "args": [...]}                    // every IYassClient push
+yass://app/...                                                          -> the static build, /img/... and /export/... as above
+```
+
 Scan loop: iterate `ScanController.Scan(options)` until the enumerable ends (feeder empty) or `StopScan`; write each page to disk, emit `PageAdded` immediately, generate thumbnail in a bounded background queue, emit `PageUpdated`.
 
 ## 8. UI — DECIDED behaviour, OPEN styling
@@ -172,7 +191,7 @@ Targets: first paint < 1 s over LAN; JS ≤ 150 kB gzipped; no image bytes held 
 
 ## 9. Resource budget — DECIDED
 
-Idle RSS ≤ 80 MB; 50-page 300 dpi color scan ≤ 400 MB peak; container image ≤ 200 MB. Never hold more than `max_concurrent_renders` decoded bitmaps in memory.
+Idle RSS ≤ 80 MB; 50-page 300 dpi color scan ≤ 400 MB peak; container image ≤ 200 MB. Desktop: the same bounds for the .NET process (the webview's own processes excluded), window up in < 1 s on a warm start. Never hold more than `max_concurrent_renders` decoded bitmaps in memory.
 
 ## 10. Testing — DECIDED
 
@@ -220,9 +239,23 @@ ci: add release-please and multi-arch image publish
 chore(docker): add multi-stage Dockerfile and compose example
 feat(nix): add package, docker image and NixOS module
 docs: write readme with quickstart, config reference and lan-only warning
+docs: add desktop deployment to spec
+refactor(server): broadcast through IClientNotifier
+refactor(server): move hub logic into YassApi
+refactor(app): extract Yass.App project
+feat(desktop): photino host serving the app over yass://
+feat(desktop): json message bridge for hub calls and events
+test(desktop): bridge dispatcher round-trip tests
+feat(web): message-bridge transport selected at runtime
+feat(web): native save dialogs on desktop
+feat(scanning): wia and apple drivers
+perf(desktop): local-first defaults
+feat(nix): yass-desktop package
+ci: build and release desktop for linux, windows and macos
+docs: readme desktop section
 ```
 
-Scopes: `core`, `fake`, `server`, `web`, `scanning`, `export`, `nix`, `docker`, `ci`. Fixes discovered while working get their own `fix(scope):` commit, not squashed into a feature.
+Scopes: `core`, `app`, `fake`, `server`, `desktop`, `web`, `scanning`, `export`, `nix`, `docker`, `ci`. Fixes discovered while working get their own `fix(scope):` commit, not squashed into a feature.
 
 ## 12. Agent working rules
 
