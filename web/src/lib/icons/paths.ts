@@ -325,6 +325,23 @@ export const icons = {
 		],
 		size: 15
 	},
+	sun: {
+		shapes: [
+			circle(12, 12, 4),
+			p('M12 2v2'),
+			p('M12 20v2'),
+			p('m4.93 4.93 1.41 1.41'),
+			p('m17.66 17.66 1.41 1.41'),
+			p('M2 12h2'),
+			p('M20 12h2'),
+			p('m6.34 17.66-1.41 1.41'),
+			p('m19.07 4.93-1.41 1.41')
+		],
+		size: 16
+	},
+	/** ⋯: the menu a phone's header folds its other buttons into. */
+	more: { shapes: [circle(5, 12, 1), circle(12, 12, 1), circle(19, 12, 1)], size: 18, stroke: 2.5 },
+	moon: { shapes: [p('M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z')], size: 16 },
 	/** Light or dark: a circle, one half of it marked. */
 	contrast: { shapes: [circle(12, 12, 10), p('M12 18a6 6 0 0 0 0-12v12z')] }
 } as const satisfies Record<string, IconSpec>;

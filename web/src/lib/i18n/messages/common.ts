@@ -15,6 +15,18 @@ export const common = {
 		es: 'Yet Another Slop Scanner'
 	},
 	language: { en: 'Language', de: 'Sprache', fr: 'Langue', es: 'Idioma' },
+	switchToDark: {
+		en: 'Switch to dark',
+		de: 'Dunkel darstellen',
+		fr: 'Passer en sombre',
+		es: 'Cambiar a oscuro'
+	},
+	switchToLight: {
+		en: 'Switch to light',
+		de: 'Hell darstellen',
+		fr: 'Passer en clair',
+		es: 'Cambiar a claro'
+	},
 	closeLanguageMenu: {
 		en: 'Close language menu',
 		de: 'Sprachmenü schließen',
@@ -32,6 +44,13 @@ export const common = {
 		de: 'Problem melden',
 		fr: 'Signaler un problème',
 		es: 'Informar de un problema'
+	},
+	more: { en: 'More', de: 'Mehr', fr: 'Plus', es: 'Más' },
+	closeMoreMenu: {
+		en: 'Close menu',
+		de: 'Menü schließen',
+		fr: 'Fermer le menu',
+		es: 'Cerrar el menú'
 	},
 	closeIssueMenu: {
 		en: 'Close issue menu',

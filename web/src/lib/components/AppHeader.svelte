@@ -9,8 +9,11 @@
 	import { escapeCloses } from '$lib/keys.svelte';
 	import { ISSUE_TEMPLATES } from '$lib/links';
 	import { i18n, LOCALE_NAMES, LOCALES, t } from '$lib/i18n/index.svelte';
+	import { appearance } from '$lib/appearance.svelte';
+	import { scale } from 'svelte/transition';
+	import { ms } from '$lib/motion';
 
-	let menu = $state<'language' | 'issue' | null>(null);
+	let menu = $state<'language' | 'issue' | 'more' | null>(null);
 	escapeCloses(
 		() => menu !== null,
 		() => (menu = null)
@@ -102,7 +105,11 @@
 		{/if}
 	</div>
 
-	<!-- Language, documentation, issues: all the app's own chrome, kept to three icons. -->
+	<!--
+		Light or dark, language, documentation, issues: the app's own chrome, all icons. A phone
+		has room for the switch and one more beside a centred title, so there the other three
+		share a ⋯ menu, the way an iOS navigation bar does it.
+	-->
 	<div class="flex items-center justify-end gap-1.5">
 		{#if menu}
 			<button
@@ -110,12 +117,30 @@
 				class="fixed inset-0 z-30 cursor-default"
 				aria-label={menu === 'language'
 					? t('common.closeLanguageMenu')
-					: t('common.closeIssueMenu')}
+					: menu === 'more'
+						? t('common.closeMoreMenu')
+						: t('common.closeIssueMenu')}
 				onclick={() => (menu = null)}
 			></button>
 		{/if}
 
-		<div class="relative">
+		<!-- Shows the look it switches to: a moon while light, a sun while dark. -->
+		<button
+			type="button"
+			class={button}
+			aria-label={appearance.dark ? t('common.switchToLight') : t('common.switchToDark')}
+			title={appearance.dark ? t('common.switchToLight') : t('common.switchToDark')}
+			onclick={() => appearance.toggle()}
+			data-testid="header-theme"
+		>
+			{#key appearance.dark}
+				<span class="flex" in:scale={{ start: 0.6, duration: ms(220) }}>
+					<Icon name={appearance.dark ? 'sun' : 'moon'} />
+				</span>
+			{/key}
+		</button>
+
+		<div class="relative max-sm:hidden">
 			<button
 				type="button"
 				class="{button} gap-0.5 {menu === 'language' ? 'bg-ctl-hover' : ''}"
@@ -153,7 +178,7 @@
 
 		<a
 			href={resolve('/docs')}
-			class={button}
+			class="{button} max-sm:hidden"
 			aria-label={t('common.documentation')}
 			title={t('common.documentation')}
 			data-testid="header-docs"
@@ -161,7 +186,7 @@
 			<Icon name="book" />
 		</a>
 
-		<div class="relative">
+		<div class="relative max-sm:hidden">
 			<button
 				type="button"
 				class="{button} {menu === 'issue' ? 'bg-ctl-hover' : ''}"
@@ -176,6 +201,65 @@
 			</button>
 			{#if menu === 'issue'}
 				<div class={popup} role="menu" data-testid="issue-menu">
+					{#each ISSUE_TEMPLATES as template (template.id)}
+						<a
+							href={template.href}
+							target="_blank"
+							rel="noreferrer noopener external"
+							role="menuitem"
+							class={item}
+							onclick={() => (menu = null)}
+							data-testid="issue-{template.id}"
+						>
+							{t(template.label)}
+						</a>
+					{/each}
+				</div>
+			{/if}
+		</div>
+
+		<div class="relative sm:hidden">
+			<button
+				type="button"
+				class="{button} {menu === 'more' ? 'bg-ctl-hover' : ''}"
+				aria-haspopup="menu"
+				aria-expanded={menu === 'more'}
+				aria-label={t('common.more')}
+				title={t('common.more')}
+				onclick={() => (menu = menu === 'more' ? null : 'more')}
+				data-testid="header-more"
+			>
+				<Icon name="more" />
+			</button>
+			{#if menu === 'more'}
+				<div class={popup} role="menu" data-testid="more-menu">
+					{#each LOCALES as locale (locale)}
+						<button
+							type="button"
+							role="menuitemradio"
+							aria-checked={i18n.locale === locale}
+							lang={locale}
+							class="{item} justify-between gap-3"
+							onclick={() => {
+								i18n.set(locale);
+								menu = null;
+							}}
+							data-testid="language-{locale}"
+						>
+							{LOCALE_NAMES[locale]}
+							{#if i18n.locale === locale}<Icon name="checkSmall" />{/if}
+						</button>
+					{/each}
+					<div class="mx-3 my-1 h-px bg-line" role="separator"></div>
+					<a
+						href={resolve('/docs')}
+						role="menuitem"
+						class={item}
+						onclick={() => (menu = null)}
+						data-testid="menu-docs"
+					>
+						{t('common.documentation')}
+					</a>
 					{#each ISSUE_TEMPLATES as template (template.id)}
 						<a
 							href={template.href}
