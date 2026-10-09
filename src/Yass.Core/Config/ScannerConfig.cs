@@ -3,11 +3,16 @@ using Yass.Core.Domain;
 
 namespace Yass.Core.Config;
 
+/// <summary>
+/// <c>auto</c> is the platform's own driver: SANE on Linux, WIA on Windows. macOS has no usable
+/// default (NAPS2's Apple driver needs a macOS-only build, ADR-004), so there it means eSCL.
+/// </summary>
 public enum ScannerDriver
 {
     Auto = 0,
     Sane,
     Escl,
+    Wia,
 }
 
 /// <summary><c>scanner:</c> section.</summary>

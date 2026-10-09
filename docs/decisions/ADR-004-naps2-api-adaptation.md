@@ -52,3 +52,19 @@ path. The public-surface findings above were re-checked and are unchanged.
 SPEC.md §3 therefore still reads "NAPS2.Sdk (NuGet, 1.2.x)".
 
 Revisit when 1.3.x drops the preview annotation.
+
+## Amended 2026-10-09: drivers on Windows and macOS (desktop app)
+
+The desktop app (ADR-014) runs on Windows and macOS as well as Linux. NAPS2's per-platform
+default driver is WIA on Windows, Apple ImageCaptureCore on macOS and SANE on Linux.
+
+- **Windows:** `Driver.Default` is WIA and works from the plain `net8.0` assembly, through
+  `NAPS2.Wia`, which is already a dependency. `scanner.driver` gains `wia` for choosing it
+  explicitly. TWAIN is left out: it needs the 32-bit `NAPS2.Sdk.Worker.Win32` process.
+- **macOS:** the Apple driver exists only in a `net8-macos` build of the SDK. The 1.2.1 NuGet
+  package does not ship one; its own error reads "Make sure you're using the right framework
+  target (e.g. net8-macos for the Apple driver)". `NAPS2.Images.Mac` needs that target too.
+  Building the desktop app as a macOS-workload app to get it is out of proportion, so on macOS
+  **`auto` means eSCL**: network scanners, and USB ones that speak eSCL. `scanner.driver` gets
+  no `apple` value, because it could only ever fail. SANE on macOS (through
+  `NAPS2.Sane.Binaries`) would be a new dependency; it is left for when someone needs it.
