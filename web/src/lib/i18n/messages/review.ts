@@ -109,6 +109,19 @@ export const review = {
 		fr: "Progression de l'export",
 		es: 'Progreso de la exportación'
 	},
+	stopScan: {
+		en: 'Stop scanning',
+		de: 'Scan abbrechen',
+		fr: 'Arrêter la numérisation',
+		es: 'Detener el escaneo'
+	},
+	stoppingScan: { en: 'Stopping…', de: 'Wird abgebrochen…', fr: 'Arrêt…', es: 'Deteniendo…' },
+	scanStopped: {
+		en: 'Scan stopped. The pages so far are kept.',
+		de: 'Scan abgebrochen. Die bisherigen Seiten bleiben erhalten.',
+		fr: 'Numérisation arrêtée. Les pages déjà numérisées sont conservées.',
+		es: 'Escaneo detenido. Las páginas escaneadas se conservan.'
+	},
 	saveAs: {
 		en: 'Save as…',
 		de: 'Speichern unter…',

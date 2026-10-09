@@ -13,8 +13,10 @@
 		busy = false,
 		picker = false,
 		serverFolder = null,
+		stopping = false,
 		ondownload,
-		onserver
+		onserver,
+		onstop
 	}: {
 		session: SessionDto;
 		progress?: number | null;
@@ -28,6 +30,10 @@
 		 */
 		serverFolder?: string | null;
 		onserver?: () => void;
+		/** Stops a running scan, keeping the pages it has made. Shown in place of saving while scanning. */
+		onstop?: () => void;
+		/** A stop was asked for and the scanner has not let go yet. */
+		stopping?: boolean;
 	} = $props();
 
 	const active = $derived(activePageCount(session));
@@ -45,7 +51,19 @@
 </script>
 
 <div class="flex min-w-0 flex-col gap-3.5" data-testid="bottom-bar">
-	{#if exporting}
+	{#if scanning && onstop}
+		<!-- Nothing can be saved mid-scan, so the button that would save stops it instead. -->
+		<button
+			type="button"
+			class="flex h-[50px] w-full items-center justify-center gap-2 rounded-[14px] bg-accent-tint text-[15px] font-extrabold text-accent-deep transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-60"
+			onclick={onstop}
+			disabled={stopping}
+			data-testid="stop-scan-button"
+		>
+			<Icon name="close" />
+			{stopping ? t('review.stoppingScan') : t('review.stopScan')}
+		</button>
+	{:else if exporting}
 		<!-- The mockup swaps the button for a progress card while the document is being built. -->
 		<div class="flex animate-pop-in flex-col gap-2 rounded-[16px] bg-accent-hover50 p-3.5">
 			<div class="flex items-center gap-2.5">

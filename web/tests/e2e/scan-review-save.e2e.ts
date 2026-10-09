@@ -311,6 +311,20 @@ test('a picked preset stays picked, and says so once a setting moves away from i
 	).toBeChecked();
 });
 
+test('a running scan can be stopped, and keeps the pages it has made', async ({ page }) => {
+	await page.goto('/');
+	await expect(page.getByTestId('scan-button')).toBeEnabled();
+	await page.getByTestId('scan-button').click();
+	await expect(page).toHaveURL(/\/session\/[A-Za-z0-9-]+$/);
+
+	// Three pages 400 ms apart: the stop lands well before the feeder would run dry.
+	await page.getByTestId('stop-scan-button').click();
+	await expect(page.getByText('Scan stopped. The pages so far are kept.')).toBeVisible();
+	await expect(page.getByTestId('stop-scan-button')).toHaveCount(0);
+	await expect(page.getByTestId('download-button')).toBeVisible();
+	expect(await page.getByTestId('page-thumb').count()).toBeLessThan(3);
+});
+
 test('discard removes the scan from past scans', async ({ page }) => {
 	await scanToReview(page);
 	const url = page.url();
