@@ -1,12 +1,10 @@
-using Microsoft.AspNetCore.SignalR;
 using Yass.Core.Domain;
-using Yass.Core.Hub;
 using Yass.Server.Hub;
 
 namespace Yass.Server.Sessions;
 
 /// <summary>Applies edits to a stored session, persists, and pushes <c>PageUpdated</c> / <c>SessionChanged</c>.</summary>
-public sealed class EditService(SessionStore store, SessionMapper mapper, IPageSink sink, IHubContext<YassHub, IYassClient> hub)
+public sealed class EditService(SessionStore store, SessionMapper mapper, IPageSink sink, IClientNotifier hub)
 {
     /// <exception cref="InvalidOperationException">The session is not editable in its current state.</exception>
     /// <exception cref="ArgumentException">An edit is invalid.</exception>
@@ -27,7 +25,7 @@ public sealed class EditService(SessionStore store, SessionMapper mapper, IPageS
         bool reordered = !before!.Pages.Select(p => p.SourceFile).SequenceEqual(after.Pages.Select(p => p.SourceFile));
         if (reordered)
         {
-            await hub.Clients.All.SessionChanged(mapper.ToDto(after)).ConfigureAwait(false);
+            await hub.All.SessionChanged(mapper.ToDto(after)).ConfigureAwait(false);
         }
 
         var previous = before.Pages.ToDictionary(p => p.SourceFile, StringComparer.Ordinal);
@@ -44,7 +42,7 @@ public sealed class EditService(SessionStore store, SessionMapper mapper, IPageS
                 sink.Enqueue(after, page);
             }
 
-            await hub.Clients.All.PageUpdated(after.Id, mapper.ToDto(after, page)).ConfigureAwait(false);
+            await hub.All.PageUpdated(after.Id, mapper.ToDto(after, page)).ConfigureAwait(false);
         }
 
         return after;
