@@ -33,6 +33,11 @@
         packages = {
           default = yass;
           web = yass.passthru.web;
+          desktop = pkgs.callPackage ./nix/desktop.nix {
+            inherit version;
+            src = pkgs.lib.cleanSource ./.;
+            web = yass.passthru.web;
+          };
           docker = pkgs.dockerTools.buildLayeredImage {
             name = "yass";
             tag = version;
