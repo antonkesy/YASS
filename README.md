@@ -1,4 +1,4 @@
-# YASS — Yet Another Scanner Slop
+# YASS — Yet Another Slop Scanner
 
 <img src="assets/logo/yass.svg" alt="" width="96" align="right">
 

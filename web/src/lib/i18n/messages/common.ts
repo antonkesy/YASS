@@ -9,10 +9,10 @@ export const common = {
 		es: 'Volver al inicio'
 	},
 	appName: {
-		en: 'Yet Another Scanner Slop',
-		de: 'Yet Another Scanner Slop',
-		fr: 'Yet Another Scanner Slop',
-		es: 'Yet Another Scanner Slop'
+		en: 'Yet Another Slop Scanner',
+		de: 'Yet Another Slop Scanner',
+		fr: 'Yet Another Slop Scanner',
+		es: 'Yet Another Slop Scanner'
 	},
 	language: { en: 'Language', de: 'Sprache', fr: 'Langue', es: 'Idioma' },
 	closeLanguageMenu: {

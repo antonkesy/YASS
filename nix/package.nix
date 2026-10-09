@@ -87,7 +87,7 @@ buildDotnetModule {
   };
 
   meta = {
-    description = "Yet Another Scanner Slop: headless scan-to-PDF with a mobile-first web UI";
+    description = "Yet Another Slop Scanner: headless scan-to-PDF with a mobile-first web UI";
     homepage = "https://github.com/antonkesy/YASS";
     license = lib.licenses.mit;
     mainProgram = "Yass.Server";
