@@ -754,6 +754,25 @@ describe('StraightenModal', () => {
 	});
 });
 
+describe('Preview arrows', () => {
+	const pages = [page(0), page(1), page(2)];
+	const base = { sessionId: 's', pages, onnavigate: vi.fn(), onclose: vi.fn(), onrotate: vi.fn() };
+
+	it('shows only the arrows that have a page to go to', () => {
+		const { rerender } = render(Preview, { ...base, index: 0 });
+		expect(screen.queryByTestId('preview-prev')).toBeNull();
+		expect(screen.getByTestId('preview-next')).toBeInTheDocument();
+
+		rerender({ ...base, index: 1 });
+		expect(screen.getByTestId('preview-prev')).toBeInTheDocument();
+		expect(screen.getByTestId('preview-next')).toBeInTheDocument();
+
+		rerender({ ...base, index: 2 });
+		expect(screen.getByTestId('preview-prev')).toBeInTheDocument();
+		expect(screen.queryByTestId('preview-next')).toBeNull();
+	});
+});
+
 describe('Preview edit bar', () => {
 	const pages = [page(0), page(1, { Cleanup: PageCleanup.Despeckle })];
 	const base = {

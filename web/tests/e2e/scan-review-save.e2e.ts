@@ -782,3 +782,31 @@ test('switching presets on the home screen does not move the Scan button', async
 	await expect(page.getByTestId('preset-save-current')).toBeVisible();
 	expect(await top()).toBe(start);
 });
+
+test('an arrow with no page to go to is not shown, and the page does not move', async ({
+	page
+}) => {
+	await scanToReview(page);
+	const prev = page.getByTestId('stage-prev');
+	const next = page.getByTestId('stage-next');
+	await expect(page.getByRole('img', { name: 'Page 1', exact: true })).toBeVisible();
+	// A hidden arrow keeps its box, so the two arrows framing the page never move: measured on
+	// them rather than on the page, which slides in on every change.
+	const frame = async () => [
+		Math.round((await prev.boundingBox())!.x),
+		Math.round((await next.boundingBox())!.x)
+	];
+
+	// First page: nothing before it.
+	await expect(prev).toBeHidden();
+	await expect(next).toBeVisible();
+	const first = await frame();
+
+	// Last page: nothing after it, and the arrows — and the page between them — sit as before.
+	await next.click();
+	await next.click();
+	await expect(page.getByRole('img', { name: 'Page 3', exact: true })).toBeVisible();
+	await expect(next).toBeHidden();
+	await expect(prev).toBeVisible();
+	expect(await frame()).toEqual(first);
+});

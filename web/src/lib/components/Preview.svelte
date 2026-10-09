@@ -216,40 +216,43 @@
 					/>
 				</button>
 			{/key}
-			<button
-				type="button"
-				class="{navBtn} fixed top-1/2 left-2 -translate-y-1/2"
-				aria-label="Previous page"
-				disabled={index === 0}
-				onclick={() => onnavigate(index - 1)}
-				data-testid="preview-prev"
-			>
-				<svg
-					class="h-6 w-6"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg
+			<!-- Floating over the page, so an arrow with nowhere to go is simply not there. -->
+			{#if index > 0}
+				<button
+					type="button"
+					class="{navBtn} fixed top-1/2 left-2 -translate-y-1/2"
+					aria-label="Previous page"
+					onclick={() => onnavigate(index - 1)}
+					data-testid="preview-prev"
 				>
-			</button>
-			<button
-				type="button"
-				class="{navBtn} fixed top-1/2 right-2 -translate-y-1/2"
-				aria-label="Next page"
-				disabled={index >= pages.length - 1}
-				onclick={() => onnavigate(index + 1)}
-				data-testid="preview-next"
-			>
-				<svg
-					class="h-6 w-6"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg
+					<svg
+						class="h-6 w-6"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg
+					>
+				</button>
+			{/if}
+			{#if index < pages.length - 1}
+				<button
+					type="button"
+					class="{navBtn} fixed top-1/2 right-2 -translate-y-1/2"
+					aria-label="Next page"
+					onclick={() => onnavigate(index + 1)}
+					data-testid="preview-next"
 				>
-			</button>
+					<svg
+						class="h-6 w-6"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg
+					>
+				</button>
+			{/if}
 		</div>
 
 		<!--
