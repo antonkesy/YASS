@@ -24,6 +24,36 @@ export function desktopExternal(): DesktopExternal | null {
 		: null;
 }
 
+/** True inside the desktop app. */
+export function isDesktop(): boolean {
+	return desktopExternal() !== null;
+}
+
+/**
+ * What only the desktop app offers, beside the hub: native save dialogs, and moving a finished
+ * export to the chosen file on the host's side, so a document never passes through the page.
+ */
+export type DesktopHost = {
+	/** Asks where one document goes; `null` when the user cancels. */
+	pickSavePath(suggestedName: string): Promise<string | null>;
+	/** Asks for a folder for several documents; `null` when the user cancels. */
+	pickFolder(): Promise<string | null>;
+	/**
+	 * Moves the document behind an export's one-shot path to `target`. `overwrite` for a file the
+	 * user picked (the dialog already asked); otherwise a taken name gets -2, -3…. Returns the path written.
+	 */
+	saveExport(downloadPath: string, target: string, overwrite: boolean): Promise<string>;
+};
+
+export function createDesktopHost(connection: Pick<ConnectionLike, 'invoke'>): DesktopHost {
+	return {
+		pickSavePath: (name) => connection.invoke<string | null>('PickSavePath', name),
+		pickFolder: () => connection.invoke<string | null>('PickFolder'),
+		saveExport: (path, target, overwrite) =>
+			connection.invoke<string>('SaveExport', path, target, overwrite)
+	};
+}
+
 /**
  * A `HubConnection` look-alike over the desktop bridge (SPEC §7): calls go out as
  * `{id, method, args}` and come back as `{id, result}` or `{id, error}`; server pushes arrive

@@ -4,6 +4,7 @@
 	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 	import { activePageCount } from '$lib/format';
 	import { Icon } from '$lib/icons';
+	import { isDesktop } from '$lib/hub/bridge';
 	import ProgressBar from './ProgressBar.svelte';
 
 	let {
@@ -86,7 +87,7 @@
 				data-testid="server-save-button"
 			>
 				<Icon name="folder" />
-				{t('review.saveToServer')}
+				{t(isDesktop() ? 'review.saveToFolder' : 'review.saveToServer')}
 			</button>
 		{/if}
 	{/if}

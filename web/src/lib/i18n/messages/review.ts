@@ -160,6 +160,24 @@ export const review = {
 		fr: { one: 'Téléchargé', other: '{n} fichiers téléchargés' },
 		es: { one: 'Descargado', other: '{n} archivos descargados' }
 	},
+	saveToFolder: {
+		en: 'Save to folder',
+		de: 'In Ordner speichern',
+		fr: 'Enregistrer dans le dossier',
+		es: 'Guardar en la carpeta'
+	},
+	savedToFolderAs: {
+		en: 'Saved to folder as {file}',
+		de: 'Im Ordner gespeichert als {file}',
+		fr: 'Enregistré dans le dossier sous {file}',
+		es: 'Guardado en la carpeta como {file}'
+	},
+	savedFilesToFolder: {
+		en: 'Saved {n} files to folder',
+		de: '{n} Dateien im Ordner gespeichert',
+		fr: '{n} fichiers enregistrés dans le dossier',
+		es: '{n} archivos guardados en la carpeta'
+	},
 	savedToServerAs: {
 		en: 'Saved to server as {file}',
 		de: 'Auf dem Server gespeichert als {file}',

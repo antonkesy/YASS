@@ -24,6 +24,8 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Yass.Server.Tests" />
+    <InternalsVisibleTo Include="Yass.Desktop" />
+    <InternalsVisibleTo Include="Yass.Desktop.Tests" />
   </ItemGroup>
 
 </Project>
