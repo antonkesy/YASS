@@ -15,15 +15,18 @@ public static class YassAppServices
     /// Registers the whole app: config, scanner backend, sessions, rendering, export, the hosted
     /// workers and <see cref="YassApi"/>. The host adds its <see cref="IClientNotifier"/> and
     /// <see cref="IDownloadPaths"/>, and whatever transport it carries calls over.
+    /// <paramref name="hostDefaults"/> fills in what only the host knows, such as where a desktop
+    /// keeps its sessions; it runs on <paramref name="config"/> here and again on every reload.
     /// </summary>
-    public static IServiceCollection AddYassApp(this IServiceCollection services, YassConfig config, StartupOptions startup)
+    public static IServiceCollection AddYassApp(this IServiceCollection services, YassConfig config, StartupOptions startup, Func<YassConfig, YassConfig>? hostDefaults = null)
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(config);
         ArgumentNullException.ThrowIfNull(startup);
 
         services.AddSingleton(startup);
-        services.AddSingleton(sp => new ConfigStore(config, startup.ConfigPath, sp.GetRequiredService<ILogger<ConfigStore>>()));
+        YassConfig initial = hostDefaults?.Invoke(config) ?? config;
+        services.AddSingleton(sp => new ConfigStore(initial, startup.ConfigPath, sp.GetRequiredService<ILogger<ConfigStore>>(), hostDefaults));
         services.AddSingleton(TimeProvider.System);
         BackendRegistration.Add(services, startup);
 

@@ -4,9 +4,10 @@ namespace Yass.App.Config;
 
 /// <summary>
 /// Holds the live <see cref="YassConfig"/>. <see cref="Reload"/> re-reads the file but keeps the original
-/// <c>server</c> section, since the listener cannot be rebound at runtime.
+/// <c>server</c> section, since the listener cannot be rebound at runtime. The host's own defaults
+/// (<paramref name="hostDefaults"/>) are applied to every reload as they were to the first load.
 /// </summary>
-public sealed class ConfigStore(YassConfig initial, string path, ILogger<ConfigStore> logger)
+public sealed class ConfigStore(YassConfig initial, string path, ILogger<ConfigStore> logger, Func<YassConfig, YassConfig>? hostDefaults = null)
 {
     private readonly object _gate = new();
 
@@ -21,6 +22,7 @@ public sealed class ConfigStore(YassConfig initial, string path, ILogger<ConfigS
     public YassConfig Reload()
     {
         YassConfig fresh = ConfigLoader.Load(Path);
+        fresh = hostDefaults?.Invoke(fresh) ?? fresh;
         YassConfig next;
         lock (_gate)
         {
