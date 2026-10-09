@@ -83,12 +83,27 @@
           # Worker nodes and the build server outlive the command and hold pipes open.
           MSBUILDDISABLENODEREUSE = "1";
           DOTNET_CLI_USE_MSBUILD_SERVER = "0";
-          # NAPS2 dlopens libsane; make the host backends visible.
-          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ pkgs.sane-backends ];
+          # NAPS2 dlopens libsane; Photino (Yass.Desktop) dlopens WebKitGTK and GTK.
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath (
+            with pkgs;
+            [
+              sane-backends
+              webkitgtk_4_1
+              gtk3
+              glib
+              libnotify
+              mesa
+              stdenv.cc.cc.lib
+            ]
+          );
           SANE_CONFIG_DIR = "${pkgs.sane-backends}/etc/sane.d";
 
           shellHook = ''
             export PATH="$HOME/.dotnet/tools:$PATH"
+            # WebKitGTK needs an EGL driver; off NixOS the nix one cannot find the system's.
+            export __EGL_VENDOR_LIBRARY_DIRS="''${__EGL_VENDOR_LIBRARY_DIRS:-${pkgs.mesa}/share/glvnd/egl_vendor.d}"
+            # GTK's file dialogs (Yass.Desktop's save and folder pickers) read these schemas.
+            export XDG_DATA_DIRS="${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:''${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
           '';
         };
       }

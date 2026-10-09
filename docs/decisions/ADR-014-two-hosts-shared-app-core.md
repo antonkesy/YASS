@@ -20,9 +20,14 @@ written as a literal string. None of that could run without Kestrel and SignalR.
   - `ImageSource` and `ExportDownloads` resolve what the `/img` and `/export` paths point to.
   - `IDownloadPaths` is the host's own spelling of a download URL.
   - `AddYassApp(...)` registers all of it.
-  - It references `Microsoft.Extensions.*` (hosting, logging, DI) through the
-    `Microsoft.AspNetCore.App` framework reference the server already has, and no new NuGet package.
-  - It must not use ASP.NET Core or SignalR types.
+  - It must not use ASP.NET Core or SignalR types. It references
+    **`Microsoft.Extensions.Hosting.Abstractions`** 10.0.x, for `BackgroundService` and hosted-service
+    registration, and **`Microsoft.Extensions.Logging.Console`** 10.0.x for the shared logging
+    setup (the Generic Host brings it in anyway); the desktop host adds **`Microsoft.Extensions.Hosting`** 10.0.x for the Generic Host.
+    Both are Microsoft's own packages, at the version the shared framework ships. The server
+    already gets them from its `Microsoft.AspNetCore.App` framework. Taking that framework
+    reference in `Yass.App` instead was rejected: it would make the desktop app need the whole
+    ASP.NET Core runtime installed just to get a host.
 - **`Yass.Server`** is the server host: Kestrel, the SignalR hub delegating to `YassApi`, a
   `SignalRNotifier`, and HTTP endpoints that add only ETag, cache headers and status codes.
 - **`Yass.Desktop`** is the desktop host (ADR-015). Hub calls go over a JSON message bridge to
