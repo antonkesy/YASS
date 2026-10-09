@@ -4,9 +4,19 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<title>YASS</title>
+		<!--
+			Light or dark as this browser pinned it in Settings, before anything is painted; with
+			nothing pinned the system decides. Key and values as in $lib/appearance.svelte.ts.
+		-->
+		<script>
+			try {
+				var mode = localStorage.getItem('yass.appearance');
+				if (mode === 'light' || mode === 'dark') document.documentElement.dataset.theme = mode;
+			} catch (e) {}
+		</script>
 		%sveltekit.head%
 	</head>
-	<body data-sveltekit-preload-data="hover" class="bg-app antialiased">
+	<body data-sveltekit-preload-data="hover" class="bg-page antialiased">
 		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>

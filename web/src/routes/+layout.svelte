@@ -67,7 +67,8 @@
 	<link rel="icon" href="/favicon.ico" sizes="48x48" />
 	<link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
 	<link rel="apple-touch-icon" href="/icons/icon-192.png" />
-	<meta name="theme-color" content="#f5f5f7" />
+	<meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)" />
+	<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
 </svelte:head>
 
 <!--
@@ -76,7 +77,7 @@
 	switch off the column's stretch and size the page to its content, which on a phone with a
 	long list of past scans is wider than the screen.
 -->
-<div class="flex min-h-dvh flex-col bg-app text-ink *:w-full">
+<div class="flex min-h-dvh flex-col bg-page text-ink *:w-full">
 	<AppHeader />
 	{@render children()}
 </div>

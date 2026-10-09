@@ -915,3 +915,31 @@ test("the save card shows the scan, picks the format and sets this scan's PDF pr
 	).toBeChecked();
 	await expect(page.getByTestId('metadata-author')).toHaveValue('');
 });
+
+test('the app follows the system into dark mode, and Settings can pin either', async ({ page }) => {
+	const scheme = () =>
+		page.evaluate(() => ({
+			theme: document.documentElement.dataset.theme ?? null,
+			page: getComputedStyle(document.body).backgroundColor
+		}));
+
+	// Nothing pinned: the system decides.
+	await page.emulateMedia({ colorScheme: 'dark' });
+	await page.goto('/');
+	expect(await scheme()).toEqual({ theme: null, page: 'rgb(0, 0, 0)' });
+	await page.emulateMedia({ colorScheme: 'light' });
+	expect((await scheme()).page).toBe('rgb(245, 245, 247)');
+
+	// Pinned dark wins over a light system, and outlives a reload.
+	await page.goto('/settings');
+	const section = page.getByTestId('appearance-section');
+	await section.getByRole('radio', { name: 'Dark' }).check();
+	await page.reload();
+	expect(await scheme()).toMatchObject({ theme: 'dark', page: 'rgb(0, 0, 0)' });
+	await expect(section.getByRole('radio', { name: 'Dark' })).toBeChecked();
+
+	// Back to Automatic: the pin is gone and the system's light applies again.
+	await section.getByRole('radio', { name: 'Automatic' }).check();
+	await page.reload();
+	expect(await scheme()).toMatchObject({ theme: null, page: 'rgb(245, 245, 247)' });
+});
