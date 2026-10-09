@@ -40,6 +40,8 @@ public static class YassAppServices
         services.AddSingleton<RenderCache>();
         services.AddSingleton<IThumbnailStatus>(sp => sp.GetRequiredService<RenderCache>());
         services.AddSingleton<ImageSource>();
+        // A host that wants more rendered ahead registers its own after this one.
+        services.AddSingleton(new RenderAhead());
         services.AddSingleton<ThumbnailWorker>();
         services.AddSingleton<IPageSink>(sp => sp.GetRequiredService<ThumbnailWorker>());
         services.AddHostedService(sp => sp.GetRequiredService<ThumbnailWorker>());

@@ -41,7 +41,9 @@ public static class Program
 
         var notifier = new BridgeNotifier();
         string sessions = DesktopDefaults.SessionsDirectory();
-        builder.Services.AddYassApp(config, startup, c => DesktopDefaults.Apply(c, sessions));
+        builder.Services.AddYassApp(config, startup, c => DesktopDefaults.Apply(c, sessions, Environment.ProcessorCount));
+        // The webview asks for an image on its own thread and waits; render previews before it asks.
+        builder.Services.AddSingleton(new RenderAhead(Previews: true));
         builder.Services.AddSingleton(notifier);
         builder.Services.AddSingleton<IClientNotifier>(notifier);
         builder.Services.AddSingleton<IDownloadPaths>(new DownloadPaths());
