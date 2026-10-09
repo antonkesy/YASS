@@ -68,3 +68,16 @@ default driver is WIA on Windows, Apple ImageCaptureCore on macOS and SANE on Li
   **`auto` means eSCL**: network scanners, and USB ones that speak eSCL. `scanner.driver` gets
   no `apple` value, because it could only ever fail. SANE on macOS (through
   `NAPS2.Sane.Binaries`) would be a new dependency; it is left for when someone needs it.
+
+## Amended 2026-10-09: cameras are not scanners
+
+SANE and WIA both list cameras beside scanners, and NAPS2 hands them over as ordinary
+`ScanDevice`s. YASS never offers them:
+
+- **SANE:** the id is `backend:address`. A device from a camera backend (`v4l`, `gphoto2`,
+  `dc210`, `dc240`, `dc25`, `dmc`, `qcam`, `stv680`) is dropped at discovery.
+- **WIA:** the id says nothing about the device, so discovery asks WIA itself for each device's
+  `DIP_DEV_TYPE`. Digital cameras and streaming video are dropped. This uses **`NAPS2.Wia`**
+  2.0.3, the wrapper NAPS2.Sdk already depends on and is pinned to, now referenced directly;
+  it adds no new package. If WIA cannot be asked, nothing is filtered, so a failed lookup never
+  leaves the list empty.
