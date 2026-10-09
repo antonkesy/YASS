@@ -11,8 +11,8 @@ import { reduced } from '$lib/motion';
  * - A child that leaves is replaced for a moment by a copy fading out where it stood.
  *
  * Only jumps are animated. A change that already happens gradually — a section sliding open
- * with a Svelte transition — moves its siblings a pixel or two a frame, which is left alone, so
- * the two never fight. Nothing plays for anyone who asked for less motion.
+ * with a Svelte transition, or a child easing its own height — is left alone, so the two never
+ * fight. Nothing plays for anyone who asked for less motion.
  */
 
 type Rect = { top: number; left: number; width: number; height: number };
@@ -28,6 +28,20 @@ function skip(child: Element): boolean {
 	if (!(child instanceof HTMLElement) || child.dataset[GHOST] !== undefined) return true;
 	const position = getComputedStyle(child).position;
 	return position === 'absolute' || position === 'fixed';
+}
+
+/**
+ * A child already easing its own height — a CSS transition, as the home screen's settings chips
+ * do — moves its siblings smoothly by itself; adding a glide on top would make them overshoot.
+ */
+function easingHeight(child: Element): boolean {
+	if (typeof CSSTransition === 'undefined') return false;
+	return child
+		.getAnimations()
+		.some(
+			(a) =>
+				a instanceof CSSTransition && a.transitionProperty === 'height' && a.playState === 'running'
+		);
 }
 
 export function autoAnimate(container: HTMLElement): () => void {
@@ -53,7 +67,11 @@ export function autoAnimate(container: HTMLElement): () => void {
 	function settle(added: ReadonlySet<Element> = new Set()) {
 		// The container itself changed width — the window was resized — and everything reflowed
 		// with it: that is not something to animate.
-		if (reduced() || Math.abs(container.getBoundingClientRect().width - width) > 1)
+		if (
+			reduced() ||
+			Math.abs(container.getBoundingClientRect().width - width) > 1 ||
+			[...container.children].some(easingHeight)
+		)
 			return snapshot();
 		for (const child of container.children) {
 			if (skip(child)) continue;
