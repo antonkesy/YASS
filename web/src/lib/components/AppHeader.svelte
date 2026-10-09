@@ -18,11 +18,11 @@
 
 	// Icons only, each named by its aria-label and shown as a tooltip on hover.
 	const button =
-		'flex h-10 w-10 flex-none items-center justify-center rounded-[12px] bg-surface text-ink shadow-chip transition-colors hover:bg-accent-wash';
+		'flex h-10 w-10 flex-none items-center justify-center rounded-full text-accent transition-colors hover:bg-ctl-hover active:opacity-60';
 	const popup =
 		'absolute top-[calc(100%+8px)] right-0 z-31 flex min-w-[200px] animate-pop-in flex-col rounded-[14px] bg-surface p-1.5 text-ink shadow-popover';
 	const item =
-		'flex min-h-[44px] w-full items-center rounded-[10px] px-3 text-left text-[13px] font-bold transition-colors hover:bg-accent-hover50';
+		'flex min-h-[44px] w-full items-center rounded-[10px] px-3 text-left text-[13px] font-bold transition-colors hover:bg-ctl';
 
 	const client = getHub();
 	const scanner = client.scanner;
@@ -51,7 +51,7 @@
 	centred on the viewport and not on the space left between the two ends.
 -->
 <header
-	class="sticky top-0 z-20 grid h-16 grid-cols-[1fr_auto_1fr] items-center gap-2.5 bg-header px-4 backdrop-blur-[14px] sm:px-7"
+	class="sticky top-0 z-20 grid h-16 grid-cols-[1fr_auto_1fr] items-center gap-2.5 bg-header px-4 backdrop-blur-[20px] backdrop-saturate-[1.8] sm:px-7"
 >
 	<div class="flex min-w-0 items-center gap-2.5">
 		{#if !atHome}
@@ -64,7 +64,7 @@
 				class="group flex items-center gap-2.5 rounded-[12px] text-[15px] font-bold text-ink-3 transition-colors hover:text-ink"
 			>
 				<span
-					class="flex h-10 w-10 flex-none items-center justify-center rounded-[12px] bg-surface text-ink shadow-chip transition-colors group-hover:bg-accent-wash"
+					class="flex h-10 w-10 flex-none items-center justify-center rounded-full text-accent transition-colors group-hover:bg-ctl-hover group-active:opacity-60"
 				>
 					<Icon name="back" />
 				</span>
@@ -87,7 +87,7 @@
 			<!-- The name is the whole of the brand here. A phone has the buttons beside it to fit,
 			     so there it goes by its initials. -->
 			<span
-				class="truncate text-[17px] font-extrabold tracking-[-0.01em] text-ink sm:text-[20px]"
+				class="truncate text-[17px] font-bold tracking-[-0.02em] text-ink"
 				data-testid="app-name"
 			>
 				<span class="sm:hidden" aria-hidden="true">YASS</span>
@@ -118,7 +118,7 @@
 		<div class="relative">
 			<button
 				type="button"
-				class="{button} gap-0.5 {menu === 'language' ? 'bg-accent-wash text-accent' : ''}"
+				class="{button} gap-0.5 {menu === 'language' ? 'bg-ctl-hover' : ''}"
 				aria-haspopup="menu"
 				aria-expanded={menu === 'language'}
 				aria-label={t('common.language')}
@@ -164,7 +164,7 @@
 		<div class="relative">
 			<button
 				type="button"
-				class="{button} {menu === 'issue' ? 'bg-accent-wash text-accent' : ''}"
+				class="{button} {menu === 'issue' ? 'bg-ctl-hover' : ''}"
 				aria-haspopup="menu"
 				aria-expanded={menu === 'issue'}
 				aria-label={t('common.reportIssue')}
