@@ -7,7 +7,7 @@
 	import { toast } from '$lib/toast';
 	import { cameFrom } from '$lib/navigation';
 	import { getHub, imageUrl, sortedSessions } from '$lib/hub/hub';
-	import { PageFilter, SessionState } from '$lib/hub/generated/Yass.Core.Domain';
+	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 	import type { CropBox, PageAdjust, PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
 	import {
 		activePageCount,
@@ -28,8 +28,7 @@
 		setCropEdit,
 		setAdjustEdit,
 		setFilterEdit,
-		setSkewEdit,
-		pageFilterLabels
+		setSkewEdit
 	} from '$lib/review/edits';
 	import { clear, prune, toggle } from '$lib/review/selection';
 	import { createPreloader, preloadOrder } from '$lib/review/preload';
@@ -185,12 +184,6 @@
 	/** The other half of it: what Delete would still have to work on. */
 	const anyActive = $derived(
 		session?.Pages.filter((p) => targets.has(p.Index)).some((p) => !p.Deleted) ?? false
-	);
-	const filters = $derived(
-		new Set((session?.Pages ?? []).filter((p) => !p.Deleted).map((p) => p.Filter))
-	);
-	const filterLabel = $derived(
-		filters.size > 1 ? 'Mixed' : pageFilterLabels[[...filters][0] ?? PageFilter.Original]
 	);
 	/**
 	 * What the Scan section says while it is shut. Worded exactly as the line it replaces, which
@@ -802,7 +795,6 @@
 				<!-- The facts about the scan, with the page count up on the heading beside them. -->
 				<div class="flex flex-col gap-1" data-testid="scan-section">
 					{@render heading('Scan', pageSummary, 'page-count')}
-					{@render fact('Filter', filterLabel)}
 					<!-- The scanned pages on disk, not an estimate of the PDF the mockup guesses at. -->
 					{@render fact('Size', formatBytes(session.SizeBytes))}
 				</div>

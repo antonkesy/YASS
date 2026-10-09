@@ -401,7 +401,8 @@ test('the sidebar names its groups, and hides none of them', async ({ page }) =>
 	}
 
 	await expect(page.getByTestId('page-count')).toHaveText('2 of 3 pages');
-	await expect(page.getByTestId('scan-section')).toContainText('Filter');
+	// The filter is the toolbar's to show, under the page; the sidebar does not repeat it.
+	await expect(page.getByTestId('scan-section')).not.toContainText('Filter');
 	await expect(page.getByTestId('scan-section')).toContainText('Size');
 	await expect(page.getByTestId('scan-more-button')).toBeVisible();
 	await expect(page.getByTestId('merge-button')).toBeVisible();
