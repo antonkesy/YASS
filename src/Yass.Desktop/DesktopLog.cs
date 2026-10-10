@@ -12,12 +12,8 @@ namespace Yass.Desktop;
 [ExcludeFromCodeCoverage(Justification = "Process-wide console redirection and a native message box.")]
 internal static partial class DesktopLog
 {
-    /// <summary><c>yass/logs/yass-desktop.log</c> in the per-user data folder.</summary>
-    public static string FilePath { get; } = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData, Environment.SpecialFolderOption.DoNotVerify),
-        "yass",
-        "logs",
-        "yass-desktop.log");
+    /// <summary><c>logs/yass-desktop.log</c> in the per-user <see cref="DesktopDefaults.DataDirectory"/>.</summary>
+    public static string FilePath { get; } = Path.Combine(DesktopDefaults.DataDirectory(), "logs", "yass-desktop.log");
 
     /// <summary>On Windows, sends console output, and so the console logger, to <see cref="FilePath"/>.</summary>
     public static void RedirectWhenWindowless()

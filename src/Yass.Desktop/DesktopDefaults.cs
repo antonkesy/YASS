@@ -9,13 +9,15 @@ public static class DesktopDefaults
     public static string ConfigPath() =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.DoNotVerify), "yass", "yass.yaml");
 
-    /// <summary><c>yass/sessions</c> in the per-user data folder (XDG data, <c>%LOCALAPPDATA%</c>, Application Support).</summary>
-    public static string SessionsDirectory() =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData, Environment.SpecialFolderOption.DoNotVerify), "yass", "sessions");
+    /// <summary><c>yass</c> in the per-user data folder (XDG data, <c>%LOCALAPPDATA%</c>, Application Support).</summary>
+    public static string DataDirectory() =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData, Environment.SpecialFolderOption.DoNotVerify), "yass");
 
-    /// <summary>WebView2's profile and cache: <c>yass/webview</c> in the per-user data folder.</summary>
-    public static string WebViewDataDirectory() =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData, Environment.SpecialFolderOption.DoNotVerify), "yass", "webview");
+    /// <summary><c>sessions</c> in the <see cref="DataDirectory"/>.</summary>
+    public static string SessionsDirectory() => Path.Combine(DataDirectory(), "sessions");
+
+    /// <summary>WebView2's profile and cache: <c>webview</c> in the <see cref="DataDirectory"/>.</summary>
+    public static string WebViewDataDirectory() => Path.Combine(DataDirectory(), "webview");
 
     /// <summary>
     /// Where the server's built-in values assume a container or a small home server, the desktop's
