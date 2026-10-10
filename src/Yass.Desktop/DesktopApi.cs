@@ -1,4 +1,5 @@
 using Yass.App.Export;
+using Yass.Core.Export;
 
 namespace Yass.Desktop;
 
@@ -14,7 +15,7 @@ public sealed class DesktopApi(IDesktopDialogs dialogs, ExportDownloads download
     /// <summary>Asks where one document goes. <c>null</c> when the user cancels.</summary>
     public async Task<string?> PickSavePath(string suggestedName)
     {
-        string name = ExportService.SafeFileName(suggestedName ?? "scan");
+        string name = FileNames.Safe(suggestedName ?? "scan");
         string extension = Path.GetExtension(name);
         string? chosen = await dialogs.SaveFileAsync(Path.Combine(_lastFolder, name), extension).ConfigureAwait(false);
         if (string.IsNullOrEmpty(chosen))
@@ -65,7 +66,7 @@ public sealed class DesktopApi(IDesktopDialogs dialogs, ExportDownloads download
         string full = Path.GetFullPath(target);
         string directory = Path.GetDirectoryName(full) ?? throw new BridgeException($"{target} is not a file path.");
         Directory.CreateDirectory(directory);
-        string destination = overwrite ? full : ExportService.UniquePath(directory, Path.GetFileName(full));
+        string destination = overwrite ? full : FileNames.Unique(directory, Path.GetFileName(full));
         File.Move(download.Path, destination, overwrite);
         logger.LogInformation("Saved {File}", destination);
         return destination;
