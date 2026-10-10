@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { autoAnimate } from '$lib/autoAnimate';
 	import { slide } from 'svelte/transition';
-	import { ms } from '$lib/motion';
+	import { ms, play } from '$lib/motion';
 	import { untrack } from 'svelte';
 	import { page as route } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -131,13 +131,15 @@
 		if (to === shownAt) return;
 		const direction = to > shownAt ? 1 : -1;
 		shownAt = to;
-		stage?.animate(
-			[
-				{ opacity: 0, transform: `translateX(${direction * 36}px) scale(0.97)` },
-				{ opacity: 1, transform: 'none' }
-			],
-			{ duration: 340, easing: 'cubic-bezier(.2,.8,.2,1)' }
-		);
+		if (stage)
+			play(
+				stage,
+				[
+					{ opacity: 0, transform: `translateX(${direction * 36}px) scale(0.97)` },
+					{ opacity: 1, transform: 'none' }
+				],
+				340
+			);
 	});
 
 	/** Position of the page the crop dialog is open on, or null. */

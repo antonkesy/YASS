@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FLIP_MS, measure, play } from '$lib/review/flip';
 
 /** A container of keyed elements whose rects are whatever we say they are. */
@@ -19,6 +19,8 @@ function grid(rects: Record<string, [number, number]>) {
 }
 
 describe('flip', () => {
+	afterEach(() => vi.unstubAllGlobals());
+
 	it('measures every keyed element', () => {
 		const { container } = grid({ '0': [0, 0], '1': [0, 100] });
 		const positions = measure(container);
@@ -56,6 +58,15 @@ describe('flip', () => {
 		const after = grid({ '0': [0.4, 0.2] });
 
 		expect(play(after.container, before)).toBe(0);
+	});
+
+	it('still counts the moves but animates none of them under reduced motion', () => {
+		vi.stubGlobal('matchMedia', (query: string) => ({ matches: query.includes('reduce') }));
+		const before = measure(grid({ '0': [0, 0] }).container);
+		const after = grid({ '0': [0, 100] });
+
+		expect(play(after.container, before)).toBe(1);
+		expect(after.animate).not.toHaveBeenCalled();
 	});
 
 	it('does nothing without a container', () => {
