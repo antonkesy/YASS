@@ -1,10 +1,9 @@
 import { t, type MessageKey } from './i18n/index.svelte';
-import { writable } from 'svelte/store';
 import { ColorMode, PageSize, ScanSource } from './hub/generated/Yass.Core.Domain';
 import { ExportFormat, type DocumentMetadataDto } from './hub/generated/Yass.Core.Hub';
 import type { PresetIconName } from './icons';
 import type { ScanOverrides } from './settings';
-import { browserStorage } from './storage';
+import { browserStorage, persisted } from './storage';
 
 /**
  * Named bundles of scan settings, kept per browser next to the overrides rather than
@@ -242,44 +241,6 @@ export type RetentionUnit = 'minutes' | 'hours' | 'days' | 'months';
 export const HISTORY_KEY = 'yass.history';
 
 export const defaultHistoryPrefs: HistoryPrefs = { autoClear: null };
-
-function load<T>(storage: Storage | undefined, key: string, fallback: T): T {
-	try {
-		const raw = storage?.getItem(key);
-		if (!raw) return fallback;
-		const parsed: unknown = JSON.parse(raw);
-		if (!parsed || typeof parsed !== 'object') return fallback;
-		// Merged over the defaults, not used as-is: a browser that stored these before a
-		// preference existed would otherwise read it as undefined, and the screens that
-		// consume it disagree about what undefined means. Arrays (the presets) are
-		// replaced wholesale — merging one key-by-key would splice the defaults back in. A
-		// value of the wrong shape altogether, a list where a record belongs or the other way
-		// round, is no use to anyone and gives way to the default.
-		if (Array.isArray(fallback) !== Array.isArray(parsed)) return fallback;
-		if (Array.isArray(parsed)) return parsed as T;
-		return { ...fallback, ...parsed };
-	} catch {
-		return fallback;
-	}
-}
-
-function persisted<T>(storage: Storage | undefined, key: string, fallback: T) {
-	const store = writable<T>(load(storage, key, fallback));
-	return {
-		subscribe: store.subscribe,
-		set(value: T) {
-			store.set(value);
-			try {
-				storage?.setItem(key, JSON.stringify(value));
-			} catch {
-				// private mode or quota: keep the in-memory value
-			}
-		},
-		reset() {
-			this.set(fallback);
-		}
-	};
-}
 
 export const createPresets = (storage: Storage | undefined) =>
 	persisted<Preset[]>(storage, PRESETS_KEY, defaultPresets);
