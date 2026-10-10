@@ -5,8 +5,8 @@ import {
 	numberedFileName,
 	numberedPath,
 	exportBaseName,
-	exportFileName,
 	exportRequest,
+	fileExtensions,
 	safeFileName,
 	savePicker,
 	saveNatively,
@@ -95,8 +95,8 @@ describe('file names', () => {
 
 	it('adds the extension its format wants', () => {
 		const named = session('s', { Name: 'Invoice' });
-		expect(exportFileName(named, '', ExportFormat.Pdf)).toBe('Invoice.pdf');
-		expect(exportFileName(named, '', ExportFormat.Jpg)).toBe('Invoice.jpg');
+		expect(exportBaseName(named, '') + fileExtensions[ExportFormat.Pdf]).toBe('Invoice.pdf');
+		expect(exportBaseName(named, '') + fileExtensions[ExportFormat.Jpg]).toBe('Invoice.jpg');
 	});
 
 	it('numbers documents only once there is more than one', () => {
