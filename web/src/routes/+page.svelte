@@ -12,6 +12,7 @@
 		ScannerStatusDto,
 		ScanOptionsDto
 	} from '$lib/hub/generated/Yass.Core.Hub';
+	import Alert from '$lib/components/Alert.svelte';
 	import ScanStage from '$lib/components/ScanStage.svelte';
 	import PastScansPanel from '$lib/components/PastScansPanel.svelte';
 	import { settings } from '$lib/settings';
@@ -256,9 +257,7 @@
 
 <main class="mx-auto flex max-w-[2200px] flex-col gap-6 px-4 pt-3 pb-7 sm:px-7 {entrance}">
 	{#if error}
-		<p class="rounded-[14px] bg-danger-bg px-4 py-2 font-semibold text-danger" role="alert">
-			{error}
-		</p>
+		<Alert>{error}</Alert>
 	{/if}
 
 	<!--
