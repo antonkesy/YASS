@@ -1,9 +1,5 @@
-using Yass.App;
-using Yass.App.Api;
 using Yass.App.Config;
-using Yass.App.Export;
 using Yass.App.Hosting;
-using Yass.App.Rendering;
 using Yass.Core.Config;
 
 namespace Yass.Desktop;
@@ -55,19 +51,7 @@ public static class Program
         });
 
         LoggingSetup.Configure(builder.Logging, config.Logging);
-        // A background service that fails (the scanner probe, say) is logged and the window stays
-        // open; the host's default would stop the app, and with it close the window.
-        builder.Services.Configure<HostOptions>(o => o.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore);
-
-        var notifier = new BridgeNotifier();
-        string sessions = DesktopDefaults.SessionsDirectory();
-        builder.Services.AddYassApp(config, startup, c => DesktopDefaults.Apply(c, sessions, Environment.ProcessorCount));
-        // The webview asks for an image on its own thread and waits; render previews before it asks.
-        builder.Services.AddSingleton(new RenderAhead(Previews: true));
-        builder.Services.AddSingleton(notifier);
-        builder.Services.AddSingleton<IClientNotifier>(notifier);
-        builder.Services.AddSingleton<IDownloadPaths>(new DownloadPaths());
-        builder.Services.AddSingleton(sp => new AppScheme(WebRoot.Resolve(), sp.GetRequiredService<ImageSource>(), sp.GetRequiredService<ExportDownloads>(), AppOrigin.ForThisPlatform()));
+        builder.Services.AddYassDesktop(config, startup, new BridgeNotifier(), WebRoot.Resolve(), AppOrigin.ForThisPlatform(), DesktopDefaults.SessionsDirectory());
 
         using IHost host = builder.Build();
         ILogger logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Yass.Desktop");
