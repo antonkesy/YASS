@@ -146,7 +146,8 @@
 	let cropping = $state<number | null>(null);
 	let merging = $state(false);
 	let confirmDiscard = $state(false);
-	let merged = $state(false);
+	/** Pages from another scan are on their way in; the button that adds them waits. */
+	let mergeBusy = $state(false);
 
 	$effect(() => {
 		if ($connection === 'connected' && !$sessions.has(id)) {
@@ -590,7 +591,7 @@
 
 	async function merge(sourceId: string) {
 		merging = false;
-		merged = true;
+		mergeBusy = true;
 		error = null;
 		try {
 			const before = session?.Pages.length ?? 0;
@@ -599,7 +600,7 @@
 		} catch (e) {
 			error = hubError(e);
 		} finally {
-			merged = false;
+			mergeBusy = false;
 		}
 	}
 
@@ -1072,7 +1073,7 @@
 						type="button"
 						class={ghost}
 						onclick={() => (merging = true)}
-						disabled={!editable || mergeable.length === 0}
+						disabled={!editable || mergeable.length === 0 || mergeBusy}
 						title={!editable
 							? busyReason
 							: mergeable.length === 0
@@ -1111,7 +1112,6 @@
 	<MergeModal
 		sessions={mergeable}
 		template={$exportPrefs.nameTemplate}
-		busy={merged}
 		onpick={merge}
 		oncancel={() => (merging = false)}
 	/>
