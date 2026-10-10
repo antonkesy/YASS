@@ -121,12 +121,9 @@
 	--shadow-card:
 		0 0 0 0.5px light-dark(transparent, rgb(255 255 255 / 0.13)), 0 1px 2px rgb(0 0 0 / 0.04),
 		0 6px 24px rgb(0 0 0 / 0.04);
-	--shadow-stage:
-		0 0 0 0.5px light-dark(transparent, rgb(255 255 255 / 0.13)), 0 1px 2px rgb(0 0 0 / 0.04),
-		0 6px 24px rgb(0 0 0 / 0.04);
-	--shadow-panel:
-		0 0 0 0.5px light-dark(transparent, rgb(255 255 255 / 0.13)), 0 1px 2px rgb(0 0 0 / 0.04),
-		0 6px 24px rgb(0 0 0 / 0.04);
+	/* The stage and the review sidebar sit like cards, and should go on doing so together. */
+	--shadow-stage: var(--shadow-card);
+	--shadow-panel: var(--shadow-card);
 	--shadow-toolbar:
 		0 0 0 0.5px light-dark(rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.15)), 0 8px 30px rgb(0 0 0 / 0.1);
 	--shadow-chip:
@@ -147,9 +144,10 @@
 	--shadow-toast: 0 12px 32px rgb(0 0 0 / 0.3);
 	--shadow-scan: 0 1px 2px rgb(0 0 0 / 0.08);
 	--shadow-scan-hover: 0 4px 14px rgb(0 122 255 / 0.25);
-	--shadow-export: 0 1px 2px rgb(0 0 0 / 0.08);
+	/* The three blue buttons rest alike: Scan, Save as… and Done. */
+	--shadow-export: var(--shadow-scan);
 	--shadow-export-hover: 0 4px 12px rgb(0 122 255 / 0.22);
-	--shadow-done: 0 1px 2px rgb(0 0 0 / 0.08);
+	--shadow-done: var(--shadow-scan);
 	--shadow-swatch: 0 4px 12px rgb(0 122 255 / 0.35);
 	--shadow-hero: 0 18px 40px rgb(0 122 255 / 0.18), 0 0 0 1px rgb(0 122 255 / 0.08);
 	--shadow-hero-mid: 0 2px 6px rgb(0 122 255 / 0.08);
