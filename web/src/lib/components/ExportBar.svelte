@@ -2,7 +2,7 @@
 	import { t } from '$lib/i18n/index.svelte';
 	import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
-	import { activePageCount } from '$lib/format';
+	import { canSave } from '$lib/review/download';
 	import { Icon } from '$lib/icons';
 	import { isDesktop } from '$lib/hub/bridge';
 	import ProgressBar from './ProgressBar.svelte';
@@ -37,15 +37,9 @@
 		stopping?: boolean;
 	} = $props();
 
-	const active = $derived(activePageCount(session));
 	const scanning = $derived(session.State === SessionState.Scanning);
 	const exporting = $derived(session.State === SessionState.Exporting || busy);
-	const canExport = $derived(
-		!scanning &&
-			!exporting &&
-			active > 0 &&
-			(session.State === SessionState.Review || session.State === SessionState.Done)
-	);
+	const canExport = $derived(canSave(session, busy));
 
 	const primary =
 		'flex h-[50px] items-center justify-center gap-2 rounded-[14px] bg-accent hover:bg-accent-hover text-[15px] font-extrabold text-white shadow-export transition-[transform,box-shadow,background-color] duration-200 hover:shadow-export-hover active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40';
