@@ -106,16 +106,6 @@ export function exportBaseName(session: SessionDto, template: string, now = new 
 	return safeFileName(`scan-${createdAt.toISOString().slice(0, 16).replace(/[T:]/g, '-')}`);
 }
 
-/** The whole suggested name, extension and all, for a save dialog's name box. */
-export function exportFileName(
-	session: SessionDto,
-	template: string,
-	format: ExportFormat,
-	now = new Date()
-): string {
-	return exportBaseName(session, template, now) + fileExtensions[format];
-}
-
 /** Names for the documents of one scan, numbered only once there is more than one. */
 export function numberedFileName(base: string, index: number, extension: string): string {
 	return index === 0 ? `${base}${extension}` : `${base}-${index + 1}${extension}`;

@@ -102,11 +102,6 @@ export function pageSizeLabel(size: PageSize | undefined): string {
 	}
 }
 
-/** True when the scan will pull sheets through the feeder rather than use the glass. */
-export function usesFeeder(source: ScanSource | undefined): boolean {
-	return source === ScanSource.Feeder || source === ScanSource.Duplex;
-}
-
 /**
  * What a past scan shows as its status. Derived from the session's history rather
  * than stored: no events means it is still a draft, and a busy state outranks the

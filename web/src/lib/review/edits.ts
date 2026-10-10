@@ -237,18 +237,3 @@ export const pageFilters = [
 		swatch: '#f5f5f5 50%, #111 50%'
 	}
 ] as const;
-
-export const pageFilterLabels: Record<PageFilter, string> = {
-	get [PageFilter.Original]() {
-		return t('review.original');
-	},
-	get [PageFilter.Enhance]() {
-		return t('review.enhance');
-	},
-	get [PageFilter.Grayscale]() {
-		return t('review.grayscale');
-	},
-	get [PageFilter.Bw]() {
-		return t('review.blackWhite');
-	}
-};

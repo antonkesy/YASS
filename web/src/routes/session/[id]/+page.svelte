@@ -176,7 +176,7 @@
 		selection = clear();
 	}
 
-	/** Crop and rescan act on the one selected page, or the one on screen. */
+	/** Deletes what the toolbar acts on, with Undo on the toast that says so. */
 	function deletePages() {
 		// A snapshot, because undo has to put back the pages this click took and not
 		// whatever happens to be on the stage by the time the toast is pressed.
@@ -238,6 +238,7 @@
 		e.preventDefault();
 	}
 
+	/** Crop, rescan and the full-screen preview act on the one selected page, or the one on screen. */
 	function targetPage() {
 		if (selection.size === 1) {
 			const only = [...selection][0];

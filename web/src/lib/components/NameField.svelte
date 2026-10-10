@@ -21,7 +21,6 @@
 	// ever capture what it was on the first render.
 	let draft = $state('');
 	let editing = $state(false);
-	let field = $state<HTMLInputElement | null>(null);
 
 	// While the field is not being edited it mirrors the server, so a rename from
 	// another tab shows up here too.
@@ -45,7 +44,6 @@
 	<label class="flex min-w-0 flex-1 items-center">
 		<span class="sr-only">{t('review.documentName')}</span>
 		<input
-			bind:this={field}
 			class="min-w-0 flex-1 bg-transparent text-base font-extrabold tracking-[-0.01em] outline-none"
 			type="text"
 			{placeholder}

@@ -6,14 +6,11 @@
 	import Popover from './Popover.svelte';
 
 	let {
-		placement = 'above',
 		cleanup = PageCleanup.None,
 		onfilter,
 		oncleanup,
 		onclose
 	}: {
-		/** Above the review toolbar at the foot of the page; below the preview's header bar. */
-		placement?: 'above' | 'below';
 		/** The clean-ups every targeted page has; those show ticked. */
 		cleanup?: PageCleanup;
 		onfilter: (filter: PageFilter) => void;
@@ -26,10 +23,7 @@
 <Popover
 	label={t('review.closeFilterMenu')}
 	{onclose}
-	class="absolute left-1/2 z-31 min-w-[200px] -translate-x-1/2 animate-fade-in rounded-[16px] bg-surface p-1.5 text-ink shadow-menu {placement ===
-	'above'
-		? 'bottom-[calc(100%+8px)]'
-		: 'top-[calc(100%+8px)]'}"
+	class="absolute bottom-[calc(100%+8px)] left-1/2 z-31 min-w-[200px] -translate-x-1/2 animate-fade-in rounded-[16px] bg-surface p-1.5 text-ink shadow-menu"
 	testid="filter-menu"
 >
 	{#each pageFilters as option (option.value)}
