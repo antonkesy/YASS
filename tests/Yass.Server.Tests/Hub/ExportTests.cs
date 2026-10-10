@@ -1,5 +1,7 @@
 using System.Net;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
+using Yass.App.Api;
 using Yass.Core.Domain;
 using Yass.Core.Hub;
 using Yass.Fake;
@@ -31,6 +33,27 @@ public sealed class ExportTests
         Assert.DoesNotContain("page-002.png", pdf, StringComparison.Ordinal);
         Assert.Contains(hub.Progress, p => p.SessionId == done.Id && p.Percent == 100);
         Assert.Equal(SessionState.Done, (await hub.GetSession(done.Id)).State);
+    }
+
+    [Fact]
+    public async Task A_cancelled_export_returns_the_session_to_review_and_leaves_no_file()
+    {
+        await using var factory = new YassFactory(FakeScenario.Pages(2));
+        await using HubClient hub = await HubClient.ConnectAsync(factory);
+        SessionDto done = await hub.ScanToEnd();
+        YassApi api = factory.Services.GetRequiredService<YassApi>();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => api.Export(done.Id, new ExportRequest(), new CancellationToken(canceled: true)));
+
+        SessionDto after = await hub.GetSession(done.Id);
+        Assert.Equal(SessionState.Review, after.State);
+        Assert.Null(after.Error);
+        string exports = Path.Combine(factory.Root, "sessions", done.Id, "export");
+        Assert.Empty(Directory.Exists(exports) ? Directory.EnumerateFiles(exports) : []);
+
+        // And it can be exported again.
+        Assert.Equal(2, (await hub.Export(done.Id)).PageCount);
     }
 
     [Fact]

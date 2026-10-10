@@ -15,13 +15,6 @@ public sealed class DownloadTokens
         return token;
     }
 
-    public bool TryPeekPath(string token, out string path)
-    {
-        bool found = _tokens.TryGetValue(token, out (string SessionId, string Path) entry);
-        path = found ? entry.Path : "";
-        return found;
-    }
-
     /// <summary>Redeems the token; a second call returns <c>false</c>.</summary>
     public bool TryRedeem(string sessionId, string token, out string path)
     {
