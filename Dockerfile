@@ -19,7 +19,6 @@ ENV TYPST_FONT_PATHS=/usr/share/fonts
 COPY global.json Directory.Build.props Directory.Packages.props Yass.sln .editorconfig ./
 COPY scripts/render-fixtures.sh scripts/
 COPY src/ src/
-COPY tests/ tests/
 RUN --mount=type=cache,target=/root/.nuget/packages \
     dotnet restore src/Yass.Server/Yass.Server.csproj -r linux-musl-${TARGETARCH}
 RUN --mount=type=cache,target=/root/.nuget/packages \

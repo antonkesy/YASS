@@ -5,8 +5,6 @@
   <PropertyGroup>
     <!-- WinExe: no console window on Windows. Elsewhere it is an ordinary executable. -->
     <OutputType>WinExe</OutputType>
-    <AssemblyName>Yass.Desktop</AssemblyName>
-    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <!-- Precompiled when published for a runtime, so the window comes up without waiting on the JIT. -->
     <PublishReadyToRun>true</PublishReadyToRun>
     <!-- The .exe's own icon on Windows; elsewhere the package carries it (scripts/package-desktop.sh). -->
