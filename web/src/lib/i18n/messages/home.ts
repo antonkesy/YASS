@@ -340,6 +340,13 @@ export const home = {
 		fr: 'Supprimer {title}',
 		es: 'Eliminar {title}'
 	},
+	confirmDelete: { en: 'Delete?', de: 'Löschen?', fr: 'Supprimer ?', es: '¿Eliminar?' },
+	confirmDeleteNamed: {
+		en: 'Really delete {title}?',
+		de: '{title} wirklich löschen?',
+		fr: 'Vraiment supprimer {title} ?',
+		es: '¿Eliminar {title} de verdad?'
+	},
 
 	// Sorting
 	sortBy: { en: 'Sort by', de: 'Sortieren nach', fr: 'Trier par', es: 'Ordenar por' },
