@@ -21,8 +21,11 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
     private readonly ILogger<Naps2ScannerBackend> _logger;
     private readonly TimeProvider _time;
     private readonly SemaphoreSlim _discovery = new(1, 1);
-    private (DateTimeOffset At, ScanDevice? Device, IReadOnlyList<ScanDevice> Devices, string? Error) _cache = (DateTimeOffset.MinValue, null, [], null);
+    // One immutable snapshot, swapped whole: readers outside the discovery lock never see the
+    // device of one look with the device list of another.
+    private DeviceCache _cache = new(DateTimeOffset.MinValue, null, [], null);
     private int _scanning;
+    private string? _scanningOn;
 
     public Naps2ScannerBackend(Func<ScannerConfig> config, ILogger<Naps2ScannerBackend> logger, TimeProvider? time = null)
     {
@@ -37,10 +40,10 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
     {
         if (Volatile.Read(ref _scanning) == 1)
         {
-            return new ScannerStatus(ScannerState.Busy, _cache.Device?.Name, null);
+            return new ScannerStatus(ScannerState.Busy, Volatile.Read(ref _scanningOn), null);
         }
 
-        (ScanDevice? device, string? error) = await FindDeviceAsync(force: false, cancellationToken).ConfigureAwait(false);
+        (_, ScanDevice? device, _, string? error) = await FindDeviceAsync(force: false, cancellationToken).ConfigureAwait(false);
         if (error is not null)
         {
             return new ScannerStatus(ScannerState.Error, null, error);
@@ -61,19 +64,26 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
 
         try
         {
-            (ScanDevice? device, string? error) = await FindDeviceAsync(force: true, cancellationToken).ConfigureAwait(false);
+            (_, ScanDevice? device, IReadOnlyList<ScanDevice> devices, string? error) = await FindDeviceAsync(force: true, cancellationToken).ConfigureAwait(false);
+            if (error is not null)
+            {
+                throw new InvalidOperationException(error);
+            }
+
             if (options.Device.Length > 0)
             {
                 // The browser asked for one by id. Not falling back to the configured device on a
                 // miss is deliberate: scanning the wrong machine is worse than not scanning.
-                device = _cache.Devices.FirstOrDefault(d => string.Equals(d.ID, options.Device, StringComparison.Ordinal))
+                device = devices.FirstOrDefault(d => string.Equals(d.ID, options.Device, StringComparison.Ordinal))
                     ?? throw new InvalidOperationException($"No scanner with id '{options.Device}'.");
             }
 
             if (device is null)
             {
-                throw new InvalidOperationException(error ?? NoDeviceMessage());
+                throw new InvalidOperationException(NoDeviceMessage());
             }
+
+            Volatile.Write(ref _scanningOn, device.Name);
 
             NAPS2.Scan.ScanOptions naps2 = OptionMapper.ToNaps2(options, _config().Driver, device);
             _logger.LogInformation("Scanning on {Device} ({Driver}) at {Dpi} dpi, {Source}, {Depth}", device.Name, naps2.Driver, naps2.Dpi, naps2.PaperSource, naps2.BitDepth);
@@ -103,14 +113,21 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
                         break;
                     }
 
-                    using ProcessedImage image = pages.Current;
-                    byte[] png = ToPng(image);
+                    // Released before the page is handed on: the decoded scan is tens of MB, and the
+                    // caller writes, hashes and announces the page before asking for the next.
+                    byte[] png;
+                    using (ProcessedImage image = pages.Current)
+                    {
+                        png = ToPng(image);
+                    }
+
                     yield return new ScannedPage(++number, png, IsBlank: false);
                 }
             }
         }
         finally
         {
+            Volatile.Write(ref _scanningOn, null);
             Volatile.Write(ref _scanning, 0);
         }
     }
@@ -157,27 +174,29 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
 
     public async Task<IReadOnlyList<ScannerDevice>> ListDevicesAsync(CancellationToken cancellationToken)
     {
-        await FindDeviceAsync(force: false, cancellationToken).ConfigureAwait(false);
-        return [.. _cache.Devices.Select(d => new ScannerDevice(d.ID, d.Name, d.Driver.ToString().ToLowerInvariant(), string.IsNullOrWhiteSpace(d.ConnectionUri) ? null : d.ConnectionUri))];
+        DeviceCache found = await FindDeviceAsync(force: false, cancellationToken).ConfigureAwait(false);
+        return [.. found.Devices.Select(d => new ScannerDevice(d.ID, d.Name, d.Driver.ToString().ToLowerInvariant(), string.IsNullOrWhiteSpace(d.ConnectionUri) ? null : d.ConnectionUri))];
     }
 
-    private async Task<(ScanDevice? Device, string? Error)> FindDeviceAsync(bool force, CancellationToken cancellationToken)
+    private async Task<DeviceCache> FindDeviceAsync(bool force, CancellationToken cancellationToken)
     {
         ScannerConfig config = _config();
         // Enumerating SANE backends can take tens of seconds; never re-probe more often than every 30 s
         // on the status poll. Starting a scan always forces a fresh look.
         TimeSpan ttl = TimeSpan.FromSeconds(Math.Max(config.PollIntervalSeconds, 30));
-        if (!force && _time.GetUtcNow() - _cache.At < ttl)
+        DeviceCache cached = _cache;
+        if (!force && _time.GetUtcNow() - cached.At < ttl)
         {
-            return (_cache.Device, _cache.Error);
+            return cached;
         }
 
         await _discovery.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (!force && _time.GetUtcNow() - _cache.At < ttl)
+            cached = _cache;
+            if (!force && _time.GetUtcNow() - cached.At < ttl)
             {
-                return (_cache.Device, _cache.Error);
+                return cached;
             }
 
             try
@@ -199,7 +218,7 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
                     _logger.LogWarning("No device matches '{Configured}'; found: {Devices}", config.Device, string.Join(", ", devices.Select(d => $"{d.Name} [{d.ID}]")));
                 }
 
-                _cache = (_time.GetUtcNow(), device, devices, null);
+                _cache = new DeviceCache(_time.GetUtcNow(), device, devices, null);
             }
             catch (OperationCanceledException)
             {
@@ -210,16 +229,19 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
 #pragma warning restore CA1031
             {
                 _logger.LogWarning(ex, "Scanner discovery failed");
-                _cache = (_time.GetUtcNow(), null, [], ex.Message);
+                _cache = new DeviceCache(_time.GetUtcNow(), null, [], ex.Message);
             }
 
-            return (_cache.Device, _cache.Error);
+            return _cache;
         }
         finally
         {
             _discovery.Release();
         }
     }
+
+    /// <summary>What one look for scanners found: the configured device among them, or why there was none.</summary>
+    private sealed record DeviceCache(DateTimeOffset At, ScanDevice? Device, IReadOnlyList<ScanDevice> Devices, string? Error);
 
     /// <summary>Why no scanner was found, as a scan's error: a sentence that stands on its own.</summary>
     private string NoDeviceMessage() => "No scanner found. " + NoDeviceDetail();
