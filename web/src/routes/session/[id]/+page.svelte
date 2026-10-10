@@ -81,7 +81,12 @@
 		| { kind: 'crop' | 'straighten'; at: number }
 		| null
 	>(null);
-	let previewIndex = $state<number | null>(null);
+	/** The page the full-screen preview was opened on or moved to, by position. */
+	let previewAt = $state<number | null>(null);
+	/** That page, while it is still there to show: the preview closes once it is gone. */
+	const previewIndex = $derived(
+		previewAt !== null && session && previewAt >= session.Pages.length ? null : previewAt
+	);
 
 	$effect(() => {
 		if ($connection === 'connected' && !$sessions.has(id)) {
@@ -220,7 +225,7 @@
 			case 'Enter':
 				// Enter on a focused button or link presses that, as it always has.
 				if (last < 0 || (e.target as HTMLElement).closest('button, a, [role]')) return;
-				previewIndex = targetPage();
+				previewAt = targetPage();
 				break;
 			case 'a':
 			case 'A':
@@ -286,11 +291,6 @@
 		const count = session?.Pages.length ?? 0;
 		current = Math.min(count - 1, Math.max(0, current + delta));
 	}
-
-	$effect(() => {
-		if (previewIndex !== null && session && previewIndex >= session.Pages.length)
-			previewIndex = null;
-	});
 </script>
 
 <svelte:window onkeydown={keydown} />
@@ -315,7 +315,7 @@
 			cleanup={targetCleanup}
 			oncleanup={(cleanup, on) =>
 				send(on ? addCleanupEdit(cleanup, targets) : removeCleanupEdit(cleanup, targets))}
-			onexpand={() => (previewIndex = targetPage())}
+			onexpand={() => (previewAt = targetPage())}
 			oncrop={() => (dialog = { kind: 'crop', at: targetPage() })}
 			onstraighten={() => (dialog = { kind: 'straighten', at: targetPage() })}
 			onautocrop={() => review.autoCrop(targets)}
@@ -373,7 +373,7 @@
 					{scanning}
 					onshow={show}
 					ontoggle={select}
-					onopen={(i) => (previewIndex = i)}
+					onopen={(i) => (previewAt = i)}
 					onscanmore={editable ? () => review.scanMore() : undefined}
 					reorderable={editable}
 					onreorder={reorder}
@@ -488,7 +488,7 @@
 		onzoom={(overviewTile) => reviewPrefs.set({ ...$reviewPrefs, overviewTile })}
 		onshow={show}
 		ontoggle={select}
-		onopen={(i) => (previewIndex = i)}
+		onopen={(i) => (previewAt = i)}
 		onreorder={reorder}
 		onselectall={selectAll}
 		onclose={closeOverview}
@@ -502,8 +502,8 @@
 		sessionId={id}
 		pages={session.Pages}
 		index={previewIndex}
-		onnavigate={(i) => (previewIndex = i)}
-		onclose={() => (previewIndex = null)}
+		onnavigate={(i) => (previewAt = i)}
+		onclose={() => (previewAt = null)}
 		onrotate={(i, deg) => send(rotateEdit(deg, new Set([i])))}
 		editable={editable && !scanning}
 		paused={dialog !== null}

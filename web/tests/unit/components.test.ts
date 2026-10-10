@@ -16,6 +16,7 @@ import CropModal from '$lib/components/CropModal.svelte';
 import PresetPills from '$lib/components/PresetPills.svelte';
 import SessionRow from '$lib/components/SessionRow.svelte';
 import SelectBar from '$lib/components/SelectBar.svelte';
+import PastScansPanel from '$lib/components/PastScansPanel.svelte';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import {
 	ColorMode,
@@ -24,6 +25,7 @@ import {
 	PageSize,
 	Rotation,
 	ScanSource,
+	SessionEventKind,
 	SessionState
 } from '$lib/hub/generated/Yass.Core.Domain';
 import type { ScanOptionsDto, SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
@@ -977,6 +979,34 @@ describe('Modal', () => {
 		unmount();
 		expect(opener).toHaveFocus();
 		opener.remove();
+	});
+});
+
+describe('PastScansPanel', () => {
+	const saved = build('saved', {
+		Events: [{ Kind: SessionEventKind.Saved, At: '2026-09-24T10:05:00Z' }]
+	});
+	const draft = build('draft');
+
+	it('falls back to every scan once the picked status has none left', async () => {
+		const { rerender } = render(PastScansPanel, { sessions: [saved, draft] });
+		await fireEvent.click(screen.getByRole('button', { name: /^Saved/ }));
+		expect(screen.getAllByTestId('session-tile')).toHaveLength(1);
+
+		await rerender({ sessions: [draft] });
+		expect(screen.getAllByTestId('session-tile')).toHaveLength(1);
+		expect(screen.getByRole('button', { name: /^All/ })).toHaveAttribute('aria-pressed', 'true');
+	});
+
+	it('counts only the picked scans still on screen', async () => {
+		const { rerender } = render(PastScansPanel, { sessions: [saved, draft] });
+		await fireEvent.click(screen.getByTestId('select-button'));
+		for (const tile of screen.getAllByTestId('session-tile')) await fireEvent.click(tile);
+		expect(screen.getByTestId('select-bar')).toHaveTextContent('2 selected');
+
+		// Deleted from another browser while picked here.
+		await rerender({ sessions: [draft] });
+		expect(screen.getByTestId('select-bar')).toHaveTextContent('1 selected');
 	});
 });
 

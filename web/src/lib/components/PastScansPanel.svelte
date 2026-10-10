@@ -33,6 +33,7 @@
 	let view = $state<'grid' | 'list'>('grid');
 	let query = $state('');
 	let order = $state<SortOrder>('newest');
+	/** The status chip last picked, which `activeStatus` may be overriding. */
 	let status = $state<StatusFilter>('all');
 	let confirmClear = $state(false);
 	let selecting = $state(false);
@@ -43,22 +44,15 @@
 	const template = $derived($exportPrefs.nameTemplate);
 
 	const counts = $derived(statusCounts(sessions));
-	const shown = $derived(browse(sessions, { query, status, order, template }));
-	const bytes = $derived(sessions.reduce((n, s) => n + s.SizeBytes, 0));
-
 	// A filter that no longer matches anything would otherwise strand the panel empty
 	// with no chip to click back to.
-	$effect(() => {
-		if (status !== 'all' && (counts[status] ?? 0) === 0) status = 'all';
-	});
+	const activeStatus = $derived(status !== 'all' && (counts[status] ?? 0) === 0 ? 'all' : status);
+	const shown = $derived(browse(sessions, { query, status: activeStatus, order, template }));
+	const bytes = $derived(sessions.reduce((n, s) => n + s.SizeBytes, 0));
 
 	// Selections follow what is on screen: a scan filtered out of view is no longer
 	// something the bulk buttons should silently act on.
-	$effect(() => {
-		const visible = new Set(shown.map((s) => s.Id));
-		const kept = retain(picked, visible);
-		if (kept.size !== picked.size) picked = kept;
-	});
+	const pickedVisible = $derived(retain(picked, new Set(shown.map((s) => s.Id))));
 
 	function endSelecting() {
 		selecting = false;
@@ -108,14 +102,14 @@
 
 	{#if selecting}
 		<SelectBar
-			count={picked.size}
+			count={pickedVisible.size}
 			total={shown.length}
 			{busy}
 			onselectall={() => (picked = new Set(shown.map((s) => s.Id)))}
 			onselectnone={() => (picked = clear())}
-			ondownload={() => ondownload?.([...picked])}
+			ondownload={() => ondownload?.([...pickedVisible])}
 			ondelete={() => {
-				ondelete?.([...picked]);
+				ondelete?.([...pickedVisible]);
 				endSelecting();
 			}}
 			ondone={endSelecting}
@@ -152,7 +146,7 @@
 
 	{#if !selecting && sessions.length > 0}
 		<StatusFilterChips
-			value={status}
+			value={activeStatus}
 			{counts}
 			total={sessions.length}
 			onchange={(s) => (status = s)}
@@ -187,8 +181,8 @@
 							{template}
 							landed={session.Id === landed}
 							selectable={selecting}
-							selected={picked.has(session.Id)}
-							ontoggle={(id) => (picked = toggle(picked, id))}
+							selected={pickedVisible.has(session.Id)}
+							ontoggle={(id) => (picked = toggle(pickedVisible, id))}
 						/>
 					</div>
 				{/each}
@@ -202,8 +196,8 @@
 							{template}
 							landed={session.Id === landed}
 							selectable={selecting}
-							selected={picked.has(session.Id)}
-							ontoggle={(id) => (picked = toggle(picked, id))}
+							selected={pickedVisible.has(session.Id)}
+							ontoggle={(id) => (picked = toggle(pickedVisible, id))}
 							ondownload={ondownload ? (id) => ondownload([id]) : undefined}
 							ondelete={ondelete ? (id) => ondelete([id]) : undefined}
 						/>
