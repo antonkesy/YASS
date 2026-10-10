@@ -439,7 +439,7 @@
 		the lift lives on the inner one and eases, so picking up and putting down are seen.
 	-->
 	<div
-		use:portal
+		{@attach portal}
 		class="pointer-events-none fixed top-0 left-0 z-[70] {settle
 			? 'transition-transform duration-200 ease-spring'
 			: ''}"
