@@ -86,6 +86,18 @@ public sealed class DesktopApiTests : IAsyncLifetime
         Assert.Throws<BridgeException>(() => _api.SaveExport(path, Out("x.pdf"), overwrite: true));
 
     [Fact]
+    public async Task A_save_that_fails_can_be_tried_again_elsewhere()
+    {
+        string path = await ExportAsync();
+        Directory.CreateDirectory(Path.GetDirectoryName(Out("blocker"))!);
+        await File.WriteAllTextAsync(Out("blocker"), "a file where a folder is wanted");
+
+        Assert.Throws<BridgeException>(() => _api.SaveExport(path, Path.Combine(Out("blocker"), "scan.pdf"), overwrite: true));
+
+        Assert.Equal(Out("scan.pdf"), _api.SaveExport(path, Out("scan.pdf"), overwrite: true));
+    }
+
+    [Fact]
     public void Its_methods_are_callable_over_the_bridge()
     {
         var bridge = new BridgeDispatcher(_desktop.Api, _ => { }, NullLogger.Instance, [_api], CancellationToken.None);
