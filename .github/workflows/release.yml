@@ -1,14 +1,5 @@
 name: release
-
-# Two ways to a release:
-# - release-please keeps a release PR open on main, with the next version (from the
-#   Conventional Commits since the last tag) and its changelog. Merging that PR tags the
-#   commit vX.Y.Z and publishes the GitHub release.
-# - Pushing a tag v* by hand publishes a release for it straight away, with generated notes;
-#   one with a suffix (v0.1.0-alpha.1, v0.2.0-rc.1) is marked a pre-release. This is how an
-#   alpha or a release candidate goes out without touching release-please's version.
-# Either way the assets job then builds the desktop app at that tag and attaches it: an
-# AppImage, a Windows installer and a macOS .app, plus portable zips for Linux and Windows.
+# release-please tags vX.Y.Z when its PR merges; a hand-pushed v* tag releases immediately (suffix = pre-release).
 
 on:
   push:
@@ -74,13 +65,12 @@ jobs:
           'apk add --no-cache pandoc-cli typst poppler-utils font-dejavu python3 &&
           TYPST_FONT_PATHS=/usr/share/fonts scripts/publish-desktop.sh dist'
       - name: Native packages
-        # The container wrote dist/ as root. AppImage, Windows installer and macOS .app (ADR-016).
+        # The container wrote dist/ as root.
         run: |
           sudo chown -R "$(id -u):$(id -g)" dist
           YASS_VERSION="${TAG#v}" nix develop -c scripts/package-desktop.sh dist
       - name: Checksums
-        # The packages, plus the Linux and Windows folders zipped as portable builds; the macOS
-        # zip of the bare folder is left out, the .app is the way to run it there.
+        # The macOS zip of the bare folder is dropped: the .app is how it runs there.
         run: |
           cd dist
           rm -f yass-desktop-*-osx-arm64.zip

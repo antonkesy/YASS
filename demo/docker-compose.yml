@@ -4,38 +4,25 @@
 #   cd demo && YASS_PORT=9000 docker compose up --build  ->  http://localhost:9000
 #   cd demo && docker compose watch                    ->  rebuilds when the source changes
 #
-# Scan, reorder/rotate/delete pages, then "Save as…": the PDF is downloaded by
-# your browser, or "Save to server" (switch it on in Settings): it lands in
-# demo/output/. Sessions live in the container's /tmp and are gone when it
-# stops, so the demo leaves nothing else behind.
 name: yass-demo
 
 services:
   yass:
     build:
-      context: .. # the repo root; no prebuilt image is published
+      context: ..
       dockerfile: Dockerfile
     container_name: yass-demo
-    # --fake swaps in the scripted scanner: 5 pages, page 2 blank, 400 ms each. `devices`
-    # invents two more so the home screen has a scanner to choose between.
-    # Other keys: pages, blank (a;b;c), error, delay, nodevice, device.
+    # Fake keys: pages, blank (a;b;c), error, delay, nodevice, device, devices.
     command: ["--fake", "pages=5,blank=2,delay=400ms,device=YASS Demo ADF,devices=Epson DS-530 (USB);Canon LiDE 400 (flatbed)"]
     ports:
-      # localhost only; YASS has no authentication. YASS_PORT moves the host side
-      # when 8080 is taken — the container always listens on 8080, so only the
-      # number in front changes:  YASS_PORT=9000 docker compose up --build
+      # localhost only: YASS has no authentication. YASS_PORT changes only the host side.
       - "127.0.0.1:${YASS_PORT:-8080}:8080"
-    # Runs as you rather than the image's own user, so it can write into demo/output/ and
-    # what it saves there is yours to open and delete. 1000 is the first user on most Linux
-    # machines; if `id -u` says otherwise:  YASS_UID=$(id -u) YASS_GID=$(id -g) docker compose up
+    # Run as you so demo/output/ files are yours; else: YASS_UID=$(id -u) YASS_GID=$(id -g) docker compose up
     user: "${YASS_UID:-1000}:${YASS_GID:-1000}"
     volumes:
       - ./yass.yaml:/etc/yass/yass.yaml:ro
-      # output.directory in yass.yaml: where "Save to server" puts documents.
       - ./output:/data/output
-    # `docker compose watch`: the image is a trimmed, self-contained publish, so there is
-    # nothing to sync into it; a source change means a rebuild. yass.yaml is not listed
-    # because it is bind-mounted and the server reloads it on its own.
+    # No sync: the image is a trimmed publish, so a source change means a rebuild; yass.yaml hot-reloads.
     develop:
       watch:
         - action: rebuild

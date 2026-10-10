@@ -1,5 +1,4 @@
-# Config for the demo container only. See ../yass.example.yaml for every key.
-# Paths are container paths.
+# Demo container config (container paths). See ../yass.example.yaml for every key.
 
 server:
   listen: "0.0.0.0:8080" # inside the container; compose publishes it on 127.0.0.1
@@ -21,8 +20,7 @@ scanner:
     auto_deskew: false
 
 output:
-  # "Save to server" writes here; compose mounts it from demo/output/ on the host, so a
-  # saved document shows up there. Each browser switches the button on in Settings.
+  # Mounted from demo/output/ on the host.
   directory: /data/output
   pdf:
     compression: jpeg

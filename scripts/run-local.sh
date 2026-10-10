@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Build the frontend once and run the server from source against ./yass.yaml (or $1).
 # Usage: scripts/run-local.sh [config.yaml] [-- extra server args, e.g. --fake]
 set -euo pipefail
 cd "$(dirname "$0")/.."

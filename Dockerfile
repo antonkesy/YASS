@@ -1,5 +1,4 @@
 # syntax=docker/dockerfile:1.7
-# Multi-stage build: SvelteKit frontend -> trimmed self-contained .NET server -> minimal Alpine runtime with SANE.
 
 FROM --platform=$BUILDPLATFORM node:24-alpine AS web
 WORKDIR /src/web
@@ -12,8 +11,7 @@ RUN pnpm build
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS server
 ARG TARGETARCH
 WORKDIR /src
-# Yass.Fake renders the pages its scanner feeds from Markdown during the build, so the toolchain
-# for that has to be here. Build stage only: none of it reaches the runtime image below.
+# Yass.Fake renders its pages from Markdown at build time; this toolchain stays in the build stage.
 RUN apk add --no-cache pandoc-cli typst poppler-utils font-dejavu
 ENV TYPST_FONT_PATHS=/usr/share/fonts
 COPY global.json Directory.Build.props Directory.Packages.props Yass.sln .editorconfig ./

@@ -1,9 +1,5 @@
 #!/bin/sh
-# Renders the desktop app's icons from the 512 px logo: assets/logo/yass.ico (Windows: the .exe
-# and the installer) and assets/logo/yass.icns (the macOS .app). Run again when the logo
-# changes; the results are committed beside it, like the PNGs.
-#
-# Needs ImageMagick and libicns (png2icns), both in the dev shell.
+# Renders assets/logo/yass.ico and yass.icns from the 512 px logo (outputs are committed).
 set -eu
 cd "$(dirname "$0")/../assets/logo"
 work=$(mktemp -d)
