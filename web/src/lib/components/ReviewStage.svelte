@@ -128,10 +128,7 @@
 					aria-label={t('review.loadingPage', { n: shown.Index + 1 })}
 					data-testid="stage-loading"
 				>
-					<span
-						class="h-9 w-9 animate-spin rounded-full border-[3px] border-accent-100 border-t-accent"
-						aria-hidden="true"
-					></span>
+					<span class="h-9 w-9 spinner" aria-hidden="true"></span>
 				</span>
 			{/if}
 		</div>
@@ -156,11 +153,7 @@
 	>
 		{#if scanning}
 			<!-- The same spinner a thumbnail shows while its image is on the way. -->
-			<span
-				class="h-9 w-9 animate-spin rounded-full border-[3px] border-accent-100 border-t-accent"
-				aria-hidden="true"
-				data-testid="stage-spinner"
-			></span>
+			<span class="h-9 w-9 spinner" aria-hidden="true" data-testid="stage-spinner"></span>
 			{t('review.waitingFirstPage')}
 		{:else}
 			{t('review.noPages')}

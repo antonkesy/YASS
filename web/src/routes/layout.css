@@ -476,6 +476,14 @@
 }
 
 /*
+ * The spinning ring that says an image is on its way: on a thumbnail, on the stage, and on the
+ * stage while a scan waits for its first page. The size is the caller's.
+ */
+@utility spinner {
+	@apply animate-spin rounded-full border-[3px] border-accent-100 border-t-accent;
+}
+
+/*
  * A text, number or select control on a settings surface: a quiet grey well that turns
  * white with the accent ring while it has focus, so it is clear where typing will land.
  */
