@@ -101,10 +101,16 @@
 	/** Whether the filmstrip is expanded to the full-screen all-pages overview. */
 	let overview = $state(false);
 
-	/** The pages the Adjust dialog sets, and the one it shows and starts from. */
-	/** The page the Straighten dialog is open on. */
-	let straightening = $state<number | null>(null);
-	let adjusting = $state<{ pages: ReadonlySet<number>; from: number } | null>(null);
+	/**
+	 * The one dialog open over the review screen, and what it is open on: for Adjust the pages
+	 * it sets and the one it shows and starts from, for Crop and Straighten the page's position.
+	 */
+	let dialog = $state<
+		| { kind: 'merge' }
+		| { kind: 'adjust'; pages: ReadonlySet<number>; from: number }
+		| { kind: 'crop' | 'straighten'; at: number }
+		| null
+	>(null);
 	let previewIndex = $state<number | null>(null);
 	/** The big preview slides in from whichever side the new page came from. */
 	let stage = $state<HTMLElement | null>(null);
@@ -131,9 +137,6 @@
 			);
 	});
 
-	/** Position of the page the crop dialog is open on, or null. */
-	let cropping = $state<number | null>(null);
-	let merging = $state(false);
 	let confirmDiscard = $state(false);
 
 	$effect(() => {
@@ -383,7 +386,7 @@
 
 	/** Pages from another scan are added to the end of this one, once picked. */
 	function merge(sourceId: string) {
-		merging = false;
+		dialog = null;
 		void review.merge(sourceId);
 	}
 
@@ -393,21 +396,21 @@
 	}
 
 	function applyAdjust(adjust: PageAdjust | undefined) {
-		if (!adjusting) return;
-		const pages = adjusting.pages;
-		adjusting = null;
+		if (dialog?.kind !== 'adjust') return;
+		const pages = dialog.pages;
+		dialog = null;
 		send(setAdjustEdit(adjust, pages));
 	}
 
 	function applySkew(degrees: number) {
-		const page = straightening !== null ? session?.Pages[straightening] : null;
-		straightening = null;
+		const page = dialog?.kind === 'straighten' ? session?.Pages[dialog.at] : null;
+		dialog = null;
 		if (page) send(setSkewEdit(degrees, new Set([page.Index])));
 	}
 
 	function applyCrop(crop: CropBox | undefined) {
-		const page = cropping !== null ? session?.Pages[cropping] : null;
-		cropping = null;
+		const page = dialog?.kind === 'crop' ? session?.Pages[dialog.at] : null;
+		dialog = null;
 		if (page) send(setCropEdit(crop, new Set([page.Index])));
 	}
 
@@ -474,11 +477,11 @@
 			oncleanup={(cleanup, on) =>
 				send(on ? addCleanupEdit(cleanup, targets) : removeCleanupEdit(cleanup, targets))}
 			onexpand={() => (previewIndex = targetPage())}
-			oncrop={() => (cropping = targetPage())}
-			onstraighten={() => (straightening = targetPage())}
+			oncrop={() => (dialog = { kind: 'crop', at: targetPage() })}
+			onstraighten={() => (dialog = { kind: 'straighten', at: targetPage() })}
 			onautocrop={() => review.autoCrop(targets)}
 			autocropping={review.autocropping}
-			onadjust={() => (adjusting = { pages: new Set(targets), from: targetPage() })}
+			onadjust={() => (dialog = { kind: 'adjust', pages: new Set(targets), from: targetPage() })}
 			onrescan={rescan}
 			{scanning}
 			onclear={() => (selection = clear())}
@@ -834,7 +837,7 @@
 					<button
 						type="button"
 						class={ghost}
-						onclick={() => (merging = true)}
+						onclick={() => (dialog = { kind: 'merge' })}
 						disabled={!editable || mergeable.length === 0 || review.mergeBusy}
 						title={!editable
 							? busyReason
@@ -870,46 +873,47 @@
 	{/if}
 </div>
 
-{#if merging}
+{#if dialog?.kind === 'merge'}
 	<MergeModal
 		sessions={mergeable}
 		template={$exportPrefs.nameTemplate}
 		onpick={merge}
-		oncancel={() => (merging = false)}
+		oncancel={() => (dialog = null)}
 	/>
 {/if}
 
-{#if adjusting && session?.Pages[adjusting.from]}
-	{@const from = session.Pages[adjusting.from]}
+{#if dialog?.kind === 'adjust' && session?.Pages[dialog.from]}
+	{@const from = session.Pages[dialog.from]}
 	<AdjustModal
 		src={imageUrl(id, from.Index, from.Hash, 'preview')}
 		alt={t('review.pageN', { n: from.Index + 1 })}
 		adjust={from.Adjust ?? null}
-		count={adjusting.pages.size}
+		count={dialog.pages.size}
 		onapply={applyAdjust}
-		oncancel={() => (adjusting = null)}
+		oncancel={() => (dialog = null)}
 	/>
 {/if}
 
-{#if straightening !== null && session?.Pages[straightening]}
-	{@const page = session.Pages[straightening]}
+{#if dialog?.kind === 'straighten' && session?.Pages[dialog.at]}
+	{@const page = session.Pages[dialog.at]}
 	<StraightenModal
 		src={imageUrl(id, page.Index, page.Hash, 'preview')}
 		alt={t('review.pageN', { n: page.Index + 1 })}
 		skew={page.Skew}
 		onapply={applySkew}
-		oncancel={() => (straightening = null)}
+		oncancel={() => (dialog = null)}
 	/>
 {/if}
 
-{#if cropping !== null && session?.Pages[cropping]}
+{#if dialog?.kind === 'crop' && session?.Pages[dialog.at]}
+	{@const page = session.Pages[dialog.at]}
 	<CropModal
-		src={imageUrl(id, session.Pages[cropping].Index, session.Pages[cropping].Hash, 'frame')}
-		rotation={session.Pages[cropping].Rotation}
-		alt={t('review.pageN', { n: session.Pages[cropping].Index + 1 })}
-		crop={session.Pages[cropping].Crop ?? null}
+		src={imageUrl(id, page.Index, page.Hash, 'frame')}
+		rotation={page.Rotation}
+		alt={t('review.pageN', { n: page.Index + 1 })}
+		crop={page.Crop ?? null}
 		onapply={applyCrop}
-		oncancel={() => (cropping = null)}
+		oncancel={() => (dialog = null)}
 	/>
 {/if}
 
@@ -944,10 +948,10 @@
 		onclose={() => (previewIndex = null)}
 		onrotate={(i, deg) => send(rotateEdit(deg, new Set([i])))}
 		editable={editable && !scanning}
-		paused={cropping !== null || straightening !== null || adjusting !== null}
-		onadjust={(i) => (adjusting = { pages: new Set([i]), from: i })}
-		oncrop={(i) => (cropping = i)}
-		onstraighten={(i) => (straightening = i)}
+		paused={dialog !== null}
+		onadjust={(i) => (dialog = { kind: 'adjust', pages: new Set([i]), from: i })}
+		oncrop={(i) => (dialog = { kind: 'crop', at: i })}
+		onstraighten={(i) => (dialog = { kind: 'straighten', at: i })}
 		onfilter={(i, filter) => send(setFilterEdit(filter, new Set([i])))}
 		oncleanup={(i, cleanup, on) =>
 			send(on ? addCleanupEdit(cleanup, new Set([i])) : removeCleanupEdit(cleanup, new Set([i])))}
