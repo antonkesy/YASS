@@ -95,6 +95,27 @@
 			: devices
 	);
 
+	let pills = $state<HTMLElement | null>(null);
+
+	/**
+	 * The scanners are one stop for Tab, like any set of radio buttons: the arrows move the
+	 * choice along the row and focus goes with it.
+	 */
+	function rove(e: KeyboardEvent) {
+		const step =
+			e.key === 'ArrowRight' || e.key === 'ArrowDown'
+				? 1
+				: e.key === 'ArrowLeft' || e.key === 'ArrowUp'
+					? -1
+					: 0;
+		if (step === 0 || listed.length === 0) return;
+		e.preventDefault();
+		const at = listed.findIndex((s) => s.Id === shown);
+		const next = listed[(at + step + listed.length) % listed.length];
+		settings.set({ ...$settings, Device: next.Id });
+		pills?.querySelector<HTMLElement>(`[data-device="${CSS.escape(next.Id)}"]`)?.focus();
+	}
+
 	/** Presets follow the scanner, so a scanner-specific one is out of sight on the others. */
 	const offered = $derived(presetsFor($presets, device || undefined));
 
@@ -198,6 +219,9 @@
 				class="flex flex-wrap justify-center gap-1.5 rounded-[24px] bg-ctl-track p-[4px]"
 				role="radiogroup"
 				aria-label={t('home.scanner')}
+				tabindex="-1"
+				bind:this={pills}
+				onkeydown={rove}
 				data-testid="device-pills"
 			>
 				{#each listed as scanner (scanner.Id)}
@@ -220,6 +244,7 @@
 								? 'bg-seg text-ink shadow-seg'
 								: 'text-ink-2 hover:text-ink'}"
 							aria-checked={lit}
+							tabindex={lit ? 0 : -1}
 							onclick={() => {
 								if (lit) details = details === 'pinned' ? null : 'pinned';
 								else settings.set({ ...$settings, Device: scanner.Id });
