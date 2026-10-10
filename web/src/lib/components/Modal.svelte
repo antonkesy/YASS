@@ -1,9 +1,7 @@
 <script lang="ts" module>
-	/** The grey Cancel button every dialog ends with. */
 	export const dialogCancel =
 		'h-[46px] rounded-[14px] bg-ctl px-4 text-sm font-bold text-ink-3 transition-colors hover:bg-ctl-hover';
 
-	/** The blue button that does what the dialog is for. */
 	export const dialogPrimary =
 		'flex h-[46px] items-center gap-2 rounded-[14px] bg-accent px-5 text-[15px] font-extrabold text-white shadow-export transition-[background-color,box-shadow] hover:bg-accent-hover disabled:pointer-events-none disabled:opacity-40';
 
@@ -27,31 +25,22 @@
 		children,
 		actions
 	}: {
-		/** The heading, and what a screen reader announces the dialog as. */
 		title: string;
-		/** A line under the heading, when the title needs one. */
 		hint?: string;
-		/** What the backdrop does when tapped, for a screen reader. */
 		cancelLabel: string;
 		oncancel: () => void;
-		/** The card's width and gap: the only things that differ between dialogs. */
 		class: string;
-		/** Above the other dialogs, for one that can open over them. */
 		top?: boolean;
 		testid: string;
 		children: Snippet;
-		/** The row of buttons at the bottom, right-aligned. */
 		actions?: Snippet;
 	} = $props();
 
-	// Escape cancels, through the shared layer stack: only this closes, not what is under it.
 	useLayer(() => oncancel());
 
 	let card = $state<HTMLDivElement | null>(null);
 
-	// Focus moves into the dialog as it opens and goes back where it came from as it closes, so
-	// a keyboard user is not left on the page under it, or at the top of it afterwards. What
-	// had focus is read as the dialog is created, before anything in it can take focus.
+	// Read as the dialog is created, before anything in it can take focus.
 	const before = document.activeElement;
 	$effect(() => {
 		card?.focus();
@@ -60,7 +49,6 @@
 		if (before instanceof HTMLElement && before.isConnected) before.focus();
 	});
 
-	/** Tab and Shift+Tab go round the dialog's own controls, never out to the page under it. */
 	function trap(e: KeyboardEvent) {
 		if (e.key !== 'Tab' || !card) return;
 		const all = [...card.querySelectorAll<HTMLElement>(FOCUSABLE)];

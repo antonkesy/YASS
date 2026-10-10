@@ -23,22 +23,15 @@ import {
 	type SaveTarget
 } from './download';
 
-/**
- * What the review screen does to its scan, and the state those actions leave behind: the
- * error line, whether a save or a stop is under way, the name a rename is still carrying.
- * Created once per review screen, while it is mounting, since it keeps effects of its own.
- */
 export class Review {
 	error = $state<string | null>(null);
 	exporting = $state(false);
 	stopping = $state(false);
 	autocropping = $state(false);
-	/** Pages from another scan are on their way in; the button that adds them waits. */
 	mergeBusy = $state(false);
 	/**
-	 * The name this browser last asked for, held until the session comes back carrying it.
-	 * Hub calls run one at a time per connection, so a rename can sit behind a page read —
-	 * and Save as… must not name the file from a session that has not caught up yet.
+	 * Held until the session comes back carrying it: hub calls are serialized per connection, so
+	 * a rename can sit behind a page read, and Save as… must not use the stale name meanwhile.
 	 */
 	renamedTo = $state<string | null>(null);
 
@@ -51,15 +44,11 @@ export class Review {
 		this.#id = id;
 		this.#session = session;
 
-		// Held until the session comes back carrying it: the call returning is not the same as
-		// the session this page reads from having caught up, and dropping it in between would
-		// leave Save as… naming the file from a session that still thinks it is unnamed.
 		$effect(() => {
 			if (this.renamedTo !== null && (this.#session()?.Name ?? '') === this.renamedTo)
 				this.renamedTo = null;
 		});
 
-		// The SessionChanged that follows a stop is what takes the stop button away.
 		$effect(() => {
 			if (this.stopping && this.#session()?.State !== SessionState.Scanning) {
 				this.stopping = false;
@@ -68,12 +57,10 @@ export class Review {
 		});
 	}
 
-	/** The scan's name as this browser last set it, whether or not the session has caught up. */
 	get storedName() {
 		return this.renamedTo ?? this.#session()?.Name ?? null;
 	}
 
-	/** Runs a hub call, showing what went wrong in the error line instead of throwing. */
 	async #attempt(call: () => Promise<unknown>) {
 		this.error = null;
 		try {
@@ -96,7 +83,6 @@ export class Review {
 		}
 	}
 
-	/** Discard throws the scan away entirely: it leaves no row behind in past scans. */
 	async discard() {
 		const id = this.#id();
 		try {
@@ -119,10 +105,6 @@ export class Review {
 		}
 	}
 
-	/**
-	 * What every save of this scan asks the server for. The name is the one this browser asked
-	 * for, which a rename still in the air behind a page read has not reached the session with.
-	 */
 	#request(of: SessionDto, toServer: boolean) {
 		return exportRequest(of, get(exportPrefs), get(documentMeta), {
 			name: this.storedName,
@@ -130,12 +112,8 @@ export class Review {
 		});
 	}
 
-	/**
-	 * Save as…: asks where the file goes first, while the click is still a user gesture —
-	 * the export itself takes long enough that a browser would refuse to open a dialog
-	 * afterwards — then streams the finished document straight there. Browsers without
-	 * the File System Access API, which needs a secure context, get a plain download.
-	 */
+	// Picks the file first, while the click is still a user gesture: the export takes too long
+	// for the browser to allow a dialog afterwards.
 	async saveAs() {
 		const session = this.#session();
 		if (!session) return;
@@ -155,7 +133,6 @@ export class Review {
 
 		if (picker) {
 			try {
-				// One scan is one document, so this is always a file rather than a folder.
 				target = { file: await picker.showSaveFilePicker({ suggestedName: base + extension }) };
 			} catch (e) {
 				if (cancelled(e)) return;
@@ -179,16 +156,11 @@ export class Review {
 		}
 	}
 
-	/**
-	 * The desktop app's Save as…: the native dialog picks the file, and the host moves the
-	 * finished export there. The document never passes through the page.
-	 */
 	async #saveAsOnDesktop(session: SessionDto, base: string, extension: string) {
 		const desktop = this.#desktop;
 		if (!desktop) return;
 		this.error = null;
-		// Busy from the dialog on, not from the export: a second press while the native dialog
-		// is still up would otherwise open another one over it.
+		// Busy from the dialog on, so a second press cannot open another native dialog over it.
 		this.exporting = true;
 		try {
 			const file = await desktop.pickSavePath(base + extension);
@@ -203,10 +175,6 @@ export class Review {
 		}
 	}
 
-	/**
-	 * Save to server: the same export, written by the server into its configured folder
-	 * instead of handed to the browser. The name is the one Save as… would suggest.
-	 */
 	async saveToServer() {
 		const session = this.#session();
 		if (!session) return;
@@ -216,7 +184,6 @@ export class Review {
 			const result = await this.#client.hub.export(this.#id(), this.#request(session, true));
 			const saved = result.Documents.map((d) => d.SavedTo).filter((p): p is string => !!p);
 			const file = saved[0]?.split(/[/\\]/).pop() ?? '';
-			// On the desktop the "server" is this machine, and its folder just a folder.
 			const desktop = this.#desktop !== null;
 			toast.show(
 				saved.length === 1
@@ -232,10 +199,6 @@ export class Review {
 		}
 	}
 
-	/**
-	 * Stops the feeder. The server keeps every page already scanned and moves the session to
-	 * review.
-	 */
 	async stop() {
 		this.error = null;
 		this.stopping = true;
@@ -251,12 +214,10 @@ export class Review {
 		return this.#attempt(() => this.#client.hub.scanMore(this.#id()));
 	}
 
-	/** Scans the page with this index again, in place. */
 	rescan(index: number) {
 		return this.#attempt(() => this.#client.hub.rescanPage(this.#id(), index));
 	}
 
-	/** Adds the pages of another scan to the end of this one. */
 	async merge(sourceId: string) {
 		this.mergeBusy = true;
 		this.error = null;
@@ -271,11 +232,6 @@ export class Review {
 		}
 	}
 
-	/**
-	 * Crops the scanner's frame off these pages. Detection happens on the server, so there is
-	 * no optimistic step: the pages update as the server's crops come back. Undo puts back the
-	 * crops they had, which were snapshotted before asking.
-	 */
 	async autoCrop(targets: ReadonlySet<number>) {
 		const session = this.#session();
 		if (!session || this.autocropping) return;
@@ -293,7 +249,6 @@ export class Review {
 			if (count === 0) toast.show(t('review.noBorders'));
 			else
 				toast.show(t('review.croppedPages', { n: count }), () => {
-					// A one-off argument, never kept or changed, so nothing needs to watch it.
 					// eslint-disable-next-line svelte/prefer-svelte-reactivity
 					for (const p of before) this.send(setCropEdit(p.crop, new Set([p.index])));
 				});

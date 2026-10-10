@@ -1,10 +1,6 @@
-/** The project on GitHub, and where its issues are filed from the header's menu. */
 export const REPO = 'https://github.com/antonkesy/YASS';
 
-/**
- * The issue forms in .github/ISSUE_TEMPLATE, each opened straight on its own form. The
- * file names here have to match those files.
- */
+/** File names must match .github/ISSUE_TEMPLATE. */
 export const ISSUE_TEMPLATES = (
 	[
 		{ id: 'bug', label: 'common.issueBug', file: 'bug_report.yml' },

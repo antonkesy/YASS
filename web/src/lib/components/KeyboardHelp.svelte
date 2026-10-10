@@ -4,10 +4,7 @@
 
 	let { onclose }: { onclose: () => void } = $props();
 
-	/**
-	 * What each key does, grouped by where it works. Kept in step with the handlers by hand.
-	 * Derived, so a change of language relabels it while it is open.
-	 */
+	// Kept in step with the key handlers by hand. Derived so a language change relabels it.
 	const groups: { title: string; keys: [string[], string][] }[] = $derived([
 		{
 			title: t('dialogs.groupEverywhere'),

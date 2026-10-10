@@ -21,7 +21,6 @@ describe('preloadOrder', () => {
 });
 
 describe('createPreloader', () => {
-	/** A loader whose requests finish only when the test says so. */
 	function controlled() {
 		const pending = new Map<string, () => void>();
 		const asked: string[] = [];

@@ -1,8 +1,6 @@
 import type { Area } from '../types';
 
-/** The review screen: the page on the stage, its toolbar, the strip, the overview and saving. */
 export const review = {
-	// The screen itself
 	sessionTitle: { en: 'Session', de: 'Sitzung', fr: 'Session', es: 'Sesión' },
 	sessionGone: {
 		en: 'This session no longer exists.',
@@ -34,7 +32,6 @@ export const review = {
 	},
 	noPages: { en: 'No pages', de: 'Keine Seiten', fr: 'Aucune page', es: 'Sin páginas' },
 
-	// The sidebar
 	headingName: { en: 'Name', de: 'Name', fr: 'Nom', es: 'Nombre' },
 	headingSave: { en: 'Save', de: 'Speichern', fr: 'Enregistrer', es: 'Guardar' },
 	headingScan: { en: 'Scan', de: 'Scan', fr: 'Scan', es: 'Escaneo' },
@@ -101,7 +98,6 @@ export const review = {
 		es: 'Nombre del documento'
 	},
 
-	// Saving
 	preparing: { en: 'Preparing…', de: 'Wird vorbereitet…', fr: 'Préparation…', es: 'Preparando…' },
 	exportProgress: {
 		en: 'Export progress',
@@ -154,7 +150,6 @@ export const review = {
 		es: 'No se pudo obtener el archivo ({status}).'
 	},
 
-	// Toasts
 	scanDiscarded: {
 		en: 'Scan discarded',
 		de: 'Scan verworfen',
@@ -209,7 +204,7 @@ export const review = {
 		fr: { one: '{n} page supprimée', other: '{n} pages supprimées' },
 		es: { one: '{n} página eliminada', other: '{n} páginas eliminadas' }
 	},
-	// English has always said "pages" here, whatever the count; the tests hold it to that.
+	// English always says "pages" here regardless of count; tests rely on it.
 	pagesAdded: {
 		en: { one: '{n} page added', other: '{n} pages added' },
 		de: { one: '{n} Seite hinzugefügt', other: '{n} Seiten hinzugefügt' },
@@ -229,7 +224,6 @@ export const review = {
 		es: { one: '{n} página recortada', other: '{n} páginas recortadas' }
 	},
 
-	// The toolbar
 	pageEdits: {
 		en: 'Page edits',
 		de: 'Seitenbearbeitung',
@@ -327,7 +321,6 @@ export const review = {
 		es: 'Quitar el marco oscuro de {n} páginas'
 	},
 
-	// The filter menu and its options
 	closeFilterMenu: {
 		en: 'Close filter menu',
 		de: 'Filtermenü schließen',
@@ -364,7 +357,6 @@ export const review = {
 		es: 'Blanco y negro'
 	},
 
-	// The filmstrip and its thumbnails
 	allPages: { en: 'All pages', de: 'Alle Seiten', fr: 'Toutes les pages', es: 'Todas las páginas' },
 	gridLabel: {
 		en: 'Pages. Drag to reorder, or use Alt+Arrow keys.',
@@ -406,7 +398,6 @@ export const review = {
 	blank: { en: 'blank', de: 'leer', fr: 'vierge', es: 'en blanco' },
 	deleted: { en: 'deleted', de: 'gelöscht', fr: 'supprimée', es: 'eliminada' },
 
-	// The all-pages overview
 	closeOverview: {
 		en: 'Close overview',
 		de: 'Übersicht schließen',
@@ -440,7 +431,6 @@ export const review = {
 		es: 'Arrastra una página para moverla · tócala para verla · márcala para seleccionarla'
 	},
 
-	// The full-screen preview
 	pageOf: {
 		en: 'Page {n} of {total}',
 		de: 'Seite {n} von {total}',

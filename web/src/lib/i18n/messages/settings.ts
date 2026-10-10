@@ -1,6 +1,5 @@
 import type { Area } from '../types';
 
-/** The settings sheet and the controls it is built from. */
 export const settings = {
 	title: { en: 'Settings', de: 'Einstellungen', fr: 'Réglages', es: 'Ajustes' },
 	pageTitle: {

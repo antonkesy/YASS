@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Fails when the committed generated hub client differs from what the C# contract produces now.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 TMP="$(mktemp -d)"

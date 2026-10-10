@@ -9,7 +9,6 @@ import { sessionOf } from './fixtures';
 
 type Handler = (...args: unknown[]) => void;
 
-/** In-memory stand-in for HubConnection: records invocations and lets tests push server events. */
 function fakeConnection(sessions: SessionDto[] = []) {
 	const handlers = new Map<string, Handler[]>();
 	let onreconnecting: (() => void) | null = null;

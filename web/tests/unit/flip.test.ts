@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FLIP_MS, measure, play } from '$lib/review/flip';
 
-/** A container of keyed elements whose rects are whatever we say they are. */
 function grid(rects: Record<string, [number, number]>) {
 	const animate = vi.fn();
 	const elements = Object.entries(rects).map(([index, [left, top]]) => ({
@@ -32,7 +31,6 @@ describe('flip', () => {
 		const first = grid({ '0': [0, 0], '1': [0, 100] });
 		const before = measure(first.container);
 
-		// The two swapped places.
 		const second = grid({ '0': [0, 100], '1': [0, 0] });
 		const moved = play(second.container, before);
 

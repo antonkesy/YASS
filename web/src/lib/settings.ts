@@ -2,16 +2,11 @@ import { get } from 'svelte/store';
 import type { ScanOptionsDto } from './hub/generated/Yass.Core.Hub';
 import { browserStorage, persisted } from './storage';
 
-/**
- * Per-browser scan overrides (SPEC §8: settings live in localStorage, never on the server):
- * each scan option this browser has set, and none it has not — an absent one falls back to
- * scanner.defaults in yass.yaml.
- */
+/** SPEC §8: settings live in localStorage only. Absent keys fall back to yass.yaml. */
 export type ScanOverrides = Pick<ScanOptionsDto, (typeof overrideKeys)[number]>;
 
 export const STORAGE_KEY = 'yass.scanOverrides';
 
-/** The scan options a browser may override. */
 export const overrideKeys = [
 	'Source',
 	'Dpi',
@@ -27,17 +22,13 @@ export const overrideKeys = [
 
 const known = new Set<string>(overrideKeys);
 
-/** The override keys out of anything, each with a value: what is stored, and what is matched. */
 export function pickOverrides(source: object): ScanOverrides {
 	return Object.fromEntries(
 		Object.entries(source).filter(([k, v]) => known.has(k) && v != null)
 	) as ScanOverrides;
 }
 
-/**
- * Just the scan options out of a full options DTO. What a preset is matched against and
- * saved from, so nothing the server adds to the DTO later rides along into a preset.
- */
+/** Keeps fields the server adds to the DTO later out of presets. */
 export function scanOverrides(options: ScanOptionsDto): ScanOverrides {
 	return pickOverrides(options);
 }
@@ -53,7 +44,6 @@ export function parseOverrides(json: string | null): ScanOverrides {
 }
 
 export function createSettings(storage: Storage | undefined) {
-	// Cleaned on the way in and out, and gone from storage altogether once nothing is set.
 	const store = persisted<ScanOverrides>(
 		storage,
 		STORAGE_KEY,
@@ -65,7 +55,6 @@ export function createSettings(storage: Storage | undefined) {
 	);
 	return {
 		...store,
-		/** One option changed, the rest kept. Subscribers hear once, and only the cleaned value. */
 		update<K extends keyof ScanOverrides>(key: K, value: ScanOverrides[K] | undefined) {
 			store.set({ ...get(store), [key]: value });
 		}

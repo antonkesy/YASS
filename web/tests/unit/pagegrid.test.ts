@@ -8,10 +8,7 @@ import { page } from './fixtures';
 
 const pages = [0, 1, 2].map((i) => page(i));
 
-/**
- * jsdom lays nothing out, so the drop targets have to be told where they are: one
- * 90px-tall tile per row, as the filmstrip stacks them on a desktop.
- */
+// jsdom has no layout: place each drop target as a 90px tile per row, like the desktop filmstrip.
 function layOut(tiles: NodeListOf<HTMLElement> | HTMLElement[]) {
 	[...tiles].forEach((tile, i) => {
 		tile.getBoundingClientRect = () => new DOMRect(0, i * 100, 80, 90);
@@ -120,7 +117,6 @@ describe('PageGrid drag reorder', () => {
 		await fireEvent.pointerDown(tiles()[0], { ...mouse, clientX: 10, clientY: 10 });
 		await fireEvent.pointerMove(grid(), { ...mouse, clientX: 10, clientY: 220 });
 
-		// The other pages have already made room: the held page's gap sits where it will land.
 		expect([...tiles()].map((t) => t.dataset.index)).toEqual(['1', '2', '0']);
 		expect(tiles()[2]).toHaveAttribute('data-held', 'true');
 		// Picked up 10px in from the tile's corner, so it rides 10px behind the pointer.
@@ -128,7 +124,6 @@ describe('PageGrid drag reorder', () => {
 		expect(ghost()).toContain('width: 80px');
 		expect(ghost()).toContain('translate(0px, 210px)');
 
-		// Dropped, the ghost glides into the gap and then goes.
 		await fireEvent.pointerUp(grid(), { ...mouse, clientX: 10, clientY: 220 });
 		expect(ghost()).toContain('translate(0px, 200px)');
 		vi.advanceTimersByTime(250);

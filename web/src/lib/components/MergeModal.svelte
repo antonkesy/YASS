@@ -14,7 +14,6 @@
 	}: {
 		/** Candidates, already excluding the scan being merged into. */
 		sessions: SessionDto[];
-		/** The file name template, which is what an unnamed scan is called. */
 		template?: string;
 		onpick: (id: string) => void;
 		oncancel: () => void;

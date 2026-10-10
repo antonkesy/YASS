@@ -56,24 +56,16 @@
 	const send = (edit: PageEdit) => review.send(edit);
 	let missing = $state(false);
 	let selection = $state<Set<number>>(clear());
-	/** Position in `pages` shown in the centre column. */
 	let current = $state(0);
-	/** Whether the filmstrip is expanded to the full-screen all-pages overview. */
 	let overview = $state(false);
 
-	/**
-	 * The one dialog open over the review screen, and what it is open on: for Adjust the pages
-	 * it sets and the one it shows and starts from, for Crop and Straighten the page's position.
-	 */
 	let dialog = $state<
 		| { kind: 'merge' }
 		| { kind: 'adjust'; pages: ReadonlySet<number>; from: number }
 		| { kind: 'crop' | 'straighten'; at: number }
 		| null
 	>(null);
-	/** The page the full-screen preview was opened on or moved to, by position. */
 	let previewAt = $state<number | null>(null);
-	/** That page, while it is still there to show: the preview closes once it is gone. */
 	const previewIndex = $derived(
 		previewAt !== null && session && previewAt >= session.Pages.length ? null : previewAt
 	);
@@ -102,11 +94,7 @@
 	// A view transition already slides the screen in; its own entrance would be a second slide.
 	const entrance = screenTransition.active ? '' : 'animate-slide-from-right';
 
-	/**
-	 * Warms the previews around whichever page is in view — the full-screen preview's if it is
-	 * open, else the stage's — so stepping to the next one does not wait for the server to render
-	 * it. Held off during a scan, when the render slots belong to the thumbnails coming in.
-	 */
+	// Prefetch around the visible page; held off during a scan, when render slots belong to thumbnails.
 	const preloader = createPreloader();
 	$effect(() => {
 		const pages = session?.Pages;
@@ -120,13 +108,7 @@
 	});
 	$effect(() => () => preloader.stop());
 
-	/**
-	 * What the toolbar acts on. Nothing ticked means the page on the stage rather than every
-	 * page: the buttons sit under that page, Crop and Rescan have always read it that way,
-	 * and a rotation of the whole scan is worth asking for — the toolbar's All does that.
-	 */
 	const targets = $derived(selection.size > 0 ? selection : new Set(shown ? [shown.Index] : []));
-	/** The clean-ups every targeted page already has, which the filter menu shows ticked. */
 	const targetCleanup = $derived(
 		commonCleanup(session?.Pages.filter((p) => targets.has(p.Index)) ?? [])
 	);
@@ -134,17 +116,14 @@
 	const anyDeleted = $derived(
 		session?.Pages.filter((p) => targets.has(p.Index)).some((p) => p.Deleted) ?? false
 	);
-	/** The other half of it: what Delete would still have to work on. */
 	const anyActive = $derived(
 		session?.Pages.filter((p) => targets.has(p.Index)).some((p) => !p.Deleted) ?? false
 	);
 
-	/** Other scans that still have pages, newest first, for the merge dialog. */
 	const mergeable = $derived(
 		sortedSessions($sessions).filter((s) => s.Id !== id && s.Pages.some((p) => !p.Deleted))
 	);
 
-	/** Tapping a page in the strip only moves the stage; the checkbox is what selects. */
 	function show(index: number) {
 		const at = session?.Pages.findIndex((p) => p.Index === index) ?? -1;
 		if (at >= 0) current = at;
@@ -154,9 +133,7 @@
 		selection = toggle(selection, index);
 	}
 
-	/**
-	 * A reorder renumbers every page, so the ticks would end up on pages nobody picked.
-	 */
+	// A reorder renumbers every page, so the ticks would land on pages nobody picked.
 	function reorder(order: number[]) {
 		selection = clear();
 		send(reorderEdit(order));
@@ -166,39 +143,26 @@
 		selection = new Set((session?.Pages ?? []).map((p) => p.Index));
 	}
 
-	/**
-	 * Ticking pages is the all-pages view's business, so the ticks leave with it. The review
-	 * screen shows one page and its toolbar edits that page; a selection surviving the close
-	 * would leave those buttons acting on pages that are no longer on screen.
-	 */
 	function closeOverview() {
 		overview = false;
 		selection = clear();
 	}
 
-	/** Deletes what the toolbar acts on, with Undo on the toast that says so. */
 	function deletePages() {
-		// A snapshot, because undo has to put back the pages this click took and not
-		// whatever happens to be on the stage by the time the toast is pressed.
+		// Snapshot: undo must restore these pages, not whatever is on the stage by then.
 		const deleting = new Set(targets);
 		send(deleteEdit(deleting));
 		toast.show(t('review.pagesDeleted', { n: deleting.size }), () => send(restoreEdit(deleting)));
 	}
 
-	/** Escape with nothing open goes home, as the header's back link does. */
 	const screen = useLayer(() => {
 		cameFrom.leaving(id);
 		void goto(resolve('/'));
 	});
 
-	/**
-	 * The review screen's keys, only while nothing is open over it and nobody is typing:
-	 * pages with the arrows, the toolbar's edits on single letters, Ctrl/⌘+S for Save as….
-	 */
 	function keydown(e: KeyboardEvent) {
 		if (!session || !screen()?.top || typing(e)) return;
 		if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 's') {
-			// Taken from the browser either way: its own Save page is never what was meant here.
 			e.preventDefault();
 			if (canSave(session, review.exporting)) void review.saveAs();
 			return;
@@ -213,7 +177,6 @@
 				current = Math.min(last, current + 1);
 				break;
 			case 'Enter':
-				// Enter on a focused button or link presses that, as it always has.
 				if (last < 0 || (e.target as HTMLElement).closest('button, a, [role]')) return;
 				previewAt = targetPage();
 				break;
@@ -238,7 +201,6 @@
 		e.preventDefault();
 	}
 
-	/** Crop, rescan and the full-screen preview act on the one selected page, or the one on screen. */
 	function targetPage() {
 		if (selection.size === 1) {
 			const only = [...selection][0];
@@ -248,7 +210,6 @@
 		return current;
 	}
 
-	/** Pages from another scan are added to the end of this one, once picked. */
 	function merge(sourceId: string) {
 		dialog = null;
 		void review.merge(sourceId);
@@ -320,12 +281,7 @@
 	{/if}
 {/snippet}
 
-<!--
-	Side by side, the three panes get exactly the height left over after the header and
-	this container's own padding -- so the review screen fits without scrolling
-	and each pane scrolls its own overflow instead. Stacked (below lg) they keep their
-	natural height and the page scrolls, which is the right behaviour on a phone.
--->
+<!-- From lg the panes get exactly the height under the header and scroll on their own. -->
 <div
 	class="mx-auto flex max-w-[2200px] {entrance} flex-col px-4 pt-2 pb-7 sm:px-7 lg:h-[calc(100dvh-var(--app-header-h))] lg:min-h-0"
 >
@@ -342,7 +298,6 @@
 		{/if}
 
 		<div class="flex min-h-0 flex-wrap items-start gap-5 lg:flex-1 lg:flex-nowrap lg:items-stretch">
-			<!-- Filmstrip: down the left on desktop, above the page on a phone. -->
 			<nav
 				class="order-2 w-full flex-none lg:order-1 lg:min-h-0 lg:w-auto"
 				aria-label={t('review.pages')}
@@ -366,18 +321,7 @@
 			<main
 				class="order-1 flex w-full flex-1 basis-full flex-col items-center gap-[18px] lg:order-2 lg:min-h-0 lg:basis-[380px]"
 			>
-				<!--
-					The row holds the state chip once a save has started: the save is running, it
-					failed, it is saved — things the screen does not otherwise say. Scanning gets
-					no chip: the header's scanner pill already says so, with the page count, and in
-					review the row goes too rather than leaving a gap above the page.
-				-->
 				{#if scanning}
-					<!--
-						On a phone the save panel, and the Stop in it, is below the page and the
-						strip; this one is where the thumb already is. Side by side the panel's own
-						is in view, so this one goes.
-					-->
 					<div class="w-full max-w-[420px] lg:hidden">
 						<StopScanButton
 							onstop={() => review.stop()}

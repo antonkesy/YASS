@@ -1,12 +1,10 @@
 import type { Area } from '../types';
 
-/** The edit dialogs, the keyboard shortcuts, the toast and the client's own error text. */
 export const dialogs = {
 	cancel: { en: 'Cancel', de: 'Abbrechen', fr: 'Annuler', es: 'Cancelar' },
 	apply: { en: 'Apply', de: 'Anwenden', fr: 'Appliquer', es: 'Aplicar' },
 	reset: { en: 'Reset', de: 'Zurücksetzen', fr: 'Réinitialiser', es: 'Restablecer' },
 
-	// Crop
 	cropTitle: {
 		en: 'Crop page',
 		de: 'Seite zuschneiden',
@@ -42,7 +40,6 @@ export const dialogs = {
 		es: 'Recortar'
 	},
 
-	// Adjust
 	adjustTitle: {
 		en: { one: 'Adjust page', other: 'Adjust {n} pages' },
 		de: { one: 'Seite anpassen', other: '{n} Seiten anpassen' },
@@ -71,7 +68,6 @@ export const dialogs = {
 		es: 'Restablecer todo'
 	},
 
-	// Straighten
 	straightenTitle: {
 		en: 'Straighten page',
 		de: 'Seite begradigen',
@@ -104,7 +100,6 @@ export const dialogs = {
 		es: 'Alinea el texto con la cuadrícula'
 	},
 
-	// Merge
 	mergeTitle: {
 		en: 'Add pages from a past scan',
 		de: 'Seiten aus einem früheren Scan hinzufügen',
@@ -130,7 +125,6 @@ export const dialogs = {
 		es: { one: '{n} página', other: '{n} páginas' }
 	},
 
-	// Keyboard shortcuts
 	shortcutsTitle: {
 		en: 'Keyboard shortcuts',
 		de: 'Tastenkürzel',
@@ -230,7 +224,6 @@ export const dialogs = {
 		es: 'Páginas más grandes / más pequeñas'
 	},
 
-	// Toast and errors
 	undo: { en: 'Undo', de: 'Rückgängig', fr: 'Annuler', es: 'Deshacer' },
 	serverError: {
 		en: 'Something went wrong on the server.',

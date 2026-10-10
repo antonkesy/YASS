@@ -16,11 +16,8 @@
 	}: {
 		status: ScannerStatusDto | null;
 		connection: ConnectionState;
-		/** The scanner the panel is about, when it is not the one the status names. */
 		name?: string | null;
-		/** Pages scanned so far, when a scan is running. */
 		pages?: number | null;
-		/** Opened by a press, so it stays until an outside press; a hover has no catcher. */
 		pinned?: boolean;
 		onclose: () => void;
 	} = $props();
@@ -38,10 +35,6 @@
 					: t('home.offline')
 	);
 
-	/**
-	 * What the panel lists. Rows the server has nothing for are left out rather than
-	 * shown with a dash: a missing device name is already said by the state.
-	 */
 	const rows = $derived(
 		[
 			[t('home.detailServer'), connectionLabel],

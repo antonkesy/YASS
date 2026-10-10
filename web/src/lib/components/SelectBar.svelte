@@ -27,8 +27,7 @@
 	const all = $derived(count === total && total > 0);
 	const none = $derived(count === 0);
 
-	// Deleting several scans at once is worth a second press; the bar says how many. The armed
-	// button takes focus as it replaces the trash, or its blur, which disarms it, never comes.
+	// The armed button must take focus, or its blur (which disarms it) never comes.
 	function remove() {
 		if (!confirmDelete) {
 			confirmDelete = true;

@@ -11,7 +11,6 @@ describe('cameFrom', () => {
 		cameFrom.leaving('20260928-120000-abc123');
 
 		expect(cameFrom.take()).toBe('20260928-120000-abc123');
-		// The transition plays once; a later reload of home must not replay it.
 		expect(cameFrom.take()).toBeNull();
 		expect(get(cameFrom)).toBeNull();
 	});

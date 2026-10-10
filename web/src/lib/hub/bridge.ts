@@ -1,10 +1,7 @@
 import { HubConnectionState } from '@microsoft/signalr';
 import type { ConnectionLike } from './client';
 
-/**
- * What the desktop app's webview (Photino) puts on `window.external`: one string channel each
- * way to the .NET process. Nothing goes over a socket.
- */
+/** Photino's `window.external`: one string channel each way to the .NET process. */
 export type DesktopExternal = {
 	sendMessage(message: string): void;
 	receiveMessage(callback: (message: string) => void): void;
@@ -14,7 +11,6 @@ type Answer = { id: number; result?: unknown; error?: string };
 type Event = { event: string; args?: unknown[] };
 type Handler = (...args: unknown[]) => unknown;
 
-/** The desktop channel, when this page runs inside the desktop app; `null` in a browser. */
 export function desktopExternal(): DesktopExternal | null {
 	if (typeof window === 'undefined') return null;
 	const external = (window as unknown as { external?: Partial<DesktopExternal> }).external;
@@ -24,26 +20,15 @@ export function desktopExternal(): DesktopExternal | null {
 		: null;
 }
 
-/** True inside the desktop app. */
 export function isDesktop(): boolean {
 	return desktopExternal() !== null;
 }
 
-/**
- * What only the desktop app offers, beside the hub: native save dialogs, and moving a finished
- * export to the chosen file on the host's side, so a document never passes through the page.
- */
 export type DesktopHost = {
-	/** Asks where one document goes; `null` when the user cancels. */
 	pickSavePath(suggestedName: string): Promise<string | null>;
-	/** Asks for a folder for several documents; `null` when the user cancels. */
 	pickFolder(): Promise<string | null>;
-	/**
-	 * Moves the document behind an export's one-shot path to `target`. `overwrite` for a file the
-	 * user picked (the dialog already asked); otherwise a taken name gets -2, -3…. Returns the path written.
-	 */
+	/** `overwrite` when the user picked the file; otherwise a taken name gets -2, -3…. */
 	saveExport(downloadPath: string, target: string, overwrite: boolean): Promise<string>;
-	/** The webview opens no windows, so links out of the app go to the system browser. */
 	openUrl(url: string): Promise<void>;
 };
 
@@ -58,9 +43,8 @@ export function createDesktopHost(connection: Pick<ConnectionLike, 'invoke'>): D
 }
 
 /**
- * A `HubConnection` look-alike over the desktop bridge (SPEC §7): calls go out as
- * `{id, method, args}` and come back as `{id, result}` or `{id, error}`; server pushes arrive
- * as `{event, args}`. The channel is in-process, so it is up from the start and never drops.
+ * `HubConnection` look-alike over the desktop bridge (SPEC §7): `{id, method, args}` out,
+ * `{id, result|error}` or `{event, args}` back. In-process, so never drops.
  */
 export function createBridgeConnection(external: DesktopExternal): ConnectionLike {
 	const handlers = new Map<string, Handler[]>();
@@ -108,7 +92,6 @@ export function createBridgeConnection(external: DesktopExternal): ConnectionLik
 				pending.set(id, { resolve, reject });
 				external.sendMessage(JSON.stringify({ id, method, args }));
 			}),
-		// An in-process channel neither drops nor reconnects.
 		onreconnecting: () => {},
 		onreconnected: () => {},
 		onclose: () => {}

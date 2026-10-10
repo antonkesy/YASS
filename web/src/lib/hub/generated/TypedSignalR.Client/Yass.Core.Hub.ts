@@ -6,12 +6,8 @@ import type { IStreamResult, Subject } from '@microsoft/signalr';
 import type { ScanOptionsDto, SessionDto, ExportRequest, ExportResult, ScannerStatusDto, ScannerDeviceDto, PageDto } from '../Yass.Core.Hub';
 import type { PageEdit } from '../Yass.Core.Domain';
 
-/**
-* Client → server. Served at /hub over MessagePack.
-*/
 export type IYassHub = {
     /**
-    * Starts a scan with the effective options, overridden by any editable keys in .
     * @param requested Transpiled from Yass.Core.Hub.ScanOptionsDto?
     * @returns Transpiled from System.Threading.Tasks.Task<Yass.Core.Hub.SessionDto>
     */
@@ -31,7 +27,6 @@ export type IYassHub = {
     */
     listSessions(): Promise<SessionDto[]>;
     /**
-    * Removes the session and its directory outright.
     * @param sessionId Transpiled from string
     * @returns Transpiled from System.Threading.Tasks.Task
     */
@@ -44,14 +39,13 @@ export type IYassHub = {
     */
     renameSession(sessionId: string, name: string): Promise<SessionDto>;
     /**
-    * Marks a session discarded but keeps it listed, unlike .
-    * Its pages are removed, since the point of discarding is to stop storing them.
+    * Unlike , keeps the session listed but removes its pages.
     * @param sessionId Transpiled from string
     * @returns Transpiled from System.Threading.Tasks.Task<Yass.Core.Hub.SessionDto>
     */
     discardSession(sessionId: string): Promise<SessionDto>;
     /**
-    * Deletes every session that is not currently scanning or exporting. Returns how many went.
+    * Skips sessions that are scanning or exporting. Returns how many were deleted.
     * @returns Transpiled from System.Threading.Tasks.Task<int>
     */
     clearSessions(): Promise<number>;
@@ -62,29 +56,26 @@ export type IYassHub = {
     */
     applyEdits(sessionId: string, edits: PageEdit[]): Promise<SessionDto>;
     /**
-    * Crops the scanner's dark frame off the target pages (all of them when null or empty), as
-    * ordinary crop edits. Returns how many pages had one.
+    * Null or empty targets mean all pages. Returns how many pages had a frame to crop.
     * @param sessionId Transpiled from string
     * @param targets Transpiled from int[]?
     * @returns Transpiled from System.Threading.Tasks.Task<int>
     */
     autoCrop(sessionId: string, targets: number[]): Promise<number>;
     /**
-    * Scans one sheet and puts it in place of , keeping that page's edits.
+    * Replaces  with one new sheet, keeping that page's edits.
     * @param sessionId Transpiled from string
     * @param pageIndex Transpiled from int
     * @returns Transpiled from System.Threading.Tasks.Task<Yass.Core.Hub.SessionDto>
     */
     rescanPage(sessionId: string, pageIndex: number): Promise<SessionDto>;
     /**
-    * Runs the feeder again and appends the pages to an existing session.
     * @param sessionId Transpiled from string
     * @returns Transpiled from System.Threading.Tasks.Task<Yass.Core.Hub.SessionDto>
     */
     scanMore(sessionId: string): Promise<SessionDto>;
     /**
-    * Copies the active pages of  onto the end of
-    * , starting a new document at the join. The source is left alone.
+    * Appends the active pages of , starting a new document at the join. The source is left alone.
     * @param targetId Transpiled from string
     * @param sourceId Transpiled from string
     * @returns Transpiled from System.Threading.Tasks.Task<Yass.Core.Hub.SessionDto>
@@ -101,7 +92,6 @@ export type IYassHub = {
     */
     getScannerStatus(): Promise<ScannerStatusDto>;
     /**
-    * Every scanner the driver can see, so a browser can pick one to scan on.
     * @returns Transpiled from System.Threading.Tasks.Task<Yass.Core.Hub.ScannerDeviceDto[]>
     */
     listDevices(): Promise<ScannerDeviceDto[]>;
@@ -110,21 +100,17 @@ export type IYassHub = {
     */
     getEffectiveOptions(): Promise<ScanOptionsDto>;
     /**
-    * The server's output.directory, or empty when saving to the server is off. A browser
-    * only offers the option when this names a folder.
+    * Empty when saving to the server is off.
     * @returns Transpiled from System.Threading.Tasks.Task<string>
     */
     getServerFolder(): Promise<string>;
     /**
-    * Re-reads every section of the config file except server.
+    * Everything except the server section.
     * @returns Transpiled from System.Threading.Tasks.Task
     */
     reloadConfig(): Promise<void>;
 }
 
-/**
-* Server → client pushes.
-*/
 export type IYassClient = {
     /**
     * @param status Transpiled from Yass.Core.Hub.ScannerStatusDto
@@ -132,20 +118,17 @@ export type IYassClient = {
     */
     scannerStatusChanged(status: ScannerStatusDto): Promise<void>;
     /**
-    * State transitions and whole-session changes such as reorder or delete.
     * @param session Transpiled from Yass.Core.Hub.SessionDto
     * @returns Transpiled from System.Threading.Tasks.Task
     */
     sessionChanged(session: SessionDto): Promise<void>;
     /**
-    * Emitted as soon as the page is on disk, before its thumbnail exists.
     * @param sessionId Transpiled from string
     * @param page Transpiled from Yass.Core.Hub.PageDto
     * @returns Transpiled from System.Threading.Tasks.Task
     */
     pageAdded(sessionId: string, page: PageDto): Promise<void>;
     /**
-    * After an edit or when a thumbnail becomes ready; carries the new hash.
     * @param sessionId Transpiled from string
     * @param page Transpiled from Yass.Core.Hub.PageDto
     * @returns Transpiled from System.Threading.Tasks.Task

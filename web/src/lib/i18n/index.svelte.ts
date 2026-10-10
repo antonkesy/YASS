@@ -3,7 +3,6 @@ import { messages } from './messages';
 
 export { LOCALES, type Locale } from './types';
 
-/** Each language by its own name: what the language menu lists. */
 export const LOCALE_NAMES: Record<Locale, string> = {
 	en: 'English',
 	de: 'Deutsch',
@@ -14,7 +13,6 @@ export const LOCALE_NAMES: Record<Locale, string> = {
 export const LOCALE_KEY = 'yass.locale';
 
 type Messages = typeof messages;
-/** `area.key`, for every message there is. */
 export type MessageKey = {
 	[A in keyof Messages]: `${A & string}.${keyof Messages[A] & string}`;
 }[keyof Messages];
@@ -25,7 +23,6 @@ function isLocale(value: unknown): value is Locale {
 	return typeof value === 'string' && (LOCALES as readonly string[]).includes(value);
 }
 
-/** This browser's choice if it made one, else the first of its languages the UI speaks. */
 function initial(): Locale {
 	try {
 		const stored = localStorage.getItem(LOCALE_KEY);
@@ -44,10 +41,7 @@ function initial(): Locale {
 
 let current = $state<Locale>(typeof window === 'undefined' ? 'en' : initial());
 
-/**
- * The language the UI is in. Reading `i18n.locale` inside a component — or calling `t`,
- * which does — re-renders it when the language changes.
- */
+/** Reading `i18n.locale` (or calling `t`) in a component re-renders it on language change. */
 export const i18n = {
 	get locale(): Locale {
 		return current;
@@ -68,7 +62,6 @@ function lookup(key: MessageKey): Message {
 	return (messages[area] as Record<string, Message>)[name];
 }
 
-/** One plural rule set per language, made the first time that language counts something. */
 const plurals: Partial<Record<Locale, Intl.PluralRules>> = {};
 const plural = (locale: Locale) => (plurals[locale] ??= new Intl.PluralRules(locale));
 
@@ -79,10 +72,6 @@ function fill(text: string, params?: Params): string {
 	);
 }
 
-/**
- * A message in the current language, with `{name}` placeholders filled from `params`. A
- * plural message picks its form by `params.n`, the way the language counts.
- */
 export function t(key: MessageKey, params?: Params): string {
 	const text = lookup(key)[current];
 	if (typeof text === 'string') return fill(text, params);

@@ -8,11 +8,8 @@
 		extension = '.pdf',
 		onrename
 	}: {
-		/** The stored name, or null when the scan has never been named. */
 		value: string | null;
-		/** Shown when unnamed — the timestamp the list falls back to. */
 		placeholder: string;
-		/** What the saved file will end in, which is the export format's and not always PDF. */
 		extension?: string;
 		onrename: (name: string) => void;
 	} = $props();
@@ -22,8 +19,6 @@
 	let draft = $state('');
 	let editing = $state(false);
 
-	// While the field is not being edited it mirrors the server, so a rename from
-	// another tab shows up here too.
 	$effect(() => {
 		if (!editing) draft = value ?? '';
 	});

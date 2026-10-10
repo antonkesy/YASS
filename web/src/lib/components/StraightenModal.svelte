@@ -16,7 +16,6 @@
 		/** The page's preview, which already has its current skew applied and cropped. */
 		src: string;
 		alt: string;
-		/** The page's current fine rotation, in degrees. */
 		skew: number;
 		onapply: (degrees: number) => void;
 		oncancel: () => void;
@@ -25,14 +24,10 @@
 	const current = untrack(() => skew);
 	let draft = $state(current);
 
-	// Page proportions until the image says otherwise; only the ratio matters here.
 	let size = $state({ width: 1, height: 1.414 });
 
-	/**
-	 * The preview is turned by the change only, then scaled up just enough that the turned
-	 * image still fills its frame — what the server does by cropping, so the grid lines up
-	 * with what Apply will give back.
-	 */
+	// Turned by the change only and scaled to still fill the frame, as the server crops,
+	// so the grid matches what Apply gives back.
 	const delta = $derived(Math.round((draft - current) * 10) / 10);
 	const scale = $derived(1 / innerScale(size.width, size.height, delta));
 
@@ -66,7 +61,6 @@
 				}}
 				data-testid="straighten-preview"
 			/>
-			<!-- A fixed grid to line the text up against while the page turns under it. -->
 			<div
 				class="pointer-events-none absolute inset-0"
 				style="background-image: linear-gradient(to right, rgb(0 122 255 / 0.35) 1px, transparent 1px), linear-gradient(to bottom, rgb(0 122 255 / 0.35) 1px, transparent 1px); background-size: 10% 10%"

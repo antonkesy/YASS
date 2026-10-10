@@ -17,10 +17,8 @@
 	const uid = $props.id();
 	const fields = `${uid}-fields`;
 
-	/** What this scan saves with: Settings' export preferences, its own PDF properties on top. */
 	const docPrefs = $derived(metaFor($exportPrefs, $documentMeta, sessionId));
 	let open = $state(false);
-	/** The properties as one line, for the closed disclosure. */
 	const summary = $derived(
 		DOCUMENT_META_FIELDS.map((f) => docPrefs[f].trim())
 			.filter(Boolean)
@@ -29,10 +27,6 @@
 </script>
 
 {#if $exportPrefs.format === ExportFormat.Pdf}
-	<!--
-		This scan's own PDF properties, starting from the ones Settings gives every scan.
-		Shut by default: a line saying what is set is all most saves need to see.
-	-->
 	<!-- The gap above is its own padding, so it opens and shuts with it. -->
 	<div
 		class="flex flex-col gap-2 pt-3"

@@ -5,32 +5,18 @@ import type { PresetIconName } from './icons';
 import type { ScanOverrides } from './settings';
 import { browserStorage, persisted } from './storage';
 
-/**
- * Named bundles of scan settings, kept per browser next to the overrides rather than
- * in yass.yaml: they are a convenience for whoever is standing at the scanner, and the
- * config file stays the operator's.
- */
 export type Preset = {
 	id: string;
 	name: string;
 	icon: PresetIconName;
 	settings: ScanOverrides;
-	/**
-	 * The scanner this preset belongs to, and the only one it is offered for. Absent means
-	 * every scanner — which is what the built-in presets are, and what every preset saved
-	 * before a scanner could be chosen stays. The scanner itself is never in `settings`:
-	 * it is picked on the home screen and the presets follow it, not the other way round.
-	 */
+	/** Absent means offered for every scanner. The scanner itself is never in `settings`. */
 	device?: string;
 };
 
 export const PRESETS_KEY = 'yass.presets';
 
-/**
- * A preset's name in the UI's language. The built-in presets are stored by their English
- * names; one still carrying that name is shown translated, while one the user renamed, and
- * every preset the user made, shows as they named it.
- */
+/** Built-ins still carrying their stored English name are shown translated. */
 export function presetName(preset: Pick<Preset, 'id' | 'name'>): string {
 	const builtIn = defaultPresets.find((p) => p.id === preset.id);
 	if (!builtIn || builtIn.name !== preset.name) return preset.name;
@@ -44,7 +30,6 @@ const BUILT_IN_NAMES: Record<string, MessageKey> = {
 	photo: 'common.presetPhoto'
 };
 
-/** What a fresh browser starts with. The names match the mockup's. */
 export const defaultPresets: Preset[] = [
 	{
 		id: 'document',
@@ -78,18 +63,12 @@ export const defaultPresets: Preset[] = [
 	}
 ];
 
-/** Export preferences that are not scan options: what a downloaded file is and what it is called. */
 export type ExportPrefs = {
 	format: ExportFormat;
 	nameTemplate: string;
-	/** Stamped into every PDF saved from this browser. The title is the document's name. */
 	author: string;
 	subject: string;
 	keywords: string;
-	/**
-	 * Whether this browser offers Save to server next to Save as…. Only shown in Settings, and
-	 * only acted on, when the server has an output.directory configured.
-	 */
 	serverSave: boolean;
 };
 
@@ -104,10 +83,7 @@ export const defaultExportPrefs: ExportPrefs = {
 	serverSave: false
 };
 
-/**
- * The metadata an export request carries, from the preferences. Nothing at all when none is
- * set, so the server's own defaults apply rather than three empty strings.
- */
+/** Undefined when nothing is set, so the server's defaults apply. */
 export function documentMetadata(prefs: ExportPrefs): DocumentMetadataDto | undefined {
 	const author = prefs.author.trim();
 	const subject = prefs.subject.trim();
@@ -120,11 +96,9 @@ export function documentMetadata(prefs: ExportPrefs): DocumentMetadataDto | unde
 	};
 }
 
-/** The PDF properties one scan can set for itself, over the ones Settings gives every scan. */
 export type DocumentMeta = Partial<Pick<ExportPrefs, 'author' | 'subject' | 'keywords'>>;
 export const DOCUMENT_META_FIELDS = ['author', 'subject', 'keywords'] as const;
 
-/** What each PDF property is called, and the example it shows empty, wherever it is edited. */
 export const DOCUMENT_META_LABELS: Record<
 	keyof DocumentMeta,
 	{ label: MessageKey; placeholder: MessageKey }
@@ -136,7 +110,6 @@ export const DOCUMENT_META_LABELS: Record<
 
 export const DOCUMENT_META_KEY = 'yass.documentMeta';
 
-/** The export preferences one scan saves with: Settings', with its own PDF properties on top. */
 export function metaFor(
 	prefs: ExportPrefs,
 	all: Readonly<Record<string, DocumentMeta>>,
@@ -145,10 +118,7 @@ export function metaFor(
 	return { ...prefs, ...all[sessionId] };
 }
 
-/**
- * One scan's PDF property set to `value`. A value equal to what Settings gives every scan is
- * no override at all, and a scan left with none is dropped, so the store only holds real ones.
- */
+/** A value equal to the Settings default is dropped, so the store only holds real overrides. */
 export function setDocumentMeta(
 	all: Readonly<Record<string, DocumentMeta>>,
 	sessionId: string,
@@ -165,7 +135,6 @@ export function setDocumentMeta(
 	return next;
 }
 
-/** Drops the properties of scans that no longer exist, so the store does not grow forever. */
 export function pruneDocumentMeta(
 	all: Readonly<Record<string, DocumentMeta>>,
 	existing: ReadonlySet<string>
@@ -173,14 +142,8 @@ export function pruneDocumentMeta(
 	return Object.fromEntries(Object.entries(all).filter(([id]) => existing.has(id)));
 }
 
-/** Review-screen preferences, next to the export ones so they share the same storage helper. */
 export type ReviewPrefs = {
-	/**
-	 * Tile width the all-pages overview was last zoomed to, or `'fit'` for whatever puts the
-	 * whole scan on one screen. It stays `'fit'` until someone zooms: the first useful thing
-	 * that view can do is show you everything at once, and a remembered size cannot know how
-	 * many pages the next scan will have.
-	 */
+	/** `'fit'` until someone zooms: a remembered size cannot know the next scan's page count. */
 	overviewTile: number | 'fit';
 };
 
@@ -188,22 +151,14 @@ export const REVIEW_KEY = 'yass.review';
 
 export const defaultReviewPrefs: ReviewPrefs = { overviewTile: 'fit' };
 
-/** True when `settings` matches every key the preset pins. */
 export function matchesPreset(preset: Preset, overrides: ScanOverrides): boolean {
 	const pinned = Object.entries(preset.settings);
-	// A preset that pins nothing describes no scan in particular, so it matches none: every()
-	// over an empty list says yes to anything, and the stage would light it up whatever the
-	// settings were. Reachable since the scanner stopped counting as one of a preset's keys.
+	// every() is true on an empty list; a preset pinning nothing must match nothing.
 	if (pinned.length === 0) return false;
 	return pinned.every(([key, value]) => overrides[key as keyof ScanOverrides] === value);
 }
 
-/**
- * The preset the next scan is running, if any. Presets overlap — one saved while Document was
- * lit pins Document's keys and more — so several can match at once. The one last picked wins
- * while it still matches; otherwise the one that pins the most, so a saved preset is not
- * forever hidden behind the built-in it was made from.
- */
+/** Several can match: the last picked wins while it matches, else the one pinning most keys. */
 export function activePreset(
 	presets: readonly Preset[],
 	overrides: ScanOverrides,
@@ -219,30 +174,16 @@ export function activePreset(
 	);
 }
 
-/**
- * The overrides after picking a preset: exactly what it pins, and the scanner, which a preset
- * never carries. Merged over the old overrides instead, a Receipt's brightness rode along into
- * the Photo picked after it, and the pill said Photo while the scan said otherwise.
- */
+/** Replaces rather than merges, so keys of the previous preset do not leak into this one. */
 export function applyPreset(preset: Preset, current: ScanOverrides): ScanOverrides {
 	return current.Device ? { ...preset.settings, Device: current.Device } : { ...preset.settings };
 }
 
-/**
- * The presets worth offering for one scanner: the ones that belong to it, plus the ones
- * that belong to none. With no scanner chosen only the latter are left, which for a browser
- * that has never seen this feature is all of them.
- */
 export function presetsFor(presets: readonly Preset[], device: string | undefined): Preset[] {
 	return presets.filter((p) => !p.device || p.device === device);
 }
 
-/** Past-scans preferences: for now, only whether and when old scans go on their own. */
 export type HistoryPrefs = {
-	/**
-	 * Scans older than this are deleted by whichever browser has it set, next time it looks at
-	 * the list. `null` keeps them until someone deletes them or the server's own retention does.
-	 */
 	autoClear: { amount: number; unit: RetentionUnit } | null;
 };
 
@@ -261,10 +202,6 @@ export const createExportPrefs = (storage: Storage | undefined) =>
 export const createReviewPrefs = (storage: Storage | undefined) =>
 	persisted<ReviewPrefs>(storage, REVIEW_KEY, defaultReviewPrefs);
 
-/**
- * The preset this browser last picked, so it stays lit when another one matches as well, and
- * can be shown as edited rather than simply vanishing once a setting is changed.
- */
 export type PickedPreset = { id: string | null };
 
 export const PICKED_KEY = 'yass.pickedPreset';
@@ -278,22 +215,14 @@ export const createDocumentMeta = (storage: Storage | undefined) =>
 export const createHistoryPrefs = (storage: Storage | undefined) =>
 	persisted<HistoryPrefs>(storage, HISTORY_KEY, defaultHistoryPrefs);
 
-/** A scanner this browser has seen, remembered so it can be listed after it goes away. */
 export type KnownScanner = {
-	/** What the driver calls it, as last seen. */
 	name: string;
 	driver?: string;
 	connection?: string;
-	/** ISO times this browser first and last saw it on the server's list. */
 	firstSeen: string;
 	lastSeen: string;
 };
 
-/**
- * What this browser knows and has decided about scanners: the ones it has seen, the names it
- * gave them, and the ones it hid from the picker. Kept here rather than on the server like the
- * rest of this browser's preferences: a name is whoever is standing at it's business.
- */
 export type ScannerPrefs = {
 	known: Record<string, KnownScanner>;
 	labels: Record<string, string>;

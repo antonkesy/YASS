@@ -13,11 +13,9 @@
 	}: {
 		status: ScannerStatusDto | null;
 		connection: ConnectionState;
-		/** Pages scanned so far, when a scan is running. Shown as "Scanning · N pages". */
 		pages?: number | null;
 	} = $props();
 
-	/** Hovering the pill shows the panel until the pointer leaves; a press pins it until a press outside. */
 	let open = $state<'hover' | 'pinned' | null>(null);
 
 	const offline = $derived(connection !== 'connected');
@@ -33,7 +31,6 @@
 				: scannerStateLabel(status?.State)
 	);
 
-	// The mockup pills are always white; only the dot carries the state.
 	const dot = $derived(
 		offline || status?.State === ScannerState.Unknown
 			? 'bg-ink-faint'

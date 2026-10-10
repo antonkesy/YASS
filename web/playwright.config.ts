@@ -1,11 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
-/**
- * E2E runs against the real .NET server in --fake mode, serving the production build.
- * `pnpm build` writes to ./build; the server is pointed at it through YASS_WEBROOT.
- */
+// E2E runs the real .NET server in --fake mode against ./build (via YASS_WEBROOT).
 const port = 4173;
-/** The server's output.directory for e2e; the save-to-server test reads what lands here. */
 export const serverFolder = `${process.env.TMPDIR ?? '/tmp'}/yass-e2e/consume`;
 
 export default defineConfig({
@@ -22,11 +18,8 @@ export default defineConfig({
 		{ name: 'mobile', use: { ...devices['Pixel 7'] } }
 	],
 	webServer: {
-		// 400 ms a page, not 150: "stop a scan early" needs a scan that is still running
-		// when the review screen has finished sliding in, or the test races the feeder
-		// rather than exercising Stop.
-		// Two extra scanners beside the built-in one, so the home screen's picker has
-		// something to pick between and presets have scanners to belong to.
+		// 400 ms/page so "stop a scan early" still has a running scan once review has slid in.
+		// Two extra scanners so the picker and per-scanner presets have something to choose from.
 		command:
 			`pnpm build && dotnet run --project ../src/Yass.Server --no-launch-profile -- ` +
 			`--fake 'pages=3,blank=2,delay=400ms,devices=Epson DS-530;Canon LiDE 400'`,
@@ -36,7 +29,6 @@ export default defineConfig({
 		env: {
 			YASS__server__listen: `127.0.0.1:${port}`,
 			YASS__sessions__directory: `${process.env.TMPDIR ?? '/tmp'}/yass-e2e/sessions`,
-			// Saving to the server is configured, so its Settings toggle and button can be tested.
 			YASS__output__directory: serverFolder,
 			YASS__logging__level: 'warning',
 			YASS_WEBROOT: `${import.meta.dirname}/build`

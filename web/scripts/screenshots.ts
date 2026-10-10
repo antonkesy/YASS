@@ -1,11 +1,4 @@
-/**
- * Captures the README screenshots against a running `--fake` server.
- *
- *   pnpm --dir web screenshots            # expects the e2e server on :4173, or starts one
- *   YASS_URL=http://host:8080 pnpm --dir web screenshots
- *
- * Output goes to ../assets/screenshots/. Run `pnpm build` first when starting the server here.
- */
+// README screenshots against a running `--fake` server (YASS_URL, else the e2e server on :4173).
 import { spawn, type ChildProcess } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { chromium, devices, type Page } from 'playwright';
@@ -85,26 +78,22 @@ async function main() {
 	const server = (await healthy()) ? null : await startServer();
 	const browser = await chromium.launch();
 	try {
-		// Phone first: it is what the UI is designed for.
 		const phone = await browser.newContext({
 			...devices['Pixel 7'],
 			baseURL: url,
 			colorScheme: 'light',
 			reducedMotion: 'reduce'
 		});
-		// Headless Chromium offers the save dialog even on 127.0.0.1, and a native dialog
-		// cannot be driven from here: without the API the button is a plain download,
-		// which is also what a real phone gets.
+		// Headless Chromium offers the save dialog even on 127.0.0.1 and it cannot be driven;
+		// without the API the button is a plain download, as on a real phone.
 		await phone.addInitScript(() => {
 			Object.defineProperty(window, 'showSaveFilePicker', { value: undefined });
 		});
 		const page = await phone.newPage();
 
-		// One finished, named scan so the home screen has a past scan to list.
 		await scanToReview(page);
 		await page.getByTestId('name-input').fill('Insurance letter');
 		await page.getByTestId('name-input').press('Enter');
-		// Downloading it finishes the scan, which is what the list shows as its status.
 		await page.getByTestId('download-button').click();
 		await page
 			.getByTestId('session-state')
@@ -142,7 +131,6 @@ async function main() {
 		await shot(page, 'settings');
 		await phone.close();
 
-		// And one desktop frame, so nobody thinks it is phone-only.
 		const desktop = await browser.newContext({
 			...devices['Desktop Chrome'],
 			viewport: { width: 1280, height: 800 },

@@ -8,15 +8,10 @@
 	import Slider from './Slider.svelte';
 	import Toggle from './Toggle.svelte';
 
-	/** The server's scan defaults, which every control here falls back to and says it does. */
 	let { effective }: { effective: ScanOptionsDto } = $props();
 
 	const overrides = $derived($settings);
 
-	/**
-	 * What "Default" stands for, said beside the control: a row of segments with Default lit
-	 * otherwise leaves you guessing whether the next scan is 150 dpi or 600.
-	 */
 	const defaultHint = (label: string | undefined) =>
 		label ? t('settings.defaultHint', { value: label }) : '';
 
@@ -89,7 +84,6 @@
 		onchange={(v) => setNumber('PageSize', v)}
 	/>
 
-	<!-- What happens to a page after it comes off the scanner. -->
 	<fieldset class="flex flex-col rounded-[16px] bg-app px-3.5 py-1.5">
 		<legend class="sr-only">{t('settings.cleanUp')}</legend>
 		<Toggle
@@ -98,7 +92,6 @@
 			checked={overrides.BlankPageDetection ?? effective.BlankPageDetection ?? false}
 			onchange={(v) => settings.update('BlankPageDetection', v)}
 		/>
-		<!-- Belongs to the toggle above, and only matters while it is on. -->
 		<label
 			class="mb-2 ml-3 flex items-center justify-between gap-3 border-l-2 border-line-strong pl-3 transition-opacity {(overrides.BlankPageDetection ??
 			effective.BlankPageDetection)

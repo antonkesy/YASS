@@ -1,10 +1,4 @@
-/**
- * The icon set from "Scanner Stage v2.dc.html", transcribed. All 24×24, stroked with
- * `currentColor`, round caps and joins — the mockup's own `sv()` helper in reverse.
- *
- * Shapes stay as `rect` / `circle` where the mockup used them rather than being
- * flattened to paths, so a change can be diffed against the mockup line for line.
- */
+/** Transcribed from the mockup; rect/circle kept unflattened so it diffs line for line. */
 
 export type Shape =
 	| { readonly kind: 'path'; readonly d: string }
@@ -29,7 +23,6 @@ const rect = (x: number, y: number, w: number, h: number, rx: number): Shape => 
 });
 const circle = (cx: number, cy: number, r: number): Shape => ({ kind: 'circle', cx, cy, r });
 
-/** Size and stroke the mockup draws each icon at, where it differs from 18px / 1.75. */
 export type IconSpec = {
 	readonly shapes: readonly Shape[];
 	readonly size?: number;
@@ -123,7 +116,6 @@ export const icons = {
 	},
 	plus: { shapes: [p('M5 12h14'), p('M12 5v14')] },
 	close: { shapes: [p('M18 6 6 18'), p('m6 6 12 12')] },
-	/** The mockup's 12px/2.5 close, used inside pills and chips. */
 	closeSmall: { shapes: [p('M18 6 6 18'), p('m6 6 12 12')], size: 12, stroke: 2.5 },
 	chevronLeft: { shapes: [p('m15 18-6-6 6-6')] },
 	chevronRight: { shapes: [p('m9 18 6-6-6-6')] },
@@ -139,7 +131,6 @@ export const icons = {
 		stroke: 2
 	},
 	check: { shapes: [p('M20 6 9 17l-5-5')], size: 16, stroke: 2.5 },
-	/** Same glyph as `check`, drawn smaller for the autosave strip. */
 	checkSmall: { shapes: [p('M20 6 9 17l-5-5')], size: 14, stroke: 2.5 },
 	sliders: {
 		shapes: [
@@ -193,7 +184,6 @@ export const icons = {
 		size: 16
 	},
 	search: { shapes: [circle(11, 11, 8), p('m21 21-4.3-4.3')], size: 16 },
-	/** The header's language menu. */
 	globe: {
 		shapes: [
 			circle(12, 12, 9),
@@ -203,7 +193,6 @@ export const icons = {
 		],
 		size: 16
 	},
-	/** Not in the mockup either: keyboard shortcuts and issue reporting. */
 	keyboard: {
 		shapes: [
 			rect(2, 6, 20, 12, 2),
@@ -215,7 +204,6 @@ export const icons = {
 		],
 		size: 16
 	},
-	// A warning sign: a rounded triangle with the mark in it, for something to look at.
 	alert: {
 		shapes: [
 			p('M10.3 4.2a2 2 0 0 1 3.4 0l7.6 13.2a2 2 0 0 1-1.7 3H4.4a2 2 0 0 1-1.7-3z'),
@@ -225,9 +213,7 @@ export const icons = {
 	},
 	bug: {
 		shapes: [
-			// Head to tail 3.5–22: a unit below the box's centre, because a body that tapers
-			// to a rounded tip carries its weight high and looks raised when centred exactly.
-			// Ending on 22, as the book does, it reads level with the icons beside it.
+			// A unit below centre: a body tapering to a tip looks raised when centred exactly.
 			p('M9 8V6.5a3 3 0 0 1 6 0V8'),
 			rect(7, 8, 10, 14, 5),
 			p('M12 12v10'),
@@ -240,9 +226,7 @@ export const icons = {
 		],
 		size: 16
 	},
-	/** Not in the mockup, which has no full-screen page view; this app does. */
 	expand: { shapes: [p('M15 3h6v6'), p('M9 21H3v-6'), p('M21 3l-7 7'), p('M3 21l7-7')] },
-	/** Nor a full-screen overview, which zooms every thumbnail at once. */
 	zoomIn: {
 		shapes: [circle(11, 11, 7), p('m20 20-4.5-4.5'), p('M8 11h6'), p('M11 8v6')],
 		size: 16
@@ -253,7 +237,6 @@ export const icons = {
 		size: 15
 	},
 
-	// Preset icons. The mockup draws these at 15px in the picker and the preset pills.
 	file: {
 		shapes: [
 			p('M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z'),
@@ -350,16 +333,13 @@ export const icons = {
 		],
 		size: 16
 	},
-	/** ⋯: the menu a phone's header folds its other buttons into. */
 	more: { shapes: [circle(5, 12, 1), circle(12, 12, 1), circle(19, 12, 1)], size: 18, stroke: 2.5 },
 	moon: { shapes: [p('M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z')], size: 16 },
-	/** Light or dark: a circle, one half of it marked. */
 	contrast: { shapes: [circle(12, 12, 10), p('M12 18a6 6 0 0 0 0-12v12z')] }
 } as const satisfies Record<string, IconSpec>;
 
 export type IconName = keyof typeof icons;
 
-/** The twelve glyphs the settings sheet offers when naming a preset. */
 export const presetIcons = [
 	'star',
 	'file',

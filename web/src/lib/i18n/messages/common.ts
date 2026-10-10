@@ -1,6 +1,5 @@
 import type { Area } from '../types';
 
-/** The header, the documentation page and anything every screen shares. */
 export const common = {
 	backHome: {
 		en: 'Back to home',

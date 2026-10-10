@@ -11,7 +11,6 @@ import { createHubClient } from '$lib/hub/client';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import { sessionOf } from './fixtures';
 
-/** Stands in for Photino's `window.external`: records what goes out, lets tests answer. */
 function fakeExternal() {
 	const sent: { id: number; method: string; args: unknown[] }[] = [];
 	let receive: ((message: string) => void) | null = null;

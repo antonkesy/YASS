@@ -3,11 +3,9 @@ import { writable } from 'svelte/store';
 export type Toast = {
 	id: number;
 	message: string;
-	/** When set, the toast offers an Undo that calls this. */
 	undo?: () => void;
 };
 
-/** The mockup's toast lifetime. Long enough to read, short enough not to linger. */
 export const TOAST_MS = 4200;
 
 function create() {
@@ -33,5 +31,4 @@ function create() {
 	};
 }
 
-/** One at a time: a second toast replaces the first rather than stacking. */
 export const toast = create();

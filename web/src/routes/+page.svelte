@@ -46,11 +46,8 @@
 	let working = $state(false);
 	let error = $state<string | null>(null);
 	let effective = $state<ScanOptionsDto | null>(null);
-	/** Scanners the server can see: the stage's picker, and the name a chosen one goes by. */
 	let devices = $state<ScannerDeviceDto[]>([]);
 
-	// The stage shows what the next scan will use, so the options are loaded up front
-	// rather than only at the moment Scan is pressed.
 	$effect(() => {
 		if ($connection === 'connected' && !effective) {
 			client.hub
@@ -60,12 +57,7 @@
 		}
 	});
 
-	/**
-	 * The scanner list is asked for on every (re)connect and again whenever the scanner status
-	 * changes: a scanner plugged in after the page loaded, or one the driver was still
-	 * enumerating the first time, shows up in the picker without a reload. Quietly: the stage
-	 * is worth showing whether or not the driver felt like answering.
-	 */
+	// Asked again on every reconnect and status change, so a scanner enumerated late still shows up.
 	let seenStatus: ScannerStatusDto | null = null;
 	let lastConnected = false;
 	$effect(() => {
@@ -88,10 +80,6 @@
 
 	const recent = $derived(sortedSessions($sessions));
 
-	/**
-	 * A scan's own PDF properties go with the scan: once the list is in (it arrives whole on
-	 * connect), the properties of scans that are gone are dropped.
-	 */
 	$effect(() => {
 		if ($connection !== 'connected' || $sessions.size === 0) return;
 		const existing = new Set($sessions.keys());
@@ -100,8 +88,7 @@
 			documentMeta.set(pruneDocumentMeta(all, existing));
 	});
 
-	// Taken once on mount: coming back from a session slides in from the left and
-	// highlights that scan; a cold load just fades.
+	// Read once on mount.
 	const landed = cameFrom.take();
 	const cameBack = landed !== null;
 	// A view transition already slides the screen in; its own entrance would be a second slide.
@@ -111,21 +98,10 @@
 			? 'animate-slide-from-left'
 			: 'animate-fade-in';
 
-	/**
-	 * What the next scan will actually use: the server's defaults with this browser's
-	 * overrides applied. The stage shows this rather than the bare defaults, which would
-	 * advertise settings the scan is not going to run with.
-	 */
 	const planned = $derived(effective ? { ...effective, ...$settings } : null);
 
-	/** The picker's scanners: this browser's names for them, and none it has hidden. */
 	const offered = $derived(pickable($scannerPrefs, devices, planned?.Device));
 
-	/**
-	 * The chosen scanner as a person reads it. Nothing when none is chosen — the review header's
-	 * status pill names whatever the server would pick — and the bare id for one the server has
-	 * stopped listing, which at least says something is wrong.
-	 */
 	const deviceName = $derived(
 		planned?.Device
 			? scannerName(
@@ -149,10 +125,6 @@
 		}
 	}
 
-	/**
-	 * One download per scan. The browser asks before saving several files at once,
-	 * which is the right prompt to get: this really is several separate saves.
-	 */
 	async function downloadAll(ids: string[]) {
 		error = null;
 		try {
@@ -162,7 +134,6 @@
 			working = true;
 			let files = 0;
 			for (const id of ids) {
-				// A scan deleted since it was ticked has nothing left to download.
 				const session = $sessions.get(id);
 				if (!session) continue;
 				const result = await client.hub.export(
@@ -185,12 +156,7 @@
 		}
 	}
 
-	/**
-	 * The auto-clear preference, carried out: whichever browser has it set deletes the scans
-	 * past its timeframe whenever the list changes and once a minute besides, so a scan ages
-	 * out while the page is simply left open. One delete per scan at a time; a failed one
-	 * is tried again on the next look rather than reported, there being nothing to do about it.
-	 */
+	// Also once a minute, so scans age out while the page is left open; a failed delete retries on the next sweep.
 	const sweeping = new SvelteSet<string>();
 
 	async function sweep() {
@@ -247,7 +213,6 @@
 		void goto(resolve('/settings'));
 	}
 
-	/** Straight to naming a new preset, which is what Save as preset promised. */
 	function savePreset() {
 		void goto(resolve('/settings'), { state: { newPreset: true } });
 	}
@@ -260,12 +225,7 @@
 		<Alert>{error}</Alert>
 	{/if}
 
-	<!--
-		Side by side, the panes get exactly the height left over after the header and this
-		main's own pt-3 + pb-7 (2.5rem) -- so the home screen fits without scrolling
-		and each pane scrolls its own overflow instead. Stacked (below lg) they keep their
-		natural height and the page scrolls, which is the right behaviour on a phone.
-	-->
+	<!-- From lg the panes get exactly the height under the header and main's padding (2.5rem). -->
 	<div
 		class="flex flex-wrap items-stretch gap-6 lg:h-[calc(100dvh-var(--app-header-h)-2.5rem)] lg:min-h-0 lg:flex-nowrap"
 	>
