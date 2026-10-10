@@ -35,8 +35,6 @@ public sealed record FakeScenario
     /// <summary>Every device this fake reports, the configured one first.</summary>
     public IReadOnlyList<string> AllDevices => [DeviceName, .. ExtraDevices];
 
-    public static FakeScenario Default { get; } = new();
-
     /// <summary>Instant, deterministic scenario for unit tests.</summary>
     public static FakeScenario Pages(int count, params int[] blank) =>
         new() { PageCount = count, BlankPages = new HashSet<int>(blank), PageDelay = TimeSpan.Zero };
