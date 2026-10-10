@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { autoAnimate } from '$lib/autoAnimate';
 	import { t } from '$lib/i18n/index.svelte';
-	import { escapeCloses } from '$lib/keys.svelte';
 	import { PageCleanup, PageFilter } from '$lib/hub/generated/Yass.Core.Domain';
 	import FilterMenu from './FilterMenu.svelte';
+	import Popover from './Popover.svelte';
 	import { Icon } from '$lib/icons';
 
 	let {
@@ -71,10 +71,6 @@
 
 	let filterOpen = $state(false);
 	let cropOpen = $state(false);
-	escapeCloses(
-		() => cropOpen,
-		() => (cropOpen = false)
-	);
 
 	/**
 	 * Nothing ticked means the page on the stage, the one these buttons sit under. Acting on
@@ -270,16 +266,11 @@
 		{/if}
 
 		{#if cropOpen}
-			<button
-				type="button"
-				class="fixed inset-0 z-30 cursor-default"
-				aria-label={t('review.closeCropMenu')}
-				onclick={() => (cropOpen = false)}
-			></button>
-			<div
+			<Popover
+				label={t('review.closeCropMenu')}
+				onclose={() => (cropOpen = false)}
 				class="absolute bottom-[calc(100%+8px)] left-1/2 z-31 min-w-[220px] -translate-x-1/2 animate-fade-in rounded-[16px] bg-surface p-1.5 shadow-menu"
-				role="menu"
-				data-testid="crop-menu"
+				testid="crop-menu"
 			>
 				{#each [{ id: 'crop', label: t('review.cropMenuItem'), icon: 'crop', run: oncrop }, { id: 'straighten', label: t('review.straightenMenuItem'), icon: 'rotateRight', run: onstraighten }] as const as item (item.id)}
 					{#if item.run && one}
@@ -324,7 +315,7 @@
 						</span>
 					</button>
 				{/if}
-			</div>
+			</Popover>
 		{/if}
 
 		{#if filterOpen}

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { t } from '$lib/i18n/index.svelte';
-	import { useLayer } from '$lib/keys.svelte';
 	import { PageCleanup, type PageFilter } from '$lib/hub/generated/Yass.Core.Domain';
 	import { cleanupOptions, pageFilters } from '$lib/review/edits';
 	import { Icon } from '$lib/icons';
+	import Popover from './Popover.svelte';
 
 	let {
 		placement = 'above',
@@ -21,25 +21,16 @@
 		oncleanup?: (cleanup: PageCleanup, on: boolean) => void;
 		onclose: () => void;
 	} = $props();
-
-	// Escape closes this, and only this, while it is open.
-	useLayer(() => onclose());
 </script>
 
-<!-- Click-catcher first, so anywhere outside the menu closes it. -->
-<button
-	type="button"
-	class="fixed inset-0 z-30 cursor-default"
-	aria-label={t('review.closeFilterMenu')}
-	onclick={onclose}
-></button>
-<div
+<Popover
+	label={t('review.closeFilterMenu')}
+	{onclose}
 	class="absolute left-1/2 z-31 min-w-[200px] -translate-x-1/2 animate-fade-in rounded-[16px] bg-surface p-1.5 text-ink shadow-menu {placement ===
 	'above'
 		? 'bottom-[calc(100%+8px)]'
 		: 'top-[calc(100%+8px)]'}"
-	role="menu"
-	data-testid="filter-menu"
+	testid="filter-menu"
 >
 	{#each pageFilters as option (option.value)}
 		<button
@@ -91,4 +82,4 @@
 			</button>
 		{/each}
 	{/if}
-</div>
+</Popover>

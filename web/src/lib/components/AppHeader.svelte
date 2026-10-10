@@ -4,9 +4,9 @@
 	import { getHub, sortedSessions } from '$lib/hub/hub';
 	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 	import StatusPill from './StatusPill.svelte';
+	import Popover from './Popover.svelte';
 	import { Icon } from '$lib/icons';
 	import { cameFrom } from '$lib/navigation';
-	import { escapeCloses } from '$lib/keys.svelte';
 	import { ISSUE_TEMPLATES } from '$lib/links';
 	import { i18n, LOCALE_NAMES, LOCALES, t } from '$lib/i18n/index.svelte';
 	import { appearance } from '$lib/appearance.svelte';
@@ -14,10 +14,7 @@
 	import { ms } from '$lib/motion';
 
 	let menu = $state<'language' | 'issue' | 'more' | null>(null);
-	escapeCloses(
-		() => menu !== null,
-		() => (menu = null)
-	);
+	const close = () => (menu = null);
 
 	// Icons only, each named by its aria-label and shown as a tooltip on hover.
 	const button =
@@ -48,6 +45,43 @@
 		})?.[1] ?? null
 	);
 </script>
+
+<!-- The phone's ⋯ menu repeats both lists, so they are written once. -->
+{#snippet languages()}
+	{#each LOCALES as locale (locale)}
+		<button
+			type="button"
+			role="menuitemradio"
+			aria-checked={i18n.locale === locale}
+			lang={locale}
+			class="{item} justify-between gap-3"
+			onclick={() => {
+				i18n.set(locale);
+				close();
+			}}
+			data-testid="language-{locale}"
+		>
+			{LOCALE_NAMES[locale]}
+			{#if i18n.locale === locale}<Icon name="checkSmall" />{/if}
+		</button>
+	{/each}
+{/snippet}
+
+{#snippet issues()}
+	{#each ISSUE_TEMPLATES as template (template.id)}
+		<a
+			href={template.href}
+			target="_blank"
+			rel="noreferrer noopener external"
+			role="menuitem"
+			class={item}
+			onclick={close}
+			data-testid="issue-{template.id}"
+		>
+			{t(template.label)}
+		</a>
+	{/each}
+{/snippet}
 
 <!--
 	Three columns rather than a flex row with a spacer, so whatever sits in the middle is
@@ -112,19 +146,6 @@
 		share a ⋯ menu, the way an iOS navigation bar does it.
 	-->
 	<div class="flex items-center justify-end gap-1.5">
-		{#if menu}
-			<button
-				type="button"
-				class="fixed inset-0 z-30 cursor-default"
-				aria-label={menu === 'language'
-					? t('common.closeLanguageMenu')
-					: menu === 'more'
-						? t('common.closeMoreMenu')
-						: t('common.closeIssueMenu')}
-				onclick={() => (menu = null)}
-			></button>
-		{/if}
-
 		<!-- Shows the look it switches to: a moon while light, a sun while dark. -->
 		<button
 			type="button"
@@ -155,25 +176,14 @@
 				<Icon name="globe" />
 			</button>
 			{#if menu === 'language'}
-				<div class={popup} role="menu" data-testid="language-menu">
-					{#each LOCALES as locale (locale)}
-						<button
-							type="button"
-							role="menuitemradio"
-							aria-checked={i18n.locale === locale}
-							lang={locale}
-							class="{item} justify-between gap-3"
-							onclick={() => {
-								i18n.set(locale);
-								menu = null;
-							}}
-							data-testid="language-{locale}"
-						>
-							{LOCALE_NAMES[locale]}
-							{#if i18n.locale === locale}<Icon name="checkSmall" />{/if}
-						</button>
-					{/each}
-				</div>
+				<Popover
+					label={t('common.closeLanguageMenu')}
+					onclose={close}
+					class={popup}
+					testid="language-menu"
+				>
+					{@render languages()}
+				</Popover>
 			{/if}
 		</div>
 
@@ -201,21 +211,14 @@
 				<Icon name="bug" />
 			</button>
 			{#if menu === 'issue'}
-				<div class={popup} role="menu" data-testid="issue-menu">
-					{#each ISSUE_TEMPLATES as template (template.id)}
-						<a
-							href={template.href}
-							target="_blank"
-							rel="noreferrer noopener external"
-							role="menuitem"
-							class={item}
-							onclick={() => (menu = null)}
-							data-testid="issue-{template.id}"
-						>
-							{t(template.label)}
-						</a>
-					{/each}
-				</div>
+				<Popover
+					label={t('common.closeIssueMenu')}
+					onclose={close}
+					class={popup}
+					testid="issue-menu"
+				>
+					{@render issues()}
+				</Popover>
 			{/if}
 		</div>
 
@@ -233,48 +236,20 @@
 				<Icon name="more" />
 			</button>
 			{#if menu === 'more'}
-				<div class={popup} role="menu" data-testid="more-menu">
-					{#each LOCALES as locale (locale)}
-						<button
-							type="button"
-							role="menuitemradio"
-							aria-checked={i18n.locale === locale}
-							lang={locale}
-							class="{item} justify-between gap-3"
-							onclick={() => {
-								i18n.set(locale);
-								menu = null;
-							}}
-							data-testid="language-{locale}"
-						>
-							{LOCALE_NAMES[locale]}
-							{#if i18n.locale === locale}<Icon name="checkSmall" />{/if}
-						</button>
-					{/each}
+				<Popover label={t('common.closeMoreMenu')} onclose={close} class={popup} testid="more-menu">
+					{@render languages()}
 					<div class="mx-3 my-1 h-px bg-line" role="separator"></div>
 					<a
 						href={resolve('/docs')}
 						role="menuitem"
 						class={item}
-						onclick={() => (menu = null)}
+						onclick={close}
 						data-testid="menu-docs"
 					>
 						{t('common.documentation')}
 					</a>
-					{#each ISSUE_TEMPLATES as template (template.id)}
-						<a
-							href={template.href}
-							target="_blank"
-							rel="noreferrer noopener external"
-							role="menuitem"
-							class={item}
-							onclick={() => (menu = null)}
-							data-testid="issue-{template.id}"
-						>
-							{t(template.label)}
-						</a>
-					{/each}
-				</div>
+					{@render issues()}
+				</Popover>
 			{/if}
 		</div>
 	</div>

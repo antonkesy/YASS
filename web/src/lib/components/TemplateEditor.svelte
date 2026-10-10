@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { escapeCloses } from '$lib/keys.svelte';
 	import { Icon } from '$lib/icons';
 	import { t } from '$lib/i18n/index.svelte';
+	import Popover from './Popover.svelte';
 
 	let {
 		value,
@@ -27,10 +27,6 @@
 	} = $props();
 
 	let open = $state(false);
-	escapeCloses(
-		() => open,
-		() => (open = false)
-	);
 
 	let field = $state<HTMLInputElement | null>(null);
 	/** Where the caret was when the field last lost focus, so a chip inserts in place. */
@@ -82,6 +78,7 @@
 				type="button"
 				class="flex h-7 items-center gap-1 rounded-[8px] bg-ctl px-2.5 text-xs font-semibold text-ink-2 transition-colors hover:bg-ctl-track"
 				aria-expanded={open}
+				aria-haspopup="menu"
 				onclick={() => (open = !open)}
 				data-testid="template-presets"
 			>
@@ -89,16 +86,11 @@
 			</button>
 
 			{#if open}
-				<!-- Click-catcher first, so anywhere outside closes the menu. -->
-				<button
-					type="button"
-					class="fixed inset-0 z-34 cursor-default"
-					aria-label={t('settings.closeReadyMade')}
-					onclick={() => (open = false)}
-				></button>
-				<div
+				<Popover
+					label={t('settings.closeReadyMade')}
+					onclose={() => (open = false)}
 					class="absolute top-[calc(100%+4px)] left-0 z-35 flex min-w-[min(420px,80vw)] animate-pop-in flex-col rounded-[14px] bg-surface p-1.5 shadow-popover"
-					role="menu"
+					raised
 				>
 					{#each presets as preset (preset.template)}
 						<button
@@ -117,7 +109,7 @@
 							<span class="font-mono text-[11px] text-ink-muted">{preset.template}</span>
 						</button>
 					{/each}
-				</div>
+				</Popover>
 			{/if}
 		</div>
 	{/if}
