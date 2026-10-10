@@ -98,10 +98,12 @@ public sealed class PdfAssemblyTests : IDisposable
         Assert.DoesNotContain("/DCTDecode", lossless, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task A_rendered_jpeg_goes_into_the_pdf_verbatim()
+    [Theory]
+    [InlineData(ColorMode.Color)]
+    [InlineData(ColorMode.Grayscale)]
+    public async Task A_rendered_jpeg_goes_into_the_pdf_verbatim(ColorMode color)
     {
-        ExportPage page = new(_fixtures[3], new RenderSpec(Rotation.R0, PageFilter.Original, ColorMode.Color, null), 300);
+        ExportPage page = new(_fixtures[3], new RenderSpec(Rotation.R0, PageFilter.Original, color, null), 300);
         var pdf = new PdfConfig { Compression = PdfCompression.Jpeg, JpegQuality = 60 };
         string rendered = await PageRenderer.RenderToFileAsync(page, pdf, _dir, CancellationToken.None);
 
@@ -109,6 +111,17 @@ public sealed class PdfAssemblyTests : IDisposable
 
         // Not decoded and re-encoded at NAPS2's own quality: the configured one is what ships.
         Assert.Contains(Encoding.Latin1.GetString(await File.ReadAllBytesAsync(rendered)), document, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Black_and_white_pages_go_in_as_fax_compression_not_jpeg()
+    {
+        ExportPage[] pages = [new ExportPage(_fixtures[0], new RenderSpec(Rotation.R0, PageFilter.Original, ColorMode.Bw, null), 300)];
+
+        string pdf = await WriteAsync(pages, new PdfConfig { Compression = PdfCompression.Jpeg });
+
+        Assert.Contains("/CCITTFaxDecode", pdf, StringComparison.Ordinal);
+        Assert.DoesNotContain("/DCTDecode", pdf, StringComparison.Ordinal);
     }
 
     [Fact]
