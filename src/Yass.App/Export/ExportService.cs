@@ -42,8 +42,7 @@ public sealed class ExportService(
             return null;
         }
 
-        stem = FilenameTemplate.Expand(stem, session.CreatedAt, session.Id, facts, extension: "");
-        return documentCount == 1 ? stem : $"{stem}-{(index + 1).ToString(CultureInfo.InvariantCulture)}";
+        return Numbered(FilenameTemplate.Expand(stem, session.CreatedAt, session.Id, facts, extension: ""), documentCount, index);
     }
 
     /// <summary>Prefix of a file still being written into the server folder, renamed once complete.</summary>
@@ -147,9 +146,9 @@ public sealed class ExportService(
 
                 if (request.ToServer)
                 {
-                    string stem = SafeFileName(NameFor(request.Name, session, facts, documentPages.Length, d)
+                    string stem = FileNames.Safe(NameFor(request.Name, session, facts, documentPages.Length, d)
                         ?? Fallback(session, documentPages.Length, d));
-                    string saved = UniquePath(dir, stem + extension);
+                    string saved = FileNames.Unique(dir, stem + extension);
                     File.Move(path, saved);
                     logger.LogInformation("Saved {File}", saved);
                     produced.Add(new ExportedDocumentDto(document.Length, "", saved));
@@ -208,35 +207,10 @@ public sealed class ExportService(
     }
 
     /// <summary>A name for an unnamed scan, from when it was scanned — what the browser would suggest too.</summary>
-    private static string Fallback(Session session, int documentCount, int index)
-    {
-        string stem = "scan-" + session.CreatedAt.ToString("yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture);
-        return documentCount == 1 ? stem : $"{stem}-{(index + 1).ToString(CultureInfo.InvariantCulture)}";
-    }
+    private static string Fallback(Session session, int documentCount, int index) =>
+        Numbered("scan-" + session.CreatedAt.ToString("yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture), documentCount, index);
 
-    /// <summary>
-    /// A name made safe to put in the folder: no path separators or characters the file system
-    /// refuses, so a name can never climb out of <c>output.directory</c>.
-    /// </summary>
-    internal static string SafeFileName(string name)
-    {
-        char[] invalid = Path.GetInvalidFileNameChars();
-        string safe = new(name.Select(c => invalid.Contains(c) || c == '\\' ? '-' : c).ToArray());
-        safe = safe.Trim().Trim('.');
-        return safe.Length == 0 ? "scan" : safe;
-    }
-
-    /// <summary>The name, or the name with -2, -3… before the extension: never over an existing file.</summary>
-    internal static string UniquePath(string directory, string fileName)
-    {
-        string candidate = Path.Combine(directory, fileName);
-        string stem = Path.GetFileNameWithoutExtension(fileName);
-        string extension = Path.GetExtension(fileName);
-        for (int n = 2; File.Exists(candidate); n++)
-        {
-            candidate = Path.Combine(directory, $"{stem}-{n.ToString(CultureInfo.InvariantCulture)}{extension}");
-        }
-
-        return candidate;
-    }
+    /// <summary>The stem as it is for a single document, or numbered from 1 when the scan splits into several.</summary>
+    private static string Numbered(string stem, int documentCount, int index) =>
+        documentCount == 1 ? stem : $"{stem}-{(index + 1).ToString(CultureInfo.InvariantCulture)}";
 }
