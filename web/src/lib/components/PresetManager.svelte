@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import { t, type MessageKey } from '$lib/i18n/index.svelte';
 	import { Icon, presetIcons, type PresetIconName } from '$lib/icons';
+	import PresetPill from './PresetPill.svelte';
 	import { ms } from '$lib/motion';
 	import { applyPreset, pickedPreset, presetName, presets, type Preset } from '$lib/presets';
 	import { settings, type ScanOverrides } from '$lib/settings';
@@ -148,34 +149,16 @@
 
 	<div class="flex flex-wrap gap-1.5">
 		{#each $presets as preset (preset.id)}
-			<button
-				type="button"
-				class="relative flex h-[38px] items-center gap-2 rounded-full px-3.5 text-[13px] font-bold transition-all duration-200 {chosen?.id ===
-				preset.id
-					? 'bg-seg text-ink shadow-seg'
-					: edited?.id === preset.id
-						? 'text-ink-2 shadow-ring-outline hover:text-ink'
-						: 'text-ink-2 hover:bg-ctl-hover hover:text-ink'}"
-				aria-pressed={chosen?.id === preset.id}
-				title={edited?.id === preset.id ? t('settings.presetEditedTitle') : undefined}
+			<!-- The home screen only offers one with a scanner on that scanner, so this sheet — the
+			     one place every preset is listed — has to say which. -->
+			<PresetPill
+				{preset}
+				active={chosen?.id === preset.id}
+				edited={edited?.id === preset.id}
+				editedTitle={t('settings.presetEditedTitle')}
+				note={preset.device ? deviceLabel(preset.device) : ''}
 				onclick={() => pickPreset(preset)}
-			>
-				{#if edited?.id === preset.id}
-					<span
-						class="absolute top-0.5 right-1 h-2 w-2 rounded-full bg-warning ring-2 ring-surface"
-						aria-hidden="true"
-					></span>
-				{/if}
-				<Icon name={preset.icon} />
-				{presetName(preset)}
-				<!-- The home screen only offers this one on that scanner, so this sheet — the
-				     one place every preset is listed — has to say which. -->
-				{#if preset.device}
-					<span class="max-w-[110px] truncate text-[11px] font-semibold opacity-65"
-						>{deviceLabel(preset.device)}</span
-					>
-				{/if}
-			</button>
+			/>
 		{/each}
 		{#if !drafting}
 			<button

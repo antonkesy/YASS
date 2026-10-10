@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { bounceWhenPicked } from '$lib/motion';
 	import { t } from '$lib/i18n/index.svelte';
-	import { presetName, type Preset } from '$lib/presets';
+	import type { Preset } from '$lib/presets';
 	import { Icon } from '$lib/icons';
+	import PresetPill from './PresetPill.svelte';
 
 	let {
 		presets,
@@ -52,28 +53,15 @@
 	</div>
 	<div class="flex flex-wrap justify-center gap-1.5 rounded-[24px] bg-ctl-track p-[4px]">
 		{#each presets as preset (preset.id)}
-			<button
-				type="button"
-				class="relative flex h-[38px] items-center gap-2 rounded-full px-3.5 text-[13px] font-bold transition-[background-color,color,box-shadow,transform] duration-200 ease-spring active:scale-[0.97] {active ===
-				preset.id
-					? 'bg-seg text-ink shadow-seg'
-					: edited === preset.id
-						? 'text-ink-2 shadow-ring-outline hover:text-ink'
-						: 'text-ink-2 hover:text-ink'}"
-				aria-pressed={active === preset.id}
-				title={edited === preset.id ? t('home.presetEdited') : undefined}
+			<PresetPill
+				{preset}
+				active={active === preset.id}
+				edited={edited === preset.id}
+				editedTitle={t('home.presetEdited')}
+				tray
 				onclick={() => onpick(preset.id)}
 				{@attach bounce(preset.id)}
-			>
-				{#if edited === preset.id}
-					<span
-						class="absolute top-0.5 right-1 h-2 w-2 rounded-full bg-warning ring-2 ring-surface"
-						aria-hidden="true"
-					></span>
-				{/if}
-				<Icon name={preset.icon} />
-				{presetName(preset)}
-			</button>
+			/>
 		{/each}
 	</div>
 </div>
