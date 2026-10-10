@@ -6,14 +6,12 @@
 	import { page as route } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { hubError } from '$lib/hub/errors';
 	import { toast } from '$lib/toast';
 	import { t } from '$lib/i18n/index.svelte';
 	import { cameFrom } from '$lib/navigation';
 	import { getDesktop, getHub, imageUrl, sortedSessions } from '$lib/hub/hub';
 	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 	import type { CropBox, PageAdjust, PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
-	import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import {
 		activePageCount,
 		documentName,
@@ -27,7 +25,6 @@
 	} from '$lib/format';
 	import {
 		addCleanupEdit,
-		applyOptimistic,
 		commonCleanup,
 		deleteEdit,
 		removeCleanupEdit,
@@ -55,18 +52,8 @@
 	import CropModal from '$lib/components/CropModal.svelte';
 	import MergeModal from '$lib/components/MergeModal.svelte';
 	import StopScanButton from '$lib/components/StopScanButton.svelte';
-	import {
-		canSave,
-		cancelled,
-		exportBaseName,
-		exportRequest,
-		fileExtensions,
-		savePicker,
-		saveNatively,
-		saveToBrowser,
-		saveToDisk,
-		type SaveTarget
-	} from '$lib/review/download';
+	import { canSave, exportBaseName, fileExtensions, savePicker } from '$lib/review/download';
+	import { Review } from '$lib/review/review.svelte';
 	import {
 		DOCUMENT_META_FIELDS,
 		documentMeta,
@@ -102,10 +89,13 @@
 
 	const id = $derived(route.params.id ?? '');
 	const session = $derived($sessions.get(id) ?? null);
+	const review = new Review(
+		() => id,
+		() => session
+	);
+	const send = (edit: PageEdit) => review.send(edit);
 	let missing = $state(false);
-	let error = $state<string | null>(null);
 	let selection = $state<Set<number>>(clear());
-	let exporting = $state(false);
 	/** Position in `pages` shown in the centre column. */
 	let current = $state(0);
 	/** Whether the filmstrip is expanded to the full-screen all-pages overview. */
@@ -114,7 +104,6 @@
 	/** The pages the Adjust dialog sets, and the one it shows and starts from. */
 	/** The page the Straighten dialog is open on. */
 	let straightening = $state<number | null>(null);
-	let autocropping = $state(false);
 	let adjusting = $state<{ pages: ReadonlySet<number>; from: number } | null>(null);
 	let previewIndex = $state<number | null>(null);
 	/** The big preview slides in from whichever side the new page came from. */
@@ -146,8 +135,6 @@
 	let cropping = $state<number | null>(null);
 	let merging = $state(false);
 	let confirmDiscard = $state(false);
-	/** Pages from another scan are on their way in; the button that adds them waits. */
-	let mergeBusy = $state(false);
 
 	$effect(() => {
 		if ($connection === 'connected' && !$sessions.has(id)) {
@@ -277,184 +264,6 @@
 		sortedSessions($sessions).filter((s) => s.Id !== id && s.Pages.some((p) => !p.Deleted))
 	);
 
-	async function send(edit: PageEdit) {
-		if (!session) return;
-		error = null;
-		client.updateLocal(id, (s) => applyOptimistic(s, edit));
-		try {
-			await client.hub.applyEdits(id, [edit]);
-		} catch (e) {
-			error = hubError(e);
-			await client.refresh(id);
-		}
-	}
-
-	/** Discard throws the scan away entirely: it leaves no row behind in past scans. */
-	async function discard() {
-		try {
-			await client.hub.deleteSession(id);
-			cameFrom.leaving(id);
-			await goto(resolve('/'));
-			toast.show(t('review.scanDiscarded'));
-		} catch (e) {
-			error = hubError(e);
-		}
-	}
-
-	/**
-	 * The name this browser last asked for, held until the session comes back carrying it.
-	 * Hub calls run one at a time per connection, so a rename can sit behind a page read —
-	 * and Save as… must not name the file from a session that has not caught up yet.
-	 */
-	let renamedTo = $state<string | null>(null);
-	const storedName = $derived(renamedTo ?? session?.Name ?? null);
-
-	// Held until the session comes back carrying it: the call returning is not the same as the
-	// session this page reads from having caught up, and dropping it in between would leave
-	// Save as… naming the file from a session that still thinks it is unnamed.
-	$effect(() => {
-		if (renamedTo !== null && (session?.Name ?? '') === renamedTo) renamedTo = null;
-	});
-
-	async function rename(name: string) {
-		renamedTo = name.trim();
-		try {
-			await client.hub.renameSession(id, name);
-		} catch (e) {
-			renamedTo = null;
-			error = hubError(e);
-		}
-	}
-
-	/**
-	 * What every save of this scan asks the server for. The name is the one this browser asked
-	 * for, which a rename still in the air behind a page read has not reached the session with.
-	 */
-	function request(of: SessionDto, toServer: boolean) {
-		return exportRequest(of, $exportPrefs, $documentMeta, { name: storedName, toServer });
-	}
-
-	/**
-	 * Save as…: asks where the file goes first, while the click is still a user gesture —
-	 * the export itself takes long enough that a browser would refuse to open a dialog
-	 * afterwards — then streams the finished document straight there. Browsers without
-	 * the File System Access API, which needs a secure context, get a plain download.
-	 */
-	async function saveAs() {
-		if (!session) return;
-		const picker = savePicker();
-		let target: SaveTarget | null = null;
-		// The name this browser asked for, not the one the session has caught up to — a rename
-		// can still be in the air behind a page read when Save as… is pressed.
-		const base = exportBaseName(
-			{ ...session, Name: storedName ?? undefined },
-			$exportPrefs.nameTemplate
-		);
-		const extension = fileExtensions[$exportPrefs.format];
-
-		if (desktop) {
-			await saveAsOnDesktop(base, extension);
-			return;
-		}
-
-		if (picker) {
-			try {
-				// One scan is one document, so this is always a file rather than a folder.
-				target = { file: await picker.showSaveFilePicker({ suggestedName: base + extension }) };
-			} catch (e) {
-				if (cancelled(e)) return;
-				// The dialog exists but would not open: the plain download still gets the file out.
-				target = null;
-			}
-		}
-
-		error = null;
-		exporting = true;
-		try {
-			const result = await client.hub.export(id, request(session, false));
-			const count = target
-				? await saveToDisk(result, target, base, extension)
-				: saveToBrowser(result);
-			toast.show(t(target ? 'review.savedFiles' : 'review.downloadedFiles', { n: count }));
-		} catch (e) {
-			error = hubError(e);
-		} finally {
-			exporting = false;
-		}
-	}
-
-	/**
-	 * The desktop app's Save as…: the native dialog picks the file, and the host moves the
-	 * finished export there. The document never passes through the page.
-	 */
-	async function saveAsOnDesktop(base: string, extension: string) {
-		if (!desktop || !session) return;
-		error = null;
-		// Busy from the dialog on, not from the export: a second press while the native dialog
-		// is still up would otherwise open another one over it.
-		exporting = true;
-		try {
-			const file = await desktop.pickSavePath(base + extension);
-			if (!file) return;
-			const result = await client.hub.export(id, request(session, false));
-			const saved = await saveNatively(result, desktop, { file }, base, extension);
-			toast.show(t('review.savedFiles', { n: saved.length }));
-		} catch (e) {
-			error = hubError(e);
-		} finally {
-			exporting = false;
-		}
-	}
-
-	/**
-	 * Stops the feeder. The server keeps every page already scanned and moves the session to
-	 * review; the SessionChanged that follows is what takes the stop button away.
-	 */
-	let stopping = $state(false);
-	async function stopScan() {
-		error = null;
-		stopping = true;
-		try {
-			await client.hub.stopScan(id);
-		} catch (e) {
-			error = hubError(e);
-			stopping = false;
-		}
-	}
-	$effect(() => {
-		if (stopping && !scanning) {
-			stopping = false;
-			toast.show(t('review.scanStopped'));
-		}
-	});
-
-	/**
-	 * Save to server: the same export, written by the server into its configured folder
-	 * instead of handed to the browser. The name is the one Save as… would suggest.
-	 */
-	async function saveToServer() {
-		if (!session) return;
-		error = null;
-		exporting = true;
-		try {
-			const result = await client.hub.export(id, request(session, true));
-			const saved = result.Documents.map((d) => d.SavedTo).filter((p): p is string => !!p);
-			const file = saved[0]?.split(/[/\\]/).pop() ?? '';
-			// On the desktop the "server" is this machine, and its folder just a folder.
-			toast.show(
-				saved.length === 1
-					? t(desktop ? 'review.savedToFolderAs' : 'review.savedToServerAs', { file })
-					: t(desktop ? 'review.savedFilesToFolder' : 'review.savedFilesToServer', {
-							n: saved.length
-						})
-			);
-		} catch (e) {
-			error = hubError(e);
-		} finally {
-			exporting = false;
-		}
-	}
-
 	/** Tapping a page in the strip only moves the stage; the checkbox is what selects. */
 	function show(index: number) {
 		const at = session?.Pages.findIndex((p) => p.Index === index) ?? -1;
@@ -511,7 +320,7 @@
 		if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 's') {
 			// Taken from the browser either way: its own Save page is never what was meant here.
 			e.preventDefault();
-			if (canSave(session, exporting)) void saveAs();
+			if (canSave(session, review.exporting)) void review.saveAs();
 			return;
 		}
 		if (modified(e)) return;
@@ -558,26 +367,6 @@
 		return current;
 	}
 
-	async function scanMore() {
-		error = null;
-		try {
-			await client.hub.scanMore(id);
-		} catch (e) {
-			error = hubError(e);
-		}
-	}
-
-	async function rescan() {
-		const page = session?.Pages[targetPage()];
-		if (!page) return;
-		error = null;
-		try {
-			await client.hub.rescanPage(id, page.Index);
-		} catch (e) {
-			error = hubError(e);
-		}
-	}
-
 	/**
 	 * What the field shows, and the same thing the list of past scans shows for this scan: a
 	 * scan nobody has named reads as the template from settings, which is what it will be
@@ -585,23 +374,22 @@
 	 */
 	const displayName = $derived(
 		session
-			? documentName({ ...session, Name: storedName ?? undefined }, $exportPrefs.nameTemplate)
+			? documentName(
+					{ ...session, Name: review.storedName ?? undefined },
+					$exportPrefs.nameTemplate
+				)
 			: null
 	);
 
-	async function merge(sourceId: string) {
+	/** Pages from another scan are added to the end of this one, once picked. */
+	function merge(sourceId: string) {
 		merging = false;
-		mergeBusy = true;
-		error = null;
-		try {
-			const before = session?.Pages.length ?? 0;
-			const after = await client.hub.mergeSession(id, sourceId);
-			toast.show(t('review.pagesAdded', { n: after.Pages.length - before }));
-		} catch (e) {
-			error = hubError(e);
-		} finally {
-			mergeBusy = false;
-		}
+		void review.merge(sourceId);
+	}
+
+	function rescan() {
+		const page = session?.Pages[targetPage()];
+		if (page) void review.rescan(page.Index);
 	}
 
 	function applyAdjust(adjust: PageAdjust | undefined) {
@@ -609,36 +397,6 @@
 		const pages = adjusting.pages;
 		adjusting = null;
 		send(setAdjustEdit(adjust, pages));
-	}
-
-	/**
-	 * Crops the scanner's frame off the pages in frame. Detection happens on the server, so
-	 * there is no optimistic step: the pages update as the server's crops come back. Undo puts
-	 * back the crops they had, which were snapshotted before asking.
-	 */
-	async function autoCrop() {
-		if (!session || autocropping) return;
-		const before = session.Pages.filter((p) => targets.has(p.Index)).map((p) => ({
-			index: p.Index,
-			crop: p.Crop
-		}));
-		autocropping = true;
-		error = null;
-		try {
-			const count = await client.hub.autoCrop(
-				id,
-				before.map((p) => p.index)
-			);
-			if (count === 0) toast.show(t('review.noBorders'));
-			else
-				toast.show(t('review.croppedPages', { n: count }), () => {
-					for (const p of before) send(setCropEdit(p.crop, new Set([p.index])));
-				});
-		} catch (e) {
-			error = hubError(e);
-		} finally {
-			autocropping = false;
-		}
 	}
 
 	function applySkew(degrees: number) {
@@ -718,8 +476,8 @@
 			onexpand={() => (previewIndex = targetPage())}
 			oncrop={() => (cropping = targetPage())}
 			onstraighten={() => (straightening = targetPage())}
-			onautocrop={autoCrop}
-			{autocropping}
+			onautocrop={() => review.autoCrop(targets)}
+			autocropping={review.autocropping}
 			onadjust={() => (adjusting = { pages: new Set(targets), from: targetPage() })}
 			onrescan={rescan}
 			{scanning}
@@ -753,9 +511,9 @@
 				{session.Error}
 			</p>
 		{/if}
-		{#if error}
+		{#if review.error}
 			<p class="mb-3 rounded-[14px] bg-danger-bg px-4 py-2 font-semibold text-danger" role="alert">
-				{error}
+				{review.error}
 			</p>
 		{/if}
 
@@ -774,7 +532,7 @@
 					onshow={show}
 					ontoggle={select}
 					onopen={(i) => (previewIndex = i)}
-					onscanmore={editable ? scanMore : undefined}
+					onscanmore={editable ? () => review.scanMore() : undefined}
 					reorderable={editable}
 					onreorder={reorder}
 					onexpand={() => (overview = true)}
@@ -797,7 +555,11 @@
 						is in view, so this one goes.
 					-->
 					<div class="w-full max-w-[420px] lg:hidden">
-						<StopScanButton onstop={stopScan} {stopping} testid="stop-scan-top" />
+						<StopScanButton
+							onstop={() => review.stop()}
+							stopping={review.stopping}
+							testid="stop-scan-top"
+						/>
 					</div>
 				{/if}
 				{#if session.State !== SessionState.Review && !scanning}
@@ -941,7 +703,7 @@
 					value={displayName}
 					placeholder={exportBaseName(session, $exportPrefs.nameTemplate)}
 					extension={fileExtensions[$exportPrefs.format]}
-					onrename={rename}
+					onrename={(name) => review.rename(name)}
 				/>
 
 				{@render heading(t('review.headingSave'))}
@@ -949,13 +711,13 @@
 				<ExportBar
 					{session}
 					progress={$exportProgress[id] ?? null}
-					busy={exporting}
+					busy={review.exporting}
 					picker={desktop !== null || savePicker() !== null}
-					ondownload={saveAs}
+					ondownload={() => review.saveAs()}
 					serverFolder={$exportPrefs.serverSave && serverFolder ? serverFolder : null}
-					onserver={saveToServer}
-					onstop={stopScan}
-					{stopping}
+					onserver={() => review.saveToServer()}
+					onstop={() => review.stop()}
+					stopping={review.stopping}
 				/>
 
 				<!-- What the file will be, together under the button that saves it. -->
@@ -1061,7 +823,7 @@
 					<button
 						type="button"
 						class={ghost}
-						onclick={scanMore}
+						onclick={() => review.scanMore()}
 						disabled={!editable}
 						title={editable ? undefined : busyReason}
 						data-testid="scan-more-button"
@@ -1073,7 +835,7 @@
 						type="button"
 						class={ghost}
 						onclick={() => (merging = true)}
-						disabled={!editable || mergeable.length === 0 || mergeBusy}
+						disabled={!editable || mergeable.length === 0 || review.mergeBusy}
 						title={!editable
 							? busyReason
 							: mergeable.length === 0
@@ -1095,7 +857,7 @@
 					<button
 						type="button"
 						class="{ghost} w-full text-danger hover:bg-danger-bg"
-						onclick={() => (confirmDiscard ? discard() : (confirmDiscard = true))}
+						onclick={() => (confirmDiscard ? review.discard() : (confirmDiscard = true))}
 						onblur={() => (confirmDiscard = false)}
 						data-testid="discard-button"
 					>
