@@ -199,6 +199,7 @@ describe('saveNatively', () => {
 		const calls: [string, string, boolean][] = [];
 		const desktop: DesktopHost = {
 			pickSavePath: async () => null,
+			openUrl: async () => {},
 			pickFolder: async () => null,
 			saveExport: async (path, target, overwrite) => {
 				calls.push([path, target, overwrite]);
