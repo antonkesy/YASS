@@ -42,6 +42,16 @@ describe('settings', () => {
 		expect(storage.getItem(STORAGE_KEY)).toBeNull();
 	});
 
+	it('tells subscribers about an update once, already cleaned', () => {
+		const s = createSettings(fakeStorage());
+		s.update('Dpi', 600);
+		const heard: unknown[] = [];
+		const stop = s.subscribe((v) => heard.push(v));
+		s.update('Dpi', undefined);
+		stop();
+		expect(heard).toEqual([{ Dpi: 600 }, {}]);
+	});
+
 	it('works without storage', () => {
 		const s = createSettings(undefined);
 		s.update('Dpi', 300);
