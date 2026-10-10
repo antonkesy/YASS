@@ -67,6 +67,20 @@
 					: t('home.notDownloaded')
 	);
 
+	/**
+	 * Delete is for good, so it takes a second press, as Clear all does: the first arms it and
+	 * says so, and moving away disarms it.
+	 */
+	let confirmDelete = $state(false);
+	function remove() {
+		if (!confirmDelete) {
+			confirmDelete = true;
+			return;
+		}
+		confirmDelete = false;
+		ondelete?.(session.Id);
+	}
+
 	const shell =
 		'flex w-full items-center gap-2.5 rounded-[14px] px-2.5 py-2 text-left transition-colors';
 </script>
@@ -128,15 +142,29 @@
 				</button>
 			{/if}
 			{#if ondelete}
-				<button
-					type="button"
-					class="flex h-8 w-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-danger-bg hover:text-danger"
-					onclick={() => ondelete(session.Id)}
-					aria-label={t('home.deleteNamed', { title })}
-					data-testid="row-delete"
-				>
-					<Icon name="trash" size={16} />
-				</button>
+				{#if confirmDelete}
+					<button
+						type="button"
+						class="h-8 rounded-full bg-danger px-3 text-xs font-bold text-white transition-colors"
+						onclick={remove}
+						onblur={() => (confirmDelete = false)}
+						aria-label={t('home.confirmDeleteNamed', { title })}
+						data-testid="row-delete"
+						{@attach (el) => el.focus()}
+					>
+						{t('home.confirmDelete')}
+					</button>
+				{:else}
+					<button
+						type="button"
+						class="flex h-8 w-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-danger-bg hover:text-danger"
+						onclick={remove}
+						aria-label={t('home.deleteNamed', { title })}
+						data-testid="row-delete"
+					>
+						<Icon name="trash" size={16} />
+					</button>
+				{/if}
 			{/if}
 		</span>
 	{/if}

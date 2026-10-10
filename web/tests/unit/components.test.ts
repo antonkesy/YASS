@@ -14,6 +14,7 @@ import Preview from '$lib/components/Preview.svelte';
 import { layer } from '$lib/keys.svelte';
 import CropModal from '$lib/components/CropModal.svelte';
 import PresetPills from '$lib/components/PresetPills.svelte';
+import SessionRow from '$lib/components/SessionRow.svelte';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import {
 	ColorMode,
@@ -939,5 +940,24 @@ describe('PresetPills', () => {
 		const save = screen.getByRole('button', { name: 'Save as preset' });
 		await fireEvent.click(save);
 		expect(onsave).toHaveBeenCalled();
+	});
+});
+
+describe('SessionRow', () => {
+	it('deletes only on a second press, and moving away disarms it', async () => {
+		const ondelete = vi.fn();
+		render(SessionRow, { session: session(), ondownload: vi.fn(), ondelete });
+
+		await fireEvent.click(screen.getByTestId('row-delete'));
+		expect(ondelete).not.toHaveBeenCalled();
+		expect(screen.getByTestId('row-delete')).toHaveTextContent('Delete?');
+		expect(screen.getByTestId('row-delete')).toHaveFocus();
+
+		await fireEvent.blur(screen.getByTestId('row-delete'));
+		expect(screen.getByTestId('row-delete')).not.toHaveTextContent('Delete?');
+
+		await fireEvent.click(screen.getByTestId('row-delete'));
+		await fireEvent.click(screen.getByTestId('row-delete'));
+		expect(ondelete).toHaveBeenCalledWith('s1');
 	});
 });
