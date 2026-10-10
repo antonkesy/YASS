@@ -1,3 +1,4 @@
+using System.Web;
 using Yass.App.Export;
 using Yass.App.Rendering;
 
@@ -77,7 +78,7 @@ public sealed class AppScheme(string webRoot, ImageSource images, ExportDownload
 
         return segments switch
         {
-            ["img", string session, string page, string kind] => Image(session, page, kind, Query(uri, "h"), cancellationToken),
+            ["img", string session, string page, string kind] => Image(session, page, kind, HttpUtility.ParseQueryString(uri.Query)["h"], cancellationToken),
             ["export", string session, string file] => Export(session, file),
             _ => Static(segments),
         };
@@ -129,19 +130,5 @@ public sealed class AppScheme(string webRoot, ImageSource images, ExportDownload
 
         string type = ContentTypes.GetValueOrDefault(Path.GetExtension(candidate), "application/octet-stream");
         return new SchemeResponse(File.OpenRead(candidate), type);
-    }
-
-    private static string? Query(Uri uri, string key)
-    {
-        foreach (string pair in uri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
-        {
-            int eq = pair.IndexOf('=', StringComparison.Ordinal);
-            if (eq > 0 && pair.AsSpan(0, eq).SequenceEqual(key))
-            {
-                return Uri.UnescapeDataString(pair[(eq + 1)..]);
-            }
-        }
-
-        return null;
     }
 }
