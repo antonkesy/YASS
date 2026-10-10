@@ -4,6 +4,7 @@ using NAPS2.Images.ImageSharp;
 using NAPS2.ImportExport;
 using NAPS2.Pdf;
 using NAPS2.Scan;
+using NAPS2.Util;
 using Yass.Core.Config;
 using Yass.Core.Export;
 using Yass.Core.Hub;
@@ -11,17 +12,8 @@ using Yass.Core.Hub;
 namespace Yass.Export;
 
 /// <summary>Assembles a PDF with NAPS2's <see cref="PdfExporter"/> from pages pre-rendered by <see cref="PageRenderer"/>.</summary>
-public sealed class Naps2PdfWriter : IDocumentWriter, IDisposable
+public sealed class Naps2PdfWriter(ILogger<Naps2PdfWriter> logger) : IDocumentWriter
 {
-    private readonly ScanningContext _context;
-    private readonly ILogger<Naps2PdfWriter> _logger;
-
-    public Naps2PdfWriter(ILogger<Naps2PdfWriter> logger)
-    {
-        _logger = logger;
-        _context = new ScanningContext(new ImageSharpImageContext()) { Logger = logger };
-    }
-
     public async Task WriteImageAsync(ExportPage page, ExportFormat format, PdfConfig quality, Stream destination, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(page);
@@ -44,9 +36,13 @@ public sealed class Naps2PdfWriter : IDocumentWriter, IDisposable
         string work = Path.Combine(Path.GetTempPath(), "yass-export", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(work);
         var images = new List<ProcessedImage>(pages.Count);
+        // File-backed: each imported page stays the file PageRenderer wrote rather than a decoded
+        // bitmap, so a 50-page scan is not 50 bitmaps in memory at once (SPEC §9), and an
+        // untransformed JPEG goes into the PDF verbatim, at the configured quality.
+        var context = new ScanningContext(new ImageSharpImageContext()) { Logger = logger, FileStorageManager = new FileStorageManager(work) };
         try
         {
-            var importer = new ImageImporter(_context);
+            var importer = new ImageImporter(context);
             for (int i = 0; i < pages.Count; i++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -60,7 +56,7 @@ public sealed class Naps2PdfWriter : IDocumentWriter, IDisposable
                 progress?.Report((i + 1) * 90 / pages.Count);
             }
 
-            var exporter = new PdfExporter(_context);
+            var exporter = new PdfExporter(context);
             // Creator is the software, so it stays ours; the rest is exactly what the request
             // says, and what it leaves empty stays empty rather than claiming YASS.
             var parameters = new PdfExportParams
@@ -74,14 +70,18 @@ public sealed class Naps2PdfWriter : IDocumentWriter, IDisposable
                     Keywords = metadata.Keywords?.Trim() ?? "",
                 },
             };
-            bool ok = await exporter.Export(destination, images, parameters).WaitAsync(cancellationToken).ConfigureAwait(false);
+            // Cancelled through NAPS2's own handler, so it stops writing before the files it
+            // reads are disposed of below, rather than being abandoned while still running.
+            var handler = new ProgressHandler((current, max) => progress?.Report(90 + (current * 10 / Math.Max(max, 1))), cancellationToken);
+            bool ok = await exporter.Export(destination, images, parameters, progress: handler).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
             if (!ok)
             {
                 throw new IOException("NAPS2 PdfExporter reported failure.");
             }
 
             progress?.Report(100);
-            _logger.LogDebug("Assembled PDF with {Pages} page(s)", pages.Count);
+            logger.LogDebug("Assembled PDF with {Pages} page(s)", pages.Count);
         }
         finally
         {
@@ -90,16 +90,15 @@ public sealed class Naps2PdfWriter : IDocumentWriter, IDisposable
                 image.Dispose();
             }
 
+            context.Dispose();
             try
             {
                 Directory.Delete(work, recursive: true);
             }
-            catch (IOException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                // Temp cleanup is best effort.
+                // Temp cleanup is best effort, and must not hide why the export failed.
             }
         }
     }
-
-    public void Dispose() => _context.Dispose();
 }

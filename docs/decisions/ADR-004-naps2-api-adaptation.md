@@ -81,3 +81,16 @@ SANE and WIA both list cameras beside scanners, and NAPS2 hands them over as ord
   2.0.3, the wrapper NAPS2.Sdk already depends on and is pinned to, now referenced directly;
   it adds no new package. If WIA cannot be asked, nothing is filtered, so a failed lookup never
   leaves the list empty.
+
+## Amended 2026-10-10: file-backed export, and NAPS2's progress handler
+
+Point 2's "embedded verbatim" did not hold: the export's `ScanningContext` had no
+`FileStorageManager`, so `ImageImporter` decoded every rendered page into memory (about 26 MB a
+colour A4 page at 300 dpi, all held until the PDF was written) and `PdfExporter` re-encoded them.
+Each export now uses a context whose `FileStorageManager` is its own temp folder: pages stay
+files, and a JPEG goes into the PDF as rendered, at `output.pdf.jpeg_quality`.
+
+Point 3 is out of date: `NAPS2.Util.ProgressHandler` (in NAPS2.Internals, already a transitive
+dependency) is usable. `PdfExporter.Export` gets one carrying the caller's cancellation, so a
+cancelled export stops NAPS2 instead of abandoning it mid-write, and its reports fill the last
+10 % of the progress bar.

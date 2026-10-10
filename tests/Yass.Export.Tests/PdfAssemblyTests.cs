@@ -18,7 +18,6 @@ public sealed class PdfAssemblyTests : IDisposable
 
     public void Dispose()
     {
-        _writer.Dispose();
         Directory.Delete(_dir, recursive: true);
     }
 
@@ -100,6 +99,19 @@ public sealed class PdfAssemblyTests : IDisposable
     }
 
     [Fact]
+    public async Task A_rendered_jpeg_goes_into_the_pdf_verbatim()
+    {
+        ExportPage page = new(_fixtures[3], new RenderSpec(Rotation.R0, PageFilter.Original, ColorMode.Color, null), 300);
+        var pdf = new PdfConfig { Compression = PdfCompression.Jpeg, JpegQuality = 60 };
+        string rendered = await PageRenderer.RenderToFileAsync(page, pdf, _dir, CancellationToken.None);
+
+        string document = await WriteAsync([page], pdf);
+
+        // Not decoded and re-encoded at NAPS2's own quality: the configured one is what ships.
+        Assert.Contains(Encoding.Latin1.GetString(await File.ReadAllBytesAsync(rendered)), document, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Lower_jpeg_quality_yields_smaller_file()
     {
         ExportPage[] pages = [new ExportPage(_fixtures[3], new RenderSpec(Rotation.R0, PageFilter.Original, ColorMode.Color, null), 300)];
@@ -120,7 +132,10 @@ public sealed class PdfAssemblyTests : IDisposable
             new ExportPage(_fixtures[0], new RenderSpec(Rotation.R0, PageFilter.Original, ColorMode.Grayscale, null), 300),
             new ExportPage(_fixtures[1], new RenderSpec(Rotation.R0, PageFilter.Original, ColorMode.Grayscale, null), 300)], progress: handler);
 
-        Assert.Equal([45, 90, 100], progress);
+        // Rendering fills the first 90 %, a page at a time; NAPS2 writing the file the rest.
+        Assert.Equal([45, 90], progress.Take(2));
+        Assert.Equal(100, progress[^1]);
+        Assert.Equal(progress.Order(), progress);
     }
 
     [Fact]
