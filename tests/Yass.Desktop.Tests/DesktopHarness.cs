@@ -1,11 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Yass.App;
 using Yass.App.Api;
-using Yass.App.Export;
 using Yass.App.Hosting;
-using Yass.App.Rendering;
 using Yass.Core.Config;
 using Yass.Core.Domain;
 using Yass.Core.Export;
@@ -16,7 +13,7 @@ using Yass.Fake;
 namespace Yass.Desktop.Tests;
 
 /// <summary>
-/// The desktop host's services on a Generic Host, as <c>Program</c> wires them, against the fake
+/// The desktop host's services on a Generic Host, wired by the same <see cref="DesktopServices"/> as <c>Program</c>, against the fake
 /// scanner and a temp directory. No window: what the window would receive is in <see cref="Sent"/>.
 /// </summary>
 public sealed class DesktopHarness : IAsyncDisposable
@@ -41,16 +38,12 @@ public sealed class DesktopHarness : IAsyncDisposable
 
         HostApplicationBuilder builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { ContentRootPath = Root });
         builder.Logging.ClearProviders();
-        builder.Services.AddYassApp(config, new StartupOptions(Path.Combine(Root, "yass.yaml"), Fake: true, FakeScenario: null));
-        builder.Services.AddSingleton<IScannerBackend>(new FakeScannerBackend(scenario ?? FakeScenario.Pages(3, 2)));
-        builder.Services.AddSingleton<IDocumentWriter, FakeDocumentWriter>();
-        builder.Services.AddSingleton(new RenderAhead(Previews: true));
         Notifier = new BridgeNotifier();
         Notifier.Attach(Record);
-        builder.Services.AddSingleton(Notifier);
-        builder.Services.AddSingleton<IClientNotifier>(Notifier);
-        builder.Services.AddSingleton<IDownloadPaths>(new DownloadPaths());
-        builder.Services.AddSingleton(sp => new AppScheme(WebRoot, sp.GetRequiredService<ImageSource>(), sp.GetRequiredService<ExportDownloads>(), Origin));
+        StartupOptions startup = new(Path.Combine(Root, "yass.yaml"), Fake: true, FakeScenario: null);
+        builder.Services.AddYassDesktop(config, startup, Notifier, WebRoot, Origin, config.Sessions.Directory);
+        builder.Services.AddSingleton<IScannerBackend>(new FakeScannerBackend(scenario ?? FakeScenario.Pages(3, 2)));
+        builder.Services.AddSingleton<IDocumentWriter, FakeDocumentWriter>();
         _host = builder.Build();
         _host.Start();
     }
