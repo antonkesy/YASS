@@ -8,7 +8,16 @@ public sealed class EditService(SessionStore store, SessionMapper mapper, IPageS
 {
     /// <exception cref="InvalidOperationException">The session is not editable in its current state.</exception>
     /// <exception cref="ArgumentException">An edit is invalid.</exception>
-    public async Task<Session> ApplyAsync(string sessionId, IReadOnlyList<PageEdit> edits)
+    public Task<Session> ApplyAsync(string sessionId, IReadOnlyList<PageEdit> edits) => ApplyAsync(sessionId, _ => edits);
+
+    /// <summary>
+    /// As <see cref="ApplyAsync(string, IReadOnlyList{PageEdit})"/>, with the edits worked out from the
+    /// session as it is when they are applied — for edits found earlier, whose targets are only
+    /// known by page while the pages may have been reordered since.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The session is not editable in its current state.</exception>
+    /// <exception cref="ArgumentException">An edit is invalid.</exception>
+    public async Task<Session> ApplyAsync(string sessionId, Func<Session, IReadOnlyList<PageEdit>> edits)
     {
         Session? before = null;
         Session after = store.Update(sessionId, current =>
@@ -19,7 +28,7 @@ public sealed class EditService(SessionStore store, SessionMapper mapper, IPageS
             }
 
             before = current;
-            return PageEdits.Apply(current, edits);
+            return PageEdits.Apply(current, edits(current));
         });
 
         bool reordered = !before!.Pages.Select(p => p.SourceFile).SequenceEqual(after.Pages.Select(p => p.SourceFile));
