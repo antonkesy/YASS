@@ -23,6 +23,18 @@ describe('expandTemplate', () => {
 		expect(unknownTokens('{YEAR}-{MONTH}')).toEqual([]);
 	});
 
+	it('names months and weekdays in English, as the server does whatever the browser speaks', () => {
+		expect(expandTemplate('{WEEKDAY} {DAY} {MONTHNAME}', at, facts)).toBe('Thursday 24 September');
+	});
+
+	it('accepts the placeholders older config files use, which the server still expands', () => {
+		expect(unknownTokens('{date}_{time}_{session}')).toEqual([]);
+		expect(unknownTokens('{date:yyyyMMdd}-{time:HHmmss}-{YEAR}')).toEqual([]);
+		expect(unknownTokens('{nope:x}')).toEqual(['nope']);
+		expect(expandTemplate('{date}_{time}', at, facts)).toBe('2026-09-24_1504');
+		expect(expandTemplate('{date:yyyyMMdd}', at, facts)).toBe('{date:yyyyMMdd}');
+	});
+
 	it('offers the twelve tokens the server knows as the editor chips', () => {
 		expect(templateTokens).toHaveLength(12);
 		expect(unknownTokens('{NAME}')).toEqual(['NAME']);
