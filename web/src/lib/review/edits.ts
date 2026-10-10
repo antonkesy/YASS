@@ -1,10 +1,4 @@
-import {
-	ColorMode,
-	PageCleanup,
-	PageEditOp,
-	PageFilter,
-	Rotation
-} from '$lib/hub/generated/Yass.Core.Domain';
+import { PageCleanup, PageEditOp, PageFilter, Rotation } from '$lib/hub/generated/Yass.Core.Domain';
 import type { CropBox, PageAdjust, PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
 import type { PageDto, SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 import { t } from '$lib/i18n/index.svelte';
@@ -217,18 +211,6 @@ export const cleanupOptions = [
 		}
 	}
 ] as const;
-
-export const colorModeLabels: Record<ColorMode, string> = {
-	get [ColorMode.Bw]() {
-		return t('review.blackWhite');
-	},
-	get [ColorMode.Grayscale]() {
-		return t('review.grayscale');
-	},
-	get [ColorMode.Color]() {
-		return t('review.color');
-	}
-};
 
 /**
  * The four treatments the filter menu offers, with the swatch each one shows. The

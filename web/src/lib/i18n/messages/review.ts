@@ -363,7 +363,6 @@ export const review = {
 		fr: 'Noir et blanc',
 		es: 'Blanco y negro'
 	},
-	color: { en: 'Color', de: 'Farbe', fr: 'Couleur', es: 'Color' },
 
 	// The filmstrip and its thumbnails
 	allPages: { en: 'All pages', de: 'Alle Seiten', fr: 'Toutes les pages', es: 'Todas las páginas' },
