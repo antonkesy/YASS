@@ -21,6 +21,8 @@
 	import { Icon } from '$lib/icons';
 	import {
 		activePreset,
+		DOCUMENT_META_FIELDS,
+		DOCUMENT_META_LABELS,
 		exportPrefs,
 		pickedPreset,
 		presets,
@@ -322,15 +324,15 @@
 			of the export preferences: it is about whose documents these are, not how they scan.
 		-->
 		<SettingsSection title={t('settings.metadata')} icon="tag" testid="metadata-section">
-			{#each [['author', 'settings.author', 'settings.authorPlaceholder'], ['subject', 'settings.subject', 'settings.subjectPlaceholder'], ['keywords', 'settings.keywords', 'settings.keywordsPlaceholder']] as const as [key, label, placeholder] (key)}
+			{#each DOCUMENT_META_FIELDS as key (key)}
 				<label class="flex flex-col gap-1.5">
-					<span class="text-[13px] font-bold text-ink-2">{t(label)}</span>
+					<span class="text-[13px] font-bold text-ink-2">{t(DOCUMENT_META_LABELS[key].label)}</span>
 					<input
 						class="field h-11 px-3 text-sm placeholder:text-ink-faint"
 						type="text"
 						name="metadata-{key}"
 						autocomplete="off"
-						placeholder={t(placeholder)}
+						placeholder={t(DOCUMENT_META_LABELS[key].placeholder)}
 						value={$exportPrefs[key]}
 						oninput={(e) => exportPrefs.set({ ...$exportPrefs, [key]: e.currentTarget.value })}
 						data-testid="metadata-{key}"

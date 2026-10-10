@@ -1,17 +1,16 @@
 <script lang="ts">
 	import { slide } from 'svelte/transition';
 	import { ExportFormat } from '$lib/hub/generated/Yass.Core.Hub';
-	import type { MessageKey } from '$lib/i18n/index.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import { Icon } from '$lib/icons';
 	import { ms } from '$lib/motion';
 	import {
 		DOCUMENT_META_FIELDS,
+		DOCUMENT_META_LABELS,
 		documentMeta,
 		exportPrefs,
 		metaFor,
-		setDocumentMeta,
-		type DocumentMeta
+		setDocumentMeta
 	} from '$lib/presets';
 
 	let { sessionId }: { sessionId: string } = $props();
@@ -19,11 +18,6 @@
 	/** What this scan saves with: Settings' export preferences, its own PDF properties on top. */
 	const docPrefs = $derived(metaFor($exportPrefs, $documentMeta, sessionId));
 	let open = $state(false);
-	const META_LABELS: Record<keyof DocumentMeta, MessageKey> = {
-		author: 'settings.author',
-		subject: 'settings.subject',
-		keywords: 'settings.keywords'
-	};
 	/** The properties as one line, for the closed disclosure. */
 	const summary = $derived(
 		DOCUMENT_META_FIELDS.map((f) => docPrefs[f].trim())
@@ -67,7 +61,7 @@
 			>
 				{#each DOCUMENT_META_FIELDS as field (field)}
 					<label class="flex flex-col gap-1">
-						<span class="text-xs text-ink-muted">{t(META_LABELS[field])}</span>
+						<span class="text-xs text-ink-muted">{t(DOCUMENT_META_LABELS[field].label)}</span>
 						<input
 							class="field h-9 px-2.5 text-[13px]"
 							type="text"
