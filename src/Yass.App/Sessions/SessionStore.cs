@@ -6,7 +6,11 @@ using Yass.Core.Domain;
 
 namespace Yass.App.Sessions;
 
-/// <summary>Sessions on disk (<c>session.json</c> per directory) mirrored in memory. Writes are atomic (temp + rename).</summary>
+/// <summary>
+/// Sessions on disk (<c>session.json</c> per directory) mirrored in memory. Writes are atomic
+/// (temp + rename) and serialized, so the file on disk is always the latest state in memory.
+/// Reads take no lock.
+/// </summary>
 public sealed class SessionStore
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
@@ -16,6 +20,9 @@ public sealed class SessionStore
     };
 
     private readonly ConcurrentDictionary<string, Session> _sessions = new(StringComparer.Ordinal);
+    // One gate for every write: updates are quick and synchronous, and two of them persisting the
+    // same session at once would race on its temp file or land on disk out of order.
+    private readonly Lock _gate = new();
     private readonly ConfigStore _config;
     private readonly ILogger<SessionStore> _logger;
 
@@ -31,14 +38,18 @@ public sealed class SessionStore
     public Session Create(Session session)
     {
         ArgumentNullException.ThrowIfNull(session);
-        Directory.CreateDirectory(SessionPaths.Directory(Root, session.Id));
-        if (!_sessions.TryAdd(session.Id, session))
+        lock (_gate)
         {
-            throw new InvalidOperationException($"Session {session.Id} already exists.");
-        }
+            if (_sessions.ContainsKey(session.Id))
+            {
+                throw new InvalidOperationException($"Session {session.Id} already exists.");
+            }
 
-        Persist(session);
-        return session;
+            Directory.CreateDirectory(SessionPaths.Directory(Root, session.Id));
+            Persist(session);
+            _sessions[session.Id] = session;
+            return session;
+        }
     }
 
     public bool TryGet(string id, out Session session) => _sessions.TryGetValue(id, out session!);
@@ -48,32 +59,40 @@ public sealed class SessionStore
 
     public IReadOnlyList<Session> List() => _sessions.Values.OrderByDescending(s => s.CreatedAt).ToArray();
 
-    /// <summary>Applies <paramref name="update"/> atomically with respect to other updates of the same session and persists.</summary>
+    /// <summary>
+    /// Applies <paramref name="update"/> to the current state and persists the result, atomically with
+    /// respect to every other write. <paramref name="update"/> runs exactly once, under the lock, so it
+    /// may check the state it is given and throw; nothing is changed then.
+    /// </summary>
     public Session Update(string id, Func<Session, Session> update)
     {
         ArgumentNullException.ThrowIfNull(update);
-        Session updated = _sessions.AddOrUpdate(
-            id,
-            _ => throw new KeyNotFoundException($"Session {id} not found."),
-            (_, current) => update(current));
-        Persist(updated);
-        return updated;
+        lock (_gate)
+        {
+            Session updated = update(Get(id));
+            Persist(updated);
+            _sessions[id] = updated;
+            return updated;
+        }
     }
 
     public bool Delete(string id)
     {
-        if (!_sessions.TryRemove(id, out _))
+        lock (_gate)
         {
-            return false;
-        }
+            if (!_sessions.TryRemove(id, out _))
+            {
+                return false;
+            }
 
-        string dir = SessionPaths.Directory(Root, id);
-        if (Directory.Exists(dir))
-        {
-            Directory.Delete(dir, recursive: true);
-        }
+            string dir = SessionPaths.Directory(Root, id);
+            if (Directory.Exists(dir))
+            {
+                Directory.Delete(dir, recursive: true);
+            }
 
-        return true;
+            return true;
+        }
     }
 
     private void Persist(Session session)
