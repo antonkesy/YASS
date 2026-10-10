@@ -76,6 +76,36 @@ public sealed class SessionStore
         }
     }
 
+    /// <summary>
+    /// Throws a session's pages and derived images away but keeps the session, with its history,
+    /// as <see cref="SessionState.Done"/> plus <paramref name="recorded"/>.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The session is scanning or exporting.</exception>
+    public Session Discard(string id, SessionEvent recorded)
+    {
+        lock (_gate)
+        {
+            Session session = Get(id);
+            if (session.State is SessionState.Scanning or SessionState.Exporting)
+            {
+                throw new InvalidOperationException($"Session is {session.State}; wait for it to finish before discarding.");
+            }
+
+            foreach (Page page in session.Pages)
+            {
+                File.Delete(SessionPaths.Source(Root, session, page));
+            }
+
+            string cache = SessionPaths.Cache(Root, id);
+            if (Directory.Exists(cache))
+            {
+                Directory.Delete(cache, recursive: true);
+            }
+
+            return Update(id, s => (s with { State = SessionState.Done, Pages = [] }).With(recorded));
+        }
+    }
+
     public bool Delete(string id)
     {
         lock (_gate)

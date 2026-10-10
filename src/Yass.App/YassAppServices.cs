@@ -48,6 +48,7 @@ public static class YassAppServices
         services.AddSingleton<ScanService>();
         services.AddSingleton<EditService>();
         services.AddSingleton<AutoCropService>();
+        services.AddSingleton<MergeService>();
         services.AddSingleton<DownloadTokens>();
         services.AddSingleton<ExportDownloads>();
         services.AddSingleton<ExportService>();
