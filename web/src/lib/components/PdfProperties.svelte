@@ -14,6 +14,8 @@
 	} from '$lib/presets';
 
 	let { sessionId }: { sessionId: string } = $props();
+	const uid = $props.id();
+	const fields = `${uid}-fields`;
 
 	/** What this scan saves with: Settings' export preferences, its own PDF properties on top. */
 	const docPrefs = $derived(metaFor($exportPrefs, $documentMeta, sessionId));
@@ -41,6 +43,7 @@
 			type="button"
 			class="flex items-center gap-2 rounded-[10px] text-left"
 			aria-expanded={open}
+			aria-controls={fields}
 			onclick={() => (open = !open)}
 			data-testid="pdf-properties-toggle"
 		>
@@ -55,6 +58,7 @@
 		</button>
 		{#if open}
 			<div
+				id={fields}
 				class="flex flex-col gap-2"
 				transition:slide={{ duration: ms(220) }}
 				data-testid="pdf-fields"
