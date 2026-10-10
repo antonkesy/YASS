@@ -234,6 +234,25 @@ describe('ScanStage scanner picker', () => {
 		expect(get(settings).Device).toBe('canon:2');
 	});
 
+	it('moves the pick along the row with the arrows, as one Tab stop', async () => {
+		stage({ Device: 'epson:1' });
+		const epsonPill = screen.getByRole('radio', { name: 'Epson DS-530' });
+		const canonPill = screen.getByRole('radio', { name: 'Canon LiDE 400' });
+		expect(epsonPill).toHaveAttribute('tabindex', '0');
+		expect(canonPill).toHaveAttribute('tabindex', '-1');
+
+		epsonPill.focus();
+		await fireEvent.keyDown(epsonPill, { key: 'ArrowRight' });
+		expect(get(settings).Device).toBe('canon:2');
+		expect(canonPill).toHaveFocus();
+
+		// Back from the first goes round to the last. (The options here are fixed, so the lit
+		// pill stays Epson whatever the pick.)
+		settings.reset();
+		await fireEvent.keyDown(epsonPill, { key: 'ArrowLeft' });
+		expect(get(settings).Device).toBe('canon:2');
+	});
+
 	it('opens the details of the lit scanner on a press, and only of that one', async () => {
 		stage({ Device: 'epson:1' });
 		await fireEvent.click(screen.getByRole('radio', { name: 'Canon LiDE 400' }));
