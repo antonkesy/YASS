@@ -65,6 +65,12 @@ public sealed class YassApi(
             throw new YassException("Stop the scan before deleting the session.");
         }
 
+        if (session.State == SessionState.Exporting)
+        {
+            // Deleting the directory under the writer would only turn the export's error into a worse one.
+            throw new YassException("Wait for the export to finish before deleting the session.");
+        }
+
         sessions.Delete(sessionId);
         await clients.All.SessionChanged(mapper.ToDto(session with { State = SessionState.Done, Pages = [], Error = "deleted" })).ConfigureAwait(false);
     }
