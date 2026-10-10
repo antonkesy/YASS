@@ -124,6 +124,16 @@ export function documentMetadata(prefs: ExportPrefs): DocumentMetadataDto | unde
 export type DocumentMeta = Partial<Pick<ExportPrefs, 'author' | 'subject' | 'keywords'>>;
 export const DOCUMENT_META_FIELDS = ['author', 'subject', 'keywords'] as const;
 
+/** What each PDF property is called, and the example it shows empty, wherever it is edited. */
+export const DOCUMENT_META_LABELS: Record<
+	keyof DocumentMeta,
+	{ label: MessageKey; placeholder: MessageKey }
+> = {
+	author: { label: 'settings.author', placeholder: 'settings.authorPlaceholder' },
+	subject: { label: 'settings.subject', placeholder: 'settings.subjectPlaceholder' },
+	keywords: { label: 'settings.keywords', placeholder: 'settings.keywordsPlaceholder' }
+};
+
 export const DOCUMENT_META_KEY = 'yass.documentMeta';
 
 /** The export preferences one scan saves with: Settings', with its own PDF properties on top. */
