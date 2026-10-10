@@ -29,7 +29,7 @@
 	} from '$lib/presets';
 	import { TILE_SIZES } from '$lib/review/overview';
 	import { ExportFormat } from '$lib/hub/generated/Yass.Core.Hub';
-	import { exportFormatLabels } from '$lib/format';
+	import { exportFormatOptions } from '$lib/format';
 	import { fileExtensions } from '$lib/review/download';
 	import { expandTemplate, templateTokens, unknownTokens } from '$lib/template';
 	import { colorModeLabels } from '$lib/review/edits';
@@ -270,11 +270,7 @@
 				hint={$exportPrefs.format === ExportFormat.Pdf
 					? t('settings.perDocument')
 					: t('settings.perPage')}
-				options={[
-					{ value: String(ExportFormat.Pdf), label: exportFormatLabels[ExportFormat.Pdf] },
-					{ value: String(ExportFormat.Jpg), label: exportFormatLabels[ExportFormat.Jpg] },
-					{ value: String(ExportFormat.Png), label: exportFormatLabels[ExportFormat.Png] }
-				]}
+				options={exportFormatOptions}
 				value={String($exportPrefs.format)}
 				onchange={(v) => exportPrefs.set({ ...$exportPrefs, format: Number(v) as ExportFormat })}
 			/>

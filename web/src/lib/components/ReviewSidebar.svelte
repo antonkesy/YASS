@@ -10,7 +10,7 @@
 		activePageCount,
 		colorLabel,
 		documentName,
-		exportFormatLabels,
+		exportFormatOptions,
 		formatBytes,
 		formatTime,
 		pageSizeLabel,
@@ -66,12 +66,6 @@
 		documentName({ ...session, Name: review.storedName ?? undefined }, $exportPrefs.nameTemplate)
 	);
 
-	const formatOptions = $derived(
-		[ExportFormat.Pdf, ExportFormat.Jpg, ExportFormat.Png].map((f) => ({
-			value: String(f),
-			label: exportFormatLabels[f]
-		}))
-	);
 	/** The scanner the scan ran on, by the name this browser gives it. */
 	const scannerLabel = $derived(
 		session.OptionsUsed.Device
@@ -171,7 +165,7 @@
 			hint={$exportPrefs.format === ExportFormat.Pdf
 				? t('settings.perDocument')
 				: t('settings.perPage')}
-			options={formatOptions}
+			options={exportFormatOptions}
 			value={String($exportPrefs.format)}
 			onchange={(v) => exportPrefs.set({ ...$exportPrefs, format: Number(v) as ExportFormat })}
 		/>
