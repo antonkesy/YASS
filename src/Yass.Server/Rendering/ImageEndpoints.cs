@@ -13,18 +13,13 @@ public static class ImageEndpoints
     public static void Map(WebApplication app)
     {
         ArgumentNullException.ThrowIfNull(app);
-        app.MapGet("/img/{sessionId}/{pageIndex:int}/thumb", (string sessionId, int pageIndex, string? h, HttpContext ctx, ImageSource images, CancellationToken ct) =>
-            ServeAsync(sessionId, pageIndex, h, ImageKind.Thumb, ctx, images, ct));
-        app.MapGet("/img/{sessionId}/{pageIndex:int}/preview", (string sessionId, int pageIndex, string? h, HttpContext ctx, ImageSource images, CancellationToken ct) =>
-            ServeAsync(sessionId, pageIndex, h, ImageKind.Preview, ctx, images, ct));
-        app.MapGet("/img/{sessionId}/{pageIndex:int}/frame", (string sessionId, int pageIndex, string? h, HttpContext ctx, ImageSource images, CancellationToken ct) =>
-            ServeAsync(sessionId, pageIndex, h, ImageKind.Frame, ctx, images, ct));
+        app.MapGet("/img/{sessionId}/{pageIndex:int}/{kind}", ServeAsync);
     }
 
     private static async Task<Results<PhysicalFileHttpResult, NotFound, StatusCodeHttpResult>> ServeAsync(
-        string sessionId, int pageIndex, string? hash, ImageKind kind, HttpContext ctx, ImageSource images, CancellationToken ct)
+        string sessionId, int pageIndex, string kind, string? h, HttpContext ctx, ImageSource images, CancellationToken ct)
     {
-        if (!images.TryResolve(sessionId, pageIndex, hash, kind, out ImageRequest request))
+        if (!images.TryResolve(sessionId, pageIndex, kind, h, out ImageRequest request))
         {
             return TypedResults.NotFound();
         }

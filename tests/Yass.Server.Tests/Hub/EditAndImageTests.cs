@@ -93,6 +93,16 @@ public sealed class EditAndImageTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task An_unknown_image_kind_is_not_found_rather_than_the_app()
+    {
+        SessionDto done = await _hub.ScanToEnd();
+
+        HttpResponseMessage response = await _http.GetAsync(new Uri($"/img/{done.Id}/0/poster", UriKind.Relative));
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Auto_crop_trims_the_frame_off_the_pages_that_have_one()
     {
         SessionDto done = await _hub.ScanToEnd();

@@ -85,17 +85,8 @@ public sealed class AppScheme(string webRoot, ImageSource images, ExportDownload
 
     private SchemeResponse? Image(string sessionId, string page, string kind, string? hash, CancellationToken cancellationToken)
     {
-        ImageKind? parsed = kind switch
-        {
-            "thumb" => ImageKind.Thumb,
-            "preview" => ImageKind.Preview,
-            "frame" => ImageKind.Frame,
-            _ => null,
-        };
-
-        if (parsed is null
-            || !int.TryParse(page, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out int index)
-            || !images.TryResolve(sessionId, index, hash, parsed.Value, out ImageRequest request))
+        if (!int.TryParse(page, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out int index)
+            || !images.TryResolve(sessionId, index, kind, hash, out ImageRequest request))
         {
             return null;
         }
