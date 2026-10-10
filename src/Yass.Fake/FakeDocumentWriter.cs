@@ -65,7 +65,7 @@ public sealed class FakeDocumentWriter : IDocumentWriter
     public static string PageLabel(ExportPage page)
     {
         ArgumentNullException.ThrowIfNull(page);
-        return $"{Path.GetFileName(page.SourcePath)} rot={(int)page.Rotation} color={page.ColorMode}";
+        return $"{Path.GetFileName(page.SourcePath)} rot={(int)page.Spec.Rotation} color={page.ColorMode}";
     }
 
     /// <summary>One page's JPEG and the size it should occupy, in points.</summary>
@@ -74,7 +74,7 @@ public sealed class FakeDocumentWriter : IDocumentWriter
     private static async Task<Image<Rgb24>> LoadAsync(ExportPage page, CancellationToken cancellationToken)
     {
         Image<Rgb24> image = await Image.LoadAsync<Rgb24>(page.SourcePath, cancellationToken).ConfigureAwait(false);
-        RotateMode rotate = page.Rotation switch
+        RotateMode rotate = page.Spec.Rotation switch
         {
             Rotation.R90 => RotateMode.Rotate90,
             Rotation.R180 => RotateMode.Rotate180,
