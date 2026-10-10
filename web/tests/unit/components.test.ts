@@ -930,6 +930,37 @@ describe('CropModal', () => {
 	});
 });
 
+describe('Modal', () => {
+	it('takes focus as it opens, keeps Tab inside and gives focus back as it closes', async () => {
+		const opener = document.createElement('button');
+		document.body.append(opener);
+		opener.focus();
+		const { unmount } = render(StraightenModal, {
+			src: '/x.webp',
+			alt: 'Page 1',
+			skew: 0,
+			onapply: vi.fn(),
+			oncancel: vi.fn()
+		});
+
+		const dialog = screen.getByRole('dialog', { name: 'Straighten page' });
+		expect(dialog).toHaveFocus();
+
+		// Apply is disabled until the angle changes, so Cancel is the last stop.
+		const cancel = screen.getByRole('button', { name: 'Cancel' });
+		cancel.focus();
+		await fireEvent.keyDown(cancel, { key: 'Tab' });
+		const angle = screen.getByLabelText('Angle');
+		expect(angle).toHaveFocus();
+		await fireEvent.keyDown(angle, { key: 'Tab', shiftKey: true });
+		expect(cancel).toHaveFocus();
+
+		unmount();
+		expect(opener).toHaveFocus();
+		opener.remove();
+	});
+});
+
 describe('PresetPills', () => {
 	it('offers to save settings that match no preset, as one plain button', async () => {
 		const onsave = vi.fn();
