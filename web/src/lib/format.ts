@@ -173,6 +173,11 @@ export const exportFormatLabels: Record<ExportFormat, string> = {
 	[ExportFormat.Png]: 'PNG'
 };
 
+/** The export formats as a segmented picker's options: Settings and review offer the same row. */
+export const exportFormatOptions = [ExportFormat.Pdf, ExportFormat.Jpg, ExportFormat.Png].map(
+	(f) => ({ value: String(f), label: exportFormatLabels[f] })
+);
+
 /**
  * What a document is called, wherever it is shown or saved: the name on it, or the file name
  * template from settings expanded for it. Null when there is neither — an unnamed scan and an
