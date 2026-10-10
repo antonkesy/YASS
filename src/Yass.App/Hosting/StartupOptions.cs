@@ -1,19 +1,12 @@
 namespace Yass.App.Hosting;
 
-/// <summary>Command line of either host. Everything else comes from <c>yass.yaml</c>.</summary>
-/// <param name="ConfigPath">Path of the YAML file; missing file = defaults.</param>
-/// <param name="Fake">Use the fake scanner and document writer instead of NAPS2.</param>
-/// <param name="FakeScenario">Optional <c>key=value</c> scenario string for the fake backend.</param>
 public sealed record StartupOptions(string ConfigPath, bool Fake, string? FakeScenario)
 {
     public const string ConfigEnv = "YASS_CONFIG";
     public const string FakeEnv = "YASS_FAKE";
     public const string FakeScenarioEnv = "YASS_FAKE_SCENARIO";
 
-    /// <summary>
-    /// <c>--config PATH</c>, <c>--fake [SCENARIO]</c>. Environment fallbacks: <c>YASS_CONFIG</c>, <c>YASS_FAKE=1</c>, <c>YASS_FAKE_SCENARIO</c>.
-    /// Unknown arguments are left for the host. Without either, the config is <paramref name="defaultConfigPath"/>.
-    /// </summary>
+    /// <summary>Environment fallbacks: <c>YASS_CONFIG</c>, <c>YASS_FAKE=1</c>, <c>YASS_FAKE_SCENARIO</c>. Unknown arguments are left for the host.</summary>
     public static StartupOptions Parse(IReadOnlyList<string> args, string defaultConfigPath = "yass.yaml")
     {
         ArgumentNullException.ThrowIfNull(args);

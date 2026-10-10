@@ -38,9 +38,8 @@ builder.Services.AddSingleton<IClientNotifier, SignalRNotifier>();
 builder.Services.AddSingleton<IDownloadPaths>(new DownloadPaths(config.Server.BasePath));
 
 builder.Services
-    // On: SignalR prefixes every hub error with "An unexpected error occurred invoking
-    // 'X' on the server. <Type>: " regardless, so turning this off would lose the detail
-    // without cleaning up the message. The client strips the prefix (see hubError).
+    // On: SignalR prefixes hub errors regardless, so turning this off loses detail without
+    // cleaning up the message. The client strips the prefix (see hubError).
     .AddSignalR(o =>
     {
         o.EnableDetailedErrors = true;

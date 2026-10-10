@@ -5,17 +5,11 @@ using Yass.Core.Hub;
 
 namespace Yass.App.Scanning;
 
-/// <summary>Merges <c>scanner.defaults</c> with client overrides. Every key the client sends is honoured: yass.yaml only supplies defaults.</summary>
 public sealed class EffectiveOptions(ConfigStore config)
 {
-    /// <summary>The defaults, for the settings UI.</summary>
     public ScanOptionsDto Current() => ToDto(config.Current.Scanner.Defaults);
 
-    /// <summary>
-    /// Applies <paramref name="requested"/> on top of the defaults, held to the same bounds as
-    /// <c>scanner.defaults</c> in yass.yaml: the client may change any option, not to anything.
-    /// </summary>
-    /// <exception cref="ArgumentException">An option is out of range.</exception>
+    /// <summary>Held to the same bounds as <c>scanner.defaults</c> in yass.yaml.</summary>
     public ScanOptions Resolve(ScanOptionsDto? requested)
     {
         ScanOptions d = config.Current.Scanner.Defaults;

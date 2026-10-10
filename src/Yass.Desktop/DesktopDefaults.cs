@@ -2,32 +2,19 @@ using Yass.Core.Config;
 
 namespace Yass.Desktop;
 
-/// <summary>Where a desktop install keeps its files, and the config defaults that follow from that.</summary>
 public static class DesktopDefaults
 {
-    /// <summary><c>yass/yass.yaml</c> in the per-user config folder (XDG config, <c>%APPDATA%</c>, Application Support).</summary>
     public static string ConfigPath() =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.DoNotVerify), "yass", "yass.yaml");
 
-    /// <summary><c>yass</c> in the per-user data folder (XDG data, <c>%LOCALAPPDATA%</c>, Application Support).</summary>
     public static string DataDirectory() =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData, Environment.SpecialFolderOption.DoNotVerify), "yass");
 
-    /// <summary><c>sessions</c> in the <see cref="DataDirectory"/>.</summary>
     public static string SessionsDirectory() => Path.Combine(DataDirectory(), "sessions");
 
-    /// <summary>WebView2's profile and cache: <c>webview</c> in the <see cref="DataDirectory"/>.</summary>
     public static string WebViewDataDirectory() => Path.Combine(DataDirectory(), "webview");
 
-    /// <summary>
-    /// Where the server's built-in values assume a container or a small home server, the desktop's
-    /// own; a value the file sets is kept.
-    /// <list type="bullet">
-    /// <item><c>sessions.directory</c> (<c>/data/sessions</c>, a container volume) becomes the per-user data folder.</item>
-    /// <item><c>processing.max_concurrent_renders</c> (2, for a small box) becomes half the cores, up to
-    /// <see cref="MaxRenders"/>: each render holds a full-size bitmap, and the memory budget is the server's.</item>
-    /// </list>
-    /// </summary>
+    /// <summary>Replaces server defaults that assume a container or small box; values the file sets are kept.</summary>
     public static YassConfig Apply(YassConfig config, string sessionsDirectory, int processorCount)
     {
         ArgumentNullException.ThrowIfNull(config);

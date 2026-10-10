@@ -3,11 +3,10 @@ using Photino.NET;
 
 namespace Yass.Desktop;
 
-/// <summary>The Photino window: thin glue between the webview and <see cref="AppScheme"/> and the bridge.</summary>
 [ExcludeFromCodeCoverage(Justification = "Needs a display and a native webview; the logic it wires is tested on its own.")]
 internal static class DesktopWindow
 {
-    /// <summary>Opens the window on the calling (main) thread and blocks until it closes.</summary>
+    /// <summary>Runs on the calling (main) thread and blocks until the window closes.</summary>
     public static void Run(IServiceProvider services, ILogger logger)
     {
         AppScheme scheme = services.GetRequiredService<AppScheme>();
@@ -25,12 +24,11 @@ internal static class DesktopWindow
 
         var window = new PhotinoWindow()
             .SetTitle("YASS")
-            // Linux and Windows show it in the title bar and task switcher; macOS takes the .app's.
+            // macOS ignores this and takes the .app's icon.
             .SetIconFile(WindowIcon())
             // WebView2 keeps its profile here instead of beside the executable, which may not be writable.
             .SetTemporaryFilesPath(DesktopDefaults.WebViewDataDirectory())
             .SetUseOsDefaultSize(false)
-            // Opens maximized; this is the size it restores to, centred.
             .SetSize(1280, 860)
             .SetMinSize(360, 480)
             .Center()
@@ -43,8 +41,7 @@ internal static class DesktopWindow
                 {
                     if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri) || !scheme.Origin.Owns(uri))
                     {
-                        // Not the app's own: on Windows any https URL comes through here. No
-                        // answer lets the webview fetch it itself.
+                        // Not the app's own: on Windows any https URL comes through here. No answer lets the webview fetch it.
                         contentType = "";
                         return null!;
                     }
@@ -76,16 +73,12 @@ internal static class DesktopWindow
         logger.LogInformation("Opening the window ({Origin})", scheme.Origin.Root);
         window.Load(scheme.Origin.Root);
         window.WaitForClose();
-        // Nothing more goes to the native window once it is gone: neither events nor the answer
-        // to a call still in flight.
+        // Nothing more goes to the native window once it is gone, including answers to calls in flight.
         notifier.Attach(static _ => { });
         opened = null;
     }
 
-    /// <summary>
-    /// Windows loads a window icon from an .ico only (shipped beside the executable); elsewhere the
-    /// web build's PNG. Empty, for no icon, when neither is there.
-    /// </summary>
+    // Windows loads a window icon only from an .ico; elsewhere the web build's PNG.
     private static string WindowIcon()
     {
         string icon = OperatingSystem.IsWindows()
@@ -95,7 +88,7 @@ internal static class DesktopWindow
     }
 }
 
-/// <summary>Photino's dialogs, opened on the window's own thread as every toolkit requires.</summary>
+/// <summary>Opened on the window's own thread, as every toolkit requires.</summary>
 [ExcludeFromCodeCoverage(Justification = "Needs a display and a native webview.")]
 internal sealed class PhotinoDialogs(Func<PhotinoWindow?> window) : IDesktopDialogs
 {
@@ -129,10 +122,6 @@ internal sealed class PhotinoDialogs(Func<PhotinoWindow?> window) : IDesktopDial
     }
 }
 
-/// <summary>
-/// The system's default browser, through the shell: xdg-open on Linux, <c>open</c> on macOS, the
-/// registered handler on Windows.
-/// </summary>
 [ExcludeFromCodeCoverage(Justification = "Starts the user's browser.")]
 internal sealed class ShellBrowser(ILogger logger) : IBrowser
 {

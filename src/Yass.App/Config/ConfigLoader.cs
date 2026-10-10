@@ -3,10 +3,7 @@ using Yass.Core.Config;
 
 namespace Yass.App.Config;
 
-/// <summary>
-/// Reads <c>yass.yaml</c>, applies <c>YASS__section__key</c> environment overrides, types and validates.
-/// Errors name the offending key.
-/// </summary>
+/// <summary>Applies <c>YASS__section__key</c> environment overrides before typing and validating.</summary>
 public static class ConfigLoader
 {
     public const string EnvPrefix = "YASS__";
@@ -19,7 +16,6 @@ public static class ConfigLoader
         return Parse(yaml, environment, path);
     }
 
-    /// <exception cref="ConfigValidationException">Malformed YAML or invalid values; the message names the key.</exception>
     public static YassConfig Parse(string yaml, IDictionary environment, string sourceName = "yass.yaml")
     {
         ArgumentNullException.ThrowIfNull(environment);
@@ -79,6 +75,6 @@ public static class ConfigLoader
         node[segments[^1]] = value;
     }
 
-    /// <summary>YamlDotNet nests the useful part ("Property 'foo' not found on type ...") in inner exceptions.</summary>
+    // YamlDotNet nests the useful part in inner exceptions.
     private static string Describe(Exception ex) => ex.GetBaseException().Message;
 }

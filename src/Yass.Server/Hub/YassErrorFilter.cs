@@ -3,7 +3,6 @@ using Yass.App.Api;
 
 namespace Yass.Server.Hub;
 
-/// <summary>Sends a <see cref="YassException"/>'s message to the caller as a <see cref="HubException"/>.</summary>
 public sealed class YassErrorFilter : IHubFilter
 {
     public async ValueTask<object?> InvokeMethodAsync(

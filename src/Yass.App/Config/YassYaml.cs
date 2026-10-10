@@ -4,7 +4,6 @@ using Yass.Core.Config;
 
 namespace Yass.App.Config;
 
-/// <summary>YAML mapping for <see cref="YassConfig"/>: snake_case keys and snake_case enum values, as in SPEC.md §5.</summary>
 public static class YassYaml
 {
     private static readonly ISerializer Serializer = new SerializerBuilder()
@@ -23,7 +22,7 @@ public static class YassYaml
 
     public static YassConfig Deserialize(string yaml) => Deserializer.Deserialize<YassConfig>(yaml) ?? new YassConfig();
 
-    /// <summary>Untyped tree (nested dictionaries with string keys) so overrides can be merged before typing.</summary>
+    // Untyped so environment overrides can be merged before typing.
     public static Dictionary<object, object?> DeserializeTree(string yaml) =>
         TreeDeserializer.Deserialize<Dictionary<object, object?>>(yaml) ?? [];
 

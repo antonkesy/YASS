@@ -4,18 +4,12 @@ using System.Runtime.Versioning;
 
 namespace Yass.Desktop;
 
-/// <summary>
-/// Where the desktop app's output goes when nobody is watching a console. On Windows the app is a
-/// windowless executable, so a failure at startup would otherwise leave no trace at all: the
-/// window just closes. There the log is a file, and a fatal error is also shown in a message box.
-/// </summary>
+/// <summary>On Windows the app is windowless, so a startup failure would leave no trace: log to a file and show fatal errors in a message box.</summary>
 [ExcludeFromCodeCoverage(Justification = "Process-wide console redirection and a native message box.")]
 internal static partial class DesktopLog
 {
-    /// <summary><c>logs/yass-desktop.log</c> in the per-user <see cref="DesktopDefaults.DataDirectory"/>.</summary>
     public static string FilePath { get; } = Path.Combine(DesktopDefaults.DataDirectory(), "logs", "yass-desktop.log");
 
-    /// <summary>On Windows, sends console output, and so the console logger, to <see cref="FilePath"/>.</summary>
     public static void RedirectWhenWindowless()
     {
         if (!OperatingSystem.IsWindows())
@@ -39,7 +33,6 @@ internal static partial class DesktopLog
         }
     }
 
-    /// <summary>Records a fatal error and, on Windows, shows it, since there is no console to read it from.</summary>
     public static void Fatal(string message)
     {
         Console.Error.WriteLine(message);

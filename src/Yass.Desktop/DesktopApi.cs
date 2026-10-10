@@ -3,16 +3,11 @@ using Yass.Core.Export;
 
 namespace Yass.Desktop;
 
-/// <summary>
-/// What only the desktop offers, callable over the bridge next to the hub methods: native save
-/// dialogs, moving a finished export to where the user chose, and opening links in the browser.
-/// A document never passes through the page: the host renames the file the export wrote.
-/// </summary>
+/// <summary>A document never passes through the page: the host renames the file the export wrote.</summary>
 public sealed class DesktopApi(IDesktopDialogs dialogs, IBrowser browser, ExportDownloads downloads, ILogger<DesktopApi> logger)
 {
     private string _lastFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments, Environment.SpecialFolderOption.DoNotVerify);
 
-    /// <summary>Asks where one document goes. <c>null</c> when the user cancels.</summary>
     public async Task<string?> PickSavePath(string suggestedName)
     {
         string name = FileNames.Safe(suggestedName ?? "scan");
@@ -23,7 +18,6 @@ public sealed class DesktopApi(IDesktopDialogs dialogs, IBrowser browser, Export
             return null;
         }
 
-        // A name typed without its extension still gets the format's own.
         if (!string.IsNullOrEmpty(extension) && !chosen.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
         {
             chosen += extension;
@@ -33,7 +27,6 @@ public sealed class DesktopApi(IDesktopDialogs dialogs, IBrowser browser, Export
         return chosen;
     }
 
-    /// <summary>Asks for a folder to save several documents into. <c>null</c> when the user cancels.</summary>
     public async Task<string?> PickFolder()
     {
         string? chosen = await dialogs.PickFolderAsync(_lastFolder).ConfigureAwait(false);
@@ -46,12 +39,7 @@ public sealed class DesktopApi(IDesktopDialogs dialogs, IBrowser browser, Export
         return chosen;
     }
 
-    /// <summary>
-    /// Moves the document behind a one-shot <paramref name="downloadPath"/> (as an export returns it)
-    /// to <paramref name="target"/>. With <paramref name="overwrite"/> — the user picked that exact file
-    /// and the dialog already asked — an existing file is replaced; without, the name gets -2, -3…
-    /// Returns the path written.
-    /// </summary>
+    /// <summary>With <paramref name="overwrite"/> (the dialog already asked) an existing file is replaced; otherwise the name gets -2, -3…</summary>
     public string SaveExport(string downloadPath, string target, bool overwrite)
     {
         ArgumentException.ThrowIfNullOrEmpty(downloadPath);
@@ -81,11 +69,7 @@ public sealed class DesktopApi(IDesktopDialogs dialogs, IBrowser browser, Export
         }
     }
 
-    /// <summary>
-    /// Opens <paramref name="url"/> in the system's browser: a link out of the app, such as the
-    /// issue forms, which a webview with no windows of its own would otherwise swallow. Web
-    /// addresses only, so the page cannot have the host start a program or open a file.
-    /// </summary>
+    /// <summary>A webview with no windows of its own would swallow outbound links. Web addresses only, so the page cannot start a program or open a file.</summary>
     public void OpenUrl(Uri url)
     {
         ArgumentNullException.ThrowIfNull(url);

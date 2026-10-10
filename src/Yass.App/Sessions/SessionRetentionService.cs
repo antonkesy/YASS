@@ -4,7 +4,6 @@ using Yass.Core.Domain;
 
 namespace Yass.App.Sessions;
 
-/// <summary>Deletes sessions older than <c>sessions.retention_hours</c>, checking hourly. 0 disables.</summary>
 public sealed class SessionRetentionService(
     SessionStore store,
     SessionMapper mapper,

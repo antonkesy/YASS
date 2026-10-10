@@ -19,9 +19,7 @@ public sealed class ScannerDeviceTests
         ScannerDeviceDto[] devices = await hub.ListDevices();
 
         Assert.Equal(["YASS Fake ADF", "Epson DS-530", "Canon LiDE 400"], devices.Select(d => d.Name));
-        // The fake has no driver identifier to be distinct from what it is called.
         Assert.All(devices, d => Assert.Equal(d.Name, d.Id));
-        // Which driver found it rides along, for the scanner's details in Settings.
         Assert.All(devices, d => Assert.Equal("fake", d.Driver));
         Assert.All(devices, d => Assert.Null(d.Connection));
     }
@@ -53,9 +51,7 @@ public sealed class ScannerDeviceTests
         await using var factory = new YassFactory(FakeScenario.Pages(1));
         await using HubClient hub = await HubClient.ConnectAsync(factory);
 
-        // The scan runs behind StartScan, so a bad device lands as a failed session rather than
-        // a rejected call — the same way a jam does. Failing is the point: scanning the wrong
-        // machine is worse than not scanning.
+        // A bad device fails the session (like a jam) rather than the call; scanning the wrong machine is worse.
         SessionDto done = await hub.ScanToEnd(new ScanOptionsDto(Device: "Nothing Like This"));
 
         Assert.Equal(SessionState.Failed, done.State);
@@ -66,8 +62,7 @@ public sealed class ScannerDeviceTests
     [Fact]
     public async Task Device_is_honoured_whatever_the_deprecated_ui_editable_says()
     {
-        // The key used to gate which overrides the server took. It is accepted so old files still
-        // load, and ignored: yass.yaml supplies defaults, the browser decides.
+        // Legacy key: still accepted so old files load, but ignored.
         await using var factory = new YassFactory(
             FakeScenario.Pages(1) with { ExtraDevices = ["Epson DS-530"] },
             config => config with { Scanner = config.Scanner with { UiEditable = ["dpi"] } });

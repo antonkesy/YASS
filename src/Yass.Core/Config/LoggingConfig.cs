@@ -16,7 +16,6 @@ public enum LogFormat
     Json,
 }
 
-/// <summary><c>logging:</c> section.</summary>
 public sealed record LoggingConfig
 {
     public LogLevel Level { get; init; } = LogLevel.Info;

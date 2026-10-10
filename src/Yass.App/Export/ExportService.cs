@@ -11,11 +11,6 @@ using Yass.Export;
 
 namespace Yass.App.Export;
 
-/// <summary>
-/// Exports a session's active pages into the session's <c>export/</c> folder and hands out a
-/// one-shot download URL per document (spelt by the host's <see cref="IDownloadPaths"/>). The server never writes a document anywhere else:
-/// where it ends up is the browser's choice. Progress is pushed as <c>ExportProgress</c>.
-/// </summary>
 public sealed class ExportService(
     SessionStore store,
     SessionMapper mapper,
@@ -28,11 +23,9 @@ public sealed class ExportService(
     IDownloadPaths downloadPaths,
     ILogger<ExportService> logger)
 {
-    /// <summary>The PDF's own properties: its name as the title, and whatever the browser's settings say for the rest.</summary>
     private static DocumentMetadata MetadataFor(ExportRequest request, string? name) =>
         new(name, request.Metadata?.Author, request.Metadata?.Subject, request.Metadata?.Keywords);
 
-    /// <summary>The file name for one document, or <c>null</c> when neither the request nor the session names it.</summary>
     private static string? NameFor(string? requested, Session session, TemplateFacts facts, int documentCount, int index)
     {
         string? stem = !string.IsNullOrWhiteSpace(requested) ? requested!.Trim()
@@ -50,7 +43,6 @@ public sealed class ExportService(
     /// <summary>Prefix of a file still being written into the server folder, renamed once complete.</summary>
     public const string TempPrefix = "._yass-";
 
-    /// <exception cref="InvalidOperationException">Nothing to export or the session is busy.</exception>
     public async Task<ExportResult> ExportAsync(string sessionId, ExportRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -102,8 +94,7 @@ public sealed class ExportService(
         string? pending = null;
         try
         {
-            // The writer decodes one page at a time: that bitmap counts against max_concurrent_renders
-            // like a thumbnail's (SPEC §9), rather than coming on top of them.
+            // The writer decodes one page at a time; that counts against max_concurrent_renders (SPEC §9).
             using IDisposable slot = await renderer.ReserveAsync(cancellationToken).ConfigureAwait(false);
             string dir = request.ToServer ? output.Directory : SessionPaths.Export(store.Root, sessionId);
             Directory.CreateDirectory(dir);
@@ -111,15 +102,13 @@ public sealed class ExportService(
             for (int d = 0; d < documentPages.Length; d++)
             {
                 ExportPage[] document = documentPages[d];
-                // Reported across the whole export, so several documents still fill one bar; and
-                // reported as it happens, not posted to the thread pool as Progress<T> would, where a
-                // late 100% of one document could arrive after the next one's first step.
+                // Reported synchronously, not via Progress<T>: posted to the thread pool, a late 100% of one
+                // document could arrive after the next one's first step.
                 int index = d;
                 var progress = new InlineProgress(percent =>
                     _ = hub.All.ExportProgress(sessionId, Math.Clamp((int)((index + percent / 100.0) / documentPages.Length * 100), 0, 100)));
-                // Into the server folder it is written under a hidden temporary name and renamed once
-                // complete, so whatever watches the folder — paperless-ngx, say — never picks up half
-                // a document. A download gets its token only once written, so none points at half a file.
+                // Written under a hidden temp name and renamed, so a folder watcher (paperless-ngx) never sees
+                // half a document. A download gets its token only once written.
                 string path = request.ToServer
                     ? Path.Combine(dir, $"{TempPrefix}{Guid.NewGuid():N}.tmp")
                     : Path.Combine(dir, $"{Guid.NewGuid():N}{extension}");
@@ -135,8 +124,7 @@ public sealed class ExportService(
                     }
                     else
                     {
-                        // A browser download is one file, so an image download is the first
-                        // page of the document rather than a silent partial archive.
+                        // A browser download is one file, so an image download is the document's first page.
                         await writer.WriteImageAsync(document[0], request.Format, pdf, file, cancellationToken).ConfigureAwait(false);
                     }
 
@@ -184,8 +172,7 @@ public sealed class ExportService(
         }
         catch (Exception ex)
         {
-            // Cancelled too — the browser that asked went away — the session goes back to Review,
-            // or it would stay Exporting, uneditable and unexportable, until a restart.
+            // On cancel too, or the session would stay Exporting until a restart.
             bool cancelled = ex is OperationCanceledException;
             if (!cancelled)
             {
@@ -198,7 +185,6 @@ public sealed class ExportService(
         }
         finally
         {
-            // A document that did not finish leaves no half-written file behind.
             if (pending is not null && File.Exists(pending))
             {
                 File.Delete(pending);
@@ -211,11 +197,9 @@ public sealed class ExportService(
         public void Report(int value) => report(value);
     }
 
-    /// <summary>A name for an unnamed scan, from when it was scanned — what the browser would suggest too.</summary>
     private static string Fallback(Session session, int documentCount, int index) =>
         Numbered("scan-" + session.CreatedAt.ToString("yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture), documentCount, index);
 
-    /// <summary>The stem as it is for a single document, or numbered from 1 when the scan splits into several.</summary>
     private static string Numbered(string stem, int documentCount, int index) =>
         documentCount == 1 ? stem : $"{stem}-{(index + 1).ToString(CultureInfo.InvariantCulture)}";
 }

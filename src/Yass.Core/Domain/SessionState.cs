@@ -2,7 +2,6 @@ using Tapper;
 
 namespace Yass.Core.Domain;
 
-/// <summary>Lifecycle of a scan session.</summary>
 [TranspilationSource]
 public enum SessionState
 {

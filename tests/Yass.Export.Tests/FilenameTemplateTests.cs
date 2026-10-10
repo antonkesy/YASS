@@ -12,7 +12,6 @@ public class FilenameTemplateTests
         Assert.Matches(@"^\d{4}-\d{2}-\d{2}_\d{4}_scan\.pdf$", name);
     }
 
-    /// <summary>A token this side does not know is reported, and left in place rather than guessed at.</summary>
     [Fact]
     public void An_unknown_token_is_reported_and_left_alone()
     {

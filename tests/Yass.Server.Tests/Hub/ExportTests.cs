@@ -52,7 +52,6 @@ public sealed class ExportTests
         string exports = Path.Combine(factory.Root, "sessions", done.Id, "export");
         Assert.Empty(Directory.Exists(exports) ? Directory.EnumerateFiles(exports) : []);
 
-        // And it can be exported again.
         Assert.Equal(2, (await hub.Export(done.Id)).PageCount);
     }
 
@@ -74,7 +73,6 @@ public sealed class ExportTests
         await hub.Export(scanned.Id);
         SessionDto twice = await hub.GetSession(scanned.Id);
 
-        // History is append-only: the newest entry is the status, the earlier one survives.
         Assert.Equal(
             [SessionEventKind.Downloaded, SessionEventKind.Downloaded],
             twice.Events.Select(e => e.Kind));
@@ -88,7 +86,6 @@ public sealed class ExportTests
         await using HubClient hub = await HubClient.ConnectAsync(factory);
         SessionDto scanned = await hub.ScanToEnd();
 
-        // Page 3 opens a second document, so 4 pages become 2 + 2.
         SessionDto split = await hub.ApplyEdits(scanned.Id, PageEdit.SetSplit(true, 2));
         Assert.Equal(4, split.Pages.Length);
         Assert.True(split.Pages[2].StartsDocument, "page 3 should be marked as a document start");
@@ -98,7 +95,6 @@ public sealed class ExportTests
         Assert.Equal([2, 2], result.Documents.Select(d => d.PageCount));
         Assert.Equal(4, result.PageCount);
 
-        // Two downloads, not one handed out twice.
         Assert.Equal(2, result.Documents.Select(d => d.DownloadPath).Distinct(StringComparer.Ordinal).Count());
         foreach (ExportedDocumentDto document in result.Documents)
         {
@@ -207,7 +203,6 @@ public sealed class ExportTests
 
         ExportedDocumentDto document = Assert.Single(result.Documents);
         Assert.Equal("", document.DownloadPath);
-        // The slash and colon cannot climb out of the folder or upset the file system.
         Assert.Equal(Path.Combine(folder, "Tax_2026_ letter.pdf"), document.SavedTo);
         Assert.StartsWith("%PDF", await File.ReadAllTextAsync(document.SavedTo!), StringComparison.Ordinal);
         Assert.Equal([document.SavedTo], Directory.GetFiles(folder));
@@ -244,7 +239,6 @@ public sealed class ExportTests
 
         Assert.Equal("", await hub.GetServerFolder());
         await Assert.ThrowsAsync<HubException>(() => hub.Export(done.Id, new ExportRequest(ToServer: true)));
-        // Refused before it started, so the scan is still there to be saved another way.
         Assert.Equal(SessionState.Review, (await hub.GetSession(done.Id)).State);
     }
 }

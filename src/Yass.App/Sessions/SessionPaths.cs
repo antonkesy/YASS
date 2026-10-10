@@ -3,7 +3,6 @@ using Yass.Core.Domain;
 
 namespace Yass.App.Sessions;
 
-/// <summary>Layout of a session directory: <c>session.json</c>, <c>page-NNN.png</c>, <c>cache/</c>, <c>export/</c>.</summary>
 public static class SessionPaths
 {
     public const string ManifestName = "session.json";
@@ -25,10 +24,7 @@ public static class SessionPaths
 
     public static string Export(string root, string sessionId) => Path.Combine(Directory(root, sessionId), "export");
 
-    /// <summary>
-    /// Bytes the session occupies: source pages, derived caches and any pending export.
-    /// Read from disk rather than tracked, so it cannot drift from what is actually there.
-    /// </summary>
+    // Read from disk rather than tracked, so it cannot drift from what is there.
     public static long SizeOnDisk(string root, string sessionId)
     {
         var dir = new DirectoryInfo(Directory(root, sessionId));
@@ -48,7 +44,6 @@ public static class SessionPaths
         }
     }
 
-    /// <summary>Sortable, URL-safe id: timestamp plus a short random suffix.</summary>
     public static string NewId(DateTimeOffset now) =>
         now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture) + "-" + Guid.NewGuid().ToString("N")[..6];
 

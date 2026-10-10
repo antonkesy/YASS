@@ -5,11 +5,7 @@ using Yass.Core.Domain;
 
 namespace Yass.App.Rendering;
 
-/// <summary>
-/// Background thumbnail generation. Bounded so a fast scanner cannot pile up decoded bitmaps; pushes
-/// <c>PageUpdated</c> when a thumbnail is ready. With <see cref="RenderAhead.Previews"/> it then renders
-/// the page's preview as well, one page at a time, so opening it later finds it cached.
-/// </summary>
+/// <summary>Bounded so a fast scanner cannot pile up decoded bitmaps.</summary>
 public sealed class ThumbnailWorker(
     RenderCache cache,
     SessionStore store,
@@ -32,9 +28,8 @@ public sealed class ThumbnailWorker(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // A wait is kept until it completes rather than started afresh each time the worker goes
-        // idle: an abandoned wait on a channel nobody writes to (the previews, on the server)
-        // stays queued on it, and one would pile up per idle spell.
+        // Reuse the pending wait: an abandoned wait on a channel nobody writes to (previews, on the
+        // server) stays queued, and one would pile up per idle spell.
         Task<bool>? thumbs = null;
         Task<bool>? previews = null;
         while (!stoppingToken.IsCancellationRequested)
@@ -104,7 +99,7 @@ public sealed class ThumbnailWorker(
 
     private async Task PreviewAsync(string sessionId, Page page, CancellationToken stoppingToken)
     {
-        // Rendered as the page is now: an edit since it was queued changed the hash, and the old one is not worth drawing.
+        // An edit since queueing changed the hash; the old one is not worth drawing.
         if (!store.TryGet(sessionId, out Session session) || session.Pages.FirstOrDefault(p => p.SourceFile == page.SourceFile) is not { } current)
         {
             return;

@@ -6,7 +6,6 @@ using Yass.Core.Scanning;
 
 namespace Yass.App.Scanning;
 
-/// <summary>Polls <see cref="IScannerBackend.GetStatusAsync"/> and pushes <c>ScannerStatusChanged</c> when the answer changes.</summary>
 public sealed class ScannerStatusMonitor(
     IScannerBackend backend,
     IClientNotifier hub,
@@ -19,7 +18,6 @@ public sealed class ScannerStatusMonitor(
 
     public ScannerStatusDto Current => Volatile.Read(ref _current);
 
-    /// <summary>Forces a probe now, e.g. after a scan finished.</summary>
     public Task RefreshAsync(CancellationToken cancellationToken) => ProbeAsync(cancellationToken);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

@@ -12,10 +12,6 @@ using Yass.Server.Hub;
 
 namespace Yass.Server.Tests;
 
-/// <summary>
-/// Boots the real server against a fake scanner and temp directories. Each instance is isolated, so test classes
-/// can run in parallel with different scenarios.
-/// </summary>
 public sealed class YassFactory : WebApplicationFactory<Program>
 {
     public YassFactory(FakeScenario? scenario = null, Func<YassConfig, YassConfig>? configure = null)
@@ -65,8 +61,7 @@ public sealed class YassFactory : WebApplicationFactory<Program>
             return;
         }
 
-        // A scan that was still running when the host stopped may write a page or two after
-        // the first delete has walked its directory; a second pass gets what it left behind.
+        // A scan still running at host stop may write pages after the first delete; a second pass catches them.
         for (int attempt = 0; Directory.Exists(Root); attempt++)
         {
             try

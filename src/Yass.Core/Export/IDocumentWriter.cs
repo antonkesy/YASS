@@ -3,15 +3,9 @@ using Yass.Core.Hub;
 
 namespace Yass.Core.Export;
 
-/// <summary>Turns the pages of a session into files.</summary>
 public interface IDocumentWriter
 {
-    /// <param name="pages">Pages in output order; deleted pages are already excluded.</param>
-    /// <param name="pdf">Compression settings.</param>
-    /// <param name="metadata">Title, author and the like; null fields are left out of the file.</param>
-    /// <param name="destination">Receives the PDF bytes. Not closed by the writer.</param>
-    /// <param name="progress">0..100, reported at least once per page.</param>
-    /// <param name="cancellationToken">Cancels the export.</param>
+    /// <summary>The writer does not close <c>destination</c>.</summary>
     Task WritePdfAsync(
         IReadOnlyList<ExportPage> pages,
         PdfConfig pdf,
@@ -20,6 +14,5 @@ public interface IDocumentWriter
         IProgress<int>? progress,
         CancellationToken cancellationToken);
 
-    /// <summary>Writes one page as a standalone image. Used by the JPG and PNG formats, which produce a file per page.</summary>
     Task WriteImageAsync(ExportPage page, ExportFormat format, PdfConfig quality, Stream destination, CancellationToken cancellationToken);
 }

@@ -4,14 +4,12 @@ using Yass.App.Rendering;
 
 namespace Yass.Desktop;
 
-/// <summary>A response to one <c>yass://</c> request. The stream is the webview's to close.</summary>
+/// <summary>The stream is the webview's to close.</summary>
 public sealed record SchemeResponse(Stream Body, string ContentType);
 
 /// <summary>
-/// Where the app is loaded from. <c>yass://app</c>, except on Windows: Photino does not register
-/// a custom scheme with WebView2, which then will not navigate to it and shows a blank window.
-/// There the app is <c>https://yass.localhost</c>, answered by the same handler (WebView2 hands
-/// every request to it before any network; nothing listens on a socket either way).
+/// <c>yass://app</c>, except on Windows: Photino does not register a custom scheme with WebView2, which then shows
+/// a blank window. There it is <c>https://yass.localhost</c>, answered by the same handler; nothing listens on a socket.
 /// </summary>
 public sealed record AppOrigin(string Scheme, string Host)
 {
@@ -21,7 +19,6 @@ public sealed record AppOrigin(string Scheme, string Host)
 
     public static AppOrigin ForThisPlatform() => OperatingSystem.IsWindows() ? Windows : Custom;
 
-    /// <summary>The page the window opens: <c>yass://app/</c> or <c>https://yass.localhost/</c>.</summary>
     public Uri Root => new($"{Scheme}://{Host}/");
 
     public bool Owns(Uri uri)
@@ -33,11 +30,7 @@ public sealed record AppOrigin(string Scheme, string Host)
     }
 }
 
-/// <summary>
-/// <c>yass://app/...</c> (see <see cref="AppOrigin"/>): the same paths the server serves over HTTP, read straight off disk.
-/// The static build, <c>/img/{session}/{page}/{kind}?h=</c> and <c>/export/{session}/{file}</c>;
-/// anything else that is not a file is a client-side route and gets <c>index.html</c>.
-/// </summary>
+/// <summary>The server's HTTP paths, read off disk; anything else that is not a file gets <c>index.html</c> (SPA route).</summary>
 public sealed class AppScheme(string webRoot, ImageSource images, ExportDownloads downloads, AppOrigin origin)
 {
     public AppOrigin Origin { get; } = origin;
@@ -60,10 +53,7 @@ public sealed class AppScheme(string webRoot, ImageSource images, ExportDownload
 
     private readonly string _root = Path.GetFullPath(webRoot);
 
-    /// <summary>
-    /// <c>null</c> when nothing is there, which the window turns into an empty answer, or when the
-    /// URL is not the app's own (on Windows another https host), which the webview then fetches itself.
-    /// </summary>
+    /// <summary>Null when nothing is there, or when the URL is not the app's own (on Windows another https host), which the webview then fetches itself.</summary>
     public SchemeResponse? Resolve(Uri uri, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(uri);
@@ -92,8 +82,7 @@ public sealed class AppScheme(string webRoot, ImageSource images, ExportDownload
             return null;
         }
 
-        // The webview asks synchronously. Thumbnails are rendered ahead by the worker, so this
-        // only waits on a preview or frame that nobody has looked at yet.
+        // The webview asks synchronously; thumbnails are rendered ahead, so this only waits on an unseen preview or frame.
         string? path = images.GetFileAsync(request, cancellationToken).GetAwaiter().GetResult();
         return path is null ? null : new SchemeResponse(File.OpenRead(path), "image/webp");
     }
@@ -115,7 +104,6 @@ public sealed class AppScheme(string webRoot, ImageSource images, ExportDownload
 
         if (!File.Exists(candidate))
         {
-            // A deep link such as /session/abc, or the root itself: the SPA routes it.
             if (Path.HasExtension(candidate) && candidate != _root)
             {
                 return null;

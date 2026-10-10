@@ -1,9 +1,7 @@
 namespace Yass.Core.Domain;
 
-/// <summary>Pure application of <see cref="PageEdit"/>s to a session. Never touches files; only the page records change.</summary>
 public static class PageEdits
 {
-    /// <exception cref="ArgumentException">A target index is out of range or a reorder is not a permutation.</exception>
     public static Session Apply(Session session, IReadOnlyList<PageEdit> edits)
     {
         ArgumentNullException.ThrowIfNull(session);
@@ -50,7 +48,6 @@ public static class PageEdits
         return pages;
     }
 
-    /// <summary>A crop that would leave nothing is rejected here rather than at render time.</summary>
     private static CropBox? Validated(CropBox? crop)
     {
         if (crop is null || crop.IsEmpty())

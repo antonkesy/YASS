@@ -1,6 +1,5 @@
 namespace Yass.Server.Hosting;
 
-/// <summary>Serves the SvelteKit build from <c>wwwroot</c> with SPA fallback. Harmless when the folder is absent.</summary>
 public static class StaticFrontend
 {
     public static void Map(WebApplication app)
@@ -19,7 +18,6 @@ public static class StaticFrontend
         {
             OnPrepareResponse = ctx =>
             {
-                // Hashed immutable assets vs. everything else (index.html, manifest, service worker).
                 bool immutable = ctx.Context.Request.Path.StartsWithSegments("/_app/immutable");
                 ctx.Context.Response.Headers.CacheControl = immutable ? "public, max-age=31536000, immutable" : "no-cache";
             },
@@ -28,8 +26,7 @@ public static class StaticFrontend
         app.UseDefaultFiles();
         app.UseStaticFiles(options);
 
-        // The same options, because every deep link is served by the fallback rather than by the
-        // static middleware.
+        // Same options: every deep link is served by the fallback, not the static middleware.
         app.MapFallbackToFile("index.html", options);
     }
 }

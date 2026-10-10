@@ -1,14 +1,10 @@
 namespace Yass.App.Hosting;
 
-/// <summary>Where the SvelteKit build is, for whichever host serves it.</summary>
 public static class WebRoot
 {
     public const string Env = "YASS_WEBROOT";
 
-    /// <summary>
-    /// <c>YASS_WEBROOT</c> if set, else <c>wwwroot</c> next to the binary (publish/Docker layout), else
-    /// <c>wwwroot</c> in the working directory (<c>dotnet run</c>).
-    /// </summary>
+    /// <summary><c>YASS_WEBROOT</c>, else <c>wwwroot</c> next to the binary (publish/Docker), else in the working directory.</summary>
     public static string Resolve()
     {
         string? fromEnv = Environment.GetEnvironmentVariable(Env);

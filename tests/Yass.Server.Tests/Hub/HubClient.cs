@@ -5,7 +5,6 @@ using Yass.Core.Hub;
 
 namespace Yass.Server.Tests.Hub;
 
-/// <summary>Typed wrapper over a connection that also records every server push.</summary>
 public sealed class HubClient : IAsyncDisposable
 {
     private readonly HubConnection _connection;
@@ -87,7 +86,6 @@ public sealed class HubClient : IAsyncDisposable
 
     public Task ReloadConfig() => _connection.InvokeAsync(nameof(IYassHub.ReloadConfig));
 
-    /// <summary>Starts a scan and waits for the session to leave <see cref="SessionState.Scanning"/>.</summary>
     public async Task<SessionDto> ScanToEnd(ScanOptionsDto? requested = null, TimeSpan? timeout = null)
     {
         SessionDto started = await StartScan(requested);
@@ -114,11 +112,7 @@ public sealed class HubClient : IAsyncDisposable
         }
     }
 
-    /// <summary>
-    /// Waits for a <see cref="IYassClient.SessionChanged"/> push matching <paramref name="predicate"/>.
-    /// A hub call returns before its push has crossed the wire, so a test that asserts on the
-    /// push straight after the call is racing it.
-    /// </summary>
+    /// <summary>A hub call returns before its push crosses the wire; wait for the push instead of racing it.</summary>
     public async Task<SessionDto> WaitForPush(Func<SessionDto, bool> predicate, TimeSpan? timeout = null)
     {
         DateTime deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(10));

@@ -4,10 +4,7 @@ using Yass.App.Rendering;
 
 namespace Yass.Server.Rendering;
 
-/// <summary>
-/// <c>GET /img/{sessionId}/{pageIndex}/thumb|preview|frame?h=HASH</c>. The hash pins the exact derived image, so the
-/// response is immutable and the browser never revalidates; a new hash is a new URL.
-/// </summary>
+/// <summary>The hash pins the exact derived image, so responses are immutable; a new hash is a new URL.</summary>
 public static class ImageEndpoints
 {
     public static void Map(WebApplication app)

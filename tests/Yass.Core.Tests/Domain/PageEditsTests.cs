@@ -79,8 +79,7 @@ public class PageEditsTests
     [Fact]
     public void Grayscale_filter_on_a_grayscale_scan_still_gets_its_own_hash()
     {
-        // The rendered pixels match, but the two are different edits and a later change to
-        // what Grayscale means must not be served from the Original cache entry.
+        // Same pixels, but distinct edits: a later change to Grayscale must not hit the Original cache entry.
         Session before = Session(1);
 
         Session same = PageEdits.Apply(before, [PageEdit.SetFilter(PageFilter.Grayscale, 0)]);

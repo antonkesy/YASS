@@ -3,14 +3,11 @@ using Yass.Core.Domain;
 
 namespace Yass.Core.Config;
 
-/// <summary>Naming helpers between C# properties and <c>yass.yaml</c> keys.</summary>
 public static class ConfigKeys
 {
-    /// <summary>Snake_case names of every <see cref="ScanOptions"/> property, i.e. the values accepted in the deprecated <c>scanner.ui_editable</c>.</summary>
     public static IReadOnlyList<string> ScanOptionKeys { get; } =
         typeof(ScanOptions).GetProperties().Select(p => ToSnakeCase(p.Name)).ToArray();
 
-    /// <summary><c>PollIntervalSeconds</c> → <c>poll_interval_seconds</c>.</summary>
     public static string ToSnakeCase(string propertyName)
     {
         ArgumentException.ThrowIfNullOrEmpty(propertyName);

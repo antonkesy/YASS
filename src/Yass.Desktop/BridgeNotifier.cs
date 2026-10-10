@@ -4,11 +4,7 @@ using Yass.Core.Hub;
 
 namespace Yass.Desktop;
 
-/// <summary>
-/// Pushes every <see cref="IYassClient"/> event to the webview as <c>{"event": name, "args": [...]}</c>.
-/// Until the window is attached (<see cref="Attach"/>) events are dropped: the client loads the
-/// whole state once it starts, so nothing it needs is lost.
-/// </summary>
+/// <summary>Events before <see cref="Attach"/> are dropped: the client loads the whole state once it starts.</summary>
 public sealed class BridgeNotifier : IClientNotifier, IYassClient
 {
     private volatile Action<string>? _send;

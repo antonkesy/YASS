@@ -11,13 +11,7 @@ namespace Yass.App;
 
 public static class YassAppServices
 {
-    /// <summary>
-    /// Registers the whole app: config, scanner backend, sessions, rendering, export, the hosted
-    /// workers and <see cref="YassApi"/>. The host adds its <see cref="IClientNotifier"/> and
-    /// <see cref="IDownloadPaths"/>, and whatever transport it carries calls over.
-    /// <paramref name="hostDefaults"/> fills in what only the host knows, such as where a desktop
-    /// keeps its sessions; it runs on <paramref name="config"/> here and again on every reload.
-    /// </summary>
+    /// <summary><paramref name="hostDefaults"/> runs on <paramref name="config"/> here and again on every reload.</summary>
     public static IServiceCollection AddYassApp(this IServiceCollection services, YassConfig config, StartupOptions startup, Func<YassConfig, YassConfig>? hostDefaults = null)
     {
         ArgumentNullException.ThrowIfNull(services);

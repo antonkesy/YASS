@@ -11,7 +11,6 @@ using Yass.Core.Hub;
 
 namespace Yass.Export;
 
-/// <summary>Assembles a PDF with NAPS2's <see cref="PdfExporter"/> from pages pre-rendered by <see cref="PageRenderer"/>.</summary>
 public sealed class Naps2PdfWriter(ILogger<Naps2PdfWriter> logger) : IDocumentWriter
 {
     public async Task WriteImageAsync(ExportPage page, ExportFormat format, PdfConfig quality, Stream destination, CancellationToken cancellationToken)
@@ -36,9 +35,8 @@ public sealed class Naps2PdfWriter(ILogger<Naps2PdfWriter> logger) : IDocumentWr
         string work = Path.Combine(Path.GetTempPath(), "yass-export", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(work);
         var images = new List<ProcessedImage>(pages.Count);
-        // File-backed: each imported page stays the file PageRenderer wrote rather than a decoded
-        // bitmap, so a 50-page scan is not 50 bitmaps in memory at once (SPEC §9), and an
-        // untransformed JPEG goes into the PDF verbatim, at the configured quality.
+        // File-backed so pages are not all decoded in memory at once (SPEC §9), and an untransformed
+        // JPEG goes into the PDF verbatim.
         var context = new ScanningContext(new ImageSharpImageContext()) { Logger = logger, FileStorageManager = new FileStorageManager(work) };
         try
         {
@@ -52,13 +50,11 @@ public sealed class Naps2PdfWriter(ILogger<Naps2PdfWriter> logger) : IDocumentWr
                     images.Add(image);
                 }
 
-                // Rendering is the expensive part; leave the last 10 % for NAPS2 writing the file.
                 progress?.Report((i + 1) * 90 / pages.Count);
             }
 
             var exporter = new PdfExporter(context);
-            // Creator is the software, so it stays ours; the rest is exactly what the request
-            // says, and what it leaves empty stays empty rather than claiming YASS.
+            // Creator stays ours; the rest is exactly what the request says, empty stays empty.
             var parameters = new PdfExportParams
             {
                 Metadata = new PdfMetadata
@@ -70,8 +66,7 @@ public sealed class Naps2PdfWriter(ILogger<Naps2PdfWriter> logger) : IDocumentWr
                     Keywords = metadata.Keywords?.Trim() ?? "",
                 },
             };
-            // Cancelled through NAPS2's own handler, so it stops writing before the files it
-            // reads are disposed of below, rather than being abandoned while still running.
+            // Cancelled through NAPS2's handler so it stops before the files it reads are disposed below.
             var handler = new ProgressHandler((current, max) => progress?.Report(90 + (current * 10 / Math.Max(max, 1))), cancellationToken);
             bool ok = await exporter.Export(destination, images, parameters, progress: handler).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
@@ -97,7 +92,7 @@ public sealed class Naps2PdfWriter(ILogger<Naps2PdfWriter> logger) : IDocumentWr
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                // Temp cleanup is best effort, and must not hide why the export failed.
+                // Best effort; must not hide why the export failed.
             }
         }
     }

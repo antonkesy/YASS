@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Yass.Core.Config;
 
-/// <summary>Empty, or an absolute path: a relative one would land wherever the service was started from.</summary>
 [AttributeUsage(AttributeTargets.Property)]
 public sealed class AbsolutePathAttribute : ValidationAttribute
 {

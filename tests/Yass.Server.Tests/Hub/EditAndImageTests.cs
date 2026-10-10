@@ -62,7 +62,6 @@ public sealed class EditAndImageTests : IAsyncLifetime
         Assert.Equal(20, box.Right);
         Assert.NotEqual(before, cropped.Pages[0].Hash);
 
-        // A cropped page renders narrower than the same page uncropped.
         HttpClient http = _factory.CreateClient();
         using var full = await Image.LoadAsync(await (await http.GetAsync(new Uri($"/img/{done.Id}/1/preview?h={done.Pages[1].Hash}", UriKind.Relative))).Content.ReadAsStreamAsync());
         using var trimmed = await Image.LoadAsync(await (await http.GetAsync(new Uri($"/img/{done.Id}/0/preview?h={cropped.Pages[0].Hash}", UriKind.Relative))).Content.ReadAsStreamAsync());
@@ -81,7 +80,6 @@ public sealed class EditAndImageTests : IAsyncLifetime
             PageEdit.Rotate(90, 1));
         string hash = edited.Pages[0].Hash;
 
-        // Page 1 is rotated and nothing else, so its preview is the size page 0's frame should be.
         using var full = await Image.LoadAsync(await _http.GetStreamAsync(new Uri($"/img/{done.Id}/1/preview?h={edited.Pages[1].Hash}", UriKind.Relative)));
         using var preview = await Image.LoadAsync(await _http.GetStreamAsync(new Uri($"/img/{done.Id}/0/preview?h={hash}", UriKind.Relative)));
         using var frame = await Image.LoadAsync(await _http.GetStreamAsync(new Uri($"/img/{done.Id}/0/frame?h={hash}", UriKind.Relative)));
@@ -136,7 +134,6 @@ public sealed class EditAndImageTests : IAsyncLifetime
         Assert.All(after.Pages.Skip(1), p => Assert.Null(p.Crop));
         Assert.Contains(_hub.PagesUpdated, p => p.SessionId == done.Id && p.Page.Index == 0 && p.Page.Crop != null);
 
-        // Asking again finds the same frame, which is already cropped: nothing changes.
         Assert.Equal(0, await _hub.AutoCrop(done.Id, 0));
         await Assert.ThrowsAsync<HubException>(() => _hub.AutoCrop(done.Id, 42));
     }
@@ -150,7 +147,6 @@ public sealed class EditAndImageTests : IAsyncLifetime
 
         SessionDto after = await _hub.RescanPage(done.Id, 1);
 
-        // Same slot, same edits, and the replacement is no longer marked deleted.
         Assert.Equal(rotated.Pages.Length, after.Pages.Length);
         Assert.Equal(Rotation.R90, after.Pages[1].Rotation);
         Assert.Equal(PageFilter.Bw, after.Pages[1].Filter);
@@ -170,8 +166,6 @@ public sealed class EditAndImageTests : IAsyncLifetime
         Assert.Equal(first.Pages.Length * 2, after.Pages.Length);
         Assert.Equal(SessionState.Review, after.State);
 
-        // The pages that were already there are untouched: a second run writes its own files
-        // rather than starting the page numbering over and clobbering them.
         Assert.Equal(before, after.Pages.Take(first.Pages.Length).Select(p => p.Hash));
         string dir = Path.Combine(_factory.Config.Sessions.Directory, first.Id);
         Assert.Equal(after.Pages.Length, Directory.GetFiles(dir, "page-*.png").Length);

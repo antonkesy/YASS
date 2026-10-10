@@ -1,13 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- The desktop host (ADR-014, ADR-015): the app in a native webview, no listening socket. -->
-
   <PropertyGroup>
-    <!-- WinExe: no console window on Windows. Elsewhere it is an ordinary executable. -->
     <OutputType>WinExe</OutputType>
-    <!-- Precompiled when published for a runtime, so the window comes up without waiting on the JIT. -->
     <PublishReadyToRun>true</PublishReadyToRun>
-    <!-- The .exe's own icon on Windows; elsewhere the package carries it (scripts/package-desktop.sh). -->
     <ApplicationIcon>../../assets/logo/yass.ico</ApplicationIcon>
     <!-- LibraryImport (DesktopLog's message box) generates unsafe marshalling code. -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -29,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The window's own icon on Windows, which only loads one from an .ico. -->
+    <!-- The window icon on Windows, which only loads one from an .ico. -->
     <None Include="../../assets/logo/yass.ico" Link="yass.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 

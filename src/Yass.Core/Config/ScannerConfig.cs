@@ -3,10 +3,7 @@ using Yass.Core.Domain;
 
 namespace Yass.Core.Config;
 
-/// <summary>
-/// <c>auto</c> is the platform's own driver: SANE on Linux, WIA on Windows. macOS has no usable
-/// default (NAPS2's Apple driver needs a macOS-only build, ADR-004), so there it means eSCL.
-/// </summary>
+/// <summary>auto: SANE on Linux, WIA on Windows, eSCL on macOS (NAPS2's Apple driver needs a macOS-only build, ADR-004).</summary>
 public enum ScannerDriver
 {
     Auto = 0,
@@ -15,7 +12,6 @@ public enum ScannerDriver
     Wia,
 }
 
-/// <summary><c>scanner:</c> section.</summary>
 public sealed record ScannerConfig
 {
     public ScannerDriver Driver { get; init; } = ScannerDriver.Auto;
@@ -29,10 +25,7 @@ public sealed record ScannerConfig
     [Required]
     public ScanOptions Defaults { get; init; } = new();
 
-    /// <summary>
-    /// Deprecated and ignored: every scan option can be changed from the UI, and this file only
-    /// supplies the defaults. Still accepted so a yass.yaml written when it mattered keeps loading.
-    /// </summary>
+    /// <summary>Deprecated and ignored; still accepted so older yass.yaml files keep loading.</summary>
     [ScanOptionKeys]
     public string[] UiEditable { get; init; } =
         ["source", "dpi", "color", "page_size", "blank_page_detection", "device"];
