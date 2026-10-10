@@ -1,8 +1,14 @@
 import type { DesktopHost } from '$lib/hub/bridge';
-import { ExportFormat, type ExportResult, type SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
+import {
+	ExportFormat,
+	type ExportRequest,
+	type ExportResult,
+	type SessionDto
+} from '$lib/hub/generated/Yass.Core.Hub';
 import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 import { activePageCount, documentName } from '$lib/format';
 import { t } from '$lib/i18n/index.svelte';
+import { documentMetadata, metaFor, type DocumentMeta, type ExportPrefs } from '$lib/presets';
 
 /**
  * As much of the File System Access API as a save needs. It is typed here because
@@ -43,6 +49,29 @@ export function canSave(session: SessionDto | null, busy = false): boolean {
 		(session.State === SessionState.Review || session.State === SessionState.Done) &&
 		activePageCount(session) > 0
 	);
+}
+
+/**
+ * What to ask the server for when saving one scan, wherever it goes: the format from Settings,
+ * the scan's name (or the template an unnamed one falls back to), and the PDF properties
+ * Settings gives every scan with this scan's own on top. One builder, so a bulk download from
+ * home writes the same file Save as… on the review screen would.
+ *
+ * `name` stands in for the session's own when the caller knows better — a rename still on its
+ * way to the server.
+ */
+export function exportRequest(
+	session: SessionDto,
+	prefs: ExportPrefs,
+	docMeta: Readonly<Record<string, DocumentMeta>>,
+	{ name = session.Name, toServer = false }: { name?: string | null; toServer?: boolean } = {}
+): ExportRequest {
+	return {
+		Format: prefs.format,
+		Name: name?.trim() || prefs.nameTemplate.trim() || undefined,
+		Metadata: documentMetadata(metaFor(prefs, docMeta, session.Id)),
+		ToServer: toServer
+	};
 }
 
 /** True when the user closed the save dialog, which is not an error to report. */
