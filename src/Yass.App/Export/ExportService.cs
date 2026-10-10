@@ -1,6 +1,7 @@
 using System.Globalization;
 using Yass.App.Api;
 using Yass.App.Config;
+using Yass.App.Rendering;
 using Yass.App.Sessions;
 using Yass.Core.Config;
 using Yass.Core.Domain;
@@ -19,6 +20,7 @@ public sealed class ExportService(
     SessionStore store,
     SessionMapper mapper,
     IDocumentWriter writer,
+    ImageRenderer renderer,
     DownloadTokens tokens,
     ConfigStore config,
     TimeProvider time,
@@ -100,6 +102,9 @@ public sealed class ExportService(
         string? pending = null;
         try
         {
+            // The writer decodes one page at a time: that bitmap counts against max_concurrent_renders
+            // like a thumbnail's (SPEC §9), rather than coming on top of them.
+            using IDisposable slot = await renderer.ReserveAsync(cancellationToken).ConfigureAwait(false);
             string dir = request.ToServer ? output.Directory : SessionPaths.Export(store.Root, sessionId);
             Directory.CreateDirectory(dir);
             var produced = new List<ExportedDocumentDto>();
