@@ -96,6 +96,8 @@ public sealed class EditAndImageTests : IAsyncLifetime
     public async Task Auto_crop_trims_the_frame_off_the_pages_that_have_one()
     {
         SessionDto done = await _hub.ScanToEnd();
+        // Thumbnails render in the background; wait them out so none is reading the page below.
+        await _hub.WaitFor(done.Id, s => s.Pages.All(p => p.ThumbnailReady));
         // The fake scanner's pages are clean, so give page 0 the dark band a scanner lid leaves.
         SessionStore store = _factory.Services.GetRequiredService<SessionStore>();
         Session session = store.Get(done.Id);
