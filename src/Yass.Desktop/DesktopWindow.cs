@@ -76,7 +76,10 @@ internal static class DesktopWindow
         logger.LogInformation("Opening the window ({Origin})", scheme.Origin.Root);
         window.Load(scheme.Origin.Root);
         window.WaitForClose();
+        // Nothing more goes to the native window once it is gone: neither events nor the answer
+        // to a call still in flight.
         notifier.Attach(static _ => { });
+        opened = null;
     }
 
     /// <summary>
