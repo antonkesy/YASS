@@ -10,7 +10,6 @@
 	let {
 		sessions,
 		template = '',
-		busy = false,
 		onpick,
 		oncancel
 	}: {
@@ -18,7 +17,6 @@
 		sessions: SessionDto[];
 		/** The file name template, which is what an unnamed scan is called. */
 		template?: string;
-		busy?: boolean;
 		onpick: (id: string) => void;
 		oncancel: () => void;
 	} = $props();
@@ -58,7 +56,7 @@
 				{t('dialogs.mergeNone')}
 			</p>
 		{:else}
-			<div class="flex flex-col gap-0.5" class:is-muted={busy}>
+			<div class="flex flex-col gap-0.5">
 				{#each sessions as session, i (session.Id)}
 					{@const first = session.Pages.find((p) => !p.Deleted && p.ThumbnailReady)}
 					<button
