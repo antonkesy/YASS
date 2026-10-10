@@ -121,22 +121,18 @@ public sealed class BridgeDispatcher
             {
                 values[i] = args[i].Deserialize(parameter.ParameterType, BridgeJson.Options);
             }
-            else
+            else if (parameter.HasDefaultValue)
             {
-                values[i] = parameter.HasDefaultValue ? parameter.DefaultValue : null;
+                values[i] = parameter.DefaultValue;
+            }
+            else if (parameter.ParameterType.IsValueType && Nullable.GetUnderlyingType(parameter.ParameterType) is null)
+            {
+                // Reflection would quietly pass default(T): a rescan without its page would rescan page 0.
+                throw new BridgeException($"{name} needs its {parameter.Name} argument.");
             }
         }
 
-        object? returned;
-        try
-        {
-            returned = entry.Method.Invoke(entry.Target, values);
-        }
-        catch (TargetInvocationException ex) when (ex.InnerException is not null)
-        {
-            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw(ex.InnerException);
-            throw;
-        }
+        object? returned = entry.Method.Invoke(entry.Target, BindingFlags.DoNotWrapExceptions, binder: null, values, culture: null);
 
         if (returned is not Task task)
         {
