@@ -41,8 +41,9 @@ describe('how the settings sheet is laid out', () => {
 		// A preset is a bundle of scan overrides and has nothing to offer until the defaults
 		// they sit on are known, so it belongs in the section that the branch hides.
 		const loading = page.indexOf('{:else if !effective}', scanner);
-		const presets = page.indexOf('data-testid="presets"');
-		const form = page.indexOf('data-testid="settings-form"');
+		// Each lives in a component of its own, rendered from here.
+		const presets = page.indexOf('<PresetManager');
+		const form = page.indexOf('<ScanDefaultsForm');
 
 		expect(loading).toBeGreaterThan(scanner);
 		expect(loading).toBeLessThan(scannerEnds);
