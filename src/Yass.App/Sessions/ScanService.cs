@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using Yass.App.Api;
 using Yass.App.Scanning;
 using Yass.Core.Domain;
@@ -21,22 +20,27 @@ public sealed class ScanService(
     TimeProvider time,
     ILogger<ScanService> logger)
 {
-    private readonly ConcurrentDictionary<string, CancellationTokenSource> _running = new(StringComparer.Ordinal);
-
-    public bool IsScanning => !_running.IsEmpty;
+    // The one scan the scanner can run at a time, claimed and released under the gate: a check
+    // and a separate claim would let two callers both see the scanner free.
+    private readonly Lock _gate = new();
+    private (string SessionId, CancellationTokenSource Cts)? _active;
 
     /// <exception cref="InvalidOperationException">A scan is already running.</exception>
     public Session Start(ScanOptions options)
     {
-        var session = new Session(SessionPaths.NewId(time.GetUtcNow()), time.GetUtcNow(), SessionState.Scanning, [], options);
-        var cts = new CancellationTokenSource();
-        if (!_running.IsEmpty || !_running.TryAdd(session.Id, cts))
+        DateTimeOffset now = time.GetUtcNow();
+        var session = new Session(SessionPaths.NewId(now), now, SessionState.Scanning, [], options);
+        CancellationTokenSource cts = Claim(session.Id);
+        try
         {
-            cts.Dispose();
-            throw new InvalidOperationException("A scan is already running.");
+            store.Create(session);
+        }
+        catch
+        {
+            Release(session.Id);
+            throw;
         }
 
-        store.Create(session);
         _ = Task.Run(() => RunAsync(session.Id, options, 0, cts.Token), CancellationToken.None);
         return session;
     }
@@ -48,20 +52,21 @@ public sealed class ScanService(
     /// <exception cref="InvalidOperationException">A scan is running or the session is not editable.</exception>
     public Session StartMore(string sessionId)
     {
-        Session session = store.Get(sessionId);
-        if (session.State is not (SessionState.Review or SessionState.Done))
+        CancellationTokenSource cts = Claim(sessionId);
+        Session scanning;
+        try
         {
-            throw new InvalidOperationException($"Session is {session.State}; pages can only be added in Review.");
+            scanning = store.Update(sessionId, s =>
+            {
+                EnsureEditable(s, "pages can only be added in Review");
+                return s with { State = SessionState.Scanning, Error = null };
+            });
         }
-
-        var cts = new CancellationTokenSource();
-        if (!_running.IsEmpty || !_running.TryAdd(sessionId, cts))
+        catch
         {
-            cts.Dispose();
-            throw new InvalidOperationException("A scan is already running.");
+            Release(sessionId);
+            throw;
         }
-
-        Session scanning = store.Update(sessionId, s => s with { State = SessionState.Scanning, Error = null });
 
         // The new run numbers its pages from 1 again, so page files are offset past the ones
         // already on disk; without it the second run would overwrite the first run's pages.
@@ -77,27 +82,29 @@ public sealed class ScanService(
     /// <exception cref="InvalidOperationException">A scan is running, the session is not editable, or the feeder was empty.</exception>
     public async Task<Page> RescanPageAsync(string sessionId, int pageIndex, CancellationToken cancellationToken)
     {
-        if (!_running.IsEmpty)
-        {
-            throw new InvalidOperationException("A scan is already running.");
-        }
-
         Session session = store.Get(sessionId);
-        if (session.State is not (SessionState.Review or SessionState.Done))
-        {
-            throw new InvalidOperationException($"Session is {session.State}; pages can only be rescanned in Review.");
-        }
-
+        EnsureEditable(session, "pages can only be rescanned in Review");
         if (pageIndex < 0 || pageIndex >= session.Pages.Count)
         {
             throw new ArgumentOutOfRangeException(nameof(pageIndex), $"Page {pageIndex} is not in this session.");
         }
 
+        // Pages can be reordered while the sheet goes through, so the page is followed by its
+        // file from here on, not by its position.
+        Page replaced = session.Pages[pageIndex];
+        CancellationTokenSource cts = Claim(sessionId, cancellationToken);
         ScannedPage? sheet = null;
-        await foreach (ScannedPage scanned in backend.ScanAsync(session.OptionsUsed, cancellationToken).ConfigureAwait(false))
+        try
         {
-            sheet = scanned;
-            break;
+            await foreach (ScannedPage scanned in backend.ScanAsync(session.OptionsUsed, cts.Token).ConfigureAwait(false))
+            {
+                sheet = scanned;
+                break;
+            }
+        }
+        finally
+        {
+            Release(sessionId);
         }
 
         if (sheet is null)
@@ -105,51 +112,86 @@ public sealed class ScanService(
             throw new InvalidOperationException("Nothing came out of the scanner; is the page loaded?");
         }
 
-        Page replaced = session.Pages[pageIndex];
-        await File.WriteAllBytesAsync(
-            Path.Combine(SessionPaths.Directory(store.Root, sessionId), replaced.SourceFile),
-            sheet.Png,
-            CancellationToken.None).ConfigureAwait(false);
+        // Written aside and renamed over the old file, so a render reading it never sees half a page.
+        string source = SessionPaths.Source(store.Root, session, replaced);
+        await File.WriteAllBytesAsync(source + ".tmp", sheet.Png, CancellationToken.None).ConfigureAwait(false);
+        File.Move(source + ".tmp", source, overwrite: true);
 
         Page? updated = null;
         Session after = store.Update(sessionId, s =>
         {
+            EnsureEditable(s, "pages can only be rescanned in Review");
             var pages = s.Pages.ToList();
+            int at = pages.FindIndex(p => p.SourceFile == replaced.SourceFile);
+            if (at < 0)
+            {
+                throw new InvalidOperationException("That page is no longer in this session.");
+            }
+
             // The new sheet inherits the slot's rotation, filter and crop: the user is
             // replacing a bad scan of this page, not starting it over.
             updated = PageHash.Rehash(
-                pages[pageIndex] with { SourceHash = PageHash.OfBytes(sheet.Png), IsBlank = sheet.IsBlank, Deleted = false },
+                pages[at] with { SourceHash = PageHash.OfBytes(sheet.Png), IsBlank = sheet.IsBlank, Deleted = false },
                 s.OptionsUsed.Color);
-            pages[pageIndex] = updated;
+            pages[at] = updated;
             return s with { Pages = pages };
         });
 
         sink.Enqueue(after, updated!);
         await hub.All.PageUpdated(sessionId, mapper.ToDto(after, updated!)).ConfigureAwait(false);
-        logger.LogInformation("Rescanned page {Page} of session {Session}", pageIndex, sessionId);
-        return updated!;
+        logger.LogInformation("Rescanned page {Page} of session {Session}", updated!.Index, sessionId);
+        return updated;
     }
 
+    /// <summary>Stops the scan or rescan running for <paramref name="sessionId"/>, if there is one.</summary>
     public void Stop(string sessionId)
     {
-        if (_running.TryGetValue(sessionId, out CancellationTokenSource? cts))
+        lock (_gate)
         {
-            cts.Cancel();
+            if (_active is { } active && active.SessionId == sessionId)
+            {
+                active.Cts.Cancel();
+            }
         }
     }
 
-    /// <summary>Awaitable end of the scan for the given session; completes immediately when none is running.</summary>
-    public Task WhenFinished(string sessionId, CancellationToken cancellationToken) =>
-        _running.TryGetValue(sessionId, out CancellationTokenSource? cts)
-            ? WaitAsync(cts.Token, cancellationToken)
-            : Task.CompletedTask;
-
-    private static async Task WaitAsync(CancellationToken scan, CancellationToken caller)
+    private static void EnsureEditable(Session session, string refusal)
     {
-        var tcs = new TaskCompletionSource();
-        using CancellationTokenRegistration reg = scan.Register(() => tcs.TrySetResult());
-        using CancellationTokenRegistration reg2 = caller.Register(() => tcs.TrySetCanceled(caller));
-        await tcs.Task.ConfigureAwait(false);
+        if (session.State is not (SessionState.Review or SessionState.Done))
+        {
+            throw new InvalidOperationException($"Session is {session.State}; {refusal}.");
+        }
+    }
+
+    /// <exception cref="InvalidOperationException">A scan is already running.</exception>
+    private CancellationTokenSource Claim(string sessionId, CancellationToken link = default)
+    {
+        lock (_gate)
+        {
+            if (_active is not null)
+            {
+                throw new InvalidOperationException("A scan is already running.");
+            }
+
+            CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(link);
+            _active = (sessionId, cts);
+            return cts;
+        }
+    }
+
+    private void Release(string sessionId)
+    {
+        CancellationTokenSource? cts = null;
+        lock (_gate)
+        {
+            if (_active is { } active && active.SessionId == sessionId)
+            {
+                cts = active.Cts;
+                _active = null;
+            }
+        }
+
+        cts?.Dispose();
     }
 
     private async Task RunAsync(string sessionId, ScanOptions options, int fileNumberOffset, CancellationToken cancellationToken)
@@ -189,11 +231,7 @@ public sealed class ScanService(
         }
         finally
         {
-            if (_running.TryRemove(sessionId, out CancellationTokenSource? cts))
-            {
-                await cts.CancelAsync().ConfigureAwait(false);
-                cts.Dispose();
-            }
+            Release(sessionId);
         }
 
         Session finished = store.Update(sessionId, s => s with

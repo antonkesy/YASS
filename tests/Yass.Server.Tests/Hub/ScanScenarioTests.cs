@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+using Yass.App.Api;
 using Yass.Core.Domain;
 using Yass.Core.Hub;
 using Yass.Fake;
@@ -17,6 +19,22 @@ public sealed class ScanScenarioTests
         Assert.Equal(SessionState.Review, done.State);
         Assert.Equal(2, done.Pages.Length);
         Assert.Contains("jammed", done.Error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Of_two_scans_started_at_once_only_one_runs()
+    {
+        await using var factory = new YassFactory(FakeScenario.Pages(3) with { PageDelay = TimeSpan.FromMilliseconds(100) });
+        YassApi api = factory.Services.GetRequiredService<YassApi>();
+
+        Task<SessionDto>[] starts = [.. Enumerable.Range(0, 8).Select(_ => Task.Run(() => api.StartScan(null)))];
+        await Task.WhenAll(starts.Select(t => t.ContinueWith(_ => { }, TaskScheduler.Default)));
+
+        SessionDto started = await Assert.Single(starts, t => t.IsCompletedSuccessfully);
+        Assert.All(starts.Where(t => !t.IsCompletedSuccessfully), t => Assert.IsType<YassException>(t.Exception!.InnerException));
+        await using HubClient hub = await HubClient.ConnectAsync(factory);
+        await hub.WaitFor(started.Id, s => s.State == SessionState.Review);
+        Assert.Single(await hub.ListSessions());
     }
 
     [Fact]
