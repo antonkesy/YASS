@@ -14,15 +14,10 @@
 		onapply,
 		oncancel
 	}: {
-		/**
-		 * The page's frame image: upright, with every edit but its crop and skew. Drawing over the
-		 * page's preview instead put the box in the wrong place on a page already cropped.
-		 */
+		// Upright, with every edit but crop and skew: over the page preview the box lands wrong on a cropped page.
 		src: string;
 		alt: string;
-		/** The page's current crop, if any, in the scan's own coordinates. */
 		crop: CropBox | null;
-		/** The page's quarter turns, which the frame image shows and the crop is taken before. */
 		rotation?: Rotation;
 		onapply: (crop: CropBox | undefined) => void;
 		oncancel: () => void;
@@ -35,10 +30,7 @@
 		{ key: 'Left', label: 'dialogs.edgeLeft' }
 	] as const;
 
-	// Seeded once and then owned by the dialog: the sliders are a draft, not a mirror.
-	// The dialog is mounted fresh each time it opens, so the seed is always current. The
-	// draft is the box as it looks on the upright page, which is what the sliders' Top and
-	// Left mean to whoever is moving them.
+	// Seeded once; the dialog is mounted fresh on each open. The draft is the box on the upright page.
 	const turn = untrack(() => rotation);
 	let box = $state<CropBox>(
 		untrack(() => cropToView(crop ?? { Top: 0, Right: 0, Bottom: 0, Left: 0 }, turn))
@@ -65,10 +57,7 @@
 	<div class="flex flex-wrap items-start gap-[18px]">
 		<div class="relative mx-auto w-full max-w-[250px] flex-none">
 			<img {src} {alt} class="block w-full rounded-[4px] shadow-page" />
-			<!--
-				The kept region is outlined and everything outside it is dimmed by a very
-				large spread shadow, which needs no second element to cover the page.
-			-->
+			<!-- A huge spread shadow dims everything outside the box without a second element. -->
 			<div
 				class="pointer-events-none absolute rounded-[4px] outline-2 outline-accent"
 				style="top: {box.Top}%; right: {box.Right}%; bottom: {box.Bottom}%; left: {box.Left}%; box-shadow: 0 0 0 999px rgb(0 0 0 / 0.4)"

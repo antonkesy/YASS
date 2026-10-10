@@ -45,7 +45,6 @@
 
 	let effective = $state<ScanOptionsDto | null>(null);
 	let error = $state<string | null>(null);
-	/** Scanners the server can see. Null until asked; empty means it found none. */
 	let devices = $state<ScannerDeviceDto[] | null>(null);
 
 	const serverFolder = client.serverFolder;
@@ -56,9 +55,7 @@
 				.getEffectiveOptions()
 				.then((o) => (effective = o))
 				.catch((e) => (error = hubError(e)));
-			// Separately, and without failing the sheet: enumerating SANE takes seconds, and a
-			// settings page that will not open because a scanner is slow is worse than one with
-			// no picker on it.
+			// Separately and non-fatal: enumerating SANE can take seconds.
 			client.hub
 				.listDevices()
 				.then((d) => {
@@ -69,10 +66,6 @@
 		}
 	});
 
-	/**
-	 * The overview's zoom steps as a row of choices. Named rather than shown in pixels: the
-	 * number means nothing to anyone, and there are only ever a handful of steps.
-	 */
 	const tileNames: MessageKey[] = [
 		'settings.tileTiny',
 		'settings.tileSmall',
@@ -98,26 +91,15 @@
 	const changedCount = $derived(overrideKeys.filter((key) => overrides[key] !== undefined).length);
 	const changed = $derived(changedCount > 0);
 
-	/**
-	 * What the next scan will do, over the keys this sheet can set: the server's defaults with
-	 * this browser's overrides on top. Presets are matched against it and saved from it — the
-	 * same thing the home screen matches. Matching the bare overrides had this sheet saying
-	 * "Unsaved changes" while the home screen, one click away, lit up Document: a browser with
-	 * nothing overridden still runs whichever preset yass.yaml defaults to. And a preset saved
-	 * from bare overrides could pin nothing at all, which is a preset that matches no scan.
-	 */
+	// Presets are matched and saved against the effective options, as on the home screen,
+	// not the bare overrides.
 	const planned = $derived<ScanOverrides>(
 		effective ? { ...scanOverrides(effective), ...$settings } : $settings
 	);
 	const chosen = $derived(activePreset($presets, planned, $pickedPreset.id));
-	/** A device id as its human name, falling back to the id for one the server no longer lists. */
 	const deviceLabel = (id: string) =>
 		scannerName($scannerPrefs, id, devices?.find((d) => d.Id === id)?.Name);
 
-	/**
-	 * The scanner the next scan runs on, chosen on the home screen. Empty when none is —
-	 * and then a preset has nothing to belong to, so it is offered everywhere.
-	 */
 	const currentDevice = $derived($settings.Device || effective?.Device || '');
 
 	const previewFacts = $derived({
@@ -132,11 +114,6 @@
 			: ''
 	);
 
-	/**
-	 * Whole templates worth starting from, each shown as what it would produce. The examples
-	 * are expanded with the same facts as the preview, so what the menu promises is what the
-	 * field will show once it is picked.
-	 */
 	const templatePresets = $derived(
 		['{YEAR}-{MONTH}-{DAY}', '{YEAR}-{MONTH}-{DAY}_{HOUR}{MINUTE}', '{PRESET}-{COUNTER}'].map(
 			(template) => ({
@@ -156,23 +133,14 @@
 		void goto(resolve('/'));
 	}
 
-	// Escape closes the sheet, once nothing on it (a menu, a field) has taken the key first.
 	useLayer(close);
 </script>
 
 <svelte:head><title>{t('settings.pageTitle')}</title></svelte:head>
 
-<!--
-	The route stays, but it reads as the mockup's sheet: a centred card on a desktop
-	and a bottom sheet on a phone, over a dimmed page.
--->
 <div class="fixed inset-0 z-40 animate-fade-in bg-[rgb(0_0_0_/_0.35)] backdrop-blur-[3px]"></div>
 
-<!--
-	Header and footer stay put while the middle scrolls, so Close, Reset and Done are never
-	a long scroll away. The card only clips; the wrapper inside it scrolls, a little in from
-	the edge, so the scrollbar does not run through the rounded corners.
--->
+<!-- The inner wrapper scrolls, inset from the edge, so the scrollbar misses the rounded corners. -->
 <div
 	class="fixed inset-x-0 bottom-0 z-41 flex max-h-[92%] animate-sheet-up flex-col overflow-hidden rounded-t-[28px] bg-surface shadow-modal sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:h-[calc(100%-48px)] sm:max-h-none sm:w-[min(1320px,calc(100%-48px))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:animate-card-in sm:rounded-[26px]"
 	role="dialog"
@@ -241,11 +209,6 @@
 			{/if}
 		</SettingsSection>
 
-		<!--
-			Every scanner the server lists, has listed or a past scan ran on: renamed and hidden
-			for this browser only. Outside the scanner section's loading branch, since none of it
-			needs the server's scan defaults.
-		-->
 		<SettingsSection title={t('settings.devices')} icon="scan" testid="scanners-section">
 			<ScannerList
 				rows={scannerRows($scannerPrefs, devices ?? [], sortedSessions($sessions))}
@@ -256,11 +219,6 @@
 			/>
 		</SettingsSection>
 
-		<!--
-			Outside the scanner section above, and for the same reason: what kind of file a
-			document is and what it is called are this browser's business. A server that lets
-			the UI change no scan setting still has to let you name what comes off it.
-		-->
 		<SettingsSection title={t('settings.export')} icon="download" testid="export-section">
 			<Segmented
 				name="format"
@@ -272,10 +230,6 @@
 				value={String($exportPrefs.format)}
 				onchange={(v) => exportPrefs.set({ ...$exportPrefs, format: Number(v) as ExportFormat })}
 			/>
-			<!--
-				Only where yass.yaml names a folder: a browser can switch saving there on for
-				itself, but the folder is the server's to choose, so there is nothing to type.
-			-->
 			{#if $serverFolder}
 				<div class="flex flex-col rounded-[16px] bg-app px-3.5 py-1.5">
 					<Toggle
@@ -295,11 +249,7 @@
 			{/if}
 		</SettingsSection>
 
-		<!--
-			Outside the scanner section above: these are preferences of this browser's, with
-			nothing to do with how the scanner is driven, and they have to stay reachable
-			while that section is still loading or has failed.
-		-->
+		<!-- Outside the scanner section: must stay reachable while it is loading or has failed. -->
 		<SettingsSection title={t('settings.naming')} icon="pencil" testid="naming-section">
 			<div class="col-span-full flex flex-col gap-1.5">
 				<span class="text-[13px] font-bold text-ink-2">{t('settings.fileNameTemplate')}</span>
@@ -315,10 +265,6 @@
 			</div>
 		</SettingsSection>
 
-		<!--
-			What a PDF says about itself in its properties. Kept in this browser like the rest
-			of the export preferences: it is about whose documents these are, not how they scan.
-		-->
 		<SettingsSection title={t('settings.metadata')} icon="tag" testid="metadata-section">
 			{#each DOCUMENT_META_FIELDS as key (key)}
 				<label class="flex flex-col gap-1.5">
@@ -337,10 +283,6 @@
 			{/each}
 		</SettingsSection>
 
-		<!--
-			The one preference the review screen keeps, and it had nowhere to be said out loud:
-			the overview's own zoom buttons set it, which you only find by opening the overview.
-		-->
 		<SettingsSection title={t('settings.editing')} icon="grid" testid="editing-section">
 			<div class="col-span-full flex flex-col gap-1.5">
 				<Segmented
@@ -354,7 +296,6 @@
 			</div>
 		</SettingsSection>
 
-		<!-- Light, dark, or whatever this device is set to: kept by this browser alone. -->
 		<SettingsSection title={t('settings.appearance')} icon="contrast" testid="appearance-section">
 			<div class="col-span-full flex flex-col gap-1.5">
 				<Segmented
@@ -368,10 +309,6 @@
 			</div>
 		</SettingsSection>
 
-		<!--
-			Past scans live on the server, but when they stop being wanted is this browser's
-			call: whichever browser has this set deletes them as they age out.
-		-->
 		<SettingsSection title={t('settings.pastScans')} icon="archive" testid="history-section">
 			<AutoClearSetting />
 		</SettingsSection>

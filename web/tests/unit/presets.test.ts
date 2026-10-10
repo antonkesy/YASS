@@ -30,8 +30,7 @@ describe('presets', () => {
 	});
 
 	it('matches nothing at all when it pins nothing', () => {
-		// Saving with no overrides but the scanner leaves this behind, and every() over an
-		// empty list would otherwise say yes to any settings whatsoever.
+		// every() over an empty list is true, so an empty overrides list must not match everything.
 		const empty: Preset = { id: 'empty', name: 'Empty', icon: 'star', settings: {} };
 		expect(matchesPreset(empty, { Dpi: 600 })).toBe(false);
 		expect(activePreset([empty], { Dpi: 600 })).toBeNull();
@@ -62,14 +61,11 @@ describe('presets scoped to a scanner', () => {
 
 	it('leaves only the unscoped ones when no scanner is chosen', () => {
 		expect(presetsFor(all, undefined).map((p) => p.id)).toEqual(['everywhere']);
-		// Which is every preset a browser that predates this feature has, and all the built-ins.
 		expect(presetsFor(defaultPresets, undefined)).toHaveLength(defaultPresets.length);
 	});
 });
 
 describe('preset matching against planned options', () => {
-	// The stage compares presets to what the next scan will do (defaults + overrides),
-	// so a browser that has never changed anything still lights up the matching preset.
 	it('matches the server defaults when nothing is overridden', () => {
 		const planned = {
 			Source: ScanSource.Feeder,
@@ -94,7 +90,6 @@ describe('preset matching against planned options', () => {
 
 describe('picking between presets that overlap', () => {
 	const document = defaultPresets[0];
-	// Saved while Document was lit: Document's keys and everything else the scan would do.
 	const office: Preset = {
 		id: 'office',
 		name: 'Office',
@@ -135,7 +130,6 @@ describe('loading stored preferences', () => {
 		}) as unknown as Storage;
 
 	it('fills in a preference stored before it existed', () => {
-		// A browser that saved its prefs before the metadata fields were added.
 		const store = createExportPrefs(
 			fake({ [EXPORT_KEY]: JSON.stringify({ format: 1, nameTemplate: '{YEAR}' }) })
 		);
@@ -159,7 +153,6 @@ describe('loading stored preferences', () => {
 		expect(get(createExportPrefs(fake({})))).toEqual(defaultExportPrefs);
 		expect(get(createExportPrefs(fake({ [EXPORT_KEY]: 'not json' })))).toEqual(defaultExportPrefs);
 		expect(get(createPresets(fake({ [PRESETS_KEY]: '7' })))).toEqual(defaultPresets);
-		// The wrong shape altogether: a record where the list belongs, and the other way round.
 		expect(get(createPresets(fake({ [PRESETS_KEY]: '{"id":"x"}' })))).toEqual(defaultPresets);
 		expect(get(createExportPrefs(fake({ [EXPORT_KEY]: '[1,2]' })))).toEqual(defaultExportPrefs);
 	});

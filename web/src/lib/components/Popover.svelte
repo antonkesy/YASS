@@ -13,24 +13,17 @@
 		testid,
 		children
 	}: {
-		/** What pressing outside does, for a screen reader: "Close the … menu". */
 		label: string;
 		onclose: () => void;
-		/** Where the panel sits and how it looks, which every caller decides for itself. */
 		class: string;
-		/** A menu takes the keyboard; a dialog is something to read and stays out of its way. */
 		role?: 'menu' | 'dialog';
-		/** The panel's own accessible name, for a dialog. */
 		name?: string;
-		/** Whether a press outside closes it. One opened by hovering has nothing to catch. */
 		catcher?: boolean;
-		/** Above a settings section's sticky header, for a popover inside one. */
 		raised?: boolean;
 		testid?: string;
 		children: Snippet;
 	} = $props();
 
-	// Escape closes this, and only this, while it is open.
 	useLayer(() => onclose());
 
 	let el = $state<HTMLDivElement | null>(null);
@@ -38,8 +31,6 @@
 	const items = () =>
 		el ? [...el.querySelectorAll<HTMLElement>('[role^="menuitem"]:not([disabled])')] : [];
 
-	// A menu is used from the keyboard like the system's: it opens on its first item, the
-	// arrows move through it, and closing it puts focus back on the button that opened it.
 	const before = document.activeElement;
 	$effect(() => {
 		if (role === 'menu') items()[0]?.focus();

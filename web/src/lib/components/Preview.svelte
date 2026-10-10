@@ -29,12 +29,8 @@
 		onnavigate: (index: number) => void;
 		onclose: () => void;
 		onrotate: (index: number, degrees: 90 | -90) => void;
-		/** Whether the page can be edited now, which is what brings up the edit bar. */
 		editable?: boolean;
-		/**
-		 * A dialog is open over the preview: keys are left to it, or Escape would close the
-		 * preview underneath and the arrows would change the page it is editing.
-		 */
+		/** Keys are left to the open dialog, or Escape would close the preview underneath. */
 		paused?: boolean;
 		onadjust?: (index: number) => void;
 		oncrop?: (index: number) => void;
@@ -54,8 +50,6 @@
 	let shown = $state<{ hash: string; rotation: number } | null>(null);
 	const delta = $derived(shown && page ? page.Rotation - shown.rotation : 0);
 
-	// Fit-to-screen wastes most of a wide window on a portrait page; zoomed fills the
-	// width and scrolls instead, up to the server's processing.preview_max_width.
 	// Keyed by page index so moving to another page drops back to fit.
 	let zoomedIndex = $state(-1);
 	const zoomed = $derived(zoomedIndex === index);
@@ -186,7 +180,6 @@
 					/>
 				</button>
 			{/key}
-			<!-- Floating over the page, so an arrow with nowhere to go is simply not there. -->
 			{#if index > 0}
 				<button
 					type="button"
@@ -211,10 +204,6 @@
 			{/if}
 		</div>
 
-		<!--
-			The edit bar, under the page rather than over it, and within reach of a thumb. It acts on
-			the page on screen only; selections are the review screen's business.
-		-->
 		{#if editable && (onadjust || oncrop || onstraighten || onfilter)}
 			<div
 				class="flex justify-center px-2 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))]"

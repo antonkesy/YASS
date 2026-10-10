@@ -1,8 +1,4 @@
-/**
- * Mirror of the server's filename tokens, so the settings sheet can preview a template
- * and flag typos without a round trip. The server is still the authority: it expands the
- * template for real and leaves unknown placeholders in the name rather than dropping them.
- */
+/** Mirrors the server's filename tokens for preview; the server stays authoritative. */
 export const templateTokens = [
 	'YEAR',
 	'MONTH',
@@ -25,22 +21,14 @@ export type TemplateFacts = {
 	color: string;
 };
 
-/**
- * The older placeholders the server still expands for config files written before the tokens
- * above: `{date}` and `{time}`, each maybe with a .NET format after a colon, and `{session}`. Not
- * offered as chips, but not typos either.
- */
+/** Legacy placeholders the server still expands: not offered as chips, but not typos either. */
 const legacyTokens = ['date', 'time', 'session'];
 
-/** A placeholder as the server's FilenameTemplate reads it: a name, and maybe `:format`. */
 const placeholder = () => /\{([A-Za-z]+)(?::([^}]*))?\}/g;
 
 const pad = (n: number, width = 2) => String(n).padStart(width, '0');
 
-/**
- * Names of months and days in English whatever the browser's language: the server writes them
- * with the invariant culture, and the preview has to promise the name it will actually get.
- */
+// The server formats names with the invariant culture, so the preview must too.
 const NAMES_LOCALE = 'en-US';
 
 export function expandTemplate(template: string, at: Date, facts: TemplateFacts): string {
@@ -83,7 +71,6 @@ export function expandTemplate(template: string, at: Date, facts: TemplateFacts)
 	});
 }
 
-/** Placeholders the server would not recognise, without braces. */
 export function unknownTokens(template: string): string[] {
 	const known = new Set<string>([...templateTokens, ...legacyTokens]);
 	const found = [...template.matchAll(placeholder())].map((m) => m[1]);

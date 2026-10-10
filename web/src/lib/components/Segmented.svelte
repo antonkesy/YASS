@@ -25,7 +25,6 @@
 <fieldset class="flex flex-col gap-1.5" data-testid="seg-{name}">
 	<legend class="mb-1.5 text-[13px] font-bold text-ink-2">
 		{label}
-		<!-- A new hint fades in over the old one's place rather than swapping in a blink. -->
 		{#key hint}{#if hint}<span class="font-semibold text-ink-muted" in:fade={{ duration: ms(220) }}>
 					· {hint}</span
 				>{/if}{/key}
@@ -33,10 +32,7 @@
 	<div class="flex rounded-[14px] bg-ctl-track p-1">
 		{#each options as option (option.value)}
 			<label class="relative flex-1">
-				<!--
-					The radio covers the segment rather than being sr-only: it stays the real
-					control for keyboard and assistive tech, and it is what a pointer hits.
-				-->
+				<!-- The radio covers the segment, not sr-only: it stays the real control and the pointer target. -->
 				<input
 					type="radio"
 					{name}

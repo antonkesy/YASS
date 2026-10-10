@@ -13,8 +13,7 @@ describe('expiresAt', () => {
 	});
 
 	it('counts months on the calendar, not as thirty days', () => {
-		// January 31st plus a month lands in March, as JavaScript dates roll it; the point is
-		// that three months from now is the same date three months on, not 90 days.
+		// Jan 31 + 1 month rolls into March in JS; the point is calendar months, not 90 days.
 		expect(expiresAt('2026-03-15T10:00:00Z', 3, 'months').toISOString()).toBe(
 			'2026-06-15T10:00:00.000Z'
 		);

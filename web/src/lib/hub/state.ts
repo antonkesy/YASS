@@ -1,10 +1,8 @@
 import type { PageDto, ScannerStatusDto, SessionDto } from './generated/Yass.Core.Hub';
 import { SessionState } from './generated/Yass.Core.Domain';
 
-/** Pure reducers over the session map, kept separate from the connection so they are unit-testable. */
 export type SessionMap = ReadonlyMap<string, SessionDto>;
 
-/** Server signals removal with a Done session carrying no pages and an Error marker. */
 export function isRemoval(session: SessionDto): boolean {
 	return (
 		session.State === SessionState.Done &&
@@ -43,17 +41,11 @@ export function replaceAll(sessions: SessionDto[]): SessionMap {
 	return new Map(sessions.map((s) => [s.Id, s]));
 }
 
-/** Newest first, as the home page lists them. */
 export function sortedSessions(map: SessionMap): SessionDto[] {
 	return [...map.values()].sort((a, b) => b.CreatedAt.localeCompare(a.CreatedAt));
 }
 
-/**
- * Whether the scanner list is worth asking for again. The server pushes a status whenever its
- * probe saw something new — a scanner appearing, going away or answering under another name —
- * and that probe is what refreshes the backend's device cache, so it is the one moment the
- * list can have changed. The timestamp alone changing is the same answer again, not news.
- */
+/** Only State/DeviceName changes mean the device probe saw something new. */
 export function devicesStale(
 	prev: ScannerStatusDto | null,
 	next: ScannerStatusDto | null

@@ -10,10 +10,6 @@ import { ExportFormat, type SessionDto } from './hub/generated/Yass.Core.Hub';
 import { expandTemplate } from './template';
 import { i18n, t } from './i18n/index.svelte';
 
-/**
- * What a session is doing, for the chip on the review screen. A saved one says how it was
- * saved — downloaded, or written into the server's folder — which only its history knows.
- */
 export function sessionStateLabel(session: SessionDto): string {
 	switch (session.State) {
 		case SessionState.Scanning:
@@ -46,7 +42,6 @@ export function scannerStateLabel(state: ScannerState | undefined): string {
 	}
 }
 
-/** Pages that will end up in the PDF. */
 export function activePageCount(session: SessionDto): number {
 	return session.Pages.filter((p) => !p.Deleted).length;
 }
@@ -102,14 +97,7 @@ export function pageSizeLabel(size: PageSize | undefined): string {
 	}
 }
 
-/**
- * What a past scan shows as its status. Derived from the session's history rather
- * than stored: no events means it is still a draft, and a busy state outranks the
- * history because it says what is happening right now.
- */
-// `exported` is a scan saved into the server's output folder. `saved` is what the old
-// pick-a-folder feature left behind; no scan gets it any more, but one from before still
-// reads that way rather than as a draft.
+// `saved` is legacy (the old pick-a-folder feature); scans from then still read that way.
 export type SessionStatus =
 	'draft' | 'scanning' | 'exporting' | 'exported' | 'saved' | 'downloaded' | 'discarded' | 'failed';
 
@@ -134,7 +122,6 @@ export function sessionStatus(session: SessionDto): SessionStatus {
 	}
 }
 
-// Getters, so a label read in markup follows the language.
 export const statusLabels: Record<SessionStatus, string> = {
 	get draft() {
 		return t('home.statusDraft');
@@ -168,20 +155,11 @@ export const exportFormatLabels: Record<ExportFormat, string> = {
 	[ExportFormat.Png]: 'PNG'
 };
 
-/** The export formats as a segmented picker's options: Settings and review offer the same row. */
 export const exportFormatOptions = [ExportFormat.Pdf, ExportFormat.Jpg, ExportFormat.Png].map(
 	(f) => ({ value: String(f), label: exportFormatLabels[f] })
 );
 
-/**
- * What a document is called, wherever it is shown or saved: the name on it, or the file name
- * template from settings expanded for it. Null when there is neither — an unnamed scan and an
- * empty template — which is the only case anything has to stand in for.
- *
- * One definition on purpose. A scan that arrives named by its template reads that way on the
- * review screen, in the list of past scans, and in the file that eventually lands on disk; a
- * rename afterwards moves all three, because all three ask this.
- */
+/** The single source for a scan's name on the review screen, in past scans and on disk. */
 export function documentName(
 	session: SessionDto,
 	template: string,
@@ -203,7 +181,6 @@ export function documentName(
 	return expanded.trim() || null;
 }
 
-/** What a scan is called, or its timestamp when it is called nothing at all. */
 export function sessionTitle(
 	session: SessionDto,
 	template: string,
@@ -212,7 +189,6 @@ export function sessionTitle(
 	return documentName(session, template, now) ?? formatTime(session.CreatedAt, now);
 }
 
-/** Where a session's document ended up, when its last event produced a file. */
 export function lastEventPath(session: SessionDto): string | null {
 	return session.Events.at(-1)?.Path ?? null;
 }

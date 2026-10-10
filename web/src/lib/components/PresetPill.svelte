@@ -14,18 +14,10 @@
 		...rest
 	}: {
 		preset: Preset;
-		/** The preset the next scan is running. */
 		active: boolean;
-		/** Picked last, and changed away from since: marked with a dot and outlined. */
 		edited: boolean;
-		/** Why the edited one is marked, as its tooltip. */
 		editedTitle: string;
-		/** A word after the name, such as the scanner a preset belongs to. */
 		note?: string;
-		/**
-		 * On the home screen's tray, which is its own hover: the pill only darkens its text, and
-		 * springs when pressed.
-		 */
 		tray?: boolean;
 		onclick: () => void;
 	} & Omit<HTMLButtonAttributes, 'class' | 'title' | 'onclick'> = $props();

@@ -14,27 +14,18 @@
 		onsave
 	}: {
 		presets: Preset[];
-		/** Id of the matching preset, or null when nothing matches. */
 		active: string | null;
-		/** Id of the preset picked last, when a setting has since been changed away from it. */
 		edited?: string | null;
-		/** Settings differ from every preset, so they can be saved as one. */
 		modified: boolean;
 		onpick: (id: string) => void;
 		onsave: () => void;
 	} = $props();
 
-	// The pill that lights up bounces, but not on load: nothing was picked then.
 	const bounce = bounceWhenPicked(() => active);
 </script>
 
 <div class="flex flex-col items-center gap-2">
-	<!--
-		The heading line carries the Save as preset link, beside the label rather than in the row
-		of presets: there it came and went with a pill of its own, rewrapping the row and moving
-		everything under it. This line is a fixed height with or without it, and the label stays
-		centred on its own column.
-	-->
+	<!-- A fixed-height line, so the Save as preset link coming and going never rewraps the pills. -->
 	<div class="grid h-8 w-full grid-cols-[1fr_auto_1fr] items-center gap-2">
 		<span></span>
 		<span class="text-[13px] font-semibold text-ink-muted">{t('home.preset')}</span>

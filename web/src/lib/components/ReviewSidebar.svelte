@@ -33,9 +33,7 @@
 	}: {
 		session: SessionDto;
 		review: Review;
-		/** How many other scans have pages to add to this one. */
 		mergeable: number;
-		/** Opens the dialog that picks one of them. */
 		onmerge: () => void;
 	} = $props();
 
@@ -48,7 +46,6 @@
 	const editable = $derived(
 		session.State === SessionState.Review || session.State === SessionState.Done
 	);
-	/** Why the sidebar's buttons are greyed while the scan is not in review, for their tooltips. */
 	const busyReason = $derived(
 		session.State === SessionState.Scanning
 			? t('review.waitScan')
@@ -57,22 +54,16 @@
 				: t('review.notEditable')
 	);
 
-	/**
-	 * What the field shows, and the same thing the list of past scans shows for this scan: a
-	 * scan nobody has named reads as the template from settings, which is what it will be
-	 * saved as.
-	 */
+	// Same fallback as the past scans list: an unnamed scan reads as the name template.
 	const displayName = $derived(
 		documentName({ ...session, Name: review.storedName ?? undefined }, $exportPrefs.nameTemplate)
 	);
 
-	/** The scanner the scan ran on, by the name this browser gives it. */
 	const scannerLabel = $derived(
 		session.OptionsUsed.Device
 			? scannerName($scannerPrefs, session.OptionsUsed.Device)
 			: ($scannerStatus?.DeviceName ?? '')
 	);
-	/** The settings the scan ran with, each on its own tile; one the scan did not record is left out. */
 	const scanSettings = $derived.by((): [MessageKey, string][] => {
 		const o = session.OptionsUsed;
 		const all: [MessageKey, string][] = [
@@ -83,10 +74,6 @@
 		];
 		return all.filter(([, value]) => value);
 	});
-	/**
-	 * What the Scan section says while it is shut. Worded exactly as the line it replaces, which
-	 * sat under the download button: it is a fact about the paper, not about the saving.
-	 */
 	const pageSummary = $derived(
 		t('review.pageSummary', { active: activePageCount(session), n: session.Pages.length })
 	);
@@ -110,7 +97,6 @@
 {/snippet}
 
 {#snippet tile(label: string, value: string, wide = false)}
-	<!-- Label over value, two to a row: the facts of a scan read at a glance in a narrow card. -->
 	<div
 		class="flex min-w-0 flex-col gap-0.5 rounded-[12px] bg-app px-2.5 py-2 {wide
 			? 'col-span-2'
@@ -123,12 +109,7 @@
 	</div>
 {/snippet}
 
-<!--
-	Width kept close to the filmstrip's: the stage sits between the two, so the page
-	on screen is only centred while the columns either side of it match. Neither can
-	be the other's exact width — thumbnails do not want 280px and this card does not
-	want 180 — so they meet in the middle and the page lands near enough to centre.
--->
+<!-- Width kept near the filmstrip's so the stage between them stays roughly centred. -->
 <aside
 	class="order-3 flex w-full min-w-0 basis-full flex-col gap-3.5 rounded-[24px] bg-surface p-[22px] shadow-panel lg:min-h-0 lg:w-auto lg:basis-(--review-aside-w) lg:overflow-y-auto"
 	{@attach autoAnimate}
@@ -156,9 +137,7 @@
 		stopping={review.stopping}
 	/>
 
-	<!-- What the file will be, together under the button that saves it. -->
 	<div class="flex flex-col rounded-[16px] bg-app p-3" data-testid="file-options">
-		<!-- Settings → Export holds the same choice; switching here switches it there. -->
 		<Segmented
 			name="review-format"
 			label={t('settings.fileFormat')}
@@ -173,12 +152,10 @@
 		<PdfProperties sessionId={session.Id} />
 	</div>
 
-	<!-- The facts about the scan, with the page count up on the heading beside them. -->
 	<div class="flex flex-col gap-1.5" data-testid="scan-section">
 		{@render heading(t('review.headingScan'), pageSummary, 'page-count')}
 		<div class="mt-1 grid grid-cols-2 gap-1.5">
 			{@render tile(t('review.scanned'), formatTime(session.CreatedAt))}
-			<!-- The scanned pages on disk, not an estimate of the PDF the mockup guesses at. -->
 			{@render tile(t('review.size'), formatBytes(session.SizeBytes))}
 			{#if scannerLabel}
 				{@render tile(t('review.scanner'), scannerLabel, true)}
@@ -191,7 +168,6 @@
 
 	<div class="flex flex-col gap-0.5" data-testid="more-section">
 		{@render heading(t('review.headingMore'))}
-		<!-- A greyed button says why on hover: rule of thumb, no dead control without a reason. -->
 		<button
 			type="button"
 			class={ghost}
@@ -216,11 +192,6 @@
 		</button>
 	</div>
 
-	<!--
-		Alone at the foot, because it throws the scan away and has no business sitting
-		where a hand goes looking for Scan more. mt-auto puts it on the bottom edge
-		while the panel has room to spare, and is simply inert once it has not.
-	-->
 	<div class="mt-auto border-t border-line pt-4 max-lg:mt-4">
 		<button
 			type="button"

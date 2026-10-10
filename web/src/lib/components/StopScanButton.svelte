@@ -7,9 +7,7 @@
 		stopping = false,
 		testid = 'stop-scan-button'
 	}: {
-		/** Stops the running scan; the pages it has made are kept. */
 		onstop: () => void;
-		/** A stop was asked for and the scanner has not let go yet. */
 		stopping?: boolean;
 		testid?: string;
 	} = $props();

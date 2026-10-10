@@ -11,10 +11,8 @@
 		oncleanup,
 		onclose
 	}: {
-		/** The clean-ups every targeted page has; those show ticked. */
 		cleanup?: PageCleanup;
 		onfilter: (filter: PageFilter) => void;
-		/** Turn one clean-up on or off for the targeted pages. Absent hides the section. */
 		oncleanup?: (cleanup: PageCleanup, on: boolean) => void;
 		onclose: () => void;
 	} = $props();
@@ -46,7 +44,6 @@
 	{/each}
 
 	{#if oncleanup}
-		<!-- On top of whichever filter is picked, so these tick on and off rather than choose. -->
 		<div class="mx-1 my-1.5 h-px bg-line" role="separator"></div>
 		<span class="block px-2.5 pt-0.5 pb-1 text-[12px] font-semibold text-ink-faint"
 			>{t('review.cleanUp')}</span

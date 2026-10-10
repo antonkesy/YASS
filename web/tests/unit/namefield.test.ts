@@ -76,7 +76,6 @@ describe('NameField', () => {
 		expect(screen.getByTestId('document-name')).toHaveTextContent('.png');
 		unmount();
 
-		// PDF is only the default, not the assumption.
 		render(NameField, {
 			value: 'Invoice',
 			placeholder: '10:00',

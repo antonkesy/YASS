@@ -124,7 +124,6 @@ describe('ScanStage', () => {
 		expect(screen.getByTestId('scanner-trouble')).toHaveTextContent('No scanner found');
 		unmount();
 
-		// What the scanner itself said wins over our own guess at the reason.
 		stage(ScannerState.Error, 'connected', 'Cover open');
 		expect(screen.getByTestId('scanner-trouble')).toHaveTextContent('Cover open');
 		expect(screen.getByTestId('scan-button-wrap')).toHaveAttribute(
@@ -167,7 +166,6 @@ describe('ScanStage', () => {
 		const { unmount } = stage(null, 'connecting');
 		expect(screen.getByTestId('scan-button')).toBeDisabled();
 		expect(screen.getByTestId('scanner-trouble')).toHaveTextContent(/Connecting/);
-		// Every page load connects for a moment: that is no card.
 		expect(screen.queryByRole('alert')).toBeNull();
 		unmount();
 
@@ -217,7 +215,6 @@ describe('ScanStage scanner picker', () => {
 		expect(picked()).toBe('adf:3');
 		unmount();
 
-		// The server's name matches nothing listed: the first one stands in rather than none.
 		stage({ Device: '' });
 		expect(picked()).toBe('epson:1');
 	});
@@ -246,8 +243,6 @@ describe('ScanStage scanner picker', () => {
 		expect(get(settings).Device).toBe('canon:2');
 		expect(canonPill).toHaveFocus();
 
-		// Back from the first goes round to the last. (The options here are fixed, so the lit
-		// pill stays Epson whatever the pick.)
 		settings.reset();
 		await fireEvent.keyDown(epsonPill, { key: 'ArrowLeft' });
 		expect(get(settings).Device).toBe('canon:2');
@@ -305,7 +300,6 @@ describe('ScanStage scanner picker', () => {
 		expect(screen.queryByRole('button', { name: /Flatbed run/ })).toBeNull();
 		unmount();
 
-		// Nothing chosen: only the presets that belong to no scanner in particular.
 		stage({ Device: '' });
 		expect(screen.getByRole('button', { name: /Everywhere/ })).toBeInTheDocument();
 		expect(screen.queryByRole('button', { name: /Feeder run/ })).toBeNull();
@@ -327,12 +321,10 @@ describe('Toolbar', () => {
 			onfilter,
 			onclear
 		});
-		// No scope line and no All: this toolbar edits the page it sits under, full stop.
 		expect(screen.queryByTestId('toolbar-scope')).toBeNull();
 		expect(screen.queryByTestId('toolbar-select-all')).toBeNull();
 		await fireEvent.click(screen.getByRole('button', { name: 'Rotate right' }));
 		expect(onrotate).toHaveBeenCalledWith(90);
-		// Nothing is deleted, so there is nothing to restore and no button offering to.
 		expect(screen.queryByTestId('restore-button')).toBeNull();
 		await fireEvent.click(screen.getByTestId('filter-button'));
 		await fireEvent.click(screen.getByRole('menuitem', { name: 'Black & white' }));
@@ -364,7 +356,6 @@ describe('Toolbar', () => {
 		expect(oncleanup).toHaveBeenLastCalledWith(PageCleanup.Despeckle, true);
 		await fireEvent.click(levels);
 		expect(oncleanup).toHaveBeenLastCalledWith(PageCleanup.AutoLevels, false);
-		// Ticking stays in the menu: two clean-ups are often wanted together.
 		expect(screen.getByTestId('filter-menu')).toBeInTheDocument();
 	});
 
@@ -443,17 +434,13 @@ describe('Toolbar', () => {
 		await fireEvent.click(screen.getByTestId('expand-button'));
 		expect(onexpand).toHaveBeenCalled();
 
-		// Disabled here means "not editable", e.g. mid-scan. Every edit goes, and a bar left
-		// holding Expand alone is not worth showing, so there is no bar at all.
 		await rerender({ ...props, onexpand, disabled: true });
 		expect(screen.queryByTestId('toolbar')).toBeNull();
 		expect(screen.queryByTestId('expand-button')).toBeNull();
 
-		// The all-pages view keeps its bar for the selection, even with edits off.
 		await rerender({ ...props, onexpand, disabled: true, scoped: true });
 		expect(screen.getByTestId('toolbar-scope')).toBeVisible();
 
-		// Nothing scanned yet: there is no page to open, so Expand goes too.
 		await rerender({ ...props, onexpand, total: 0 });
 		expect(screen.queryByTestId('expand-button')).toBeNull();
 	});
@@ -472,7 +459,6 @@ describe('Toolbar', () => {
 			onclear: vi.fn()
 		};
 
-		// Nothing ticked is the page on the stage — one page, so both are on offer.
 		const { rerender } = render(Toolbar, props);
 		expect(screen.getByTestId('crop-button')).toBeInTheDocument();
 		expect(screen.getByTestId('rescan-button')).toBeInTheDocument();
@@ -480,7 +466,6 @@ describe('Toolbar', () => {
 		await rerender({ ...props, selectedCount: 1 });
 		expect(screen.getByTestId('crop-button')).toBeInTheDocument();
 
-		// Neither means anything for a set of pages, nor while the feeder is still going.
 		await rerender({ ...props, selectedCount: 2 });
 		expect(screen.queryByTestId('crop-button')).toBeNull();
 		expect(screen.queryByTestId('rescan-button')).toBeNull();
@@ -503,18 +488,14 @@ describe('Toolbar', () => {
 			onclear: vi.fn()
 		};
 
-		// A page that is still there can be deleted, and there is nothing to put back.
 		const { rerender } = render(Toolbar, props);
 		expect(screen.getByTestId('delete-button')).toBeInTheDocument();
 		expect(screen.queryByTestId('restore-button')).toBeNull();
 
-		// Deleted, and the offer is the other way round — no second Delete for a page that
-		// has already had one.
 		await rerender({ ...props, anyDeleted: true, anyActive: false });
 		expect(screen.getByTestId('restore-button')).toBeInTheDocument();
 		expect(screen.queryByTestId('delete-button')).toBeNull();
 
-		// Some of each: both mean something, so both are there.
 		await rerender({ ...props, anyDeleted: true, anyActive: true });
 		expect(screen.getByTestId('restore-button')).toBeInTheDocument();
 		expect(screen.getByTestId('delete-button')).toBeInTheDocument();
@@ -540,12 +521,10 @@ describe('Toolbar', () => {
 		await fireEvent.click(screen.getByTestId('toolbar-select-all'));
 		expect(onselectall).toHaveBeenCalled();
 
-		// Ticked pages are their own answer to "which ones", so Clear takes its place.
 		await rerender({ ...props, selectedCount: 2 });
 		expect(screen.queryByTestId('toolbar-select-all')).toBeNull();
 		expect(screen.getByRole('button', { name: 'Clear' })).toBeVisible();
 
-		// One page is the whole scan already; there is nothing for All to add.
 		await rerender({ ...props, selectedCount: 0, total: 1 });
 		expect(screen.queryByTestId('toolbar-select-all')).toBeNull();
 	});
@@ -665,7 +644,6 @@ describe('PageThumb', () => {
 			'src',
 			expect.stringContaining('/img/s1/2/thumb?h=abc')
 		);
-		// Tapping the page only moves the stage: selection is the checkbox's job alone.
 		await fireEvent.click(screen.getByRole('button', { name: /^Show page 3/ }));
 		expect(onshow).toHaveBeenCalledWith(2);
 		expect(ontoggle).not.toHaveBeenCalled();
@@ -765,9 +743,6 @@ describe('TemplateEditor', () => {
 	});
 
 	it('ends every name in the extension the export format asks for', async () => {
-		// The preview is a promise about the file that will be written, so a JPG export must
-		// not be previewed as a PDF. Three places say it: the field, the preview, and each
-		// ready-made template in the menu.
 		const { rerender } = render(TemplateEditor, {
 			...editor(['YEAR']),
 			extension: '.jpg',
@@ -929,7 +904,6 @@ describe('Preview edit bar', () => {
 		const onnavigate = vi.fn();
 		render(Preview, { ...base, onclose, onnavigate });
 
-		// Something opens over the preview, as a dialog does: it is the newest layer.
 		const closeDialog = vi.fn();
 		const dialog = layer(closeDialog);
 		await fireEvent.keyDown(window, { key: 'ArrowLeft' });
@@ -938,7 +912,6 @@ describe('Preview edit bar', () => {
 		expect(onclose).not.toHaveBeenCalled();
 		expect(onnavigate).not.toHaveBeenCalled();
 
-		// With it gone, the keys are the preview's again.
 		dialog.pop();
 		await fireEvent.keyDown(window, { key: 'ArrowLeft' });
 		expect(onnavigate).toHaveBeenCalled();
@@ -959,7 +932,6 @@ describe('CropModal', () => {
 			oncancel: vi.fn()
 		});
 
-		// Turned right, the scan's left edge is the top of the page on screen.
 		expect(screen.getByTestId('crop-top')).toHaveValue('10');
 		expect(screen.getByTestId('crop-left')).toHaveValue('0');
 
@@ -986,7 +958,6 @@ describe('Modal', () => {
 		const dialog = screen.getByRole('dialog', { name: 'Straighten page' });
 		expect(dialog).toHaveFocus();
 
-		// Apply is disabled until the angle changes, so Cancel is the last stop.
 		const cancel = screen.getByRole('button', { name: 'Cancel' });
 		cancel.focus();
 		await fireEvent.keyDown(cancel, { key: 'Tab' });
@@ -1023,7 +994,6 @@ describe('PastScansPanel', () => {
 		for (const tile of screen.getAllByTestId('session-tile')) await fireEvent.click(tile);
 		expect(screen.getByTestId('select-bar')).toHaveTextContent('2 selected');
 
-		// Deleted from another browser while picked here.
 		await rerender({ sessions: [draft] });
 		expect(screen.getByTestId('select-bar')).toHaveTextContent('1 selected');
 	});

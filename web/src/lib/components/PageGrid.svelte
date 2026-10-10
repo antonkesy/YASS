@@ -29,56 +29,36 @@
 		sessionId: string;
 		pages: PageDto[];
 		selection: ReadonlySet<number>;
-		/** Index of the page the stage is showing, ringed in the strip. */
 		current?: number;
 		reorderable?: boolean;
-		/** Shows a placeholder tile for the page currently coming off the feeder. */
 		scanning?: boolean;
-		/**
-		 * `strip` is the filmstrip beside the stage; `overview` is the same pages as a
-		 * wrapping grid, sized by `tile`, for the full-screen all-pages view.
-		 */
 		layout?: 'strip' | 'overview';
-		/** Minimum width of one tile in the overview, i.e. the zoom level. */
 		tile?: number;
-		/** The scrolling element, out here so the overview can ask whether everything fits. */
 		grid?: HTMLDivElement | null;
 		onshow: (index: number) => void;
 		ontoggle: (index: number) => void;
-		/** Opens a page full screen, offered per tile in the overview and by the toolbar in the strip. */
 		onopen: (index: number) => void;
 		onreorder: (order: number[]) => void;
 		onscanmore?: () => void;
-		/** Opens the full-screen overview; the strip shows a button for it when set. */
 		onexpand?: () => void;
 	} = $props();
 
 	const overview = $derived(layout === 'overview');
 
-	// A mouse drags as soon as it moves. A finger has to press and hold ~250 ms first,
-	// so a swipe still scrolls the strip. Either way a quick tap stays a tap (show/select).
+	// Touch must hold first so a swipe still scrolls the strip.
 	const HOLD_MS = 250;
 	const MOVE_PX = 6;
 
-	/**
-	 * A drag in flight. `over` is the slot (a position in the grid, not a page) the page would
-	 * land in; `grab` is where inside the tile it was picked up, so the ghost stays under the
-	 * finger; `size` is the tile's, so the ghost is the tile and not a guess at it.
-	 */
 	let drag = $state<{
 		from: number;
 		over: number | null;
 		grab: { x: number; y: number };
 		size: { w: number; h: number };
 	} | null>(null);
-	/** The page a finger is holding down on, before the hold has become a drag. */
 	let pressing = $state<number | null>(null);
-	/**
-	 * The ghost after a drop, gliding into the slot the page landed in. Kept apart from
-	 * `drag` so the grid can already be in its final order while the ghost catches up.
-	 */
+	// Apart from `drag` so the grid is already in its final order while the ghost glides in.
 	let settle = $state<{ page: PageDto; x: number; y: number; w: number; h: number } | null>(null);
-	/** Lifts the ghost a frame after it appears, so the lift is seen rather than just there. */
+	// Set a frame later so the lift transition actually plays.
 	let lifted = $state(false);
 	let pressTimer: ReturnType<typeof setTimeout> | null = null;
 	let pressStart: { x: number; y: number; index: number; hold: boolean } | null = null;
@@ -89,18 +69,12 @@
 
 	const SETTLE_MS = 200;
 
-	/**
-	 * The pages in the order the grid shows them: while a drag is on, the order it would
-	 * leave behind, so the other pages make room where the held one is going to land. That
-	 * moving gap, more than any outline, is what says where a drop will put it.
-	 */
 	const shown = $derived(
 		drag && drag.over !== null
 			? moveIndex(pages.length, drag.from, drag.over).map((i) => pages[i])
 			: pages
 	);
 
-	/** The page under the pointer as a floating card, while held and while settling. */
 	const ghost = $derived(
 		drag
 			? {
@@ -117,18 +91,13 @@
 		return grid ? [...grid.querySelectorAll<HTMLElement>('[data-index]')] : [];
 	}
 
-	/**
-	 * Starts a drag of the page at `index`. `pressed` is where the tile was first pressed,
-	 * which is where the ghost is held by: a mouse only becomes a drag once it has moved,
-	 * and measured from there the ghost would jump by that first move.
-	 */
+	// The ghost is held by `pressed`: a mouse drag starts only after moving, so `at` would jump.
 	function begin(index: number, pointerId: number, pressed: { x: number; y: number }) {
 		pressing = null;
 		clearSettle();
 		rects = slots().map((el) => el.getBoundingClientRect());
 		const tile = rects[index] ?? new DOMRect(pressed.x, pressed.y, 0, 0);
-		// Straight from where the pointer already is: a quick flick and release would
-		// otherwise drop on the slot the drag started in.
+		// From the current pointer, so a quick flick-and-release doesn't drop on the start slot.
 		drag = {
 			from: index,
 			over: slotAt(rects, at.x, at.y) ?? index,
@@ -145,11 +114,6 @@
 		scrolling ??= requestAnimationFrame(autoScroll);
 	}
 
-	/**
-	 * Moves the held page's gap to another slot, sliding the pages in between out of the
-	 * way. Measured before and played after, like a real reorder, so they travel rather
-	 * than jump.
-	 */
 	function hover(over: number | null) {
 		if (!drag || drag.over === over) return;
 		const from = measure(grid);
@@ -157,10 +121,6 @@
 		requestAnimationFrame(() => play(grid, from));
 	}
 
-	/**
-	 * Pulls the scroller when a drag hovers near its edge, so a page can be dropped
-	 * somewhere that was off screen when the drag started.
-	 */
 	function autoScroll() {
 		scrolling = null;
 		if (!drag || !grid) return;
@@ -168,9 +128,7 @@
 		if (dx || dy) {
 			const { scrollLeft, scrollTop } = grid;
 			grid.scrollBy?.({ left: dx, top: dy });
-			// The slots moved under the pointer by however far the scroller actually went.
-			// Shifted rather than re-measured: mid-slide, a tile's box is wherever its
-			// animation has it, not where its slot is.
+			// Shifted, not re-measured: mid-slide a tile's box is wherever its animation has it.
 			const movedX = grid.scrollLeft - scrollLeft;
 			const movedY = grid.scrollTop - scrollTop;
 			if (movedX || movedY) {
@@ -190,8 +148,6 @@
 		pressStart = { x: e.clientX, y: e.clientY, index, hold };
 		at = { x: e.clientX, y: e.clientY };
 		if (hold) {
-			// The tile sinks under the finger while the hold counts down, then lifts: the
-			// press is seen to be doing something before it has become a drag.
 			pressing = index;
 			const pressed = { x: e.clientX, y: e.clientY };
 			pressTimer = setTimeout(() => begin(index, e.pointerId, pressed), HOLD_MS);
@@ -207,7 +163,6 @@
 		}
 		if (!pressStart) return;
 		if (Math.hypot(e.clientX - pressStart.x, e.clientY - pressStart.y) <= MOVE_PX) return;
-		// Past the slop: a held press has turned into a drag, an unheld touch into a scroll.
 		if (pressStart.hold) cancelPress();
 		else {
 			const { index, x, y } = pressStart;
@@ -219,16 +174,12 @@
 
 	function pointerup(e: PointerEvent) {
 		if (drag) {
-			// Where the pointer was released, not where it last reported a move: a quick
-			// flick can end without one in between, and the drop should land where it looks.
+			// A flick can end without a final pointermove.
 			if (e.type === 'pointerup') at = { x: e.clientX, y: e.clientY };
 			const from = drag.from;
 			const over = e.type === 'pointerup' ? (slotAt(rects, at.x, at.y) ?? drag.over) : from;
 			const page = pages[from];
 			const { w, h } = drag.size;
-			// The grid is already laid out the way the drop leaves it (or, when the drag is
-			// going nowhere, slides back), so the ghost glides into the gap and nothing else
-			// has to move.
 			const held = measure(grid);
 			drag = null;
 			stopScrolling();
@@ -249,7 +200,6 @@
 				lifted = false;
 				settleTimer = setTimeout(clearSettle, SETTLE_MS);
 			}
-			// Suppress the click that follows the drag.
 			suppressClick = true;
 			setTimeout(() => (suppressClick = false), 0);
 		}
@@ -276,8 +226,6 @@
 
 	let suppressClick = false;
 
-	// Measured just before the order changes, replayed once the DOM has settled, so pages
-	// slide to their new slots instead of jumping.
 	let before: Positions | null = null;
 
 	function reorderWithFlip(order: number[]) {
@@ -286,7 +234,7 @@
 	}
 
 	$effect(() => {
-		// Re-runs whenever the page order changes; `before` is only set by a reorder.
+		// Tracks the order; `before` is only set by a keyboard reorder.
 		void pages.map((p) => p.Index).join();
 		if (!before) return;
 		const from = before;
@@ -294,8 +242,7 @@
 		requestAnimationFrame(() => play(grid, from));
 	});
 
-	// A hold still counting down when the strip goes would otherwise start a drag on a
-	// grid that is no longer there.
+	// A pending hold would otherwise start a drag on an unmounted grid.
 	$effect(() => () => {
 		cancelPress();
 		stopScrolling();
@@ -310,7 +257,6 @@
 		if (!suppressClick) ontoggle(index);
 	}
 
-	/** Keyboard reorder: Alt+Arrow moves the focused page, either axis. */
 	function keydown(e: KeyboardEvent) {
 		const back = e.key === 'ArrowLeft' || e.key === 'ArrowUp';
 		const forward = e.key === 'ArrowRight' || e.key === 'ArrowDown';
@@ -325,12 +271,7 @@
 		queueMicrotask(() => slots()[to]?.querySelector<HTMLElement>('button')?.focus());
 	}
 
-	// The strip is its own panel beside the stage; the overview just fills the sheet
-	// its overlay has already drawn.
-	//
-	// Its width is kept close to the save card's on the review screen, because the stage
-	// sits between the two: the page on screen is only centred when the columns either
-	// side of it match. Change one and the other wants changing too.
+	// The strip's width must match the save card's, or the stage is off-centre.
 	const panel = $derived(
 		overview
 			? 'flex min-h-0 flex-1 flex-col'
@@ -341,13 +282,11 @@
 			? 'grid min-h-0 flex-1 content-start gap-3 overflow-y-auto overscroll-contain p-1 pb-6'
 			: 'flex min-h-0 flex-1 flex-row gap-3 overflow-x-auto lg:flex-col lg:overflow-x-visible lg:overflow-y-auto'
 	);
-	/** One tile: a fixed sliver in the strip, a zoomable cell of the overview's grid. */
 	const cell = $derived(overview ? 'w-full' : 'w-[70px] flex-none lg:w-full');
 </script>
 
 <div class={panel}>
 	{#if onexpand && !overview}
-		<!-- No page count here: the stage already says which page of how many. -->
 		<button
 			type="button"
 			class="flex h-8 w-full flex-none items-center justify-center gap-1.5 rounded-full text-xs font-bold text-accent transition-colors hover:bg-accent-hover50"
@@ -359,11 +298,7 @@
 		</button>
 	{/if}
 
-	<!--
-		A list of pages, each of whose own buttons are what a screen reader works: showing,
-		ticking and opening a page. The pointer and Alt+Arrow handlers here are delegated from
-		those buttons, for dragging and keyboard reordering, not a control of the list's own.
-	-->
+	<!-- The pointer and Alt+Arrow handlers are delegated from the tiles' own buttons. -->
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<div
 		class="{scroller} {drag ? 'cursor-grabbing touch-none select-none' : ''}"
@@ -386,8 +321,6 @@
 	>
 		{#each shown as page (page.Index)}
 			{@const held = drag?.from === page.Index}
-			<!-- The held page's own tile is the gap it will drop into: a dashed slot that
-			     travels with the pointer while the page itself rides along as the ghost. -->
 			<div
 				class="{cell} animate-page-in transition-transform duration-200 ease-spring {held
 					? 'rounded-[14px] bg-accent-50 outline-[1.5px] -outline-offset-[1.5px] outline-accent-dash outline-dashed'
@@ -412,7 +345,7 @@
 			</div>
 		{/each}
 
-		<!-- Items of the list as well, without a box of their own to change the layout. -->
+		<!-- `contents`: list items without a box of their own. -->
 		{#if scanning}
 			<div class="contents" role="listitem">
 				<div
@@ -442,12 +375,8 @@
 </div>
 
 {#if ghost}
-	<!--
-		The page in hand. Fixed to the viewport and portalled out, because any transformed
-		ancestor (the overlay's slide-in, the page's fade) would otherwise pin it to itself.
-		Translate rides on the outer box with no easing, so it keeps up with the pointer;
-		the lift lives on the inner one and eases, so picking up and putting down are seen.
-	-->
+	<!-- Portalled: a transformed ancestor would otherwise pin a fixed element to itself.
+	     Translate has no easing so it keeps up; the lift on the inner box eases. -->
 	<div
 		{@attach portal}
 		class="pointer-events-none fixed top-0 left-0 z-[70] {settle

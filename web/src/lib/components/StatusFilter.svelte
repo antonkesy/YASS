@@ -22,8 +22,6 @@
 		downloaded: 'bg-downloaded'
 	};
 
-	// Only statuses that actually occur get a chip, so the row does not list five
-	// filters that would all come back empty.
 	const shown = $derived(filterableStatuses.filter((s) => (counts[s] ?? 0) > 0));
 </script>
 

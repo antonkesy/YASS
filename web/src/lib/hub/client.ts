@@ -16,28 +16,19 @@ import {
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
 
 export type YassHubClient = {
-	/** Typed hub proxy (client → server). */
 	readonly hub: IYassHub;
 	readonly connection: Readable<ConnectionState>;
 	readonly scanner: Readable<ScannerStatusDto | null>;
 	readonly sessions: Readable<SessionMap>;
-	/** sessionId → percent for exports in flight. */
 	readonly exportProgress: Readable<Record<string, number>>;
-	/**
-	 * The server's output folder, or "" when it has none or would not say; null until the
-	 * first connect has asked. Asked again on every connect, since a config reload can change it.
-	 */
+	/** "" when the server has none; null until asked. Re-asked on every connect (config reload). */
 	readonly serverFolder: Readable<string | null>;
-	/** Starts (or resumes) the connection and loads the initial state. Idempotent. */
 	start(): Promise<void>;
 	stop(): Promise<void>;
-	/** Fetches one session from the server and puts it in the store. */
 	refresh(sessionId: string): Promise<SessionDto>;
-	/** Optimistic local change; the next SessionChanged/PageUpdated from the server wins. */
 	updateLocal(sessionId: string, update: (session: SessionDto) => SessionDto): void;
 };
 
-/** Minimal surface of HubConnection this client needs; lets tests pass a fake. */
 export type ConnectionLike = Pick<
 	HubConnection,
 	| 'start'
@@ -53,7 +44,6 @@ export type ConnectionLike = Pick<
 
 const RETRY_MS = [500, 1000, 2000, 5000, 10_000];
 
-/** `record` without `key`, or the very same object when it had none, so nobody re-renders. */
 function without<T>(record: Record<string, T>, key: string): Record<string, T> {
 	if (!(key in record)) return record;
 	const rest = { ...record };
@@ -74,8 +64,7 @@ export function createHubClient(connection: ConnectionLike): YassHubClient {
 		scannerStatusChanged: async (status) => scanner.set(status),
 		sessionChanged: async (session) => {
 			sessions.update((m) => applySessionChanged(m, session));
-			// An export's percentages end with it, so the next one starts from nothing rather
-			// than from the 100% the last one left behind.
+
 			if (session.State !== SessionState.Exporting)
 				exportProgress.update((p) => without(p, session.Id));
 		},
@@ -90,8 +79,7 @@ export function createHubClient(connection: ConnectionLike): YassHubClient {
 	});
 
 	connection.onreconnecting(() => connectionState.set('reconnecting'));
-	// Both through start(), so a reload after a reconnect is retried like any other, and a
-	// close while a start is already retrying joins that one instead of racing it.
+	// Both go through start(), so a close during a retrying start joins it instead of racing it.
 	connection.onreconnected(() => {
 		connectionState.set('connected');
 		if (!stopped) void start();
@@ -108,8 +96,7 @@ export function createHubClient(connection: ConnectionLike): YassHubClient {
 		const [status, list] = await Promise.all([hub.getScannerStatus(), hub.listSessions()]);
 		scanner.set(status);
 		sessions.set(replaceAll(list));
-		// Apart from the rest, and never failing the connect: without it Save to server is
-		// simply not offered.
+		// Never fails the connect: without it, Save to server is simply not offered.
 		hub.getServerFolder().then(
 			(folder) => serverFolder.set(folder),
 			() => serverFolder.set('')
@@ -119,7 +106,6 @@ export function createHubClient(connection: ConnectionLike): YassHubClient {
 	async function startWithRetry() {
 		for (let attempt = 0; !stopped; attempt++) {
 			try {
-				// Already connected (a reconnect, or a retry of a failed load) is nothing to announce.
 				if (connection.state !== HubConnectionState.Connected) {
 					connectionState.set(attempt === 0 ? 'connecting' : 'reconnecting');
 					await connection.start();

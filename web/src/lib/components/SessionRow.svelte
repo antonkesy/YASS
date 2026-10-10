@@ -27,11 +27,9 @@
 		ondelete
 	}: {
 		session: SessionDto;
-		/** The file name template, which is what an unnamed scan is called. */
 		template?: string;
 		selectable?: boolean;
 		selected?: boolean;
-		/** Plays the arrival animation once, for the scan just returned from. */
 		landed?: boolean;
 		ontoggle?: (id: string) => void;
 		ondownload?: (id: string) => void;
@@ -44,8 +42,6 @@
 	const path = $derived(lastEventPath(session));
 	const status = $derived(sessionStatus(session));
 
-	// Time first, but only when the title is not already the time: an unnamed scan is
-	// titled by it, and saying it twice a line apart said nothing new.
 	const meta = $derived(
 		[
 			documentName(session, template) ? formatTime(session.CreatedAt) : null,
@@ -56,7 +52,6 @@
 			.join(' · ')
 	);
 
-	// The mono line says where the document went, or why there is nowhere yet.
 	const detail = $derived(
 		path
 			? `→ ${path}`
@@ -67,10 +62,6 @@
 					: t('home.notDownloaded')
 	);
 
-	/**
-	 * Delete is for good, so it takes a second press, as Clear all does: the first arms it and
-	 * says so, and moving away disarms it.
-	 */
 	let confirmDelete = $state(false);
 	function remove() {
 		if (!confirmDelete) {

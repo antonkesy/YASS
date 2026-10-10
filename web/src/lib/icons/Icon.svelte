@@ -8,14 +8,12 @@
 		class: klass = ''
 	}: {
 		name: IconName;
-		/** Overrides the size the mockup draws this glyph at. */
 		size?: number;
 		stroke?: number;
 		class?: string;
 	} = $props();
 
-	// Widened to IconSpec: the `as const` map narrows each entry to its own literal
-	// shape, so glyphs without a size override would otherwise have no such property.
+	// Widened: the `as const` map narrows entries without a size override to have no such property.
 	const spec: IconSpec = $derived(icons[name]);
 	const px = $derived(size ?? spec.size ?? DEFAULT_SIZE);
 	const width = $derived(stroke ?? spec.stroke ?? DEFAULT_STROKE);

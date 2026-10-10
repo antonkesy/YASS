@@ -4,10 +4,7 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<title>YASS</title>
-		<!--
-			Light or dark before anything is painted: light unless this browser chose dark, or
-			automatic (the system decides). Key and values as in $lib/appearance.svelte.ts.
-		-->
+		<!-- Applied before first paint; key and values must match $lib/appearance.svelte.ts. -->
 		<script>
 			var mode = 'light';
 			try {

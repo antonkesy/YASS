@@ -1,17 +1,10 @@
 import type { ScannerDeviceDto, SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 import type { KnownScanner, ScannerPrefs } from '$lib/presets';
 
-/**
- * The scanners worth listing in Settings: every one the server lists now, every one this
- * browser has seen before, and every one a past scan ran on. A scanner that is not on the
- * server's list now is still shown — as a ghost — so it can be renamed, hidden or forgotten
- * while it is unplugged, and so its name is not lost the day it comes back.
- */
+/** Includes disconnected ("ghost") scanners so they can still be renamed, hidden or forgotten. */
 export type ScannerRow = {
 	id: string;
-	/** The name to show: this browser's label, else what the driver calls it, else the id. */
 	name: string;
-	/** What the driver calls it, when that differs from the label. */
 	original: string;
 	connected: boolean;
 	hidden: boolean;
@@ -20,12 +13,10 @@ export type ScannerRow = {
 	connection?: string;
 	firstSeen?: string;
 	lastSeen?: string;
-	/** When a past scan last ran on it, and how many did. */
 	lastUsed?: string;
 	scans: number;
 };
 
-/** Notes every scanner on the server's list as seen now, keeping what was known about the rest. */
 export function remember(
 	prefs: ScannerPrefs,
 	devices: readonly ScannerDeviceDto[],
@@ -47,15 +38,11 @@ export function remember(
 	return { ...prefs, known };
 }
 
-/** The name a scanner goes by in this browser. */
 export function scannerName(prefs: ScannerPrefs, id: string, fallback?: string): string {
 	return prefs.labels[id]?.trim() || fallback || prefs.known[id]?.name || id;
 }
 
-/**
- * The server's list as the home screen's picker shows it: renamed, and without the hidden
- * ones — except the one chosen now, which hiding must not make disappear from under a scan.
- */
+/** Hidden scanners are left out, except the chosen one, which must not vanish from under a scan. */
 export function pickable(
 	prefs: ScannerPrefs,
 	devices: readonly ScannerDeviceDto[],
@@ -103,7 +90,6 @@ export function scannerRows(
 		};
 	});
 
-	// Connected ones first, in the server's order; then the ghosts, most recently seen first.
 	const order = (r: ScannerRow) => devices.findIndex((d) => d.Id === r.id);
 	return rows.sort((a, b) =>
 		a.connected !== b.connected
@@ -119,7 +105,6 @@ export function scannerRows(
 export function rename(prefs: ScannerPrefs, id: string, label: string): ScannerPrefs {
 	const labels = { ...prefs.labels };
 	const known = prefs.known[id]?.name;
-	// A name set back to the driver's own, or emptied, is no label at all.
 	if (!label.trim() || label.trim() === known) delete labels[id];
 	else labels[id] = label.trim();
 	return { ...prefs, labels };
@@ -130,7 +115,6 @@ export function setHidden(prefs: ScannerPrefs, id: string, hidden: boolean): Sca
 	return { ...prefs, hidden: hidden ? [...rest, id] : rest };
 }
 
-/** Drops everything this browser knew about a scanner that is gone. */
 export function forget(prefs: ScannerPrefs, id: string): ScannerPrefs {
 	const known = { ...prefs.known };
 	const labels = { ...prefs.labels };

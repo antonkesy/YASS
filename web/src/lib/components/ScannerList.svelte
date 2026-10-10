@@ -15,7 +15,6 @@
 		onforget
 	}: {
 		rows: ScannerRow[];
-		/** The scanner the next scan runs on, which cannot be hidden from under it. */
 		chosen?: string;
 		onrename: (id: string, label: string) => void;
 		onhide: (id: string, hidden: boolean) => void;
@@ -37,7 +36,6 @@
 		editing = null;
 	}
 
-	/** The details a row expands to, leaving out anything nobody has a value for. */
 	function facts(row: ScannerRow): [string, string][] {
 		return (
 			[
@@ -77,7 +75,6 @@
 				data-hidden={row.hidden}
 			>
 				<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-					<!-- A ghost — seen or used before, not on the server's list now — is drawn faded. -->
 					<span
 						class="h-2.5 w-2.5 flex-none rounded-full {row.connected
 							? 'bg-success'
@@ -132,7 +129,6 @@
 							data-testid="scanner-rename"
 						>
 							<Icon name="pencil" />
-							<!-- The word only where there is room: on a phone it would squeeze the name. -->
 							<span class="hidden sm:inline">{t('settings.rename')}</span>
 						</button>
 						<button

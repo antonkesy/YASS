@@ -1,4 +1,3 @@
-/** Moves the item at `from` to position `to`, returning the new order as old indices (a permutation). */
 export function moveIndex(count: number, from: number, to: number): number[] {
 	const order = Array.from({ length: count }, (_, i) => i);
 	if (from === to || from < 0 || to < 0 || from >= count || to >= count) return order;
@@ -11,11 +10,7 @@ export function isIdentity(order: number[]): boolean {
 	return order.every((v, i) => v === i);
 }
 
-/**
- * Which grid slot a point is over; `rects` are the thumbs' bounding boxes in DOM order.
- * A point in a gap, or past the last thumb, snaps to the nearest one: a drop that lands
- * a few pixels outside a tile should still move the page, not silently do nothing.
- */
+/** Points in a gap or past the last thumb snap to the nearest one. */
 export function slotAt(rects: DOMRectReadOnly[], x: number, y: number): number | null {
 	let nearest: number | null = null;
 	let best = Infinity;
@@ -33,14 +28,9 @@ export function slotAt(rects: DOMRectReadOnly[], x: number, y: number): number |
 	return nearest;
 }
 
-/** How far outside the drop zone the pointer starts pulling the scroller, and how fast. */
 export const EDGE_ZONE = 72;
 export const EDGE_SPEED = 18;
 
-/**
- * How much to nudge a scroller whose edge a drag is hovering near, so pages can be
- * dragged past what is on screen. Zero for a box with no size: nothing is laid out yet.
- */
 export function edgeScroll(
 	rect: { left: number; right: number; top: number; bottom: number },
 	x: number,

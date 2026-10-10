@@ -32,76 +32,44 @@
 	}: {
 		selectedCount: number;
 		total: number;
-		/** At least one page in the frame is deleted, so there is something to restore. */
 		anyDeleted: boolean;
-		/** At least one page in the frame is not, so there is something to delete. */
 		anyActive?: boolean;
 		disabled?: boolean;
-		/** Crop and rescan need the scanner idle and a single page picked. */
 		scanning?: boolean;
 		onrotate: (degrees: 90 | -90) => void;
 		ondelete: () => void;
 		onrestore: () => void;
 		onfilter: (filter: PageFilter) => void;
-		/** The clean-ups every page in the frame has, which the filter menu shows ticked. */
 		cleanup?: PageCleanup;
 		oncleanup?: (cleanup: PageCleanup, on: boolean) => void;
-		/** Opens the page the edits point at, full screen. Not an edit, but this is where it lives. */
 		onexpand?: () => void;
 		oncrop?: () => void;
-		/** Opens the fine-rotation dialog for the page in view. */
 		onstraighten?: () => void;
-		/** Trims the scanner's dark frame off the page in view or the selection. */
 		onautocrop?: () => void;
-		/** An auto-crop is under way; its menu item says so and cannot be pressed again. */
 		autocropping?: boolean;
-		/** Opens the tone and sharpness dialog for the page in view or the selection. */
 		onadjust?: () => void;
 		onrescan?: () => void;
-		/**
-		 * Whether this toolbar manages a selection. Only the all-pages view does: the review
-		 * screen shows one page at a time, and a toolbar under it that could be acting on
-		 * some other set of pages is a question nobody wanted to have to ask.
-		 */
 		scoped?: boolean;
 		onclear: () => void;
-		/** Takes the whole scan, which is the way out of acting on one page at a time. */
 		onselectall?: () => void;
 	} = $props();
 
 	let filterOpen = $state(false);
 	let cropOpen = $state(false);
 
-	/**
-	 * Nothing ticked means the page on the stage, the one these buttons sit under. Acting on
-	 * the whole scan by default was a rotation of everything one button away from a rotation
-	 * of the page someone was looking at, with nothing on screen to tell them apart.
-	 */
 	const scope = $derived(
 		selectedCount === 0
 			? t('review.actingOnPage')
 			: t('review.actingOnSelected', { n: selectedCount })
 	);
 
-	/**
-	 * Whether the edits point at exactly one page, which is what Crop and Rescan need. Nothing
-	 * ticked counts: that is the page on the stage, and it is the one they act on.
-	 */
 	const one = $derived(selectedCount <= 1);
 
-	/**
-	 * A button is here when pressing it would do something, and absent when it would not —
-	 * no shelf of grey buttons explaining what you cannot have. Editing stops altogether
-	 * while a scan runs, and a bar holding nothing but Expand is not an edit bar, so then
-	 * there is no bar at all until the feeder stops. The all-pages view keeps its own, for
-	 * the selection it shows.
-	 */
 	const editing = $derived(!disabled);
 	const canAim = $derived(editing && !scanning && one);
 	const shown = $derived(editing || scoped);
 
-	// Icons only: each button's name is its aria-label, shown as a tooltip on hover. The
-	// words under the icons made the bar two rows deep on a phone.
+	// Icons only: each button's aria-label doubles as its tooltip.
 	const tool =
 		'flex h-11 w-11 flex-none items-center justify-center rounded-[14px] transition-colors hover:bg-accent-hover50';
 </script>
@@ -141,7 +109,6 @@
 		{/if}
 
 		{#if onexpand && total > 0}
-			<!-- Looking at a page is not editing it, so this one stays on while a scan runs. -->
 			<button
 				type="button"
 				class="text-ink {tool}"
@@ -175,10 +142,6 @@
 			</button>
 		{/if}
 
-		<!--
-			The page's shape — crop, straighten — behind one button, so the row does not grow
-			by a button per tool and still fits a phone.
-		-->
 		{#if editing && !scanning && ((one && (oncrop || onstraighten)) || onautocrop)}
 			<button
 				type="button"
@@ -235,11 +198,6 @@
 			</button>
 		{/if}
 
-		<!--
-		The two take the same place at the end of the row and trade it between them: a page
-		that is deleted offers Restore, one that is not offers Delete. Both appear only for a
-		selection that is some of each, where both of them mean something.
-	-->
 		{#if editing && anyDeleted}
 			<button
 				type="button"

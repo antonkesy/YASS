@@ -1,8 +1,6 @@
 import type { Area } from '../types';
 
-/** The home screen: the scan stage, the past scans panel, and the status and setting labels they share. */
 export const home = {
-	// Scan stage
 	scan: { en: 'Scan', de: 'Scannen', fr: 'Numériser', es: 'Escanear' },
 	scanningEllipsis: {
 		en: 'Scanning…',
@@ -79,7 +77,6 @@ export const home = {
 		es: 'Cambiar ajustes'
 	},
 
-	// Presets
 	preset: { en: 'Preset', de: 'Profil', fr: 'Profil', es: 'Perfil' },
 	saveAsPreset: {
 		en: 'Save as preset',
@@ -100,7 +97,6 @@ export const home = {
 		es: 'Editado — pulsa para volver a él'
 	},
 
-	// Settings chips
 	autoDeskew: {
 		en: 'Auto-deskew',
 		de: 'Auto-Begradigen',
@@ -120,7 +116,6 @@ export const home = {
 		es: 'B {b} / C {c}'
 	},
 
-	// Scanner status
 	connecting: { en: 'Connecting…', de: 'Verbinde…', fr: 'Connexion…', es: 'Conectando…' },
 	reconnecting: {
 		en: 'Reconnecting…',
@@ -164,7 +159,6 @@ export const home = {
 		es: 'Última comprobación'
 	},
 
-	// Session and scanner state labels
 	stateScanning: { en: 'Scanning', de: 'Scannt', fr: 'Numérisation', es: 'Escaneando' },
 	stateReview: {
 		en: 'Ready to review',
@@ -185,7 +179,6 @@ export const home = {
 	},
 	scannerChecking: { en: 'Checking…', de: 'Prüfe…', fr: 'Vérification…', es: 'Comprobando…' },
 
-	// Scan settings
 	sourceFeeder: { en: 'Feeder', de: 'Einzug', fr: 'Chargeur', es: 'Alimentador' },
 	sourceDuplex: {
 		en: 'Feeder, both sides',
@@ -205,7 +198,6 @@ export const home = {
 	sizeLetter: { en: 'Letter', de: 'Letter', fr: 'Lettre US', es: 'Carta' },
 	sizeLegal: { en: 'Legal', de: 'Legal', fr: 'Légal US', es: 'Oficio' },
 
-	// Past scan statuses
 	statusDraft: { en: 'Draft', de: 'Entwurf', fr: 'Brouillon', es: 'Borrador' },
 	statusExported: {
 		en: 'On server',
@@ -217,7 +209,6 @@ export const home = {
 	statusDownloaded: { en: 'Downloaded', de: 'Heruntergeladen', fr: 'Téléchargé', es: 'Descargado' },
 	statusDiscarded: { en: 'Discarded', de: 'Verworfen', fr: 'Abandonné', es: 'Descartado' },
 
-	// Past scans panel
 	pastScans: {
 		en: 'Past scans',
 		de: 'Bisherige Scans',
@@ -309,7 +300,6 @@ export const home = {
 		es: { one: '{n} escaneo eliminado', other: '{n} escaneos eliminados' }
 	},
 
-	// Past scan tiles and rows
 	pageCount: {
 		en: { one: '{n} page', other: '{n} pages' },
 		de: { one: '{n} Seite', other: '{n} Seiten' },
@@ -348,7 +338,6 @@ export const home = {
 		es: '¿Eliminar {title} de verdad?'
 	},
 
-	// Sorting
 	sortBy: { en: 'Sort by', de: 'Sortieren nach', fr: 'Trier par', es: 'Ordenar por' },
 	closeSortMenu: {
 		en: 'Close sort menu',
@@ -373,7 +362,6 @@ export const home = {
 	sortOldestShort: { en: 'Oldest', de: 'Älteste', fr: 'Anciens', es: 'Antiguos' },
 	sortNameShort: { en: 'Name', de: 'Name', fr: 'Nom', es: 'Nombre' },
 
-	// Selecting
 	selectedCount: {
 		en: '{n} selected',
 		de: '{n} ausgewählt',

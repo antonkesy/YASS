@@ -17,15 +17,11 @@
 	}: {
 		sessionId: string;
 		page: PageDto;
-		/** In the toolbar's selection, ticked through the checkbox. */
 		selected?: boolean;
-		/** The page the stage is showing, picked by tapping the thumbnail. */
 		current?: boolean;
-		/** Whether the tick box is offered; the filmstrip leaves selecting to the overview. */
 		selectable?: boolean;
 		onshow: (index: number) => void;
 		ontoggle: (index: number) => void;
-		/** Opens the page full screen. Left out where the toolbar offers that instead. */
 		onopen?: (index: number) => void;
 	} = $props();
 
@@ -109,7 +105,6 @@
 
 	<div class="flex items-center justify-between gap-1 px-0.5">
 		{#if selectable}
-			<!-- Ticking pages is what the toolbar acts on; tapping the page above only moves the stage. -->
 			<button
 				type="button"
 				class="-m-1 flex items-center gap-1 rounded-full p-1 transition-colors hover:bg-accent-wash"

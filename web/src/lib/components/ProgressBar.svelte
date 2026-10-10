@@ -3,9 +3,8 @@
 		percent = null,
 		label
 	}: {
-		/** How far along, 0–100. Null is indeterminate: a sliver, so the bar is visibly there. */
+		/** 0–100, or null for indeterminate. */
 		percent?: number | null;
-		/** What is progressing, for anyone listening rather than looking. */
 		label: string;
 	} = $props();
 </script>

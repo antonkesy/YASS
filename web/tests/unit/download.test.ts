@@ -24,7 +24,6 @@ const result = (...paths: string[]): ExportResult =>
 		Documents: paths.map((DownloadPath) => ({ PageCount: 1, DownloadPath }))
 	}) as ExportResult;
 
-/** A file handle that keeps what was written to it, standing in for a picked file. */
 function fakeFile() {
 	const written: Uint8Array<ArrayBuffer>[] = [];
 	const file = { written, closed: false, aborted: false, text: () => new Blob(written).text() };

@@ -4,10 +4,7 @@ import type { HistoryPrefs, RetentionUnit } from '$lib/presets';
 
 export const retentionUnits: readonly RetentionUnit[] = ['minutes', 'hours', 'days', 'months'];
 
-/**
- * When a scan made at `createdAt` is old enough to go, under the given timeframe. Counted in
- * UTC so a clock change in between does not move the answer by an hour.
- */
+/** Counted in UTC so a DST change does not shift the answer by an hour. */
 export function expiresAt(createdAt: string, amount: number, unit: RetentionUnit): Date {
 	const at = new Date(createdAt);
 	switch (unit) {
@@ -27,10 +24,7 @@ export function expiresAt(createdAt: string, amount: number, unit: RetentionUnit
 	return at;
 }
 
-/**
- * The scans the auto-clear preference says should go now. A scan still coming in or going out
- * is left alone whatever its age: deleting under a running export is how a save gets lost.
- */
+/** Skips scans still scanning or exporting: deleting under a running export loses the save. */
 export function expiredSessions(
 	sessions: readonly SessionDto[],
 	prefs: HistoryPrefs,

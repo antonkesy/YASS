@@ -22,19 +22,15 @@
 		ontoggle
 	}: {
 		session: SessionDto;
-		/** The file name template, which is what an unnamed scan is called. */
 		template?: string;
 		selectable?: boolean;
 		selected?: boolean;
-		/** Plays the arrival animation once, for the scan just returned from. */
 		landed?: boolean;
 		ontoggle?: (id: string) => void;
 	} = $props();
 
 	const first = $derived(session.Pages.find((p) => !p.Deleted && p.ThumbnailReady) ?? null);
 	const pages = $derived(activePageCount(session));
-	// The time goes on the line under the title only when the title is not already the time:
-	// an unnamed scan is titled by it, and saying it twice a line apart said nothing new.
 	const meta = $derived(
 		[
 			t('home.pageCount', { n: pages }),
@@ -68,7 +64,6 @@
 
 	<span class="relative block pr-[5px] pb-[5px]">
 		{#if pages > 1}
-			<!-- A second sheet peeking out, so a multi-page scan reads as a stack. -->
 			<span class="absolute inset-y-0 top-[5px] right-0 left-[5px] rounded-[6px] bg-accent-stack2"
 			></span>
 		{/if}

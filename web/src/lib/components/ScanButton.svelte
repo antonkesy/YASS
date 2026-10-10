@@ -10,16 +10,12 @@
 	}: {
 		disabled?: boolean;
 		busy?: boolean;
-		/** Why the button is greyed out, shown on hover. Nothing to say when it is not. */
 		reason?: string;
 		onclick: () => void;
 	} = $props();
 </script>
 
-<!--
-	The tooltip hangs on the wrapper, not the button: a disabled button takes no pointer
-	events, so it could never show one itself.
--->
+<!-- The tooltip hangs on the wrapper: a disabled button gets no pointer events. -->
 <span
 	class="flex w-full max-w-[340px] justify-center"
 	title={disabled && !busy ? reason || undefined : undefined}

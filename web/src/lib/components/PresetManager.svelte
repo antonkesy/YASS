@@ -14,23 +14,12 @@
 		currentDevice,
 		deviceLabel
 	}: {
-		/**
-		 * What the next scan will do: the server's defaults with this browser's overrides on
-		 * top. Presets are saved from it.
-		 */
 		planned: ScanOverrides;
-		/** The preset the next scan is running, if any. */
 		chosen: Preset | null;
-		/**
-		 * The scanner the next scan runs on, chosen on the home screen. Empty when none is —
-		 * and then a preset has nothing to belong to, so it is offered everywhere.
-		 */
 		currentDevice: string;
-		/** A device id as its human name. */
 		deviceLabel: (id: string) => string;
 	} = $props();
 
-	/** The preset icons' names, for whoever hears the icon picker rather than sees it. */
 	const iconNames: Record<PresetIconName, MessageKey> = {
 		star: 'settings.iconStar',
 		file: 'settings.iconFile',
@@ -46,31 +35,16 @@
 		zap: 'settings.iconZap'
 	};
 
-	/**
-	 * The preset picked last, once a setting has been changed away from it. Shown as edited
-	 * rather than simply going dark, so it is clear what Update would overwrite.
-	 */
 	const edited = $derived(
 		chosen ? null : ($presets.find((p) => p.id === $pickedPreset.id) ?? null)
 	);
-	/** The preset the Update, Delete and scope controls act on. */
 	const target = $derived(chosen ?? edited);
-	/** Arriving from the home screen's Save as preset opens the name field straight away. */
 	let drafting = $state(page.state.newPreset === true);
 	let draftName = $state('');
 	let draftIcon = $state<PresetIconName>('star');
-	/**
-	 * Whether the new preset should be offered on every scanner. Off by default: presets
-	 * follow the scanner picked on the home screen, and one saved for the flatbed rarely
-	 * makes sense on the feeder next to it.
-	 */
 	let draftShared = $state(false);
 
-	/**
-	 * A preset never carries the scanner in its settings: the scanner is picked on the home
-	 * screen and the presets follow it, so one that moved the machine when it was pressed
-	 * would be arguing with the control right above it.
-	 */
+	// The scanner is picked on the home screen; a preset that changed it would fight that control.
 	function withoutDevice(overrides: ScanOverrides): ScanOverrides {
 		const rest = { ...overrides };
 		delete rest.Device;
@@ -108,7 +82,6 @@
 		pickedPreset.set({ id });
 	}
 
-	/** Move a saved preset between "every scanner" and "only the one chosen now". */
 	function sharePreset(id: string, shared: boolean) {
 		presets.set(
 			$presets.map((p) => {
@@ -149,8 +122,6 @@
 
 	<div class="flex flex-wrap gap-1.5">
 		{#each $presets as preset (preset.id)}
-			<!-- The home screen only offers one with a scanner on that scanner, so this sheet — the
-			     one place every preset is listed — has to say which. -->
 			<PresetPill
 				{preset}
 				active={chosen?.id === preset.id}
@@ -222,7 +193,6 @@
 				{/each}
 			</div>
 			{#if currentDevice}
-				<!-- Only worth asking when there is a scanner for it to belong to. -->
 				<label class="flex flex-wrap items-center gap-2 text-xs font-semibold text-ink-2">
 					<input
 						type="checkbox"

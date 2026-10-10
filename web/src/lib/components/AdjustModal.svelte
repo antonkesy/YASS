@@ -15,12 +15,9 @@
 		onapply,
 		oncancel
 	}: {
-		/** The preview of the page in view, which already carries its current adjust. */
 		src: string;
 		alt: string;
-		/** The page in view's current adjust, if any; the sliders start from it. */
 		adjust: PageAdjust | null;
-		/** How many pages Apply sets, for the title. */
 		count?: number;
 		onapply: (adjust: PageAdjust | undefined) => void;
 		oncancel: () => void;
@@ -30,11 +27,8 @@
 	const current = untrack(() => adjust ?? NEUTRAL_ADJUST);
 	let draft = $state<PageAdjust>({ ...current });
 
-	/**
-	 * The preview image already has the current adjust baked in, so the live preview applies
-	 * only the difference. Brightness and contrast are CSS's own formulas, the same ones the
-	 * server renders with, so this is what Apply will give back.
-	 */
+	// The preview already has the current adjust baked in, so only the difference is applied.
+	// CSS brightness and contrast use the same formulas the server renders with.
 	const filter = $derived(
 		[
 			`brightness(${(toneFactor(draft.Brightness) / toneFactor(current.Brightness)).toFixed(3)})`,

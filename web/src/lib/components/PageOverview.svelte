@@ -30,10 +30,6 @@
 		current?: number;
 		reorderable?: boolean;
 		scanning?: boolean;
-		/**
-		 * Tile width in pixels, or `'fit'` for whatever puts every page on one screen. The
-		 * overlay owns the control, the caller owns the value.
-		 */
 		tile: number | 'fit';
 		onzoom: (tile: number) => void;
 		onshow: (index: number) => void;
@@ -42,32 +38,21 @@
 		onreorder: (order: number[]) => void;
 		onselectall: () => void;
 		onclose: () => void;
-		/** The page-edit toolbar, so edits act on what was just ticked without leaving. */
 		children?: Snippet;
 	} = $props();
 
 	let dialog = $state<HTMLDivElement | null>(null);
 	const all = $derived(pages.length > 0 && selection.size === pages.length);
 
-	/**
-	 * Fitting everything on one screen is measured, not worked out: a tile's height is the
-	 * thumbnail's aspect plus whatever the markup puts under it, and a formula for that here
-	 * would go quietly wrong the next time the markup changes. So the grid is drawn at two
-	 * known sizes first, hidden, and the line through those two points says how tall a tile
-	 * of any width would be.
-	 */
+	// Fit is measured, not computed: the grid is drawn hidden at two known sizes and a tile's
+	// height is interpolated from them, so it stays right when the markup changes.
 	const PROBES = [TILE_SIZES[2], TILE_SIZES[TILE_SIZES.length - 1]] as const;
 
 	let gridEl = $state<HTMLDivElement | null>(null);
 	let fitted = $state<number>(DEFAULT_TILE);
-	/**
-	 * Which probe is on screen, or -1 once there is a size to show. The initial read of
-	 * `tile` is deliberate: this view is built fresh each time it opens, and fitting is what
-	 * an open does — a later switch to 'fit' in settings is for the next one.
-	 */
+	// `tile` is read once on purpose: fitting happens on open; a later switch to 'fit' is for the next one.
 	let probe = $state(untrack(() => tile) === 'fit' ? 0 : -1);
 
-	/** What the grid is actually drawn at, which the zoom buttons step from. */
 	const shown = $derived(tile !== 'fit' ? tile : probe >= 0 ? PROBES[probe] : fitted);
 
 	// Plain, not state: it guards the run below without becoming a reason to run it again.
@@ -85,8 +70,7 @@
 
 		for (let i = 0; i < PROBES.length; i++) {
 			probe = i;
-			// The size has to be on the page before it can be measured, and `tick` is what
-			// says it is. Reading offsetWidth then forces the layout that answers.
+			// tick() puts the size on the page; reading offsetWidth then forces the layout.
 			await tick();
 			const cell = grid.querySelector<HTMLElement>('[data-index]');
 			if (!cell) {
@@ -121,13 +105,11 @@
 
 	const overview = useLayer(() => onclose());
 
-	/** One zoom step that the grid will actually show, measured off the grid as it is now. */
 	function zoom(delta: number) {
 		const grid = gridEl;
 		const style = grid ? getComputedStyle(grid) : null;
 		const width =
 			grid && style ? grid.clientWidth - px(style.paddingLeft) - px(style.paddingRight) : 0;
-		// Not laid out yet, nothing to count columns in: a plain step.
 		if (!style || width <= 0) return onzoom(zoomTile(shown, delta));
 		onzoom(zoomGrid(shown, delta, width, px(style.columnGap)));
 	}
@@ -177,7 +159,6 @@
 		</span>
 
 		<span class="ml-auto flex items-center gap-2">
-			<!-- Clearing is the toolbar's Clear, which is only there once something is ticked. -->
 			<button
 				type="button"
 				class="{pill} disabled:pointer-events-none disabled:opacity-35"

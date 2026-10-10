@@ -16,11 +16,6 @@ export * from './state';
 let instance: YassHubClient | null = null;
 let desktop: DesktopHost | null = null;
 
-/**
- * The app-wide hub client. Created on first use in the browser; `start()` is safe to call
- * repeatedly. Inside the desktop app it talks over the webview's message bridge; everywhere
- * else over SignalR. Either way the rest of the app sees the same client.
- */
 export function getHub(): YassHubClient {
 	if (!instance) {
 		if (!browser) throw new Error('The hub is only available in the browser.');
@@ -42,13 +37,11 @@ export function getHub(): YassHubClient {
 	return instance;
 }
 
-/** The desktop app's own calls, or `null` in a browser. */
 export function getDesktop(): DesktopHost | null {
 	getHub();
 	return desktop;
 }
 
-/** URL of a page image; the hash makes it immutable, so the browser caches it forever. */
 export function imageUrl(
 	sessionId: string,
 	index: number,

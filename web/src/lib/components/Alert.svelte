@@ -7,11 +7,8 @@
 		class: place = '',
 		children
 	}: {
-		/** Something failed, or something worth knowing went less than well. */
 		tone?: 'danger' | 'warning';
-		/** Standing in for a whole screen that could not load, rather than above one. */
 		tall?: boolean;
-		/** Where it sits: a margin, a grid span. */
 		class?: string;
 		children: Snippet;
 	} = $props();

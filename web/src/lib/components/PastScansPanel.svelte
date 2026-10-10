@@ -22,7 +22,6 @@
 		ondelete
 	}: {
 		sessions: SessionDto[];
-		/** Id of the scan to play the landing highlight on, once. */
 		landed?: string | null;
 		busy?: boolean;
 		onclear?: () => void;
@@ -33,25 +32,20 @@
 	let view = $state<'grid' | 'list'>('grid');
 	let query = $state('');
 	let order = $state<SortOrder>('newest');
-	/** The status chip last picked, which `activeStatus` may be overriding. */
 	let status = $state<StatusFilter>('all');
 	let confirmClear = $state(false);
 	let selecting = $state(false);
 	let picked = $state<Set<string>>(clear());
 
-	// What an unnamed scan is called, so the list, the search box and the A-Z sort all read
-	// the same name the review screen shows and the save writes.
 	const template = $derived($exportPrefs.nameTemplate);
 
 	const counts = $derived(statusCounts(sessions));
-	// A filter that no longer matches anything would otherwise strand the panel empty
-	// with no chip to click back to.
+	// A filter with no matches left would strand the panel empty with no chip to go back.
 	const activeStatus = $derived(status !== 'all' && (counts[status] ?? 0) === 0 ? 'all' : status);
 	const shown = $derived(browse(sessions, { query, status: activeStatus, order, template }));
 	const bytes = $derived(sessions.reduce((n, s) => n + s.SizeBytes, 0));
 
-	// Selections follow what is on screen: a scan filtered out of view is no longer
-	// something the bulk buttons should silently act on.
+	// Bulk actions only apply to scans still in view.
 	const pickedVisible = $derived(retain(picked, new Set(shown.map((s) => s.Id))));
 
 	function endSelecting() {
@@ -75,7 +69,6 @@
 	data-testid="past-scans"
 >
 	<div class="flex items-center gap-2">
-		<!-- No count up here: the foot of the panel says how many, and the empty state says none. -->
 		<h2 class="text-[19px] font-extrabold tracking-[-0.01em]">{t('home.pastScans')}</h2>
 		<div class="flex-1"></div>
 		<div
@@ -116,11 +109,7 @@
 		/>
 	{:else if sessions.length > 0}
 		<div class="flex gap-2">
-			<!--
-				min-w-0 here and w-0 on the input: an input keeps a default width of about twenty
-				characters however flexible its box, which with Sort and Select beside it made this
-				row wider than a phone.
-			-->
+			<!-- min-w-0 here and w-0 on the input: an input's default ~20ch width overflowed a phone. -->
 			<label class="flex h-[38px] min-w-0 flex-1 items-center gap-2 rounded-[12px] bg-ctl px-3">
 				<span class="text-ink-faint"><Icon name="search" /></span>
 				<span class="sr-only">{t('home.searchPastScans')}</span>
@@ -153,7 +142,6 @@
 		/>
 	{/if}
 
-	<!-- The list is the only part that scrolls, so the search row and totals stay put. -->
 	<div class="-mx-1 flex min-h-0 flex-1 flex-col overflow-y-auto px-1">
 		{#if shown.length === 0}
 			<EmptyState

@@ -4,7 +4,6 @@ import { t } from '$lib/i18n/index.svelte';
 
 export type SortOrder = 'newest' | 'oldest' | 'name';
 
-// Getters, so a label read in markup follows the language.
 export const sortLabels: Record<SortOrder, string> = {
 	get newest() {
 		return t('home.sortNewest');
@@ -17,7 +16,6 @@ export const sortLabels: Record<SortOrder, string> = {
 	}
 };
 
-/** The same orders named for the button that opens the menu, where space is tight. */
 export const sortShortLabels: Record<SortOrder, string> = {
 	get newest() {
 		return t('home.sortNewestShort');
@@ -30,10 +28,7 @@ export const sortShortLabels: Record<SortOrder, string> = {
 	}
 };
 
-/**
- * Statuses the filter row offers, in the order the mockup lists them. Discarded is not
- * one: discarding deletes the scan, so nothing listed ever carries it.
- */
+/** Discarded is not offered: discarding deletes the scan, so nothing listed carries it. */
 export const filterableStatuses = [
 	'draft',
 	'exported',
@@ -43,11 +38,7 @@ export const filterableStatuses = [
 
 export type StatusFilter = 'all' | (typeof filterableStatuses)[number];
 
-/**
- * Searching and sorting both go through the title, and the title needs the file name template
- * to know what an unnamed scan is called. Passing it in keeps the box matching what the list
- * actually shows: typing the year of a scan named by `{YEAR}-{MONTH}-{DAY}` has to find it.
- */
+/** Matches the displayed title, so a template-named scan is found by e.g. its year. */
 export function matchesQuery(
 	session: SessionDto,
 	query: string,
@@ -76,7 +67,6 @@ export function browse(
 			matchesQuery(s, query, template, now) && (status === 'all' || sessionStatus(s) === status)
 	);
 
-	// Sorted on a copy: the caller's array is store-owned.
 	return [...kept].sort((a, b) => {
 		if (order === 'name') {
 			return sessionTitle(a, template, now).localeCompare(sessionTitle(b, template, now));
@@ -86,7 +76,6 @@ export function browse(
 	});
 }
 
-/** How many sessions carry each status, for the counts on the filter chips. */
 export function statusCounts(sessions: readonly SessionDto[]): Record<string, number> {
 	const counts: Record<string, number> = {};
 	for (const session of sessions) {

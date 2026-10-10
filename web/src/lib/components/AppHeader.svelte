@@ -16,7 +16,6 @@
 	let menu = $state<'language' | 'issue' | 'more' | null>(null);
 	const close = () => (menu = null);
 
-	// Icons only, each named by its aria-label and shown as a tooltip on hover.
 	const button =
 		'flex h-10 w-10 flex-none items-center justify-center rounded-full text-accent transition-colors hover:bg-ctl-hover active:opacity-60';
 	const popup =
@@ -30,9 +29,7 @@
 	const sessions = client.sessions;
 	const exportProgress = client.exportProgress;
 
-	// Home wears the name in the middle; every other route wears a way back to it.
 	const atHome = $derived(route.url.pathname === resolve('/'));
-	// Review is where the scanner's state matters mid-task, so it sits in the middle there.
 	const atReview = $derived(route.params.id !== undefined);
 
 	const scanning = $derived(
@@ -46,7 +43,6 @@
 	);
 </script>
 
-<!-- The phone's ⋯ menu repeats both lists, so they are written once. -->
 {#snippet languages()}
 	{#each LOCALES as locale (locale)}
 		<button
@@ -83,17 +79,13 @@
 	{/each}
 {/snippet}
 
-<!--
-	Three columns rather than a flex row with a spacer, so whatever sits in the middle is
-	centred on the viewport and not on the space left between the two ends.
--->
+<!-- Three columns, not flex with a spacer, so the middle is centred on the viewport. -->
 <header
 	data-app-header
 	class="sticky top-0 z-20 grid h-16 grid-cols-[1fr_auto_1fr] items-center gap-2.5 bg-header px-4 backdrop-blur-[20px] backdrop-saturate-[1.8] sm:px-7"
 >
 	<div class="flex min-w-0 items-center gap-2.5">
 		{#if !atHome}
-			<!-- Label and arrow are one link: the words are the obvious thing to click. -->
 			<a
 				href={resolve('/')}
 				onclick={() => cameFrom.leaving(route.params.id ?? '')}
@@ -110,11 +102,7 @@
 		{/if}
 	</div>
 
-	<!--
-		On review, a wide screen puts the page between a narrow strip and a wider sidebar, so
-		its centre sits left of the window's: the pill moves by half the difference to stay
-		over the page rather than over the gap beside it.
-	-->
+	<!-- On wide review screens the pill shifts by half the strip/sidebar difference to sit over the page. -->
 	<div
 		class="flex min-w-0 items-center justify-center {atReview
 			? 'lg:-translate-x-[calc((var(--review-aside-w)-var(--review-strip-w))/2)]'
@@ -122,8 +110,6 @@
 		data-testid="header-centre"
 	>
 		{#if atHome}
-			<!-- The name is the whole of the brand here. A phone has the buttons beside it to fit,
-			     so there it goes by its initials. -->
 			<span
 				class="truncate text-[17px] font-bold tracking-[-0.02em] text-ink"
 				data-testid="app-name"
@@ -140,13 +126,7 @@
 		{/if}
 	</div>
 
-	<!--
-		Light or dark, language, documentation, issues: the app's own chrome, all icons. A phone
-		has room for the switch and one more beside a centred title, so there the other three
-		share a ⋯ menu, the way an iOS navigation bar does it.
-	-->
 	<div class="flex items-center justify-end gap-1.5">
-		<!-- Shows the look it switches to: a moon while light, a sun while dark. -->
 		<button
 			type="button"
 			class={button}
@@ -254,11 +234,6 @@
 		</div>
 	</div>
 
-	<!--
-		Sub-page scan progress is not something the scanner reports, so the rail runs
-		indeterminate while pages are arriving and switches to real percentages once an
-		export is under way, which the hub does report.
-	-->
 	{#if scanning || exporting !== null}
 		<div class="pointer-events-none absolute inset-x-0 bottom-0 h-[3px] overflow-hidden">
 			{#if exporting !== null}

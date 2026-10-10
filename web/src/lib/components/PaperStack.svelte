@@ -6,9 +6,7 @@
 		caption = '',
 		pulse = null
 	}: {
-		/** Shown along the bottom of the front sheet, e.g. "A4 · 300 dpi". */
 		caption?: string;
-		/** Changes when the scan's settings do — the preset picked — and makes the stack hop. */
 		pulse?: string | null;
 	} = $props();
 
@@ -22,20 +20,10 @@
 	}
 </script>
 
+<!-- Capped at 20vh: sized by width alone, the stack made short, wide windows scroll. -->
 <!--
-	Three sheets, fanned. Offsets are the mockup's; the whole stack drifts up and down and
-	a scan head sweeps the front sheet, so the hero has a pulse even when nothing is
-	happening. The sweep is decoration, not progress: a real scan leaves this page at once.
-
-	The mockup sized this against width alone (18vw). A sheet is 1.414x taller than it is
-	wide, so on a short-but-wide window that made the stack the reason the home screen
-	scrolled -- hence the 20vh cap, which binds first on laptop screens.
--->
-<!--
-	The drift is on a box of its own, inside the one the stage lays out: the stage glides its
-	children with script animations when something beside them changes, and once one has played
-	on an element, Chrome no longer runs that element's CSS animations on the compositor. The
-	drift would then restyle the whole page on every frame.
+	The drift has a box of its own: once a script animation (the stage's) has played on an
+	element, Chrome stops running its CSS animations on the compositor.
 -->
 <div
 	class="relative mt-1.5 mb-3.5 w-[150px] flex-none sm:w-[clamp(118px,min(18vw,17vh),300px)]"
@@ -65,8 +53,6 @@
 						</span>
 					{/if}
 				{/key}
-				<!-- The line rides at the top of a box the size of the page, which is what it is
-				     moved down by: a transform, so the sweep never lays the page out again. -->
 				<div class="absolute inset-0 animate-sweep">
 					<div class="h-0.5 bg-accent-light shadow-sweep"></div>
 				</div>

@@ -32,7 +32,6 @@ describe('remembering scanners', () => {
 			firstSeen: t0.toISOString(),
 			lastSeen: t1.toISOString()
 		});
-		// Not on the list the second time: still known, from when it last was.
 		expect(prefs.known['canon:2'].lastSeen).toBe(t0.toISOString());
 	});
 
@@ -80,7 +79,6 @@ describe('the list in Settings', () => {
 		const scans = [
 			session('a', { CreatedAt: '2026-10-02T09:00:00Z', OptionsUsed: { Device: 'canon:2' } }),
 			session('b', { CreatedAt: '2026-10-03T09:00:00Z', OptionsUsed: { Device: 'canon:2' } }),
-			// Used once, long ago, and never seen by this browser: listed all the same.
 			session('c', { CreatedAt: '2026-09-01T09:00:00Z', OptionsUsed: { Device: 'old:7' } })
 		];
 

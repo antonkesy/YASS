@@ -42,53 +42,28 @@
 		status: ScannerStatusDto | null;
 		connection: ConnectionState;
 		options: ScanOptionsDto | null;
-		/** Scanners the server can see, for the picker. */
 		devices?: ScannerDeviceDto[];
-		/** The chosen scanner's name, for the chips when there is no picker to say it. */
 		deviceName?: string | null;
 		busy?: boolean;
 		onscan: () => void;
 		onsettings: () => void;
-		/** Opens Settings ready to name the current settings as a preset; falls back to plain Settings. */
 		onsavepreset?: () => void;
 	} = $props();
 
-	/**
-	 * The lit pill's details panel: hovering the pill shows it until the pointer leaves,
-	 * a press pins it until a press outside.
-	 */
 	let details = $state<'hover' | 'pinned' | null>(null);
 
-	/**
-	 * The scanner pill that lights up bounces, as a preset does when picked. Not on load: a page
-	 * that opens with a scanner already chosen has nothing to answer.
-	 */
 	const bounce = bounceWhenPicked(() => shown);
 
-	/** The scanner the next scan will run on: this browser's pick, or the server's. */
 	const device = $derived(options?.Device || '');
 
-	/**
-	 * Only once there is something to show: the line above already says when no scanner was
-	 * found. yass.yaml has no say in it — the file supplies the default scanner, the person
-	 * at the screen chooses.
-	 */
 	const canPickDevice = $derived(devices.length > 0);
 
-	/**
-	 * What the box shows. There is no "Automatic" entry: a scanner is always named, which
-	 * is this browser's pick when it has one, otherwise the scanner the server says it is
-	 * on, and failing that the first one listed. The server's status names it rather than
-	 * identifying it, so the match is by name.
-	 */
+	// The server's status names the scanner rather than identifying it, so match by name.
 	const shown = $derived(
 		device || devices.find((d) => d.Name === status?.DeviceName)?.Id || devices[0]?.Id || ''
 	);
 
-	/**
-	 * One the server has stopped listing still has to show, or the row would silently
-	 * light another scanner while the scan goes somewhere else.
-	 */
+	// Keep a scanner the server stopped listing, or the row would light the wrong one.
 	const listed = $derived(
 		device && !devices.some((d) => d.Id === device)
 			? [...devices, { Id: device, Name: t('home.deviceNotFound', { device }) }]
@@ -97,10 +72,6 @@
 
 	let pills = $state<HTMLElement | null>(null);
 
-	/**
-	 * The scanners are one stop for Tab, like any set of radio buttons: the arrows move the
-	 * choice along the row and focus goes with it.
-	 */
 	function rove(e: KeyboardEvent) {
 		const step =
 			e.key === 'ArrowRight' || e.key === 'ArrowDown'
@@ -116,13 +87,10 @@
 		pills?.querySelector<HTMLElement>(`[data-device="${CSS.escape(next.Id)}"]`)?.focus();
 	}
 
-	/** Presets follow the scanner, so a scanner-specific one is out of sight on the others. */
 	const offered = $derived(presetsFor($presets, device || undefined));
 
-	// Matched against what the scan will do, not against the stored overrides alone:
-	// a browser with no overrides still matches whichever preset the server defaults to.
+	// Against the effective options, so no overrides still matches the server's default preset.
 	const chosen = $derived(options ? activePreset(offered, options, $pickedPreset.id) : null);
-	/** The preset picked last, once a setting has moved away from it. */
 	const edited = $derived(
 		chosen || !options ? null : (offered.find((p) => p.id === $pickedPreset.id) ?? null)
 	);
@@ -130,10 +98,6 @@
 	const offline = $derived(connection !== 'connected');
 	const ready = $derived(!offline && status?.State === ScannerState.Ready);
 
-	/**
-	 * Why the Scan button is greyed out, for its tooltip. Ready needs no headline of its
-	 * own: the header pill says so, and a button that can be pressed says the rest.
-	 */
 	const blocked = $derived(
 		offline
 			? connection === 'connecting'
@@ -148,15 +112,12 @@
 						: t('home.blockedChecking')
 	);
 
-	/** The card for a problem, or null when the scanner is only checking or busy. */
 	const trouble = $derived<{
 		tone: 'warning' | 'danger';
 		title: string;
 		hint: string;
 		detail: string | null;
 	} | null>(
-		// Connecting is what every page load does for a moment, not a problem to pop out;
-		// a connection that failed or dropped is.
 		offline && connection !== 'connecting'
 			? { tone: 'warning', title: blocked, hint: t('home.offlineHint'), detail: null }
 			: status?.State === ScannerState.NoDevice
@@ -191,10 +152,6 @@
 >
 	<PaperStack {caption} pulse={chosen?.id ?? 'custom'} />
 
-	<!--
-		Nothing when all is well. A problem (no scanner, no connection, a fault) pops out as a
-		card, again whenever it changes; checking or busy is not one, and stays a quiet line.
-	-->
 	{#if !ready}
 		{#key trouble?.tone + blocked}
 			{#if trouble}
@@ -212,7 +169,6 @@
 	{/if}
 
 	{#if canPickDevice}
-		<!-- Every scanner in a row, the chosen one lit, the same way the presets are picked. -->
 		<div class="flex flex-col items-center gap-2" data-testid="device-picker">
 			<span class="text-[13px] font-semibold text-ink-muted">{t('home.scanner')}</span>
 			<div
@@ -226,7 +182,6 @@
 			>
 				{#each listed as scanner (scanner.Id)}
 					{@const lit = shown === scanner.Id}
-					<!-- Pressing a pill picks that scanner; pressing the lit one again opens its details. -->
 					<div
 						class="relative"
 						role="presentation"

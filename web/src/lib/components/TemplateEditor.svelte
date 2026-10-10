@@ -13,15 +13,10 @@
 		onchange
 	}: {
 		value: string;
-		/** Tokens offered as chips, without braces. */
 		tokens: readonly string[];
-		/** What the template expands to right now. Empty when there is no template. */
 		preview: string;
-		/** Whole templates worth offering, each with what it would produce. */
 		presets?: readonly { template: string; example: string }[];
-		/** Tokens in the template the server does not know. */
 		unknown: readonly string[];
-		/** What the saved file will end in, which is the export format's and not always PDF. */
 		extension?: string;
 		onchange: (value: string) => void;
 	} = $props();
@@ -29,7 +24,6 @@
 	let open = $state(false);
 
 	let field = $state<HTMLInputElement | null>(null);
-	/** Where the caret was when the field last lost focus, so a chip inserts in place. */
 	let caret = $state<[number, number]>([0, 0]);
 
 	function remember() {

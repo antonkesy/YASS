@@ -7,14 +7,12 @@
 		size = 'inline'
 	}: {
 		session: SessionDto;
-		/** "thumb" is the larger pill that sits on a grid tile. */
 		size?: 'inline' | 'thumb';
 	} = $props();
 
 	const status = $derived(sessionStatus(session));
 
-	// The mockup's status colours. `failed` is ours: a scan can fail, and the design
-	// has no pill for it, but silently showing such a session as a draft would lie.
+	// `failed` has no pill in the design, but showing a failed scan as a draft would lie.
 	const tones: Record<SessionStatus, { chip: string; dot: string }> = {
 		draft: { chip: 'bg-warning-bg text-warning-ink', dot: 'bg-warning' },
 		scanning: { chip: 'bg-accent-wash2 text-accent-deep', dot: 'bg-accent animate-pulse-busy' },

@@ -15,10 +15,7 @@
 
 	let shortcuts = $state(false);
 
-	/**
-	 * The one Escape for the whole app: out of a text field first, then the newest open layer
-	 * (see $lib/keys). `?` shows the shortcuts anywhere but in a field.
-	 */
+	// The app's one Escape: out of a text field first, then the newest open layer ($lib/keys).
 	function keydown(e: KeyboardEvent) {
 		if (escape(e)) e.preventDefault();
 		else if (e.key === '?' && !typing(e)) {
@@ -47,11 +44,7 @@
 		void desktop.openUrl(url.href);
 	}
 
-	/**
-	 * Screens slide rather than swap, through the browser's View Transitions API; one without
-	 * it swaps as it always did. Home is the root, so going there is back and leaving it is
-	 * forward. The settings sheet only cross-fades: it brings its own entrance.
-	 */
+	// Home is the root: going there is back, leaving it is forward. Settings only cross-fades.
 	onNavigate((navigation) => {
 		const from = navigation.from?.url.pathname;
 		const to = navigation.to?.url.pathname;
@@ -81,12 +74,7 @@
 	<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
 </svelte:head>
 
-<!--
-	A column, so a short page (the documentation) can fill the window below the header. Its
-	children take the column's full width (`*:w-full`): a page's `mx-auto` would otherwise
-	switch off the column's stretch and size the page to its content, which on a phone with a
-	long list of past scans is wider than the screen.
--->
+<!-- *:w-full: a page's mx-auto would otherwise drop the column's stretch and overflow a phone. -->
 <div class="flex min-h-dvh flex-col bg-page text-ink *:w-full">
 	<AppHeader />
 	{@render children()}

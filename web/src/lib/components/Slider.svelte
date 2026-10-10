@@ -17,13 +17,11 @@
 		min?: number;
 		max?: number;
 		step?: number;
-		/** Where the fill grows from and what the reset button returns to. */
 		origin?: number;
 		onchange: (value: number) => void;
 	} = $props();
 
 	const pct = (v: number) => ((v - min) / (max - min)) * 100;
-	// The fill runs from the origin to the thumb, so -40 and +40 read as opposites at a glance.
 	const from = $derived(Math.min(pct(origin), pct(value)));
 	const to = $derived(Math.max(pct(origin), pct(value)));
 </script>

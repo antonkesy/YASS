@@ -7,20 +7,13 @@
 		hint = null,
 		detail = null
 	}: {
-		/** `warning` for something to sort out (no scanner, no connection); `danger` for a scanner fault. */
 		tone: 'warning' | 'danger';
 		title: string;
-		/** What to do about it. */
 		hint?: string | null;
-		/** What the scanner or driver said, in its own words. */
 		detail?: string | null;
 	} = $props();
 </script>
 
-<!--
-	The scanner's trouble, as a card that pops in over the stage rather than a line of grey
-	text under it: it is the one thing on the screen that needs doing before a scan can.
--->
 <div
 	class="flex w-full max-w-[440px] animate-pop-in items-start gap-3 rounded-[18px] px-4 py-3.5 text-left shadow-chip {tone ===
 	'danger'
