@@ -4,6 +4,7 @@ import { get, writable, type Readable } from 'svelte/store';
 import { getHubProxyFactory, getReceiverRegister } from './generated/TypedSignalR.Client';
 import type { IYassHub } from './generated/TypedSignalR.Client/Yass.Core.Hub';
 import type { ScannerStatusDto, SessionDto } from './generated/Yass.Core.Hub';
+import { SessionState } from './generated/Yass.Core.Domain';
 import {
 	applyPageAdded,
 	applyPageUpdated,
@@ -47,6 +48,14 @@ export type ConnectionLike = Pick<
 
 const RETRY_MS = [500, 1000, 2000, 5000, 10_000];
 
+/** `record` without `key`, or the very same object when it had none, so nobody re-renders. */
+function without<T>(record: Record<string, T>, key: string): Record<string, T> {
+	if (!(key in record)) return record;
+	const rest = { ...record };
+	delete rest[key];
+	return rest;
+}
+
 export function createHubClient(connection: ConnectionLike): YassHubClient {
 	const connectionState = writable<ConnectionState>('disconnected');
 	const scanner = writable<ScannerStatusDto | null>(null);
@@ -57,7 +66,13 @@ export function createHubClient(connection: ConnectionLike): YassHubClient {
 
 	getReceiverRegister('IYassClient').register(connection as HubConnection, {
 		scannerStatusChanged: async (status) => scanner.set(status),
-		sessionChanged: async (session) => sessions.update((m) => applySessionChanged(m, session)),
+		sessionChanged: async (session) => {
+			sessions.update((m) => applySessionChanged(m, session));
+			// An export's percentages end with it, so the next one starts from nothing rather
+			// than from the 100% the last one left behind.
+			if (session.State !== SessionState.Exporting)
+				exportProgress.update((p) => without(p, session.Id));
+		},
 		pageAdded: async (id, page) => {
 			if (!get(sessions).has(id)) {
 				await refresh(id).catch(() => undefined);
