@@ -806,7 +806,7 @@
 							class="rounded-full bg-surface px-3 py-1.5 text-[13px] font-bold shadow-chip"
 							data-testid="session-state"
 						>
-							{sessionStateLabel(session.State)}
+							{sessionStateLabel(session)}
 						</span>
 					</div>
 				{/if}

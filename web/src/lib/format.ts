@@ -10,8 +10,12 @@ import { ExportFormat, type SessionDto } from './hub/generated/Yass.Core.Hub';
 import { expandTemplate } from './template';
 import { i18n, t } from './i18n/index.svelte';
 
-export function sessionStateLabel(state: SessionState): string {
-	switch (state) {
+/**
+ * What a session is doing, for the chip on the review screen. A saved one says how it was
+ * saved — downloaded, or written into the server's folder — which only its history knows.
+ */
+export function sessionStateLabel(session: SessionDto): string {
+	switch (session.State) {
 		case SessionState.Scanning:
 			return t('home.stateScanning');
 		case SessionState.Review:
@@ -19,7 +23,7 @@ export function sessionStateLabel(state: SessionState): string {
 		case SessionState.Exporting:
 			return t('home.statePreparing');
 		case SessionState.Done:
-			return t('home.statusDownloaded');
+			return statusLabels[sessionStatus(session)];
 		case SessionState.Failed:
 			return t('home.stateFailed');
 		default:

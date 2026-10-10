@@ -1,15 +1,29 @@
 import { describe, expect, it } from 'vitest';
-import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
+import { SessionEventKind, SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 import { page, session } from './fixtures';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
-import { activePageCount, formatTime, scannerStateLabel, sessionStateLabel } from '$lib/format';
+import {
+	activePageCount,
+	formatTime,
+	scannerStateLabel,
+	sessionStateLabel,
+	statusLabels
+} from '$lib/format';
 
 describe('format', () => {
 	it('labels states', () => {
-		expect(sessionStateLabel(SessionState.Review)).toBe('Ready to review');
-		expect(sessionStateLabel(SessionState.Failed)).toBe('Failed');
+		expect(sessionStateLabel(session('s', { State: SessionState.Review }))).toBe('Ready to review');
+		expect(sessionStateLabel(session('s', { State: SessionState.Failed }))).toBe('Failed');
 		expect(scannerStateLabel(ScannerState.Ready)).toBe('Ready');
 		expect(scannerStateLabel(undefined)).toBe('Checking…');
+	});
+
+	it('says how a finished scan was saved', () => {
+		const done = (Kind: SessionEventKind) =>
+			session('s', { State: SessionState.Done, Events: [{ Kind, At: '' }] });
+		expect(sessionStateLabel(done(SessionEventKind.Downloaded))).toBe('Downloaded');
+		expect(sessionStateLabel(done(SessionEventKind.Exported))).not.toBe('Downloaded');
+		expect(sessionStateLabel(done(SessionEventKind.Exported))).toBe(statusLabels.exported);
 	});
 
 	it('counts active pages', () => {
