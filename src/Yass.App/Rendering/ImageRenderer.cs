@@ -53,5 +53,28 @@ public sealed class ImageRenderer : IDisposable
         }
     }
 
+    /// <summary>
+    /// Holds a render slot until the result is disposed, for work that decodes pages somewhere
+    /// else — an export, rendering one page after another — so it counts against the same limit.
+    /// </summary>
+    public async Task<IDisposable> ReserveAsync(CancellationToken cancellationToken)
+    {
+        await _slots.WaitAsync(cancellationToken).ConfigureAwait(false);
+        return new Slot(_slots);
+    }
+
     public void Dispose() => _slots.Dispose();
+
+    private sealed class Slot(SemaphoreSlim slots) : IDisposable
+    {
+        private int _released;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _released, 1) == 0)
+            {
+                slots.Release();
+            }
+        }
+    }
 }
