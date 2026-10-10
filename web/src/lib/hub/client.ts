@@ -84,13 +84,15 @@ export function createHubClient(connection: ConnectionLike): YassHubClient {
 	});
 
 	connection.onreconnecting(() => connectionState.set('reconnecting'));
+	// Both through start(), so a reload after a reconnect is retried like any other, and a
+	// close while a start is already retrying joins that one instead of racing it.
 	connection.onreconnected(() => {
 		connectionState.set('connected');
-		void loadInitial();
+		if (!stopped) void start();
 	});
 	connection.onclose(() => {
 		connectionState.set('disconnected');
-		if (!stopped) void startWithRetry();
+		if (!stopped) void start();
 	});
 
 	let stopped = false;
@@ -105,8 +107,11 @@ export function createHubClient(connection: ConnectionLike): YassHubClient {
 	async function startWithRetry() {
 		for (let attempt = 0; !stopped; attempt++) {
 			try {
-				connectionState.set(attempt === 0 ? 'connecting' : 'reconnecting');
-				if (connection.state !== HubConnectionState.Connected) await connection.start();
+				// Already connected (a reconnect, or a retry of a failed load) is nothing to announce.
+				if (connection.state !== HubConnectionState.Connected) {
+					connectionState.set(attempt === 0 ? 'connecting' : 'reconnecting');
+					await connection.start();
+				}
 				connectionState.set('connected');
 				await loadInitial();
 				return;

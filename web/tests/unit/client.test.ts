@@ -150,6 +150,20 @@ describe('hub client', () => {
 		await vi.waitFor(() => expect(conn.invocations.map(([n]) => n)).toContain('ListSessions'));
 	});
 
+	it('restarts once after a close, however often it is told', async () => {
+		const conn = fakeConnection([]);
+		const client = createHubClient(conn as unknown as ConnectionLike);
+		await client.start();
+		conn.state = HubConnectionState.Disconnected;
+		conn.invocations.length = 0;
+		conn.close();
+		conn.close();
+		await vi.waitFor(() => expect(get(client.connection)).toBe('connected'));
+		await new Promise((r) => setTimeout(r, 0));
+		expect(conn.start).toHaveBeenCalledTimes(2);
+		expect(conn.invocations.filter(([n]) => n === 'ListSessions')).toHaveLength(1);
+	});
+
 	it('retries start until it succeeds', async () => {
 		vi.useFakeTimers();
 		try {
