@@ -98,6 +98,14 @@ public sealed class BridgeDispatcherTests : IAsyncLifetime
         Assert.NotEmpty(await ErrorAsync(nameof(IYassHub.ApplyEdits), "x", "not an array"));
     }
 
+    [Fact]
+    public async Task A_missing_number_is_refused_rather_than_read_as_zero()
+    {
+        SessionDto scanned = await _desktop.ScanAsync();
+
+        Assert.Contains("pageIndex", await ErrorAsync(nameof(IYassHub.RescanPage), scanned.Id), StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("not json")]
     [InlineData("{\"method\":\"ListSessions\"}")]
