@@ -252,8 +252,11 @@ function load<T>(storage: Storage | undefined, key: string, fallback: T): T {
 		// Merged over the defaults, not used as-is: a browser that stored these before a
 		// preference existed would otherwise read it as undefined, and the screens that
 		// consume it disagree about what undefined means. Arrays (the presets) are
-		// replaced wholesale — merging one key-by-key would splice the defaults back in.
-		if (Array.isArray(fallback) || Array.isArray(parsed)) return parsed as T;
+		// replaced wholesale — merging one key-by-key would splice the defaults back in. A
+		// value of the wrong shape altogether, a list where a record belongs or the other way
+		// round, is no use to anyone and gives way to the default.
+		if (Array.isArray(fallback) !== Array.isArray(parsed)) return fallback;
+		if (Array.isArray(parsed)) return parsed as T;
 		return { ...fallback, ...parsed };
 	} catch {
 		return fallback;
