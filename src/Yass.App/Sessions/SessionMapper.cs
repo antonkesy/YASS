@@ -30,6 +30,18 @@ public sealed class SessionMapper(IThumbnailStatus thumbnails, SessionStore stor
         return new PageDto(page.Index, page.Rotation, page.Filter, crop, page.StartsDocument, page.Deleted, page.IsBlank, page.Hash, thumbnails.IsReady(session, page), adjust, page.Cleanup, page.Skew);
     }
 
+    /// <summary>
+    /// The last word on a session that no longer exists: done, no pages, and why it went in
+    /// <see cref="SessionDto.Error"/> (<see cref="Deleted"/> or <see cref="Expired"/>), which is
+    /// what tells a browser to drop it.
+    /// </summary>
+    public SessionDto Removed(Session session, string reason) =>
+        ToDto(session with { State = SessionState.Done, Pages = [], Error = reason });
+
+    public const string Deleted = "deleted";
+
+    public const string Expired = "expired";
+
     private static SessionEventDto ToDto(SessionEvent @event) =>
         new(@event.Kind, @event.At.ToString("O", CultureInfo.InvariantCulture), @event.Path);
 }

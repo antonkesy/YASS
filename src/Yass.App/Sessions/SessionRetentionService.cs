@@ -1,13 +1,13 @@
 using Yass.App.Api;
 using Yass.App.Config;
 using Yass.Core.Domain;
-using Yass.Core.Hub;
 
 namespace Yass.App.Sessions;
 
 /// <summary>Deletes sessions older than <c>sessions.retention_hours</c>, checking hourly. 0 disables.</summary>
 public sealed class SessionRetentionService(
     SessionStore store,
+    SessionMapper mapper,
     ConfigStore config,
     IClientNotifier hub,
     TimeProvider time,
@@ -50,7 +50,7 @@ public sealed class SessionRetentionService(
             if (store.Delete(session.Id))
             {
                 logger.LogInformation("Deleted expired session {Session}", session.Id);
-                await hub.All.SessionChanged(new SessionDto(session.Id, session.CreatedAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture), SessionState.Done, [], Scanning.EffectiveOptions.ToDto(session.OptionsUsed), "expired", session.Name, [], 0)).ConfigureAwait(false);
+                await hub.All.SessionChanged(mapper.Removed(session, SessionMapper.Expired)).ConfigureAwait(false);
             }
         }
     }
