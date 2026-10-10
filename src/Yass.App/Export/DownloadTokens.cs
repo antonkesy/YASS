@@ -15,6 +15,9 @@ public sealed class DownloadTokens
         return token;
     }
 
+    /// <summary>Makes a redeemed token good again, for a caller whose use of the file failed.</summary>
+    public void Restore(string sessionId, string token, string path) => _tokens[token] = (sessionId, path);
+
     /// <summary>Redeems the token; a second call returns <c>false</c>.</summary>
     public bool TryRedeem(string sessionId, string token, out string path)
     {

@@ -35,4 +35,14 @@ public sealed class ExportDownloads(DownloadTokens tokens)
         download = new ExportDownload(path, contentType, $"yass-{sessionId}{extension}");
         return true;
     }
+
+    /// <summary>
+    /// Hands back a download redeemed from <paramref name="file"/> whose file could not be used
+    /// (a move that failed, say), so the same URL can be tried again.
+    /// </summary>
+    public void Return(string sessionId, string file, ExportDownload download)
+    {
+        ArgumentNullException.ThrowIfNull(download);
+        tokens.Restore(sessionId, System.IO.Path.GetFileNameWithoutExtension(file), download.Path);
+    }
 }

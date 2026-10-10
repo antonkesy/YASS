@@ -63,12 +63,21 @@ public sealed class DesktopApi(IDesktopDialogs dialogs, ExportDownloads download
             throw new BridgeException("That document has already been saved or is gone; export it again.");
         }
 
-        string full = Path.GetFullPath(target);
-        string directory = Path.GetDirectoryName(full) ?? throw new BridgeException($"{target} is not a file path.");
-        Directory.CreateDirectory(directory);
-        string destination = overwrite ? full : FileNames.Unique(directory, Path.GetFileName(full));
-        File.Move(download.Path, destination, overwrite);
-        logger.LogInformation("Saved {File}", destination);
-        return destination;
+        try
+        {
+            string full = Path.GetFullPath(target);
+            string directory = Path.GetDirectoryName(full) ?? throw new BridgeException($"{target} is not a file path.");
+            Directory.CreateDirectory(directory);
+            string destination = overwrite ? full : FileNames.Unique(directory, Path.GetFileName(full));
+            File.Move(download.Path, destination, overwrite);
+            logger.LogInformation("Saved {File}", destination);
+            return destination;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or BridgeException)
+        {
+            // The document is still where the export left it: let the user pick somewhere else.
+            downloads.Return(sessionId, file, download);
+            throw new BridgeException($"Could not save to {target}: {ex.Message}");
+        }
     }
 }
