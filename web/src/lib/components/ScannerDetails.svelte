@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { useLayer } from '$lib/keys.svelte';
 	import type { ScannerStatusDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 	import type { ConnectionState } from '$lib/hub/client';
 	import { formatTime, scannerStateLabel } from '$lib/format';
 	import { t } from '$lib/i18n/index.svelte';
+	import Popover from './Popover.svelte';
 
 	let {
 		status,
@@ -24,9 +24,6 @@
 		pinned?: boolean;
 		onclose: () => void;
 	} = $props();
-
-	// Escape closes this, and only this, while it is open.
-	useLayer(() => onclose());
 
 	const offline = $derived(connection !== 'connected');
 	const scanning = $derived(!offline && status?.State === ScannerState.Busy);
@@ -57,20 +54,14 @@
 	);
 </script>
 
-{#if pinned}
-	<!-- Click-catcher so the panel closes on any outside press, including a tap. -->
-	<button
-		type="button"
-		class="fixed inset-0 z-30 cursor-default"
-		aria-label={t('home.closeScannerDetails')}
-		onclick={onclose}
-	></button>
-{/if}
-<div
+<Popover
+	label={t('home.closeScannerDetails')}
+	{onclose}
 	class="absolute top-[calc(100%+8px)] left-1/2 z-31 w-max max-w-[min(320px,calc(100vw-32px))] -translate-x-1/2 animate-pop-in rounded-[16px] bg-surface p-4 text-left shadow-menu"
 	role="dialog"
-	aria-label={t('home.scannerDetails')}
-	data-testid="scanner-details"
+	name={t('home.scannerDetails')}
+	catcher={pinned}
+	testid="scanner-details"
 >
 	<p class="mb-2 text-[12px] font-semibold text-ink-faint">
 		{t('home.scanner')}
@@ -81,4 +72,4 @@
 			<dd class="min-w-0 font-medium break-words text-ink">{value}</dd>
 		{/each}
 	</dl>
-</div>
+</Popover>

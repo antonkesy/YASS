@@ -704,6 +704,25 @@ describe('SortMenu', () => {
 		await rerender({ order: 'name', onchange });
 		expect(screen.getByTestId('sort-button')).toHaveTextContent(/Name/);
 	});
+
+	it('opens on its first item, moves with the arrows and gives focus back on Escape', async () => {
+		render(SortMenu, { order: 'newest', onchange: vi.fn() });
+		const button = screen.getByTestId('sort-button');
+		button.focus();
+		await fireEvent.click(button);
+
+		const items = screen.getAllByRole('menuitemradio');
+		expect(items[0]).toHaveFocus();
+		await fireEvent.keyDown(items[0], { key: 'ArrowDown' });
+		expect(items[1]).toHaveFocus();
+		await fireEvent.keyDown(items[1], { key: 'ArrowUp' });
+		await fireEvent.keyDown(items[0], { key: 'ArrowUp' });
+		expect(items.at(-1)).toHaveFocus();
+
+		await fireEvent.keyDown(items.at(-1)!, { key: 'Escape' });
+		expect(screen.queryByTestId('sort-menu')).toBeNull();
+		expect(button).toHaveFocus();
+	});
 });
 
 describe('TemplateEditor', () => {

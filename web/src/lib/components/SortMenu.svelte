@@ -1,16 +1,12 @@
 <script lang="ts">
-	import { escapeCloses } from '$lib/keys.svelte';
 	import { sortLabels, sortShortLabels, type SortOrder } from '$lib/sessions/browse';
 	import { Icon } from '$lib/icons';
 	import { t } from '$lib/i18n/index.svelte';
+	import Popover from './Popover.svelte';
 
 	let { order, onchange }: { order: SortOrder; onchange: (order: SortOrder) => void } = $props();
 
 	let open = $state(false);
-	escapeCloses(
-		() => open,
-		() => (open = false)
-	);
 	const orders = Object.keys(sortLabels) as SortOrder[];
 </script>
 
@@ -30,17 +26,11 @@
 	</button>
 
 	{#if open}
-		<!-- Click-catcher so the menu closes on any outside press, including a tap. -->
-		<button
-			type="button"
-			class="fixed inset-0 z-30 cursor-default"
-			aria-label={t('home.closeSortMenu')}
-			onclick={() => (open = false)}
-		></button>
-		<div
+		<Popover
+			label={t('home.closeSortMenu')}
+			onclose={() => (open = false)}
 			class="absolute top-[calc(100%+6px)] right-0 z-31 min-w-[190px] animate-pop-in rounded-[16px] bg-surface p-1.5 shadow-menu"
-			role="menu"
-			data-testid="sort-menu"
+			testid="sort-menu"
 		>
 			<p class="px-2.5 py-1.5 text-[12px] font-semibold text-ink-faint">
 				{t('home.sortBy')}
@@ -63,6 +53,6 @@
 					{#if order === value}<span class="text-accent"><Icon name="check" size={14} /></span>{/if}
 				</button>
 			{/each}
-		</div>
+		</Popover>
 	{/if}
 </div>
