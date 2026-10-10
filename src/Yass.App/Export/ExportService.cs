@@ -46,10 +46,10 @@ public sealed class ExportService(
         return documentCount == 1 ? stem : $"{stem}-{(index + 1).ToString(CultureInfo.InvariantCulture)}";
     }
 
-    /// <exception cref="InvalidOperationException">Nothing to export or the session is busy.</exception>
     /// <summary>Prefix of a file still being written into the server folder, renamed once complete.</summary>
     public const string TempPrefix = "._yass-";
 
+    /// <exception cref="InvalidOperationException">Nothing to export or the session is busy.</exception>
     public async Task<ExportResult> ExportAsync(string sessionId, ExportRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -114,20 +114,13 @@ public sealed class ExportService(
             for (int d = 0; d < documentPages.Length; d++)
             {
                 ExportPage[] document = documentPages[d];
-                string? token = null;
-                string path;
-                if (request.ToServer)
-                {
-                    // Written under a hidden temporary name and renamed once complete, so whatever
-                    // watches the folder — paperless-ngx, say — never picks up half a document.
-                    path = Path.Combine(dir, $"{TempPrefix}{Guid.NewGuid():N}.tmp");
-                    pending = path;
-                }
-                else
-                {
-                    token = tokens.Issue(sessionId, Path.Combine(dir, $"{Guid.NewGuid():N}{extension}"));
-                    tokens.TryPeekPath(token, out path);
-                }
+                // Into the server folder it is written under a hidden temporary name and renamed once
+                // complete, so whatever watches the folder — paperless-ngx, say — never picks up half
+                // a document. A download gets its token only once written, so none points at half a file.
+                string path = request.ToServer
+                    ? Path.Combine(dir, $"{TempPrefix}{Guid.NewGuid():N}.tmp")
+                    : Path.Combine(dir, $"{Guid.NewGuid():N}{extension}");
+                pending = path;
 
                 FileStream file = new(path, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1 << 16, FileOptions.Asynchronous);
                 await using (file.ConfigureAwait(false))
@@ -159,14 +152,16 @@ public sealed class ExportService(
                         ?? Fallback(session, documentPages.Length, d));
                     string saved = UniquePath(dir, stem + extension);
                     File.Move(path, saved);
-                    pending = null;
                     logger.LogInformation("Saved {File}", saved);
                     produced.Add(new ExportedDocumentDto(document.Length, "", saved));
                 }
                 else
                 {
-                    produced.Add(new ExportedDocumentDto(document.Length, downloadPaths.Download(sessionId, token!, extension)));
+                    string token = tokens.Issue(sessionId, path);
+                    produced.Add(new ExportedDocumentDto(document.Length, downloadPaths.Download(sessionId, token, extension)));
                 }
+
+                pending = null;
 
                 finished++;
             }
@@ -186,16 +181,23 @@ public sealed class ExportService(
             await hub.All.SessionChanged(mapper.ToDto(done)).ConfigureAwait(false);
             return result;
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (Exception ex)
         {
-            logger.LogError(ex, "Export of {Session} failed", sessionId);
-            Session failed = store.Update(sessionId, s => s with { State = SessionState.Review, Error = ex.Message });
-            await hub.All.SessionChanged(mapper.ToDto(failed)).ConfigureAwait(false);
+            // Cancelled too — the browser that asked went away — the session goes back to Review,
+            // or it would stay Exporting, uneditable and unexportable, until a restart.
+            bool cancelled = ex is OperationCanceledException;
+            if (!cancelled)
+            {
+                logger.LogError(ex, "Export of {Session} failed", sessionId);
+            }
+
+            Session back = store.Update(sessionId, s => s with { State = SessionState.Review, Error = cancelled ? null : ex.Message });
+            await hub.All.SessionChanged(mapper.ToDto(back)).ConfigureAwait(false);
             throw;
         }
         finally
         {
-            // A save into the server folder that did not finish leaves no half-written file behind.
+            // A document that did not finish leaves no half-written file behind.
             if (pending is not null && File.Exists(pending))
             {
                 File.Delete(pending);
