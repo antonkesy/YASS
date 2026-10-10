@@ -23,17 +23,20 @@ public sealed class SessionStore
     // One gate for every write: updates are quick and synchronous, and two of them persisting the
     // same session at once would race on its temp file or land on disk out of order.
     private readonly Lock _gate = new();
-    private readonly ConfigStore _config;
     private readonly ILogger<SessionStore> _logger;
 
     public SessionStore(ConfigStore config, ILogger<SessionStore> logger)
     {
-        _config = config;
+        Root = config.Current.Sessions.Directory;
         _logger = logger;
         LoadAll();
     }
 
-    public string Root => _config.Current.Sessions.Directory;
+    /// <summary>
+    /// Where sessions live, as configured at startup. Fixed: the sessions loaded from here stay
+    /// here, so a reload that moved it would point every path at a folder without them.
+    /// </summary>
+    public string Root { get; }
 
     public Session Create(Session session)
     {
