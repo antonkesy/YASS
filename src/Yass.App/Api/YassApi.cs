@@ -9,12 +9,7 @@ using Yass.Core.Scanning;
 
 namespace Yass.App.Api;
 
-/// <summary>
-/// Everything <see cref="IYassHub"/> promises, with no transport attached. Each method mirrors the
-/// contract; those whose work can be abandoned also take the caller's cancellation. The SignalR hub and the
-/// desktop bridge both delegate here, so they behave identically. Errors meant for the user are
-/// thrown as <see cref="YassException"/>.
-/// </summary>
+/// <summary>The hub contract without a transport; the SignalR hub and the desktop bridge both delegate here.</summary>
 public sealed class YassApi(
     ScannerStatusMonitor scanner,
     IScannerBackend backend,
@@ -58,7 +53,6 @@ public sealed class YassApi(
 
         if (session.State == SessionState.Exporting)
         {
-            // Deleting the directory under the writer would only turn the export's error into a worse one.
             throw new YassException("Wait for the export to finish before deleting the session.");
         }
 
@@ -141,7 +135,6 @@ public sealed class YassApi(
     public async Task<ExportResult> Export(string sessionId, ExportRequest request, CancellationToken cancellationToken = default)
     {
         Find(sessionId);
-        // The folder may exist but refuse this service: worth saying plainly that the export is what failed.
         return await GuardAsync(() => exporter.ExportAsync(sessionId, request ?? new ExportRequest(), cancellationToken), "Export failed: ").ConfigureAwait(false);
     }
 
@@ -177,11 +170,7 @@ public sealed class YassApi(
             ? session
             : throw new YassException($"Session {sessionId} not found.");
 
-    /// <summary>
-    /// The services say no with the BCL's exceptions — a state that forbids the call, an argument
-    /// out of range, a session gone in the meantime, a disk that refused — and this is where those
-    /// become a <see cref="YassException"/> the caller reads. Anything else is a bug and stays one.
-    /// </summary>
+    // BCL exceptions from the services become YassException for the caller; anything else is a bug and stays one.
     private static T Guard<T>(Func<T> work, string ioPrefix = "")
     {
         try

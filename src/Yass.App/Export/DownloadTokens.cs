@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 
 namespace Yass.App.Export;
 
-/// <summary>One-shot download URLs: a token maps to a file exactly once.</summary>
+/// <summary>One-shot: a token maps to a file exactly once.</summary>
 public sealed class DownloadTokens
 {
     private readonly ConcurrentDictionary<string, (string SessionId, string Path)> _tokens = new(StringComparer.Ordinal);
@@ -15,10 +15,8 @@ public sealed class DownloadTokens
         return token;
     }
 
-    /// <summary>Makes a redeemed token good again, for a caller whose use of the file failed.</summary>
     public void Restore(string sessionId, string token, string path) => _tokens[token] = (sessionId, path);
 
-    /// <summary>Redeems the token; a second call returns <c>false</c>.</summary>
     public bool TryRedeem(string sessionId, string token, out string path)
     {
         path = "";

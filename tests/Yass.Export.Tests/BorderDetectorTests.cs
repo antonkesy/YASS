@@ -5,7 +5,6 @@ namespace Yass.Export.Tests;
 
 public class BorderDetectorTests
 {
-    /// <summary>A white page of the given size with a dark frame of the given widths, in pixels.</summary>
     private static Image<L8> Scan(int width, int height, int top = 0, int right = 0, int bottom = 0, int left = 0, byte frame = 30)
     {
         var image = new Image<L8>(width, height, new L8(240));
@@ -65,7 +64,6 @@ public class BorderDetectorTests
     [Fact]
     public void Leaves_a_page_that_is_dark_all_over_alone()
     {
-        // A photo or a dark cover: no lighter paper to tell a frame from.
         using var scan = new Image<L8>(400, 600, new L8(40));
 
         Assert.Null(BorderDetector.Detect(scan));
@@ -86,7 +84,6 @@ public class BorderDetectorTests
     public void Ignores_text_on_the_page()
     {
         using Image<L8> scan = Scan(400, 600, top: 30);
-        // A line of "text" near the left edge: dark, but nowhere near a whole line of it.
         scan.ProcessPixelRows(rows =>
         {
             for (int y = 100; y < 110; y++)

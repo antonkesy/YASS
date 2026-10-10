@@ -2,10 +2,8 @@ using Yass.Core.Domain;
 
 namespace Yass.App.Sessions;
 
-/// <summary>Adds the active pages of one session to the end of another, as a document of their own.</summary>
 public sealed class MergeService(SessionStore store, IPageSink sink, ILogger<MergeService> logger)
 {
-    /// <exception cref="InvalidOperationException">The target is busy, is the source, or the source has no pages left.</exception>
     public Session Merge(string targetId, string sourceId)
     {
         EnsureEditable(store.Get(targetId));
@@ -21,7 +19,7 @@ public sealed class MergeService(SessionStore store, IPageSink sink, ILogger<Mer
             throw new InvalidOperationException("That scan has no pages left to add.");
         }
 
-        // Page files are copied, not moved: the source scan stays intact and usable.
+        // Copied, not moved: the source scan stays intact.
         string targetDir = SessionPaths.Directory(store.Root, targetId);
         var copies = new List<(Page Page, string File)>();
         Session merged;
@@ -34,8 +32,7 @@ public sealed class MergeService(SessionStore store, IPageSink sink, ILogger<Mer
                 copies.Add((page, fileName));
             }
 
-            // Indexed against the session as it is now, not as it was before the copy: a scan
-            // could have added pages meanwhile.
+            // Indexed against the session as it is now: a scan could have added pages meanwhile.
             merged = store.Update(targetId, s =>
             {
                 EnsureEditable(s);
@@ -49,8 +46,6 @@ public sealed class MergeService(SessionStore store, IPageSink sink, ILogger<Mer
                             {
                                 Index = s.Pages.Count + i,
                                 SourceFile = c.File,
-                                // The merged run becomes its own document, which is the point of
-                                // merging rather than rescanning into this session.
                                 StartsDocument = i == 0,
                                 Deleted = false,
                             },

@@ -3,7 +3,7 @@ using Yass.App.Export;
 
 namespace Yass.Server.Export;
 
-/// <summary><c>GET /export/{sessionId}/{file}</c>: serves a produced document once, then deletes it.</summary>
+/// <summary>Serves a produced document once, then deletes it.</summary>
 public static class ExportEndpoints
 {
     public static void Map(WebApplication app)

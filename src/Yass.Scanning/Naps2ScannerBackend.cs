@@ -9,10 +9,6 @@ using Yass.Core.Scanning;
 
 namespace Yass.Scanning;
 
-/// <summary>
-/// <see cref="IScannerBackend"/> over NAPS2.Sdk with the headless ImageSharp image context (no GTK).
-/// Device discovery is cached for the poll interval because SANE/eSCL enumeration is slow.
-/// </summary>
 public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
 {
     private readonly ScanningContext _context;
@@ -21,8 +17,7 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
     private readonly ILogger<Naps2ScannerBackend> _logger;
     private readonly TimeProvider _time;
     private readonly SemaphoreSlim _discovery = new(1, 1);
-    // One immutable snapshot, swapped whole: readers outside the discovery lock never see the
-    // device of one look with the device list of another.
+    // One immutable snapshot, swapped whole, so readers outside the lock never mix two looks.
     private DeviceCache _cache = new(DateTimeOffset.MinValue, null, [], null);
     private int _scanning;
     private string? _scanningOn;
@@ -72,8 +67,7 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
 
             if (options.Device.Length > 0)
             {
-                // The browser asked for one by id. Not falling back to the configured device on a
-                // miss is deliberate: scanning the wrong machine is worse than not scanning.
+                // No fallback to the configured device on a miss: scanning the wrong machine is worse than not scanning.
                 device = devices.FirstOrDefault(d => string.Equals(d.ID, options.Device, StringComparison.Ordinal))
                     ?? throw new InvalidOperationException($"No scanner with id '{options.Device}'.");
             }
@@ -113,8 +107,7 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
                         break;
                     }
 
-                    // Released before the page is handed on: the decoded scan is tens of MB, and the
-                    // caller writes, hashes and announces the page before asking for the next.
+                    // Released before the page is handed on: the decoded scan is tens of MB.
                     byte[] png;
                     using (ProcessedImage image = pages.Current)
                     {
@@ -134,10 +127,7 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
 
     private static readonly IReadOnlySet<string> EmptyIds = new HashSet<string>();
 
-    /// <summary>
-    /// The WIA devices that are cameras. If WIA cannot say, none are filtered: a camera in the list
-    /// is a nuisance, an empty list because of a failed lookup would stop every scan.
-    /// </summary>
+    // If WIA cannot say, nothing is filtered: an empty list from a failed lookup would stop every scan.
     private IReadOnlySet<string> WiaCameras()
     {
         if (!OperatingSystem.IsWindows())
@@ -164,7 +154,6 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
         _discovery.Dispose();
     }
 
-    /// <summary>Renders the scanned page once and encodes it as PNG; the ProcessedImage is disposed by the caller.</summary>
     private static byte[] ToPng(ProcessedImage image)
     {
         using IMemoryImage rendered = image.Render();
@@ -181,8 +170,7 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
     private async Task<DeviceCache> FindDeviceAsync(bool force, CancellationToken cancellationToken)
     {
         ScannerConfig config = _config();
-        // Enumerating SANE backends can take tens of seconds; never re-probe more often than every 30 s
-        // on the status poll. Starting a scan always forces a fresh look.
+        // SANE enumeration can take tens of seconds; never re-probe more often than every 30 s.
         TimeSpan ttl = TimeSpan.FromSeconds(Math.Max(config.PollIntervalSeconds, 30));
         DeviceCache cached = _cache;
         if (!force && _time.GetUtcNow() - cached.At < ttl)
@@ -240,16 +228,10 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
         }
     }
 
-    /// <summary>What one look for scanners found: the configured device among them, or why there was none.</summary>
     private sealed record DeviceCache(DateTimeOffset At, ScanDevice? Device, IReadOnlyList<ScanDevice> Devices, string? Error);
 
-    /// <summary>Why no scanner was found, as a scan's error: a sentence that stands on its own.</summary>
     private string NoDeviceMessage() => "No scanner found. " + NoDeviceDetail();
 
-    /// <summary>
-    /// What was looked for and how, for the status: the screen names the problem itself
-    /// ("No scanner found") and shows this under it.
-    /// </summary>
     private string NoDeviceDetail()
     {
         ScannerConfig config = _config();

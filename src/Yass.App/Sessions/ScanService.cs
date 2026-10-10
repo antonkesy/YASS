@@ -5,11 +5,6 @@ using Yass.Core.Scanning;
 
 namespace Yass.App.Sessions;
 
-/// <summary>
-/// Runs the scan loop off the hub thread: for each page from the backend, write it to disk, add it to the session,
-/// push <c>PageAdded</c>, and hand it to the <see cref="IPageSink"/>. Ends in <see cref="SessionState.Review"/>
-/// when the feeder is empty or the scan is stopped, or <see cref="SessionState.Failed"/> on a driver error.
-/// </summary>
 public sealed class ScanService(
     IScannerBackend backend,
     SessionStore store,
@@ -20,12 +15,10 @@ public sealed class ScanService(
     TimeProvider time,
     ILogger<ScanService> logger)
 {
-    // The one scan the scanner can run at a time, claimed and released under the gate: a check
-    // and a separate claim would let two callers both see the scanner free.
+    // Claimed and released under the gate: a check and a separate claim would let two callers both see the scanner free.
     private readonly Lock _gate = new();
     private (string SessionId, CancellationTokenSource Cts)? _active;
 
-    /// <exception cref="InvalidOperationException">A scan is already running.</exception>
     public Session Start(ScanOptions options)
     {
         DateTimeOffset now = time.GetUtcNow();
@@ -45,11 +38,7 @@ public sealed class ScanService(
         return session;
     }
 
-    /// <summary>
-    /// Runs the feeder again and appends what comes out to an existing session, with the
-    /// options that session was scanned with, so added pages match the ones already there.
-    /// </summary>
-    /// <exception cref="InvalidOperationException">A scan is running or the session is not editable.</exception>
+    /// <summary>Uses the session's original options so added pages match.</summary>
     public Session StartMore(string sessionId)
     {
         CancellationTokenSource cts = Claim(sessionId);
@@ -68,18 +57,13 @@ public sealed class ScanService(
             throw;
         }
 
-        // The new run numbers its pages from 1 again, so page files are offset past the ones
-        // already on disk; without it the second run would overwrite the first run's pages.
+        // The new run numbers pages from 1 again; offset so it does not overwrite the first run's files.
         int offset = scanning.Pages.Count;
         _ = Task.Run(() => RunAsync(sessionId, scanning.OptionsUsed, offset, cts.Token), CancellationToken.None);
         return scanning;
     }
 
-    /// <summary>
-    /// Pulls one more sheet and puts it in place of an existing page, keeping that page's
-    /// position and its edits. The old source file is replaced, so nothing else has to move.
-    /// </summary>
-    /// <exception cref="InvalidOperationException">A scan is running, the session is not editable, or the feeder was empty.</exception>
+    /// <summary>Replaces the old source file in place, keeping the page's position and edits.</summary>
     public async Task<Page> RescanPageAsync(string sessionId, int pageIndex, CancellationToken cancellationToken)
     {
         Session session = store.Get(sessionId);
@@ -89,8 +73,7 @@ public sealed class ScanService(
             throw new ArgumentOutOfRangeException(nameof(pageIndex), $"Page {pageIndex} is not in this session.");
         }
 
-        // Pages can be reordered while the sheet goes through, so the page is followed by its
-        // file from here on, not by its position.
+        // Pages can be reordered meanwhile, so the page is followed by its file, not its position.
         Page replaced = session.Pages[pageIndex];
         CancellationTokenSource cts = Claim(sessionId, cancellationToken);
         ScannedPage? sheet = null;
@@ -112,7 +95,7 @@ public sealed class ScanService(
             throw new InvalidOperationException("Nothing came out of the scanner; is the page loaded?");
         }
 
-        // Written aside and renamed over the old file, so a render reading it never sees half a page.
+        // Written aside and renamed over the old file, so a render never sees half a page.
         string source = SessionPaths.Source(store.Root, session, replaced);
         await File.WriteAllBytesAsync(source + ".tmp", sheet.Png, CancellationToken.None).ConfigureAwait(false);
         File.Move(source + ".tmp", source, overwrite: true);
@@ -128,8 +111,6 @@ public sealed class ScanService(
                 throw new InvalidOperationException("That page is no longer in this session.");
             }
 
-            // The new sheet inherits the slot's rotation, filter and crop: the user is
-            // replacing a bad scan of this page, not starting it over.
             updated = PageHash.Rehash(
                 pages[at] with { SourceHash = PageHash.OfBytes(sheet.Png), IsBlank = sheet.IsBlank, Deleted = false },
                 s.OptionsUsed.Color);
@@ -143,7 +124,6 @@ public sealed class ScanService(
         return updated;
     }
 
-    /// <summary>Stops the scan or rescan running for <paramref name="sessionId"/>, if there is one.</summary>
     public void Stop(string sessionId)
     {
         lock (_gate)
@@ -163,7 +143,6 @@ public sealed class ScanService(
         }
     }
 
-    /// <exception cref="InvalidOperationException">A scan is already running.</exception>
     private CancellationTokenSource Claim(string sessionId, CancellationToken link = default)
     {
         lock (_gate)

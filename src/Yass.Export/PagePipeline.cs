@@ -5,42 +5,23 @@ using Yass.Core.Domain;
 
 namespace Yass.Export;
 
-/// <summary>
-/// The one place a page's edits turn into pixels. Preview rendering and PDF export used to
-/// carry separate copies of this, which is how they drift apart.
-/// </summary>
+/// <summary>The one place edits turn into pixels, shared by preview and export so they cannot drift apart.</summary>
 public static class PagePipeline
 {
-    /// <summary>Long edge of the copy auto-levels measures; plenty for a histogram, and cheap.</summary>
     private const int ProbeSize = 512;
 
-    /// <summary>Share of the darkest and lightest pixels auto-levels ignores, so one speck does not set the range.</summary>
     private const double LevelsClip = 0.005;
 
-    /// <summary>A page whose tones span less than this is blank, and stretching it would only amplify noise.</summary>
     private const int LevelsMinSpan = 38;
 
-    /// <summary>Short edge of an A4 page at 300 dpi; sharpening is tuned for it and scaled for anything else.</summary>
     private const float SharpenReference = 2480f;
 
     /// <summary>
-    /// Geometry first — crop on the scan as it came, the quarter turns, then the fine skew — then
-    /// tone, clean-up and colour in the order each needs the one before it:
-    /// <list type="number">
-    /// <item>auto-levels normalises the range, so everything after works on the same footing;</item>
-    /// <item>the Enhance filter, then the user's own brightness and contrast, which fine-tune what Enhance did;</item>
-    /// <item>despeckle before sharpen, which would otherwise sharpen the specks;</item>
-    /// <item>grayscale or the black-and-white threshold last, on the cleaned page.</item>
-    /// </list>
+    /// Geometry first (crop, quarter turns, skew), then auto-levels, Enhance, user tone, despeckle before
+    /// sharpen (else it sharpens the specks), and grayscale/threshold last.
+    /// <para>maxWidth: previews shrink before the expensive skew and filters; every filter is per pixel or
+    /// size-scaled, so the result looks the same. Null for export.</para>
     /// </summary>
-    /// <param name="image">The scan as it came, edited in place.</param>
-    /// <param name="spec">The edits to apply.</param>
-    /// <param name="maxWidth">
-    /// For a preview or thumbnail: shrink to this width once cropped and turned, before the
-    /// skew and the filters, which cost a second or more each on a full page and are wasted on
-    /// pixels about to be thrown away. Every filter is per pixel or scaled to the page's size,
-    /// so the result looks the same. Null for export, which keeps every pixel.
-    /// </param>
     public static void Apply(Image image, RenderSpec spec, int? maxWidth = null)
     {
         ArgumentNullException.ThrowIfNull(image);
@@ -60,8 +41,7 @@ public static class PagePipeline
             }
         });
 
-        // Measuring the histogram needs the pixels as they are at this point, which a single
-        // Mutate cannot give it, so the pipeline runs in two halves around it.
+        // The histogram needs the pixels at this point, so the pipeline runs as two Mutates around it.
         ColorMatrix? levels = spec.Cleanup.HasFlag(PageCleanup.AutoLevels) ? Levels(image) : null;
 
         image.Mutate(ctx =>
@@ -90,11 +70,7 @@ public static class PagePipeline
         }
     }
 
-    /// <summary>
-    /// Turns the page by a small angle and crops back to its own proportions inside the turned
-    /// canvas. Filling the corners instead leaves wedges — white on a grey scan, black once a
-    /// JPEG has dropped the transparency — and every page of a document would have them.
-    /// </summary>
+    // Crops back to the page's proportions: filling the corners leaves wedges (white, or black once JPEG drops alpha).
     private static void Skew(IImageProcessingContext ctx, double degrees)
     {
         Size before = ctx.GetCurrentSize();
@@ -108,10 +84,6 @@ public static class PagePipeline
         ctx.Crop(new Rectangle((turned.Width - width) / 2, (turned.Height - height) / 2, width, height));
     }
 
-    /// <summary>
-    /// The stretch that maps the page's darkest ink to black and its paper to white, measured on a
-    /// small grey copy. Null when the page has no range worth stretching.
-    /// </summary>
     private static ColorMatrix? Levels(Image image)
     {
         using Image<L8> probe = image.CloneAs<L8>();

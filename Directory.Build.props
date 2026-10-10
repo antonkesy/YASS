@@ -9,27 +9,22 @@
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <Deterministic>true</Deterministic>
 
-    <!-- Analyzers: everything on, warnings are errors. -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AnalysisLevel>latest-all</AnalysisLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <!-- IDE0005 (unused usings) only runs on build when doc generation is on; CS1591 (missing XML doc) is then noise. -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <!-- CA1014: CLSCompliant attribute is irrelevant for an application. -->
     <NoWarn>$(NoWarn);CS1591;CA1014</NoWarn>
-    <!-- NuGet audits transitive packages since .NET 10. A newly published advisory should show up
-         as a warning to act on, not break a build that changed nothing. -->
+    <!-- A newly published NuGet advisory should warn, not break a build that changed nothing. -->
     <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <!-- xunit.v3 test projects must be executables; the package supplies the entry point and sets
-         UseAppHost, GenerateProgramFile and TestProject itself. -->
+    <!-- xunit.v3 test projects must be executables; the package supplies the entry point. -->
     <OutputType>Exe</OutputType>
-    <!-- CA1707: underscores in test method names are conventional.
-         CA1001: v3's IAsyncLifetime derives from IAsyncDisposable, which CA1001 does not accept. -->
+    <!-- CA1001: v3's IAsyncLifetime derives from IAsyncDisposable, which CA1001 does not accept. -->
     <NoWarn>$(NoWarn);CA1707;CA1001</NoWarn>
   </PropertyGroup>
 

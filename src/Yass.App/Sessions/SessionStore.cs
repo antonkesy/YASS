@@ -6,11 +6,7 @@ using Yass.Core.Domain;
 
 namespace Yass.App.Sessions;
 
-/// <summary>
-/// Sessions on disk (<c>session.json</c> per directory) mirrored in memory. Writes are atomic
-/// (temp + rename) and serialized, so the file on disk is always the latest state in memory.
-/// Reads take no lock.
-/// </summary>
+/// <summary>Writes are atomic (temp + rename) and serialized; reads take no lock.</summary>
 public sealed class SessionStore
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
@@ -20,8 +16,7 @@ public sealed class SessionStore
     };
 
     private readonly ConcurrentDictionary<string, Session> _sessions = new(StringComparer.Ordinal);
-    // One gate for every write: updates are quick and synchronous, and two of them persisting the
-    // same session at once would race on its temp file or land on disk out of order.
+    // One gate for every write: two writes of the same session would race on its temp file or land out of order.
     private readonly Lock _gate = new();
     private readonly ILogger<SessionStore> _logger;
 
@@ -32,10 +27,7 @@ public sealed class SessionStore
         LoadAll();
     }
 
-    /// <summary>
-    /// Where sessions live, as configured at startup. Fixed: the sessions loaded from here stay
-    /// here, so a reload that moved it would point every path at a folder without them.
-    /// </summary>
+    // Fixed at startup: a reload that moved it would point every path at a folder without the loaded sessions.
     public string Root { get; }
 
     public Session Create(Session session)
@@ -62,11 +54,7 @@ public sealed class SessionStore
 
     public IReadOnlyList<Session> List() => _sessions.Values.OrderByDescending(s => s.CreatedAt).ToArray();
 
-    /// <summary>
-    /// Applies <paramref name="update"/> to the current state and persists the result, atomically with
-    /// respect to every other write. <paramref name="update"/> runs exactly once, under the lock, so it
-    /// may check the state it is given and throw; nothing is changed then.
-    /// </summary>
+    /// <summary><paramref name="update"/> runs exactly once, under the lock, and may throw to change nothing.</summary>
     public Session Update(string id, Func<Session, Session> update)
     {
         ArgumentNullException.ThrowIfNull(update);
@@ -79,11 +67,7 @@ public sealed class SessionStore
         }
     }
 
-    /// <summary>
-    /// Throws a session's pages and derived images away but keeps the session, with its history,
-    /// as <see cref="SessionState.Done"/> plus <paramref name="recorded"/>.
-    /// </summary>
-    /// <exception cref="InvalidOperationException">The session is scanning or exporting.</exception>
+    /// <summary>Removes pages and derived images but keeps the session and its history.</summary>
     public Session Discard(string id, SessionEvent recorded)
     {
         lock (_gate)
@@ -160,7 +144,7 @@ public sealed class SessionStore
                     continue;
                 }
 
-                // A scan or export that was interrupted by a restart cannot resume.
+                // A scan or export interrupted by a restart cannot resume.
                 if (session.State is SessionState.Scanning or SessionState.Exporting)
                 {
                     session = session with { State = session.Pages.Count > 0 ? SessionState.Review : SessionState.Failed, Error = session.Pages.Count > 0 ? null : "Interrupted by restart." };

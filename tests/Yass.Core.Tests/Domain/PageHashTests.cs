@@ -4,8 +4,7 @@ namespace Yass.Core.Tests.Domain;
 
 public class PageHashTests
 {
-    // Literal values from before RenderSpec existed. Every rendered image on disk is cached under
-    // one of these, so an unedited page must keep hashing to exactly the same thing.
+    // Pre-RenderSpec literals: cached renders on disk are keyed by these, so unedited pages must hash identically.
     [Fact]
     public void An_unedited_page_keeps_the_hash_it_always_had()
     {

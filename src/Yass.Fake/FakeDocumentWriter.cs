@@ -11,12 +11,7 @@ using Yass.Core.Hub;
 
 namespace Yass.Fake;
 
-/// <summary>
-/// Writes a real PDF of the scanned pages without NAPS2: each page is decoded, rotated and
-/// greyed the way the edits ask, encoded as JPEG and embedded whole. What comes out opens in
-/// any reader and shows the document, which is the point — a placeholder that only claimed to
-/// be a page proved nothing about the save flow and made the demo look broken.
-/// </summary>
+/// <summary>Writes a real, viewable PDF without NAPS2, so the demo's save flow produces a real document.</summary>
 public sealed class FakeDocumentWriter : IDocumentWriter
 {
     public async Task WritePdfAsync(
@@ -44,7 +39,6 @@ public sealed class FakeDocumentWriter : IDocumentWriter
         progress?.Report(100);
     }
 
-    /// <summary>The page as its own file, encoded for real so an image export is a real image.</summary>
     public async Task WriteImageAsync(ExportPage page, ExportFormat format, PdfConfig quality, Stream destination, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(page);
@@ -61,14 +55,12 @@ public sealed class FakeDocumentWriter : IDocumentWriter
         await image.SaveAsJpegAsync(destination, Encoder(page, quality.JpegQuality), cancellationToken).ConfigureAwait(false);
     }
 
-    /// <summary>What a page went through, for the PDF's title. Handy when a save looks wrong.</summary>
     public static string PageLabel(ExportPage page)
     {
         ArgumentNullException.ThrowIfNull(page);
         return $"{Path.GetFileName(page.SourcePath)} rot={(int)page.Spec.Rotation} color={page.ColorMode}";
     }
 
-    /// <summary>One page's JPEG and the size it should occupy, in points.</summary>
     private sealed record Rendered(byte[] Jpeg, int Width, int Height, bool Gray, double Points, double PointsHigh);
 
     private static async Task<Image<Rgb24>> LoadAsync(ExportPage page, CancellationToken cancellationToken)
@@ -110,8 +102,7 @@ public sealed class FakeDocumentWriter : IDocumentWriter
         using var buffer = new MemoryStream();
         await image.SaveAsJpegAsync(buffer, Encoder(page, quality), cancellationToken).ConfigureAwait(false);
 
-        // 72 points to the inch: the page is however large the pixels are at the dpi they were
-        // scanned at, which is what makes an A4 page come back out as A4.
+        // 72 points to the inch at the scan dpi, so an A4 page comes back out as A4.
         double dpi = page.Dpi > 0 ? page.Dpi : 300;
         return new Rendered(
             buffer.ToArray(),
@@ -128,7 +119,6 @@ public sealed class FakeDocumentWriter : IDocumentWriter
         var body = new List<byte[]>();
         int first = 4;
         string kids = string.Join(" ", Enumerable.Range(0, rendered.Count).Select(i => $"{first + i * 3} 0 R"));
-        // The same fields the real writer stamps, so a demo PDF's properties read the same.
         string title = metadata.Title ?? (pages.Count > 0 ? PageLabel(pages[0]) : "YASS fake scan");
         var info = new StringBuilder($"<< /Title ({Escape(title)}) /Producer (YASS fake writer) /Creator (YASS)");
         if (!string.IsNullOrWhiteSpace(metadata.Author))
@@ -174,7 +164,6 @@ public sealed class FakeDocumentWriter : IDocumentWriter
         return Assemble(body);
     }
 
-    /// <summary>An image XObject: the JPEG goes in whole, which is what /DCTDecode means.</summary>
     private static byte[] Stream(Rendered page)
     {
         string header = string.Create(
@@ -190,7 +179,6 @@ public sealed class FakeDocumentWriter : IDocumentWriter
         return [.. bytes];
     }
 
-    /// <summary>Objects, cross-reference table and trailer, counted in bytes because of the JPEGs.</summary>
     private static byte[] Assemble(List<byte[]> body)
     {
         using var output = new MemoryStream();

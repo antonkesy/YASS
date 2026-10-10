@@ -18,7 +18,6 @@ public sealed class SessionHistoryTests
         Assert.Equal("  Tax return 2025  ".Trim(), (await hub.RenameSession(scanned.Id, "  Tax return 2025  ")).Name);
         Assert.Equal("Tax return 2025", (await hub.GetSession(scanned.Id)).Name);
 
-        // Blank clears it, so the UI falls back to the timestamp.
         Assert.Null((await hub.RenameSession(scanned.Id, "   ")).Name);
     }
 
@@ -75,7 +74,6 @@ public sealed class SessionHistoryTests
         Assert.False(merged.Pages[0].StartsDocument);
         Assert.True(merged.Pages[2].StartsDocument, "the merged run opens its own document");
 
-        // The source is copied, not consumed.
         Assert.Equal(2, (await hub.GetSession(source.Id)).Pages.Length);
 
         ExportResult result = await hub.Export(target.Id);

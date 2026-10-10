@@ -3,20 +3,11 @@ using Yass.Core.Domain;
 
 namespace Yass.App.Sessions;
 
-/// <summary>Applies edits to a stored session, persists, and pushes <c>PageUpdated</c> / <c>SessionChanged</c>.</summary>
 public sealed class EditService(SessionStore store, SessionMapper mapper, IPageSink sink, IClientNotifier hub)
 {
-    /// <exception cref="InvalidOperationException">The session is not editable in its current state.</exception>
-    /// <exception cref="ArgumentException">An edit is invalid.</exception>
     public Task<Session> ApplyAsync(string sessionId, IReadOnlyList<PageEdit> edits) => ApplyAsync(sessionId, _ => edits);
 
-    /// <summary>
-    /// As <see cref="ApplyAsync(string, IReadOnlyList{PageEdit})"/>, with the edits worked out from the
-    /// session as it is when they are applied — for edits found earlier, whose targets are only
-    /// known by page while the pages may have been reordered since.
-    /// </summary>
-    /// <exception cref="InvalidOperationException">The session is not editable in its current state.</exception>
-    /// <exception cref="ArgumentException">An edit is invalid.</exception>
+    /// <summary>Edits are worked out from the session as it is when applied, for targets known by page that may have moved.</summary>
     public async Task<Session> ApplyAsync(string sessionId, Func<Session, IReadOnlyList<PageEdit>> edits)
     {
         Session? before = null;

@@ -7,7 +7,6 @@ using Naps2PageSize = NAPS2.Images.PageSize;
 
 namespace Yass.Scanning;
 
-/// <summary>Pure mapping between YASS options and NAPS2's <see cref="Naps2Options"/>. Kept free of I/O for unit tests.</summary>
 public static class OptionMapper
 {
     /// <summary>NAPS2 brightness/contrast run -1000..1000; ours -100..100.</summary>
@@ -15,11 +14,7 @@ public static class OptionMapper
 
     public static Driver MapDriver(ScannerDriver driver) => MapDriver(driver, OperatingSystem.IsMacOS());
 
-    /// <param name="driver"></param>
-    /// <param name="macOS">
-    /// NAPS2's default there is its Apple driver, which only exists in a <c>-macos</c> build of the SDK;
-    /// eSCL is what a plain .NET build can scan with.
-    /// </param>
+    // On macOS NAPS2's default Apple driver needs a -macos SDK build; plain .NET can only scan via eSCL.
     public static Driver MapDriver(ScannerDriver driver, bool macOS) => driver switch
     {
         ScannerDriver.Sane => Driver.Sane,
@@ -51,13 +46,10 @@ public static class OptionMapper
         _ => Naps2PageSize.A4,
     };
 
-    /// <summary>
-    /// NAPS2 expresses the blank-page coverage threshold as 0..100 (mapped internally onto 0..1 % ink coverage);
-    /// our <c>blank_page_threshold</c> is a 0..1 fraction. Scale and clamp.
-    /// </summary>
+    // NAPS2's blank threshold is 0..100; ours is a 0..1 fraction.
     public static int MapBlankThreshold(double threshold) => (int)Math.Clamp(Math.Round(threshold * 100), 0, 100);
 
-    /// <summary>Builds NAPS2 options for one scan run. Blank pages are excluded and deskew applied by NAPS2 itself (ADR-004).</summary>
+    /// <summary>Blank-page exclusion and deskew are done by NAPS2 itself (ADR-004).</summary>
     public static Naps2Options ToNaps2(Core.Domain.ScanOptions options, ScannerDriver driver, ScanDevice device)
     {
         ArgumentNullException.ThrowIfNull(options);
@@ -82,10 +74,7 @@ public static class OptionMapper
         };
     }
 
-    /// <summary>
-    /// Picks the configured device: exact id, then case-insensitive substring of id or name; empty = first.
-    /// Returns <c>null</c> when nothing matches.
-    /// </summary>
+    /// <summary>Exact id, then case-insensitive substring of id or name; empty = first. Null when nothing matches.</summary>
     public static ScanDevice? SelectDevice(IReadOnlyList<ScanDevice> devices, string configured)
     {
         ArgumentNullException.ThrowIfNull(devices);
@@ -105,18 +94,11 @@ public static class OptionMapper
                 d.Name.Contains(configured, StringComparison.OrdinalIgnoreCase));
     }
 
-    /// <summary>
-    /// SANE backends that drive cameras rather than scanners: webcams (<c>v4l</c>), digital
-    /// cameras (<c>gphoto2</c> and the old per-model ones) and a microscope camera. A camera is
-    /// not a scan source here, so their devices are never offered.
-    /// </summary>
+    /// <summary>SANE backends that drive cameras (v4l, gphoto2, ...), never offered as scan sources.</summary>
     public static readonly IReadOnlySet<string> CameraBackends =
         new HashSet<string>(["v4l", "gphoto2", "dc210", "dc240", "dc25", "dmc", "qcam", "stv680"], StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>
-    /// Whether a device is a camera. A SANE id is <c>backend:address</c>, so the backend says; a
-    /// WIA id says nothing, so <paramref name="wiaCameras"/> lists the ones WIA calls cameras.
-    /// </summary>
+    // A SANE id is backend:address so the backend says; a WIA id says nothing, hence wiaCameras.
     public static bool IsCamera(ScanDevice device, IReadOnlySet<string>? wiaCameras = null)
     {
         ArgumentNullException.ThrowIfNull(device);
@@ -132,11 +114,9 @@ public static class OptionMapper
         }
     }
 
-    /// <summary>The devices that can scan, cameras left out.</summary>
     public static IReadOnlyList<ScanDevice> ScannersOnly(IEnumerable<ScanDevice> devices, IReadOnlySet<string>? wiaCameras = null) =>
         [.. devices.Where(d => !IsCamera(d, wiaCameras))];
 
-    /// <summary>The driver a search ran with, named for a person: what <c>auto</c> resolves to on this machine.</summary>
     public static string DriverLabel(ScannerDriver driver) => DriverLabel(driver, OperatingSystem.IsWindows(), OperatingSystem.IsMacOS());
 
     public static string DriverLabel(ScannerDriver driver, bool windows, bool macOS) => driver switch

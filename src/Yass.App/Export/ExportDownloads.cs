@@ -2,16 +2,11 @@ using Yass.App.Sessions;
 
 namespace Yass.App.Export;
 
-/// <summary>A produced document, redeemed from its one-shot token. The caller deletes or moves <see cref="Path"/>.</summary>
+/// <summary>The caller deletes or moves <see cref="Path"/>.</summary>
 public sealed record ExportDownload(string Path, string ContentType, string DownloadName);
 
-/// <summary>What <c>/export/{sessionId}/{file}</c> points to, whichever host serves it.</summary>
 public sealed class ExportDownloads(DownloadTokens tokens)
 {
-    /// <summary>
-    /// Redeems <paramref name="file"/> (<c>{token}{ext}</c>). The extension is the format's own, not
-    /// always <c>.pdf</c>. <c>false</c> for an unknown format, a bad session id, a spent token or a missing file.
-    /// </summary>
     public bool TryRedeem(string sessionId, string file, out ExportDownload download)
     {
         download = null!;
@@ -36,10 +31,7 @@ public sealed class ExportDownloads(DownloadTokens tokens)
         return true;
     }
 
-    /// <summary>
-    /// Hands back a download redeemed from <paramref name="file"/> whose file could not be used
-    /// (a move that failed, say), so the same URL can be tried again.
-    /// </summary>
+    // For a download whose file could not be used (a failed move), so the same URL can be retried.
     public void Return(string sessionId, string file, ExportDownload download)
     {
         ArgumentNullException.ThrowIfNull(download);

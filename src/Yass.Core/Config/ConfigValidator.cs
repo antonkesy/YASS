@@ -3,10 +3,7 @@ using System.Reflection;
 
 namespace Yass.Core.Config;
 
-/// <summary>
-/// Validates a <see cref="YassConfig"/> tree. Unlike <c>ValidateDataAnnotations()</c> this recurses into
-/// nested sections, checks enums are defined, and reports every failure by its <c>yass.yaml</c> key.
-/// </summary>
+/// <summary>Unlike <c>ValidateDataAnnotations()</c>, recurses into nested sections, checks enums are defined, and reports errors by <c>yass.yaml</c> key.</summary>
 public static class ConfigValidator
 {
     public static IReadOnlyList<ConfigError> Validate(YassConfig config)
@@ -17,10 +14,6 @@ public static class ConfigValidator
         return errors;
     }
 
-    /// <summary>
-    /// Validates one section on its own, such as scan options a client sent, with keys under
-    /// <paramref name="prefix"/>.
-    /// </summary>
     public static IReadOnlyList<ConfigError> ValidateSection(object section, string prefix = "")
     {
         ArgumentNullException.ThrowIfNull(section);
@@ -29,7 +22,6 @@ public static class ConfigValidator
         return errors;
     }
 
-    /// <exception cref="ConfigValidationException">When any key is invalid.</exception>
     public static YassConfig ValidateOrThrow(YassConfig config)
     {
         IReadOnlyList<ConfigError> errors = Validate(config);
@@ -80,7 +72,7 @@ public static class ConfigValidator
     private static string Describe(ValidationResult result) =>
         result.ErrorMessage is { Length: > 0 } message ? StripFieldPrefix(message) : "invalid value";
 
-    /// <summary>Data annotations phrase messages as "The field Dpi must be between 50 and 1200."; the key already says which field.</summary>
+    // Data annotations prefix "The field Dpi ..."; the key already says which field.
     private static string StripFieldPrefix(string message)
     {
         const string prefix = "The field ";

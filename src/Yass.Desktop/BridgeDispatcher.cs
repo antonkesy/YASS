@@ -7,10 +7,7 @@ using Yass.Core.Hub;
 namespace Yass.Desktop;
 
 /// <summary>
-/// The client → host half of the message bridge. A call is <c>{"id": n, "method": "Name", "args": [...]}</c>;
-/// the answer is <c>{"id": n, "result": ...}</c> or <c>{"id": n, "error": "message"}</c>. Every
-/// <see cref="IYassHub"/> method is callable, served by <see cref="YassApi"/>'s method of the same name,
-/// plus the public methods of any extra targets (the desktop's own, such as its file dialogs).
+/// Call: <c>{"id": n, "method": "Name", "args": [...]}</c>; answer: <c>{"id": n, "result": ...}</c> or <c>{"id": n, "error": "message"}</c>.
 /// A trailing <see cref="CancellationToken"/> parameter gets the app's shutdown token.
 /// </summary>
 public sealed class BridgeDispatcher
@@ -46,13 +43,9 @@ public sealed class BridgeDispatcher
         }
     }
 
-    /// <summary>The names a client may call.</summary>
     public IReadOnlyCollection<string> Methods => _methods.Keys;
 
-    /// <summary>
-    /// Takes a message from the webview, which calls this on its UI thread, and answers it from
-    /// the thread pool: no call ever blocks the window.
-    /// </summary>
+    // Called on the webview's UI thread; answered from the thread pool so no call blocks the window.
     public void Receive(string message) =>
         _ = Task.Run(async () =>
         {
@@ -63,7 +56,7 @@ public sealed class BridgeDispatcher
             }
         });
 
-    /// <summary>Runs one call; the answer to send back, or <c>null</c> for a message that is not a call.</summary>
+    /// <summary>Null for a message that is not a call.</summary>
     public async Task<string?> HandleAsync(string message)
     {
         Call? call;
@@ -155,7 +148,6 @@ public sealed class BridgeDispatcher
         [property: JsonPropertyName("error"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Error);
 }
 
-/// <summary>A call the bridge cannot make: an unknown method or arguments that do not fit.</summary>
 public sealed class BridgeException : Exception
 {
     public BridgeException()

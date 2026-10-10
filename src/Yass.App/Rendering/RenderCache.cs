@@ -8,18 +8,11 @@ public enum ImageKind
     Thumb = 0,
     Preview,
 
-    /// <summary>
-    /// The page at preview size with every edit but its crop and skew: what the Crop dialog draws
-    /// its box over. A crop is taken from the scan as it came, so drawing it over a page already
-    /// cropped — or straightened, which crops too — put the box in the wrong place.
-    /// </summary>
+    // Every edit but crop and skew: the Crop dialog draws its box over the scan as it came.
     Frame,
 }
 
-/// <summary>
-/// Disk cache of derived images under <c>{session}/cache/{hash}-{kind}.webp</c>. Because the file name is the
-/// content hash, a cached file is valid forever and the HTTP layer can mark it immutable.
-/// </summary>
+/// <summary>The file name is the content hash, so a cached file is valid forever and can be served immutable.</summary>
 public sealed class RenderCache(SessionStore store, ImageRenderer renderer, Config.ConfigStore config) : IThumbnailStatus
 {
     public string PathFor(string sessionId, string hash, ImageKind kind) =>
@@ -32,7 +25,7 @@ public sealed class RenderCache(SessionStore store, ImageRenderer renderer, Conf
         return File.Exists(PathFor(session.Id, page.Hash, ImageKind.Thumb));
     }
 
-    /// <summary>Returns the cached file path, rendering it first if needed. Concurrent renders of the same file are harmless (temp + rename).</summary>
+    /// <summary>Concurrent renders of the same file are harmless (temp + rename).</summary>
     public async Task<string> GetOrRenderAsync(Session session, Page page, ImageKind kind, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(session);

@@ -9,14 +9,9 @@
   </ItemGroup>
 
   <!--
-    The pages the fake scanner feeds are rendered from the Markdown beside them rather than
-    committed as images, so what they say and what they look like cannot drift apart. They go
-    to obj/ and are embedded from there; nothing about them is checked in but the words.
-
-    Paths are worked out inside the target because IntermediateOutputPath is not set yet where
-    a csproj's own PropertyGroup is evaluated, and the render is left to decide what is stale:
-    MSBuild's Inputs attribute takes a wildcard literally, and the script has to walk the
-    documents anyway.
+    Fixture PNGs are rendered from the Markdown into obj/ and embedded. Paths are set inside the
+    target because IntermediateOutputPath is not set yet at csproj evaluation; no Inputs/Outputs
+    because Inputs takes a wildcard literally, so the script decides what is stale.
   -->
   <Target Name="RenderFixtures" BeforeTargets="AssignTargetPaths">
     <PropertyGroup>
@@ -26,10 +21,7 @@
 
     <Exec Command="&quot;$(MSBuildThisFileDirectory)../../scripts/render-fixtures.sh&quot; &quot;$(FixtureSourceDir)&quot; &quot;$(FixtureOutputDir)&quot;" />
 
-    <!--
-      Two passes: inside a target, %(Filename) on an item being created batches over nothing
-      and comes out empty. Update sees the items the Include just made.
-    -->
+    <!-- Two passes: inside a target, %(Filename) on an item being created comes out empty. -->
     <ItemGroup>
       <EmbeddedResource Include="$(FixtureOutputDir)/*.png" />
       <EmbeddedResource Update="$(FixtureOutputDir)/*.png">

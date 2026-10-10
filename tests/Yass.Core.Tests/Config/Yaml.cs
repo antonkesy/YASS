@@ -3,7 +3,6 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace Yass.Core.Tests.Config;
 
-/// <summary>YAML (de)serialisation with the spec's naming: snake_case keys, snake_case enum values.</summary>
 internal static class Yaml
 {
     private static readonly ISerializer Serializer = new SerializerBuilder()

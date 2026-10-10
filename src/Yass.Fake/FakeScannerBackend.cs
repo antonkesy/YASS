@@ -4,20 +4,14 @@ using Yass.Core.Scanning;
 
 namespace Yass.Fake;
 
-/// <summary>Plays a <see cref="FakeScenario"/>: yields fixture PNGs, flags blanks, optionally fails part-way.</summary>
 public sealed class FakeScannerBackend(FakeScenario scenario) : IScannerBackend
 {
     private int _scanning;
 
     public FakeScenario Scenario { get; } = scenario;
 
-    /// <summary>Options of the most recent <see cref="ScanAsync"/> call, for assertions.</summary>
     public ScanOptions? LastOptions { get; private set; }
 
-    /// <summary>
-    /// The scanners this fake pretends to have. The id is the name: a fake device has no
-    /// driver identifier to be distinct from what it is called.
-    /// </summary>
     public Task<IReadOnlyList<ScannerDevice>> ListDevicesAsync(CancellationToken cancellationToken)
     {
         IReadOnlyList<ScannerDevice> devices = Scenario.NoDevice

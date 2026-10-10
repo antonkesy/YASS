@@ -5,7 +5,6 @@ using Yass.Core.Hub;
 
 namespace Yass.Desktop.Tests;
 
-/// <summary>The bridge as the webview drives it: JSON in, JSON out, against the real app on the fake scanner.</summary>
 public sealed class BridgeDispatcherTests : IAsyncLifetime
 {
     private static readonly int[] FirstPage = [0];

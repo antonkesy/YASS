@@ -4,22 +4,16 @@ using NAPS2.Wia;
 
 namespace Yass.Scanning;
 
-/// <summary>
-/// Which WIA devices are cameras. WIA lists webcams and digital cameras beside scanners, and the
-/// ids NAPS2 reports carry no type, so this asks WIA itself for each device's type.
-/// </summary>
+/// <summary>NAPS2's WIA ids carry no type, so this asks WIA for each device's type to filter out cameras.</summary>
 public static class WiaDeviceKinds
 {
     private const int StiDigitalCamera = 2;
     private const int StiStreamingVideo = 3;
 
-    /// <summary>WIA's <c>DIP_DEV_TYPE</c> holds the STI device type in its high word: 1 scanner, 2 camera, 3 video.</summary>
+    // DIP_DEV_TYPE holds the STI device type in its high word: 1 scanner, 2 camera, 3 video.
     public static bool IsCamera(int deviceType) => (deviceType >> 16) is StiDigitalCamera or StiStreamingVideo;
 
-    /// <summary>
-    /// The ids (<c>DIP_DEV_ID</c>, as NAPS2 reports them) of every WIA camera, read on an STA thread
-    /// as COM wants. Throws what WIA throws; the caller decides what a failure means.
-    /// </summary>
+    // Read on an STA thread, as COM wants. Throws what WIA throws.
     [SupportedOSPlatform("windows")]
     [ExcludeFromCodeCoverage(Justification = "Needs Windows and its WIA service.")]
     public static IReadOnlySet<string> CameraIds(TimeSpan timeout)

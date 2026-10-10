@@ -1,22 +1,8 @@
 namespace Yass.Core.Domain;
 
 /// <summary>
-/// One scanned page. <see cref="SourceFile"/> is never modified; every edit is recorded on
-/// this record and derived images are a pure function of (source, edits), keyed by <see cref="Hash"/>.
+/// <see cref="SourceFile"/> is never modified; derived images are a pure function of (source, edits), keyed by <see cref="Hash"/>.
 /// </summary>
-/// <param name="Index">Zero-based position within the session, in scan order.</param>
-/// <param name="SourceFile">Path of the original PNG, relative to the session directory.</param>
-/// <param name="Rotation">Rotation to apply when rendering or exporting.</param>
-/// <param name="Filter">Per-page rendering treatment; <see cref="PageFilter.Original"/> keeps the scan's colour mode.</param>
-/// <param name="Crop">Per-page trim, or <c>null</c> for the whole page.</param>
-/// <param name="StartsDocument">This page begins a new document within the session; the first active page always does.</param>
-/// <param name="Deleted">Excluded from export. Reversible.</param>
-/// <param name="IsBlank">Flagged by blank-page detection at scan time; such pages start out deleted.</param>
-/// <param name="SourceHash">Hash of the source file bytes, fixed at scan time.</param>
-/// <param name="Hash">Content hash of (source, edits); changes whenever a derived image would change.</param>
-/// <param name="Adjust">Tone and sharpness set after scanning, or <c>null</c> for none.</param>
-/// <param name="Cleanup">Clean-up passes: despeckle, auto-levels.</param>
-/// <param name="Skew">Fine rotation in degrees (±15), applied after the quarter turns.</param>
 public sealed record Page(
     int Index,
     string SourceFile,

@@ -70,8 +70,7 @@ public sealed class PdfAssemblyTests : IDisposable
     [Fact]
     public async Task Rotated_page_is_landscape_and_dpi_sets_the_page_size()
     {
-        // Fixtures are rendered A4 at 300 dpi, so 300 dpi is what makes them A4 (595x842 pt)
-        // again on the page, and twice that halves it.
+        // Fixtures are A4 at 300 dpi: 300 dpi gives 595x842 pt, 600 halves it.
         string pdf = await WriteAsync([
             new ExportPage(_fixtures[0], new RenderSpec(Rotation.R0, PageFilter.Original, ColorMode.Grayscale, null), 300),
             new ExportPage(_fixtures[0], new RenderSpec(Rotation.R90, PageFilter.Original, ColorMode.Grayscale, null), 300),

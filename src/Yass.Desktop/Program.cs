@@ -4,10 +4,6 @@ using Yass.Core.Config;
 
 namespace Yass.Desktop;
 
-/// <summary>
-/// The desktop app: the same services as the server on a Generic Host, and the same UI in a
-/// native window. Nothing listens on a socket; the window talks to the host in-process.
-/// </summary>
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage(Justification = "Startup glue around a native window; DesktopHarness wires the same services under test.")]
 public static class Program
 {

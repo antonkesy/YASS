@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Yass.Core.Config;
 
-/// <summary>Root of <c>yass.yaml</c>. Property names map to snake_case keys (<see cref="ConfigKeys.ToSnakeCase"/>).</summary>
 public sealed record YassConfig
 {
     [Required]

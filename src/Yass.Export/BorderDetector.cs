@@ -5,29 +5,20 @@ using Yass.Core.Domain;
 
 namespace Yass.Export;
 
-/// <summary>
-/// Finds the dark frame a scanner leaves around a page — the lid or the bed showing past the
-/// paper's edge — so it can be cropped away. The answer is an ordinary <see cref="CropBox"/>
-/// on the scan as it came, which the Crop dialog can then adjust like any other.
-/// </summary>
+/// <summary>Finds the dark frame (lid or bed past the paper's edge) as a <see cref="CropBox"/> on the scan as it came.</summary>
 public static class BorderDetector
 {
-    /// <summary>Long edge the scan is shrunk to before looking; a frame is never finer than this.</summary>
     public const int ProbeSize = 600;
 
-    /// <summary>Most of an edge taken away, the same limit as the Crop dialog's sliders.</summary>
     public const double MaxEdgePercent = 30;
 
-    /// <summary>Kept past the paper's edge, so a crop never shaves the page itself.</summary>
     private const double MarginPercent = 0.5;
 
-    /// <summary>A line darker than this share of the paper's brightness is not paper.</summary>
     private const double DarkFactor = 0.6;
 
-    /// <summary>A line with more than this share of dark pixels is frame, even where the paper starts mid-line.</summary>
+    // More than this share of dark pixels is frame, even where the paper starts mid-line.
     private const double DarkShare = 0.6;
 
-    /// <summary>Looks at a scan as it came off the scanner.</summary>
     public static CropBox? Detect(Image source)
     {
         ArgumentNullException.ThrowIfNull(source);
@@ -36,7 +27,6 @@ public static class BorderDetector
         return Detect(probe);
     }
 
-    /// <summary>Looks at a grey image already shrunk to a workable size.</summary>
     public static CropBox? Detect(Image<L8> image)
     {
         ArgumentNullException.ThrowIfNull(image);
@@ -48,8 +38,7 @@ public static class BorderDetector
         double paper = Paper(pixels, width, height);
         double dark = paper * DarkFactor;
 
-        // Each line's verdict, then smoothed over its neighbours so one stray line of dust in
-        // the frame, or of shadow on the page, does not decide where the edge is.
+        // Smoothed over neighbours so one stray line of dust or shadow does not decide the edge.
         bool[] rows = Smooth(Enumerable.Range(0, height).Select(y => IsFrame(pixels, y * width, 1, width, dark)).ToArray());
         bool[] cols = Smooth(Enumerable.Range(0, width).Select(x => IsFrame(pixels, x, width, height, dark)).ToArray());
 
@@ -58,7 +47,7 @@ public static class BorderDetector
         double left = Edge(cols, fromEnd: false);
         double right = Edge(cols, fromEnd: true);
 
-        // Frame on every line means there is no page in it to find; take nothing rather than guess.
+        // Frame on every line means no page to find; take nothing rather than guess.
         if (top + bottom > CropBox.MaxTotalPercent || left + right > CropBox.MaxTotalPercent)
         {
             return null;
@@ -68,7 +57,6 @@ public static class BorderDetector
         return box.IsEmpty() ? null : box;
     }
 
-    /// <summary>The page's brightness: the median of its middle half, where the frame never is.</summary>
     private static double Paper(byte[] pixels, int width, int height)
     {
         var middle = new List<byte>((width / 2) * (height / 2));
@@ -89,10 +77,6 @@ public static class BorderDetector
         return middle[middle.Count / 2];
     }
 
-    /// <summary>
-    /// Whether one line — a row (stride 1) or a column (stride = width) — is frame rather than
-    /// page: dark on average, or mostly dark where the paper's edge cuts across it.
-    /// </summary>
     private static bool IsFrame(byte[] pixels, int start, int stride, int count, double dark)
     {
         long sum = 0;
@@ -110,7 +94,6 @@ public static class BorderDetector
         return count > 0 && ((double)sum / count < dark || (double)darkCount / count > DarkShare);
     }
 
-    /// <summary>A line is frame when most of it and its two neighbours are.</summary>
     private static bool[] Smooth(bool[] lines)
     {
         bool[] smoothed = new bool[lines.Length];
@@ -133,7 +116,6 @@ public static class BorderDetector
         return smoothed;
     }
 
-    /// <summary>How far in from one end the frame runs, as a percentage, with the margin and cap applied.</summary>
     private static double Edge(bool[] lines, bool fromEnd)
     {
         int run = 0;

@@ -38,7 +38,6 @@ public class PagePipelineTests
         return (min, max);
     }
 
-    /// <summary>A washed-out page: a left-to-right ramp from 80 to 170, nothing near black or white.</summary>
     private static Image<Rgb24> Faded()
     {
         var image = new Image<Rgb24>(200, 100);
@@ -212,7 +211,6 @@ public class PagePipelineTests
 
         // 200x100 turned is 100x200; at 50 wide it is 50x100.
         Assert.Equal((50, 100), (small.Width, small.Height));
-        // Per-pixel tone survives the shrink: the ramp's ends land on the same values.
         Assert.InRange(Math.Abs(Grey(small, 25, 1) - Grey(full, 50, 2)), 0, 6);
         Assert.InRange(Math.Abs(Grey(small, 25, 98) - Grey(full, 50, 197)), 0, 6);
     }

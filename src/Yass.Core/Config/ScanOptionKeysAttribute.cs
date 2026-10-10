@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Yass.Core.Config;
 
-/// <summary>Every element must be a snake_case <see cref="Domain.ScanOptions"/> key.</summary>
 [AttributeUsage(AttributeTargets.Property)]
 public sealed class ScanOptionKeysAttribute : ValidationAttribute
 {

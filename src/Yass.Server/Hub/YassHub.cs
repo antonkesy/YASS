@@ -5,10 +5,6 @@ using Yass.Core.Hub;
 
 namespace Yass.Server.Hub;
 
-/// <summary>
-/// The single SignalR hub. Pure delegation to <see cref="YassApi"/>; <see cref="YassErrorFilter"/>
-/// turns its errors into hub errors. The connection's abort token cancels long work.
-/// </summary>
 public sealed class YassHub(YassApi api) : Hub<IYassClient>, IYassHub
 {
     public Task<SessionDto> StartScan(ScanOptionsDto? requested) => api.StartScan(requested);

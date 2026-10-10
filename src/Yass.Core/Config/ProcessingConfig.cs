@@ -2,10 +2,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Yass.Core.Config;
 
-/// <summary><c>processing:</c> section.</summary>
 public sealed record ProcessingConfig
 {
-    /// <summary>Upper bound on decoded bitmaps held in memory at once.</summary>
     [Range(1, 16)]
     public int MaxConcurrentRenders { get; init; } = 2;
 

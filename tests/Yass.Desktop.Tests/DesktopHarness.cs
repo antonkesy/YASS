@@ -12,10 +12,6 @@ using Yass.Fake;
 
 namespace Yass.Desktop.Tests;
 
-/// <summary>
-/// The desktop host's services on a Generic Host, wired by the same <see cref="DesktopServices"/> as <c>Program</c>, against the fake
-/// scanner and a temp directory. No window: what the window would receive is in <see cref="Sent"/>.
-/// </summary>
 public sealed class DesktopHarness : IAsyncDisposable
 {
     private readonly IHost _host;
@@ -62,7 +58,6 @@ public sealed class DesktopHarness : IAsyncDisposable
 
     public AppScheme Scheme => Services.GetRequiredService<AppScheme>();
 
-    /// <summary>Every message posted to the window so far.</summary>
     public IReadOnlyList<string> Sent
     {
         get
@@ -82,7 +77,6 @@ public sealed class DesktopHarness : IAsyncDisposable
         }
     }
 
-    /// <summary>Scans with the fake backend and waits until the session is in review with every thumbnail rendered.</summary>
     public async Task<SessionDto> ScanAsync()
     {
         SessionDto started = await Api.StartScan(null);

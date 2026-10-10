@@ -1,14 +1,8 @@
 namespace Yass.App.Hosting;
 
-/// <summary>What either host says about how it started: which config it read, and whether it is faking the hardware.</summary>
 public static class StartupLog
 {
-    /// <param name="logger">The host's logger.</param>
-    /// <param name="startup">The parsed command line.</param>
-    /// <param name="missingConfig">
-    /// How loudly to say there was no config file: a server is expected to have one, while a
-    /// desktop install runs on its defaults until someone writes one.
-    /// </param>
+    // missingConfig: a server is expected to have a config file; a desktop install runs on defaults.
     public static void Write(ILogger logger, StartupOptions startup, LogLevel missingConfig)
     {
         ArgumentNullException.ThrowIfNull(startup);

@@ -6,7 +6,7 @@ using Yass.Export;
 
 namespace Yass.App.Rendering;
 
-/// <summary>Turns a source PNG plus edits into a WebP of bounded width. At most <c>max_concurrent_renders</c> bitmaps are decoded at once.</summary>
+/// <summary>At most <c>max_concurrent_renders</c> bitmaps are decoded at once.</summary>
 public sealed class ImageRenderer : IDisposable
 {
     private readonly SemaphoreSlim _slots;
@@ -35,10 +35,6 @@ public sealed class ImageRenderer : IDisposable
         }
     }
 
-    /// <summary>
-    /// Looks for a scanner's dark frame around the page in a source file, taking a render slot
-    /// like any other job that decodes a full page.
-    /// </summary>
     public async Task<CropBox?> DetectBordersAsync(string sourcePath, CancellationToken cancellationToken)
     {
         await _slots.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -53,10 +49,7 @@ public sealed class ImageRenderer : IDisposable
         }
     }
 
-    /// <summary>
-    /// Holds a render slot until the result is disposed, for work that decodes pages somewhere
-    /// else — an export, rendering one page after another — so it counts against the same limit.
-    /// </summary>
+    // For work that decodes pages elsewhere (export), so it counts against the same limit.
     public async Task<IDisposable> ReserveAsync(CancellationToken cancellationToken)
     {
         await _slots.WaitAsync(cancellationToken).ConfigureAwait(false);
