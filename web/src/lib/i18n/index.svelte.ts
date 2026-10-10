@@ -68,6 +68,10 @@ function lookup(key: MessageKey): Message {
 	return (messages[area] as Record<string, Message>)[name];
 }
 
+/** One plural rule set per language, made the first time that language counts something. */
+const plurals: Partial<Record<Locale, Intl.PluralRules>> = {};
+const plural = (locale: Locale) => (plurals[locale] ??= new Intl.PluralRules(locale));
+
 function fill(text: string, params?: Params): string {
 	if (!params) return text;
 	return text.replace(/\{(\w+)\}/g, (whole, name: string) =>
@@ -83,6 +87,6 @@ export function t(key: MessageKey, params?: Params): string {
 	const text = lookup(key)[current];
 	if (typeof text === 'string') return fill(text, params);
 	const n = Number(params?.n ?? 0);
-	const form = new Intl.PluralRules(current).select(n) === 'one' ? 'one' : 'other';
+	const form = plural(current).select(n) === 'one' ? 'one' : 'other';
 	return fill((text as Plural)[form], params);
 }
