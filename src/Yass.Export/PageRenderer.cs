@@ -17,28 +17,18 @@ namespace Yass.Export;
 /// </summary>
 public static class PageRenderer
 {
+    /// <summary>Renders a page into a new file in <paramref name="directory"/> for the PDF, and returns its path.</summary>
     public static async Task<string> RenderToFileAsync(ExportPage page, PdfConfig pdf, string directory, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(page);
         ArgumentNullException.ThrowIfNull(pdf);
+        ExportFormat format = pdf.Compression == PdfCompression.Lossless ? ExportFormat.Png : ExportFormat.Jpg;
+        string path = Path.Combine(directory, Guid.NewGuid().ToString("N") + (format == ExportFormat.Png ? ".png" : ".jpg"));
+        FileStream file = File.Create(path);
+        await using (file.ConfigureAwait(false))
+        {
+            await RenderToStreamAsync(page, format, pdf, file, cancellationToken).ConfigureAwait(false);
+        }
 
-        bool lossless = pdf.Compression == PdfCompression.Lossless;
-        string path = Path.Combine(directory, Guid.NewGuid().ToString("N") + (lossless ? ".png" : ".jpg"));
-
-        using Image image = await Image.LoadAsync(page.SourcePath, cancellationToken).ConfigureAwait(false);
-        PagePipeline.Apply(image, page.Spec);
-
-        // ImageSharp reports 96 dpi for files without resolution metadata, so "absent" is indistinguishable
-        // from "96"; the scan resolution is authoritative and is stamped unconditionally.
-        ImageMetadata meta = image.Metadata;
-        meta.ResolutionUnits = PixelResolutionUnit.PixelsPerInch;
-        meta.HorizontalResolution = page.Dpi;
-        meta.VerticalResolution = page.Dpi;
-
-        IImageEncoder encoder = lossless
-            ? new PngEncoder { CompressionLevel = PngCompressionLevel.DefaultCompression }
-            : new JpegEncoder { Quality = pdf.JpegQuality, ColorType = page.ColorMode == ColorMode.Color ? JpegEncodingColor.YCbCrRatio420 : JpegEncodingColor.Luminance };
-        await image.SaveAsync(path, encoder, cancellationToken).ConfigureAwait(false);
         return path;
     }
 
@@ -54,13 +44,15 @@ public static class PageRenderer
         using Image image = await Image.LoadAsync(page.SourcePath, cancellationToken).ConfigureAwait(false);
         PagePipeline.Apply(image, page.Spec);
 
+        // ImageSharp reports 96 dpi for files without resolution metadata, so "absent" is indistinguishable
+        // from "96"; the scan resolution is authoritative and is stamped unconditionally.
         ImageMetadata meta = image.Metadata;
         meta.ResolutionUnits = PixelResolutionUnit.PixelsPerInch;
         meta.HorizontalResolution = page.Dpi;
         meta.VerticalResolution = page.Dpi;
 
         IImageEncoder encoder = format == ExportFormat.Png
-            ? new PngEncoder { CompressionLevel = PngCompressionLevel.DefaultCompression }
+            ? new PngEncoder()
             : new JpegEncoder { Quality = quality.JpegQuality, ColorType = page.ColorMode == ColorMode.Color ? JpegEncodingColor.YCbCrRatio420 : JpegEncodingColor.Luminance };
         await image.SaveAsync(destination, encoder, cancellationToken).ConfigureAwait(false);
     }
