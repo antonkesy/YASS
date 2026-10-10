@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 import type { ScanOptionsDto } from './hub/generated/Yass.Core.Hub';
+import { browserStorage } from './storage';
 
 /**
  * Per-browser scan overrides (SPEC §8: settings live in localStorage, never on the server):
@@ -84,6 +85,4 @@ export function createSettings(storage: Storage | undefined) {
 	};
 }
 
-export const settings = createSettings(
-	typeof localStorage === 'undefined' ? undefined : localStorage
-);
+export const settings = createSettings(browserStorage());

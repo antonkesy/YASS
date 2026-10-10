@@ -4,6 +4,7 @@ import { ColorMode, PageSize, ScanSource } from './hub/generated/Yass.Core.Domai
 import { ExportFormat, type DocumentMetadataDto } from './hub/generated/Yass.Core.Hub';
 import type { PresetIconName } from './icons';
 import type { ScanOverrides } from './settings';
+import { browserStorage } from './storage';
 
 /**
  * Named bundles of scan settings, kept per browser next to the overrides rather than
@@ -332,7 +333,7 @@ export const defaultScannerPrefs: ScannerPrefs = { known: {}, labels: {}, hidden
 export const createScannerPrefs = (storage: Storage | undefined) =>
 	persisted<ScannerPrefs>(storage, SCANNERS_KEY, defaultScannerPrefs);
 
-const storage = typeof localStorage === 'undefined' ? undefined : localStorage;
+const storage = browserStorage();
 export const presets = createPresets(storage);
 export const pickedPreset = createPickedPreset(storage);
 export const exportPrefs = createExportPrefs(storage);
