@@ -839,8 +839,11 @@
 							min="1"
 							step="1"
 							value={rule.amount}
-							oninput={(e) => {
+							onchange={(e) => {
+								// On commit, not per keystroke: clamped as it was typed, clearing the
+								// field to type 45 put a 1 back first and left 145.
 								const amount = Math.max(1, Math.floor(Number(e.currentTarget.value) || 1));
+								e.currentTarget.value = String(amount);
 								historyPrefs.set({ autoClear: { ...rule, amount } });
 							}}
 							data-testid="auto-clear-amount"
