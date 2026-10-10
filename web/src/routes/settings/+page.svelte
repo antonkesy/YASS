@@ -10,7 +10,7 @@
 	import { getHub, sortedSessions } from '$lib/hub/hub';
 	import { ColorMode, PageSize, ScanSource } from '$lib/hub/generated/Yass.Core.Domain';
 	import type { ScannerDeviceDto, ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
-	import { editableKeys, scanOverrides, settings, type ScanOverrides } from '$lib/settings';
+	import { overrideKeys, scanOverrides, settings, type ScanOverrides } from '$lib/settings';
 	import Segmented from '$lib/components/Segmented.svelte';
 	import Toggle from '$lib/components/Toggle.svelte';
 	import SettingsSection from '$lib/components/SettingsSection.svelte';
@@ -107,9 +107,7 @@
 	]);
 
 	const overrides = $derived($settings);
-	const changedCount = $derived(
-		Object.values(editableKeys).filter((key) => overrides[key] !== undefined).length
-	);
+	const changedCount = $derived(overrideKeys.filter((key) => overrides[key] !== undefined).length);
 	const changed = $derived(changedCount > 0);
 
 	/**

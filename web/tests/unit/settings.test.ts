@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { get } from 'svelte/store';
-import { createSettings, parseOverrides, scanOverrides, STORAGE_KEY } from '$lib/settings';
+import {
+	createSettings,
+	parseOverrides,
+	pickOverrides,
+	scanOverrides,
+	STORAGE_KEY
+} from '$lib/settings';
+import { persisted } from '$lib/storage';
 
 function fakeStorage(initial: Record<string, string> = {}): Storage {
 	const data = new Map(Object.entries(initial));
@@ -52,9 +59,40 @@ describe('settings', () => {
 		expect(heard).toEqual([{ Dpi: 600 }, {}]);
 	});
 
+	it('drops unknown and empty keys a stored value carries', () => {
+		const storage = fakeStorage({ [STORAGE_KEY]: '{"Dpi":600,"Bogus":1,"Color":null}' });
+		expect(get(createSettings(storage))).toEqual({ Dpi: 600 });
+		expect(pickOverrides({ Contrast: 0, Old: true })).toEqual({ Contrast: 0 });
+	});
+
 	it('works without storage', () => {
 		const s = createSettings(undefined);
 		s.update('Dpi', 300);
 		expect(get(s)).toEqual({ Dpi: 300 });
+	});
+});
+
+describe('persisted', () => {
+	it('stores every set, and an empty object only when asked to keep it', () => {
+		const storage = fakeStorage();
+		const kept = persisted<Record<string, number>>(storage, 'kept', {});
+		kept.set({});
+		expect(storage.getItem('kept')).toBe('{}');
+		const removed = persisted<Record<string, number>>(storage, 'gone', {}, { removeEmpty: true });
+		removed.set({ a: 1 });
+		expect(storage.getItem('gone')).toBe('{"a":1}');
+		removed.reset();
+		expect(storage.getItem('gone')).toBeNull();
+	});
+
+	it('cleans what it loads and what it is given', () => {
+		const storage = fakeStorage({ k: '{"a":1,"b":-1}' });
+		const positive = (v: Record<string, number>) =>
+			Object.fromEntries(Object.entries(v).filter(([, n]) => n > 0));
+		const s = persisted<Record<string, number>>(storage, 'k', {}, { clean: positive });
+		expect(get(s)).toEqual({ a: 1 });
+		s.set({ a: -2, c: 3 });
+		expect(get(s)).toEqual({ c: 3 });
+		expect(storage.getItem('k')).toBe('{"c":3}');
 	});
 });
