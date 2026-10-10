@@ -1,5 +1,3 @@
-using MessagePack;
-using MessagePack.Resolvers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -10,6 +8,7 @@ using Yass.Core.Config;
 using Yass.Core.Export;
 using Yass.Core.Scanning;
 using Yass.Fake;
+using Yass.Server.Hub;
 
 namespace Yass.Server.Tests;
 
@@ -44,9 +43,7 @@ public sealed class YassFactory : WebApplicationFactory<Program>
     {
         return new HubConnectionBuilder()
             .WithUrl(new Uri(Server.BaseAddress, "hub"), o => o.HttpMessageHandlerFactory = _ => Server.CreateHandler())
-            .AddMessagePackProtocol(o => o.SerializerOptions = MessagePackSerializerOptions.Standard
-                .WithResolver(ContractlessStandardResolver.Instance)
-                .WithSecurity(MessagePackSecurity.UntrustedData))
+            .AddMessagePackProtocol(o => o.SerializerOptions = HubProtocol.Options)
             .Build();
     }
 

@@ -1,5 +1,3 @@
-using MessagePack;
-using MessagePack.Resolvers;
 using Microsoft.AspNetCore.SignalR;
 using Yass.App;
 using Yass.App.Api;
@@ -48,9 +46,7 @@ builder.Services
         o.EnableDetailedErrors = true;
         o.AddFilter<YassErrorFilter>();
     })
-    .AddMessagePackProtocol(o => o.SerializerOptions = MessagePackSerializerOptions.Standard
-        .WithResolver(ContractlessStandardResolver.Instance)
-        .WithSecurity(MessagePackSecurity.UntrustedData));
+    .AddMessagePackProtocol(o => o.SerializerOptions = HubProtocol.Options);
 
 WebApplication app = builder.Build();
 
