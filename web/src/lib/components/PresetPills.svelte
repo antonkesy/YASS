@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { pickKeyframes, play } from '$lib/motion';
+	import { bounceWhenPicked } from '$lib/motion';
 	import { t } from '$lib/i18n/index.svelte';
 	import { presetName, type Preset } from '$lib/presets';
 	import { Icon } from '$lib/icons';
@@ -23,19 +23,8 @@
 		onsave: () => void;
 	} = $props();
 
-	/**
-	 * The pill that lights up gives a small springy bounce. Not on load: a page that opens
-	 * with a preset already chosen has nothing to celebrate.
-	 */
-	let settled = false;
-	$effect(() => {
-		settled = true;
-	});
-	function bounceWhenPicked(id: string) {
-		return (el: Element) => {
-			if (active === id && settled) play(el, pickKeyframes, 420);
-		};
-	}
+	// The pill that lights up bounces, but not on load: nothing was picked then.
+	const bounce = bounceWhenPicked(() => active);
 </script>
 
 <div class="flex flex-col items-center gap-2">
@@ -74,7 +63,7 @@
 				aria-pressed={active === preset.id}
 				title={edited === preset.id ? t('home.presetEdited') : undefined}
 				onclick={() => onpick(preset.id)}
-				{@attach bounceWhenPicked(preset.id)}
+				{@attach bounce(preset.id)}
 			>
 				{#if edited === preset.id}
 					<span

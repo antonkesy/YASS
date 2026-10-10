@@ -1,3 +1,5 @@
+import { onMount } from 'svelte';
+import type { Attachment } from 'svelte/attachments';
 import { cubicIn } from 'svelte/easing';
 import type { TransitionConfig } from 'svelte/transition';
 
@@ -62,6 +64,21 @@ export const pickKeyframes: Keyframe[] = [
 	{ transform: 'scale(1.07)', offset: 0.55 },
 	{ transform: 'scale(1)' }
 ];
+
+/**
+ * For a row of pills: the one `lit()` names gives a small springy bounce as it lights up. Not
+ * on load: a screen that opens with one already lit has nothing to answer. Call it while the
+ * component is being set up; what it returns is each pill's attachment, by the pill's id.
+ */
+export function bounceWhenPicked(lit: () => string | null): (id: string) => Attachment {
+	let settled = false;
+	onMount(() => {
+		settled = true;
+	});
+	return (id) => (el) => {
+		if (lit() === id && settled) play(el, pickKeyframes, 420);
+	};
+}
 
 /** The paper on the stage taking in new settings: a small hop and tilt, and back. */
 export const hopKeyframes: Keyframe[] = [

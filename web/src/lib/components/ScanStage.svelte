@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { autoAnimate } from '$lib/autoAnimate';
-	import { pickKeyframes, play } from '$lib/motion';
+	import { bounceWhenPicked } from '$lib/motion';
 	import { t } from '$lib/i18n/index.svelte';
 	import type {
 		ScannerDeviceDto,
@@ -63,15 +63,7 @@
 	 * The scanner pill that lights up bounces, as a preset does when picked. Not on load: a page
 	 * that opens with a scanner already chosen has nothing to answer.
 	 */
-	let settled = false;
-	$effect(() => {
-		settled = true;
-	});
-	function bounceWhenPicked(id: string) {
-		return (el: Element) => {
-			if (shown === id && settled) play(el, pickKeyframes, 420);
-		};
-	}
+	const bounce = bounceWhenPicked(() => shown);
 
 	/** The scanner the next scan will run on: this browser's pick, or the server's. */
 	const device = $derived(options?.Device || '');
@@ -233,7 +225,7 @@
 								else settings.set({ ...$settings, Device: scanner.Id });
 							}}
 							data-device={scanner.Id}
-							{@attach bounceWhenPicked(scanner.Id)}
+							{@attach bounce(scanner.Id)}
 						>
 							<span class="truncate">{scanner.Name}</span>
 						</button>
