@@ -49,55 +49,63 @@ export function autoAnimate(container: HTMLElement): () => void {
 		return () => {};
 
 	const rects = new Map<Element, Rect>();
-	let width = container.getBoundingClientRect().width;
+	// Unknown until the first measure, which the resize observer's first report makes: measuring
+	// here, while the page is still being put together, would lay the whole page out early.
+	let width = -1;
 
-	function measure(child: Element): Rect {
+	function measure(child: Element, origin: DOMRect): Rect {
 		const r = child.getBoundingClientRect();
-		const p = container.getBoundingClientRect();
-		return { top: r.top - p.top, left: r.left - p.left, width: r.width, height: r.height };
+		return {
+			top: r.top - origin.top,
+			left: r.left - origin.left,
+			width: r.width,
+			height: r.height
+		};
 	}
 
-	function snapshot() {
-		width = container.getBoundingClientRect().width;
+	function snapshot(origin = container.getBoundingClientRect()) {
+		width = origin.width;
 		rects.clear();
-		for (const child of container.children) if (!skip(child)) rects.set(child, measure(child));
+		for (const child of container.children)
+			if (!skip(child)) rects.set(child, measure(child, origin));
 	}
 
 	/** Plays back every child's jump from its last measured place to where it is now. */
 	function settle(added: ReadonlySet<Element> = new Set()) {
+		const origin = container.getBoundingClientRect();
 		// The container itself changed width — the window was resized — and everything reflowed
 		// with it: that is not something to animate.
-		if (
-			reduced() ||
-			Math.abs(container.getBoundingClientRect().width - width) > 1 ||
-			[...container.children].some(easingHeight)
-		)
-			return snapshot();
+		if (reduced() || Math.abs(origin.width - width) > 1) return snapshot(origin);
+		const moves: { child: Element; dx: number; dy: number }[] = [];
+		const entering: Element[] = [];
 		for (const child of container.children) {
 			if (skip(child)) continue;
-			const after = measure(child);
+			const after = measure(child, origin);
 			const before = rects.get(child);
-			if (added.has(child) || !before) {
-				if (added.has(child))
-					child.animate(
-						[
-							{ opacity: 0, transform: 'scale(0.97)' },
-							{ opacity: 1, transform: 'none' }
-						],
-						{ duration: DURATION, easing: EASING }
-					);
-				continue;
-			}
+			rects.set(child, after);
+			if (added.has(child)) entering.push(child);
+			if (added.has(child) || !before) continue;
 			const dx = before.left - after.left;
 			const dy = before.top - after.top;
-			if (Math.abs(dx) < JUMP && Math.abs(dy) < JUMP) continue;
+			if (Math.abs(dx) >= JUMP || Math.abs(dy) >= JUMP) moves.push({ child, dx, dy });
+		}
+		// Asked only once something would move: it goes through every child's animations.
+		if ((moves.length || entering.length) && [...container.children].some(easingHeight)) return;
+		for (const child of entering)
+			child.animate(
+				[
+					{ opacity: 0, transform: 'scale(0.97)' },
+					{ opacity: 1, transform: 'none' }
+				],
+				{ duration: DURATION, easing: EASING }
+			);
+		for (const { child, dx, dy } of moves)
 			child.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], {
 				duration: DURATION,
 				easing: EASING,
 				composite: 'add'
 			});
-		}
-		snapshot();
+		for (const child of rects.keys()) if (child.parentElement !== container) rects.delete(child);
 	}
 
 	/** A copy of a child that has just left, fading out where it stood. */
@@ -133,8 +141,6 @@ export function autoAnimate(container: HTMLElement): () => void {
 			)
 			.finished.finally(() => copy.remove());
 	}
-
-	snapshot();
 
 	const mutations = new MutationObserver((records) => {
 		const added = new Set<HTMLElement>();
