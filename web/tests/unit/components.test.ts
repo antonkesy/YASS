@@ -15,6 +15,7 @@ import { layer } from '$lib/keys.svelte';
 import CropModal from '$lib/components/CropModal.svelte';
 import PresetPills from '$lib/components/PresetPills.svelte';
 import SessionRow from '$lib/components/SessionRow.svelte';
+import SelectBar from '$lib/components/SelectBar.svelte';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import {
 	ColorMode,
@@ -959,5 +960,27 @@ describe('SessionRow', () => {
 		await fireEvent.click(screen.getByTestId('row-delete'));
 		await fireEvent.click(screen.getByTestId('row-delete'));
 		expect(ondelete).toHaveBeenCalledWith('s1');
+	});
+});
+
+describe('SelectBar', () => {
+	it('focuses the armed delete, so moving away from it disarms it', async () => {
+		const ondelete = vi.fn();
+		const noop = () => undefined;
+		render(SelectBar, {
+			count: 2,
+			total: 3,
+			onselectall: noop,
+			onselectnone: noop,
+			ondownload: noop,
+			ondelete,
+			ondone: noop
+		});
+
+		await fireEvent.click(screen.getByTestId('bulk-delete'));
+		expect(screen.getByTestId('bulk-delete')).toHaveFocus();
+		await fireEvent.blur(screen.getByTestId('bulk-delete'));
+		expect(screen.getByTestId('bulk-delete')).not.toHaveTextContent('Delete 2?');
+		expect(ondelete).not.toHaveBeenCalled();
 	});
 });

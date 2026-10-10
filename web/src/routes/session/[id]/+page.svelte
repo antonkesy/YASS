@@ -1093,6 +1093,7 @@
 						type="button"
 						class="{ghost} w-full text-danger hover:bg-danger-bg"
 						onclick={() => (confirmDiscard ? discard() : (confirmDiscard = true))}
+						onblur={() => (confirmDiscard = false)}
 						data-testid="discard-button"
 					>
 						<Icon name="trash" />
