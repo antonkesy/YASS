@@ -11,23 +11,18 @@ import { t } from '$lib/i18n/index.svelte';
 import { documentMetadata, metaFor, type DocumentMeta, type ExportPrefs } from '$lib/presets';
 
 /**
- * As much of the File System Access API as a save needs. It is typed here because
- * lib.dom does not carry it yet, and reached through `savePicker` because it only
- * exists in a secure context: a box served over plain http on the LAN has no save
- * dialog to offer, and callers fall back to an ordinary browser download.
+ * The File System Access API's two dialogs. lib.dom has the handles they return but not the
+ * dialogs themselves, which only exist in a secure context: a box served over plain http on
+ * the LAN has no save dialog to offer, so they are reached through `savePicker`, and callers
+ * fall back to an ordinary browser download.
  */
-export type WritableFile = { write: (data: Blob) => Promise<void>; close: () => Promise<void> };
-export type FileTarget = { createWritable: () => Promise<WritableFile> };
-export type DirectoryTarget = {
-	getFileHandle: (name: string, options: { create: boolean }) => Promise<FileTarget>;
-};
 export type SavePicker = {
-	showSaveFilePicker: (options: { suggestedName?: string }) => Promise<FileTarget>;
-	showDirectoryPicker: (options?: { mode?: 'readwrite' }) => Promise<DirectoryTarget>;
+	showSaveFilePicker: (options: { suggestedName?: string }) => Promise<FileSystemFileHandle>;
+	showDirectoryPicker: (options?: { mode?: 'readwrite' }) => Promise<FileSystemDirectoryHandle>;
 };
 
 /** One document goes into a chosen file; a scan that splits goes into a chosen folder. */
-export type SaveTarget = { file: FileTarget } | { directory: DirectoryTarget };
+export type SaveTarget = { file: FileSystemFileHandle } | { directory: FileSystemDirectoryHandle };
 
 export function savePicker(scope: object = globalThis): SavePicker | null {
 	const api = scope as Partial<SavePicker>;
@@ -153,9 +148,17 @@ export async function saveToDisk(
 						create: true
 					});
 		const writable = await handle.createWritable();
-		try {
-			await writable.write(await response.blob());
-		} finally {
+		if (response.body) {
+			// Straight through, a chunk at a time. pipeTo closes the file once the last byte is
+			// in and aborts it on a failure, which leaves the file as it was instead of cut short.
+			await response.body.pipeTo(writable);
+		} else {
+			try {
+				await writable.write(await response.blob());
+			} catch (e) {
+				await writable.abort(e);
+				throw e;
+			}
 			await writable.close();
 		}
 		written += 1;
