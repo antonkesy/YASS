@@ -161,6 +161,25 @@ describe('PageGrid drag reorder', () => {
 		await fireEvent.pointerUp(grid(), { ...touch, clientX: 10, clientY: 110 });
 	});
 
+	it('drops a hold still counting down when the strip goes away', async () => {
+		vi.useFakeTimers();
+		const { unmount } = render(PageGrid, {
+			sessionId: 's1',
+			pages,
+			selection: new Set<number>(),
+			onshow: vi.fn(),
+			ontoggle: vi.fn(),
+			onopen: vi.fn(),
+			onreorder: vi.fn()
+		});
+		layOut(tiles());
+
+		await fireEvent.pointerDown(tiles()[1], { ...touch, clientX: 10, clientY: 110 });
+		expect(vi.getTimerCount()).toBeGreaterThan(0);
+		unmount();
+		expect(vi.getTimerCount()).toBe(0);
+	});
+
 	it('leaves ticking pages to the overview, which the strip only links to', () => {
 		render(PageGrid, {
 			sessionId: 's1',
