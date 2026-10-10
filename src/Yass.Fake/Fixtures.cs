@@ -84,8 +84,6 @@ public static class Fixtures
         return Load(ContentPages[(number - 1) % ContentPages.Count]);
     }
 
-    public static string FixturePath(int number) => ContentPages[(number - 1) % ContentPages.Count];
-
     /// <summary>Writes every fixture into <paramref name="directory"/> for tests that need files on disk.</summary>
     public static IReadOnlyList<string> ExtractAll(string directory)
     {

@@ -80,14 +80,5 @@ public static class ConfigLoader
     }
 
     /// <summary>YamlDotNet nests the useful part ("Property 'foo' not found on type ...") in inner exceptions.</summary>
-    private static string Describe(Exception ex)
-    {
-        Exception inner = ex;
-        while (inner.InnerException is not null)
-        {
-            inner = inner.InnerException;
-        }
-
-        return inner.Message;
-    }
+    private static string Describe(Exception ex) => ex.GetBaseException().Message;
 }

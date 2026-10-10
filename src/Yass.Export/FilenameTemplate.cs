@@ -5,10 +5,10 @@ using Yass.Core.Export;
 namespace Yass.Export;
 
 /// <summary>
-/// Expands <c>output.filename_template</c>. Two syntaxes are supported side by side:
-/// the original <c>{date:FORMAT}</c>, <c>{time:FORMAT}</c> and <c>{session}</c>, and the
-/// UI's plain tokens (<c>{YEAR}</c>, <c>{MONTH}</c>, <c>{PRESET}</c>, …). Existing config
-/// files keep working; the editor in the settings sheet writes the second kind.
+/// Expands a document's name template, as the settings sheet writes it with plain tokens
+/// (<c>{YEAR}</c>, <c>{MONTH}</c>, <c>{PRESET}</c>, …). The older <c>{date:FORMAT}</c>,
+/// <c>{time:FORMAT}</c> and <c>{session}</c>, from when the template was a config key, still
+/// expand, so a name typed that way keeps working.
 /// The result is sanitised to a single safe file name.
 /// </summary>
 public static partial class FilenameTemplate

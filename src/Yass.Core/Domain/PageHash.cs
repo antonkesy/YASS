@@ -25,7 +25,6 @@ public static class PageHash
         return OfBytes(Encoding.UTF8.GetBytes(key));
     }
 
-    /// <summary>Recomputes <see cref="Page.Hash"/> from the page's current edits and the session's scan colour mode.</summary>
     /// <summary>
     /// The edits that came after the original key, appended only when set: a page that has none
     /// of them keeps the hash — and the cached images — it had before they existed.
@@ -51,6 +50,7 @@ public static class PageHash
         return extras.ToString();
     }
 
+    /// <summary>Recomputes <see cref="Page.Hash"/> from the page's current edits and the session's scan colour mode.</summary>
     public static Page Rehash(Page page, ColorMode sessionColor)
     {
         ArgumentNullException.ThrowIfNull(page);

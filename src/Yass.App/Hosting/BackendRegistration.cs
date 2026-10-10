@@ -7,7 +7,7 @@ using Yass.Scanning;
 
 namespace Yass.App.Hosting;
 
-/// <summary>Chooses fake or real scanner/PDF implementations. The real PDF writer arrives with Yass.Export.</summary>
+/// <summary>Chooses the fake scanner and document writer (<c>--fake</c>) or the NAPS2-backed real ones.</summary>
 public static class BackendRegistration
 {
     public static void Add(IServiceCollection services, StartupOptions startup)
