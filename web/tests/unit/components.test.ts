@@ -29,7 +29,7 @@ import {
 	SessionState
 } from '$lib/hub/generated/Yass.Core.Domain';
 import type { ScanOptionsDto, SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
-import { presets } from '$lib/presets';
+import { defaultPresets, presets } from '$lib/presets';
 import { settings } from '$lib/settings';
 import { get } from 'svelte/store';
 import { page, session as build } from './fixtures';
@@ -1011,6 +1011,23 @@ describe('PastScansPanel', () => {
 });
 
 describe('PresetPills', () => {
+	it('bounces the pill that lights up, but not the one lit on load', async () => {
+		const animate = vi.fn();
+		Element.prototype.animate = animate;
+		try {
+			const props = { presets: defaultPresets.slice(0, 2), onpick: vi.fn(), onsave: vi.fn() };
+			const { rerender } = render(PresetPills, { ...props, active: 'document', modified: false });
+			await Promise.resolve();
+			expect(animate).not.toHaveBeenCalled();
+
+			await rerender({ ...props, active: 'double-sided', modified: false });
+			expect(animate).toHaveBeenCalledTimes(1);
+			expect(animate.mock.contexts[0]).toHaveAttribute('aria-pressed', 'true');
+		} finally {
+			delete (Element.prototype as Partial<Element>).animate;
+		}
+	});
+
 	it('offers to save settings that match no preset, as one plain button', async () => {
 		const onsave = vi.fn();
 		const props = { presets: [], active: null, onpick: vi.fn(), onsave };
