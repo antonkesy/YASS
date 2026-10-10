@@ -1,4 +1,3 @@
-# YASS desktop app: $out/bin/Yass.Desktop, the same web build in a WebKitGTK window. No socket.
 {
   lib,
   buildDotnetModule,

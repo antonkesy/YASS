@@ -1,4 +1,3 @@
-# NixOS module: services.yass
 { self }:
 {
   config,

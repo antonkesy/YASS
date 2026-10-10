@@ -12,7 +12,6 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-# Every job runs inside the flake's dev shell so CI uses exactly the toolchain developers use.
 env:
   DOTNET_NOLOGO: "1"
   DOTNET_CLI_TELEMETRY_OPTOUT: "1"
@@ -105,15 +104,12 @@ jobs:
       - uses: DeterminateSystems/magic-nix-cache-action@v15
       - name: Build web
         run: nix develop -c bash -c 'pnpm --dir web install --frozen-lockfile && pnpm --dir web build'
-      # Cross-compiled from Linux: Photino ships its native parts prebuilt. Microsoft's own SDK
-      # (not the dev shell's, whose Linux runtime is patched for /nix/store), with Yass.Fake's
-      # fixture toolchain, as in the Dockerfile.
+      # Microsoft's SDK, not the dev shell's (its Linux runtime is patched for /nix/store).
       - name: Publish
         run: >-
           docker run --rm -v "$PWD:/src" -w /src mcr.microsoft.com/dotnet/sdk:10.0-alpine sh -c
           'apk add --no-cache pandoc-cli typst poppler-utils font-dejavu python3 &&
           TYPST_FONT_PATHS=/usr/share/fonts scripts/publish-desktop.sh dist'
-      # The same native packages a release attaches (ADR-016), so a broken one shows here first.
       - name: Native packages
         run: sudo chown -R "$(id -u):$(id -g)" dist && nix develop -c scripts/package-desktop.sh dist
       - name: Nix package

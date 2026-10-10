@@ -26,9 +26,8 @@
           inherit version;
           src = pkgs.lib.cleanSource ./.;
         };
-        # Runs one command with what Photino (Yass.Desktop) loads from the dev shell: WebKitGTK,
-        # GTK and an EGL driver, plus the schemas GTK's file dialogs read. Scoped to that one
-        # command rather than the shell, so nothing else picks up nix's GUI libraries.
+        # Photino's GUI libraries (WebKitGTK, GTK, EGL, GSettings schemas) for one command only,
+        # not the whole shell, so nothing else picks them up.
         withDesktopLibs = pkgs.writeShellScriptBin "with-desktop-libs" ''
           export LD_LIBRARY_PATH="${
             pkgs.lib.makeLibraryPath (
@@ -90,23 +89,20 @@
             pnpm
             sane-backends
             pre-commit
-            just # justfile: just desktop, just server, just check
+            just
             nixfmt
             git
-            python3 # scripts/coverage-gate.py
-            # scripts/render-fixtures.sh, run by Yass.Fake's build: the fake scanner's pages
-            # are rendered from Markdown rather than committed as images. typst ships no fonts
-            # of its own, so one has to be on the path or it refuses to lay anything out.
+            python3
+            # render-fixtures.sh; typst ships no fonts, so one must be on the path.
             pandoc
             typst
             poppler-utils
             dejavu_fonts
-            # scripts/render-icons.sh and scripts/package-desktop.sh (ADR-016)
             imagemagick
             libicns
             nsis
             rcodesign
-            withDesktopLibs # with-desktop-libs dotnet run --project src/Yass.Desktop
+            withDesktopLibs
           ];
 
           TYPST_FONT_PATHS = "${pkgs.dejavu_fonts}/share/fonts";
@@ -117,9 +113,7 @@
           # Worker nodes and the build server outlive the command and hold pipes open.
           MSBUILDDISABLENODEREUSE = "1";
           DOTNET_CLI_USE_MSBUILD_SERVER = "0";
-          # NAPS2 dlopens libsane. The desktop app's GUI libraries are not here but in
-          # with-desktop-libs: on this path they would load into every program the shell runs,
-          # and Playwright's Chromium, built for the host's glibc, cannot take nix's.
+          # NAPS2 dlopens libsane. GUI libs live in with-desktop-libs: Playwright's Chromium can't load nix's glibc.
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ pkgs.sane-backends ];
           SANE_CONFIG_DIR = "${pkgs.sane-backends}/etc/sane.d";
 

@@ -1,14 +1,6 @@
 #!/bin/sh
-# Publishes the desktop app for each runtime, self-contained, with the web build beside it, and
-# zips each one. Everything cross-compiles from Linux: Photino's native parts come prebuilt
-# from NuGet, so one machine (and the fixture toolchain Yass.Fake needs) covers all three.
-#
-#   publish-desktop.sh OUTPUT_DIR [RID...]     (default: linux-x64 win-x64 osx-arm64)
-#
-# Expects web/build to exist (pnpm --dir web build), and the fixture toolchain Yass.Fake builds
-# with (ADR-012). Run it with Microsoft's own SDK, as CI does in the stock Alpine SDK image: the
-# Nix SDK's Linux apphost and runtime are patched to load from /nix/store, and would not start
-# on any other distribution. (`nix build .#desktop` is the Nix way to the same app.)
+# Usage: publish-desktop.sh OUTPUT_DIR [RID...]  (default: linux-x64 win-x64 osx-arm64; needs web/build)
+# Use Microsoft's SDK, not Nix's: the Nix apphost/runtime are patched to load from /nix/store.
 set -eu
 
 out=${1:?output directory}

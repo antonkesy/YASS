@@ -1,13 +1,5 @@
 #!/bin/sh
-# Renders the fake scanner's pages from the Markdown beside them: pandoc to PDF through typst,
-# then poppler to a PNG at scan resolution. Called by Yass.Fake's build, which is why it takes
-# its paths as arguments rather than guessing them.
-#
-#   render-fixtures.sh SOURCE_DIR OUTPUT_DIR [DPI]
-#
-# The default matches scanner.defaults.dpi, so the common case is a native-resolution page and
-# the fake scanner has nothing to resample.
-#
+# Usage: render-fixtures.sh SOURCE_DIR OUTPUT_DIR [DPI]  (called by Yass.Fake's build)
 # POSIX sh, not bash: this also runs in the Alpine SDK image, which has no bash.
 set -eu
 
@@ -22,19 +14,13 @@ for markdown in "$source_dir"/*.md; do
   pdf="$output_dir/$name.pdf"
   png="$output_dir/$name.png"
 
-  # The build runs this every time, so skip what is already newer than its source. This is
-  # where the incrementality lives: MSBuild's Inputs attribute takes a wildcard literally.
+  # Skip up-to-date outputs: MSBuild's Inputs takes the wildcard literally, so incrementality lives here.
   if [ -f "$png" ] && [ "$png" -nt "$markdown" ] && [ "$png" -nt "$0" ]; then
     continue
   fi
 
-  # A4 because that is what the scanner defaults to, and what the page size assertions in
-  # Yass.Export.Tests read back out of the PDF. DejaVu because typst ships no fonts of its
-  # own and an empty fallback list is a hard error.
-  #
-  # A page named *-landscape is turned on its side. It has to go in through the preamble:
-  # pandoc's typst template hands the body to conf(), which sets the page itself, so a set
-  # rule written in the document is overruled before it can do anything.
+  # A4 is what the tests read back; typst ships no fonts and errors on an empty fallback, hence DejaVu.
+  # Landscape goes via the preamble: pandoc's template calls conf(), which overrides in-body set rules.
   case "$name" in
     *-landscape)
       flip=$(mktemp)
@@ -47,9 +33,7 @@ for markdown in "$source_dir"/*.md; do
       ;;
   esac
 
-  # Greyscale, like a document scanner's own output —
-  # except the page whose name says it is in colour, which is there so the review screen's
-  # colour handling has something to show.
+  # Greyscale like a real scanner, except *-color, which exercises the review screen's colour handling.
   case "$name" in
     *-color) pdftoppm -png -r "$dpi" -singlefile "$pdf" "$output_dir/$name" ;;
     *) pdftoppm -png -gray -r "$dpi" -singlefile "$pdf" "$output_dir/$name" ;;

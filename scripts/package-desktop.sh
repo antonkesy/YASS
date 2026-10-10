@@ -1,15 +1,6 @@
 #!/usr/bin/env bash
-# Turns the folders publish-desktop.sh wrote into a native package per OS (ADR-016):
-#
-#   linux-x64  -> YASS-<version>-x86_64.AppImage         (WebKitGTK 4.1 from the system)
-#   win-x64    -> YASS-<version>-windows-x64-setup.exe   (NSIS, per-user, no admin prompt)
-#   osx-arm64  -> YASS-<version>-macos-arm64.zip         (YASS.app, ad-hoc signed, unnotarised)
-#
-#   package-desktop.sh DIST_DIR
-#
-# Runs in the dev shell (makensis, rcodesign, ImageMagick). appimagetool and the AppImage
-# runtime are not in nixpkgs, so they are downloaded at pinned versions and checked against
-# their SHA-256 before use.
+# Usage: package-desktop.sh DIST_DIR  (AppImage, NSIS installer, macOS .app zip; ADR-016)
+# appimagetool and the AppImage runtime are not in nixpkgs: fetched at pinned versions, SHA-256 checked.
 set -euo pipefail
 
 dist=$(cd "${1:?dist directory}" && pwd)
@@ -67,13 +58,10 @@ macos() {
   cp "$root/assets/logo/yass.icns" "$app/Contents/Resources/yass.icns"
   sed "s/@VERSION@/$version/g" "$root/packaging/macos/Info.plist" > "$app/Contents/Info.plist"
   printf 'APPL????' > "$app/Contents/PkgInfo"
-  # Apple Silicon refuses to run an arm64 binary with no signature at all. Ad hoc is enough to
-  # start (after the user allows it once, as for any unnotarised app); it proves nothing more.
-  # rcodesign signs every Mach-O and seals the rest; it warns about each managed .dll beside
-  # the executable, which is where a .NET app keeps them, so its chatter goes to a log.
+  # Apple Silicon won't run an unsigned arm64 binary; ad hoc is enough. rcodesign warns about
+  # every managed .dll, so its output goes to a log.
   rcodesign sign "$app" > "$work/rcodesign.log" 2>&1 || { cat "$work/rcodesign.log" >&2; exit 1; }
-  # Zipped, not a .dmg: Linux has no tool for Apple's compressed images, and an uncompressed one
-  # is nearly three times the size. A zipped .app is how unsigned Mac apps usually ship.
+  # Zip, not .dmg: Linux can't write compressed images and an uncompressed one is ~3x the size.
   python3 - "$stage" "$out" <<'PY'
 import os, sys, zipfile
 stage, out = sys.argv[1], sys.argv[2]

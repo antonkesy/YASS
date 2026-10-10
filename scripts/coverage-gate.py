@@ -16,8 +16,8 @@ def main() -> int:
     parser.add_argument("--dir", default="TestResults")
     args = parser.parse_args()
 
-    # Every test project instruments the assemblies it references, so the same source line shows up in
-    # several reports. Merge by (assembly, file, line) taking the best hit count, never summing.
+    # Each test project instruments what it references, so lines repeat across reports: merge by
+    # (assembly, file, line) with the best hit count, never summing.
     hits: dict[tuple[str, str, int], int] = {}
     reports = glob.glob(f"{args.dir}/**/coverage.cobertura.xml", recursive=True)
     if not reports:
@@ -28,9 +28,7 @@ def main() -> int:
         for package in ET.parse(report).getroot().iter("package"):
             name = package.get("name", "?")
             for cls in package.iter("class"):
-                # Reports disagree on the source root: most spell a file "Yass.Core/Hub/Dtos.cs",
-                # the one from the assembly's own test project spells it "Hub/Dtos.cs". Left alone,
-                # the same line lands in two buckets and inflates the denominator.
+                # Reports disagree on the root ("Yass.Core/Hub/Dtos.cs" vs "Hub/Dtos.cs"); strip it or lines double-count.
                 filename = cls.get("filename", "?").removeprefix(f"{name}/")
                 for line in cls.iter("line"):
                     key = (name, filename, int(line.get("number", "0")))
