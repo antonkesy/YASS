@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import type { ScanOptionsDto } from './hub/generated/Yass.Core.Hub';
 import { browserStorage } from './storage';
 
@@ -74,10 +74,9 @@ export function createSettings(storage: Storage | undefined) {
 				// private mode or quota: keep the in-memory value
 			}
 		},
+		/** One option changed, the rest kept. Subscribers hear once, and only the cleaned value. */
 		update<K extends keyof ScanOverrides>(key: K, value: ScanOverrides[K] | undefined) {
-			let next: ScanOverrides = {};
-			store.update((current) => (next = { ...current, [key]: value }));
-			this.set(next);
+			this.set({ ...get(store), [key]: value });
 		},
 		reset() {
 			this.set({});
