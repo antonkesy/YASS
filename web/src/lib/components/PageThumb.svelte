@@ -75,10 +75,7 @@
 				onload={loaded}
 			/>
 		{:else}
-			<span
-				class="h-7 w-7 animate-spin rounded-full border-[3px] border-accent-100 border-t-accent"
-				aria-hidden="true"
-			></span>
+			<span class="h-7 w-7 spinner" aria-hidden="true"></span>
 		{/if}
 
 		{#if page.IsBlank}
