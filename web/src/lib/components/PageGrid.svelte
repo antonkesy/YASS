@@ -294,7 +294,10 @@
 		requestAnimationFrame(() => play(grid, from));
 	});
 
+	// A hold still counting down when the strip goes would otherwise start a drag on a
+	// grid that is no longer there.
 	$effect(() => () => {
+		cancelPress();
 		stopScrolling();
 		clearSettle();
 	});
