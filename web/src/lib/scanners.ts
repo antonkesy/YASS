@@ -38,12 +38,8 @@ export function remember(
 		const before: KnownScanner | undefined = known[d.Id];
 		known[d.Id] = {
 			name: d.Name,
-			...(d.Driver ? { driver: d.Driver } : before?.driver ? { driver: before.driver } : {}),
-			...(d.Connection
-				? { connection: d.Connection }
-				: before?.connection
-					? { connection: before.connection }
-					: {}),
+			driver: d.Driver || before?.driver,
+			connection: d.Connection || before?.connection,
 			firstSeen: before?.firstSeen ?? at,
 			lastSeen: at
 		};
