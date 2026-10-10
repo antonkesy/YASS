@@ -108,6 +108,17 @@ describe('hub client', () => {
 		expect(get(client.scanner)?.State).toBe(ScannerState.Busy);
 	});
 
+	it('forgets the progress of an export once the session is no longer exporting', async () => {
+		const conn = fakeConnection([session('a', 1)]);
+		const client = createHubClient(conn as unknown as ConnectionLike);
+		await client.start();
+		await conn.emit('SessionChanged', { ...session('a', 1), State: SessionState.Exporting });
+		await conn.emit('ExportProgress', 'a', 100);
+		expect(get(client.exportProgress)).toEqual({ a: 100 });
+		await conn.emit('SessionChanged', { ...session('a', 1), State: SessionState.Done });
+		expect(get(client.exportProgress)).toEqual({});
+	});
+
 	it('fetches an unknown session when its first page arrives', async () => {
 		const conn = fakeConnection([]);
 		const client = createHubClient(conn as unknown as ConnectionLike);
