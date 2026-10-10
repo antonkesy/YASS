@@ -96,13 +96,6 @@ public sealed class ExportService(
             .ToArray();
         int totalPages = documentPages.Sum(d => d.Length);
 
-        // Progress is reported across the whole export, so several documents still fill one bar.
-        int finished = 0;
-        var progress = new Progress<int>(percent =>
-        {
-            int overall = (int)((finished + percent / 100.0) / documentPages.Length * 100);
-            _ = hub.All.ExportProgress(sessionId, Math.Clamp(overall, 0, 100));
-        });
         PdfConfig pdf = output.Pdf;
 
         string? pending = null;
@@ -114,6 +107,12 @@ public sealed class ExportService(
             for (int d = 0; d < documentPages.Length; d++)
             {
                 ExportPage[] document = documentPages[d];
+                // Reported across the whole export, so several documents still fill one bar; and
+                // reported as it happens, not posted to the thread pool as Progress<T> would, where a
+                // late 100% of one document could arrive after the next one's first step.
+                int index = d;
+                var progress = new InlineProgress(percent =>
+                    _ = hub.All.ExportProgress(sessionId, Math.Clamp((int)((index + percent / 100.0) / documentPages.Length * 100), 0, 100)));
                 // Into the server folder it is written under a hidden temporary name and renamed once
                 // complete, so whatever watches the folder — paperless-ngx, say — never picks up half
                 // a document. A download gets its token only once written, so none points at half a file.
@@ -162,8 +161,6 @@ public sealed class ExportService(
                 }
 
                 pending = null;
-
-                finished++;
             }
 
             var result = new ExportResult(totalPages, [.. produced]);
@@ -203,6 +200,11 @@ public sealed class ExportService(
                 File.Delete(pending);
             }
         }
+    }
+
+    private sealed class InlineProgress(Action<int> report) : IProgress<int>
+    {
+        public void Report(int value) => report(value);
     }
 
     /// <summary>A name for an unnamed scan, from when it was scanned — what the browser would suggest too.</summary>
