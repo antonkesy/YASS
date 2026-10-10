@@ -137,17 +137,8 @@ export function cropToView(crop: CropBox, rotation: Rotation): CropBox {
 
 /** The inverse of {@link cropToView}: a box drawn on the upright page, back in scan coordinates. */
 export function cropFromView(box: CropBox, rotation: Rotation): CropBox {
-	const { Top, Right, Bottom, Left } = box;
-	switch (rotation) {
-		case Rotation.R90:
-			return { Top: Right, Right: Bottom, Bottom: Left, Left: Top };
-		case Rotation.R180:
-			return { Top: Bottom, Right: Left, Bottom: Top, Left: Right };
-		case Rotation.R270:
-			return { Top: Left, Right: Top, Bottom: Right, Left: Bottom };
-		default:
-			return { ...box };
-	}
+	// Undoing a turn is the turn the rest of the way round.
+	return cropToView(box, ((360 - rotation) % 360) as Rotation);
 }
 
 export const NEUTRAL_ADJUST: PageAdjust = { Brightness: 0, Contrast: 0, Sharpen: 0 };
