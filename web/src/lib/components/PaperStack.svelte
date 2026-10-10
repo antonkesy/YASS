@@ -31,34 +31,46 @@
 	wide, so on a short-but-wide window that made the stack the reason the home screen
 	scrolled -- hence the 20vh cap, which binds first on laptop screens.
 -->
+<!--
+	The drift is on a box of its own, inside the one the stage lays out: the stage glides its
+	children with script animations when something beside them changes, and once one has played
+	on an element, Chrome no longer runs that element's CSS animations on the compositor. The
+	drift would then restyle the whole page on every frame.
+-->
 <div
-	class="relative mt-1.5 mb-3.5 w-[150px] flex-none animate-float sm:w-[clamp(118px,min(18vw,17vh),300px)]"
+	class="relative mt-1.5 mb-3.5 w-[150px] flex-none sm:w-[clamp(118px,min(18vw,17vh),300px)]"
 	style="aspect-ratio: 1 / 1.414"
 	aria-hidden="true"
 >
-	<div class="absolute inset-0" {@attach hopOnChange}>
-		<div
-			class="absolute inset-0 rounded-[10px] bg-accent-stack"
-			style="transform: translate(16px, 12px) rotate(4deg)"
-		></div>
-		<div
-			class="absolute inset-0 rounded-[10px] bg-accent-50 shadow-hero-mid"
-			style="transform: translate(8px, 6px) rotate(2deg)"
-		></div>
+	<div class="absolute inset-0 animate-float">
+		<div class="absolute inset-0" {@attach hopOnChange}>
+			<div
+				class="absolute inset-0 rounded-[10px] bg-accent-stack"
+				style="transform: translate(16px, 12px) rotate(4deg)"
+			></div>
+			<div
+				class="absolute inset-0 rounded-[10px] bg-accent-50 shadow-hero-mid"
+				style="transform: translate(8px, 6px) rotate(2deg)"
+			></div>
 
-		<div class="absolute inset-0 overflow-hidden rounded-[10px] bg-surface shadow-hero">
-			{#key caption}
-				{#if caption}
-					<span
-						class="absolute inset-x-0 bottom-[9%] text-center font-mono text-[11px] font-semibold text-ink-faint"
-						in:fly={{ y: 8, duration: ms(260), delay: ms(80) }}
-						out:fly={{ y: -8, duration: ms(160) }}
-					>
-						{caption}
-					</span>
-				{/if}
-			{/key}
-			<div class="absolute inset-x-0 h-0.5 animate-sweep bg-accent-light shadow-sweep"></div>
+			<div class="absolute inset-0 overflow-hidden rounded-[10px] bg-surface shadow-hero">
+				{#key caption}
+					{#if caption}
+						<span
+							class="absolute inset-x-0 bottom-[9%] text-center font-mono text-[11px] font-semibold text-ink-faint"
+							in:fly={{ y: 8, duration: ms(260), delay: ms(80) }}
+							out:fly={{ y: -8, duration: ms(160) }}
+						>
+							{caption}
+						</span>
+					{/if}
+				{/key}
+				<!-- The line rides at the top of a box the size of the page, which is what it is
+				     moved down by: a transform, so the sweep never lays the page out again. -->
+				<div class="absolute inset-0 animate-sweep">
+					<div class="h-0.5 bg-accent-light shadow-sweep"></div>
+				</div>
+			</div>
 		</div>
 	</div>
 </div>

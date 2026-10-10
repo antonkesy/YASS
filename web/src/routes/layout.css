@@ -165,8 +165,6 @@
 	--ease-land: cubic-bezier(0.2, 0.9, 0.3, 1);
 
 	/* Motion */
-	--animate-pulse-ready: pulse-ready 2s infinite;
-	--animate-pulse-busy: pulse-busy 1.2s infinite;
 	--animate-page-in: page-in 0.45s var(--ease-spring) both;
 	--animate-sweep: sweep 3.2s ease-in-out infinite;
 	--animate-fade-in: fade-in 0.3s both;
@@ -183,27 +181,20 @@
 	--animate-float: float 5s ease-in-out infinite;
 	--animate-rail: rail 1.4s ease-in-out infinite;
 
-	@keyframes pulse-ready {
+	/*
+	 * A status dot's ring, spreading out and fading. Scale and opacity on a pseudo-element
+	 * rather than a growing box-shadow: those the compositor plays by itself, where a shadow
+	 * would restyle and repaint the page on every frame for as long as the dot is on screen.
+	 */
+	@keyframes pulse {
 		0% {
-			box-shadow: 0 0 0 0 rgb(52 199 89 / 0.55);
+			opacity: 0.55;
+			transform: scale(0.3);
 		}
-		70% {
-			box-shadow: 0 0 0 7px rgb(52 199 89 / 0);
-		}
+		70%,
 		100% {
-			box-shadow: 0 0 0 0 rgb(52 199 89 / 0);
-		}
-	}
-
-	@keyframes pulse-busy {
-		0% {
-			box-shadow: 0 0 0 0 rgb(0 122 255 / 0.55);
-		}
-		70% {
-			box-shadow: 0 0 0 7px rgb(0 122 255 / 0);
-		}
-		100% {
-			box-shadow: 0 0 0 0 rgb(0 122 255 / 0);
+			opacity: 0;
+			transform: none;
 		}
 	}
 
@@ -218,9 +209,10 @@
 		}
 	}
 
+	/* On transform, not top, so the line does not lay the page out again every frame. */
 	@keyframes sweep {
 		0% {
-			top: 0;
+			transform: translateY(0);
 			opacity: 0;
 		}
 		12% {
@@ -230,7 +222,7 @@
 			opacity: 1;
 		}
 		100% {
-			top: calc(100% - 2px);
+			transform: translateY(calc(100% - 2px));
 			opacity: 0;
 		}
 	}
@@ -429,6 +421,34 @@
  */
 @utility spinner {
 	@apply animate-spin rounded-full border-[3px] border-accent-100 border-t-accent;
+}
+
+/*
+ * A status dot that pulses: green while the scanner is ready, quicker in blue while it works.
+ * The ring is the dot's own colour; it rests invisible, which is also where it stays for
+ * anyone who asked for less motion.
+ */
+@utility animate-pulse-ready {
+	position: relative;
+
+	&::after {
+		content: '';
+		position: absolute;
+		inset: -7px;
+		border-radius: 9999px;
+		background: inherit;
+		opacity: 0;
+		pointer-events: none;
+		animation: pulse 2s infinite;
+	}
+}
+
+@utility animate-pulse-busy {
+	@apply animate-pulse-ready;
+
+	&::after {
+		animation-duration: 1.2s;
+	}
 }
 
 /*
