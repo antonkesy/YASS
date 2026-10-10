@@ -32,6 +32,11 @@ public sealed class ThumbnailWorker(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // A wait is kept until it completes rather than started afresh each time the worker goes
+        // idle: an abandoned wait on a channel nobody writes to (the previews, on the server)
+        // stays queued on it, and one would pile up per idle spell.
+        Task<bool>? thumbs = null;
+        Task<bool>? previews = null;
         while (!stoppingToken.IsCancellationRequested)
         {
             // Thumbnails first: a preview is only rendered while no thumbnail is waiting.
@@ -45,16 +50,16 @@ public sealed class ThumbnailWorker(
             }
             else
             {
-                try
+                thumbs ??= _queue.Reader.WaitToReadAsync(stoppingToken).AsTask();
+                if (ahead.Previews)
                 {
-                    await Task.WhenAny(
-                        _queue.Reader.WaitToReadAsync(stoppingToken).AsTask(),
-                        _previews.Reader.WaitToReadAsync(stoppingToken).AsTask()).ConfigureAwait(false);
+                    previews ??= _previews.Reader.WaitToReadAsync(stoppingToken).AsTask();
                 }
-                catch (OperationCanceledException)
-                {
-                    return;
-                }
+
+                await (previews is null ? thumbs : (Task)Task.WhenAny(thumbs, previews))
+                    .ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+                thumbs = thumbs.IsCompleted ? null : thumbs;
+                previews = previews?.IsCompleted == true ? null : previews;
             }
         }
     }
