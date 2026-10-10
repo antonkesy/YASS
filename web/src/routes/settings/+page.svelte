@@ -45,16 +45,7 @@
 	/** Scanners the server can see. Null until asked; empty means it found none. */
 	let devices = $state<ScannerDeviceDto[] | null>(null);
 
-	/** The server's output folder, or "" when it has none; null until asked. */
-	let serverFolder = $state<string | null>(null);
-	$effect(() => {
-		if ($connection === 'connected' && serverFolder === null) {
-			client.hub
-				.getServerFolder()
-				.then((f) => (serverFolder = f))
-				.catch(() => (serverFolder = ''));
-		}
-	});
+	const serverFolder = client.serverFolder;
 
 	$effect(() => {
 		if ($connection === 'connected' && !effective) {
@@ -291,7 +282,7 @@
 				Only where yass.yaml names a folder: a browser can switch saving there on for
 				itself, but the folder is the server's to choose, so there is nothing to type.
 			-->
-			{#if serverFolder}
+			{#if $serverFolder}
 				<div class="flex flex-col rounded-[16px] bg-app px-3.5 py-1.5">
 					<Toggle
 						name="server-save"
@@ -301,10 +292,10 @@
 					/>
 					<span
 						class="mb-2 truncate border-t border-line-strong pt-2 font-mono text-[12px] text-ink-muted"
-						title={serverFolder}
+						title={$serverFolder}
 						data-testid="server-folder"
 					>
-						{serverFolder}
+						{$serverFolder}
 					</span>
 				</div>
 			{/if}

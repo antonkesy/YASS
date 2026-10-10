@@ -28,14 +28,11 @@
 	let {
 		session,
 		review,
-		serverFolder,
 		mergeable,
 		onmerge
 	}: {
 		session: SessionDto;
 		review: Review;
-		/** The server's output folder, or "" when it has none; null until asked. */
-		serverFolder: string | null;
 		/** How many other scans have pages to add to this one. */
 		mergeable: number;
 		/** Opens the dialog that picks one of them. */
@@ -45,6 +42,7 @@
 	const client = getHub();
 	const desktop = getDesktop();
 	const exportProgress = client.exportProgress;
+	const serverFolder = client.serverFolder;
 	const scannerStatus = client.scanner;
 
 	const editable = $derived(
@@ -158,7 +156,7 @@
 		busy={review.exporting}
 		picker={desktop !== null || savePicker() !== null}
 		ondownload={() => review.saveAs()}
-		serverFolder={$exportPrefs.serverSave && serverFolder ? serverFolder : null}
+		serverFolder={$exportPrefs.serverSave && $serverFolder ? $serverFolder : null}
 		onserver={() => review.saveToServer()}
 		onstop={() => review.stop()}
 		stopping={review.stopping}

@@ -46,17 +46,6 @@
 	const sessions = client.sessions;
 	const connection = client.connection;
 
-	/** The server's output folder, or "" when it has none; null until asked. */
-	let serverFolder = $state<string | null>(null);
-	$effect(() => {
-		if ($connection === 'connected' && serverFolder === null) {
-			client.hub
-				.getServerFolder()
-				.then((f) => (serverFolder = f))
-				.catch(() => (serverFolder = ''));
-		}
-	});
-
 	const id = $derived(route.params.id ?? '');
 	const session = $derived($sessions.get(id) ?? null);
 	const review = new Review(
@@ -423,7 +412,6 @@
 			<ReviewSidebar
 				{session}
 				{review}
-				{serverFolder}
 				mergeable={mergeable.length}
 				onmerge={() => (dialog = { kind: 'merge' })}
 			/>

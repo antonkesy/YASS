@@ -23,6 +23,11 @@ export type YassHubClient = {
 	readonly sessions: Readable<SessionMap>;
 	/** sessionId → percent for exports in flight. */
 	readonly exportProgress: Readable<Record<string, number>>;
+	/**
+	 * The server's output folder, or "" when it has none or would not say; null until the
+	 * first connect has asked. Asked again on every connect, since a config reload can change it.
+	 */
+	readonly serverFolder: Readable<string | null>;
 	/** Starts (or resumes) the connection and loads the initial state. Idempotent. */
 	start(): Promise<void>;
 	stop(): Promise<void>;
@@ -61,6 +66,7 @@ export function createHubClient(connection: ConnectionLike): YassHubClient {
 	const scanner = writable<ScannerStatusDto | null>(null);
 	const sessions = writable<SessionMap>(new Map());
 	const exportProgress = writable<Record<string, number>>({});
+	const serverFolder = writable<string | null>(null);
 
 	const hub = getHubProxyFactory('IYassHub').createHubProxy(connection as HubConnection);
 
@@ -102,6 +108,12 @@ export function createHubClient(connection: ConnectionLike): YassHubClient {
 		const [status, list] = await Promise.all([hub.getScannerStatus(), hub.listSessions()]);
 		scanner.set(status);
 		sessions.set(replaceAll(list));
+		// Apart from the rest, and never failing the connect: without it Save to server is
+		// simply not offered.
+		hub.getServerFolder().then(
+			(folder) => serverFolder.set(folder),
+			() => serverFolder.set('')
+		);
 	}
 
 	async function startWithRetry() {
@@ -153,6 +165,7 @@ export function createHubClient(connection: ConnectionLike): YassHubClient {
 		scanner: { subscribe: scanner.subscribe },
 		sessions: { subscribe: sessions.subscribe },
 		exportProgress: { subscribe: exportProgress.subscribe },
+		serverFolder: { subscribe: serverFolder.subscribe },
 		start,
 		stop,
 		refresh,
