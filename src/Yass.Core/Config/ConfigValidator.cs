@@ -17,6 +17,18 @@ public static class ConfigValidator
         return errors;
     }
 
+    /// <summary>
+    /// Validates one section on its own, such as scan options a client sent, with keys under
+    /// <paramref name="prefix"/>.
+    /// </summary>
+    public static IReadOnlyList<ConfigError> ValidateSection(object section, string prefix = "")
+    {
+        ArgumentNullException.ThrowIfNull(section);
+        var errors = new List<ConfigError>();
+        ValidateObject(section, prefix, errors);
+        return errors;
+    }
+
     /// <exception cref="ConfigValidationException">When any key is invalid.</exception>
     public static YassConfig ValidateOrThrow(YassConfig config)
     {

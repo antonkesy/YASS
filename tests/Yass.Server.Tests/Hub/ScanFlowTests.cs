@@ -62,6 +62,15 @@ public sealed class ScanFlowTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task An_override_out_of_range_is_refused_by_its_key()
+    {
+        HubException error = await Assert.ThrowsAsync<HubException>(() => _hub.StartScan(new ScanOptionsDto(Dpi: 0)));
+
+        Assert.Contains("dpi", error.Message, StringComparison.Ordinal);
+        Assert.Empty(await _hub.ListSessions());
+    }
+
+    [Fact]
     public async Task Every_override_is_honoured_and_the_rest_stays_at_the_defaults()
     {
         SessionDto session = await _hub.StartScan(new ScanOptionsDto(Dpi: 150, Brightness: 50, Color: ColorMode.Color));
