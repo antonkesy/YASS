@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { autoAnimate } from '$lib/autoAnimate';
 	import { slide } from 'svelte/transition';
-	import { ms, play } from '$lib/motion';
+	import { ms } from '$lib/motion';
 	import { untrack } from 'svelte';
 	import { page as route } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -43,6 +43,7 @@
 	import AdjustModal from '$lib/components/AdjustModal.svelte';
 	import StraightenModal from '$lib/components/StraightenModal.svelte';
 	import PageGrid from '$lib/components/PageGrid.svelte';
+	import ReviewStage from '$lib/components/ReviewStage.svelte';
 	import PageOverview from '$lib/components/PageOverview.svelte';
 	import Toolbar from '$lib/components/Toolbar.svelte';
 	import Preview from '$lib/components/Preview.svelte';
@@ -112,30 +113,6 @@
 		| null
 	>(null);
 	let previewIndex = $state<number | null>(null);
-	/** The big preview slides in from whichever side the new page came from. */
-	let stage = $state<HTMLElement | null>(null);
-	/** Hash of the page whose preview has finished loading onto the stage. */
-	/** What the stage image last finished loading: which page, which render, and its turn. */
-	let stageLoaded = $state<{ index: number; hash: string; rotation: number } | null>(null);
-	// Deliberately the initial value: it tracks which page the stage is showing, and is
-	// updated by the effect below rather than following `current` on its own.
-	let shownAt = untrack(() => current);
-
-	$effect(() => {
-		const to = current;
-		if (to === shownAt) return;
-		const direction = to > shownAt ? 1 : -1;
-		shownAt = to;
-		if (stage)
-			play(
-				stage,
-				[
-					{ opacity: 0, transform: `translateX(${direction * 36}px) scale(0.97)` },
-					{ opacity: 1, transform: 'none' }
-				],
-				340
-			);
-	});
 
 	let confirmDiscard = $state(false);
 
@@ -207,14 +184,6 @@
 		];
 		return all.filter(([, value]) => value);
 	});
-	/** The page on the stage has an image up — maybe of an older render of it, during an edit. */
-	const stageReady = $derived(!!shown && stageLoaded?.index === shown.Index);
-	/**
-	 * A rotation not yet in the image on screen. The page keeps showing its last render, turned
-	 * by CSS, until the new one has loaded: swapping straight to an empty frame with a spinner
-	 * in front made every rotate blink.
-	 */
-	const stageTurn = $derived(stageReady && shown ? shown.Rotation - stageLoaded!.rotation : 0);
 	// A view transition already slides the screen in; its own entrance would be a second slide.
 	const entrance = screenTransition.active ? '' : 'animate-slide-from-right';
 
@@ -576,116 +545,7 @@
 					</div>
 				{/if}
 
-				{#if session.Pages.length > 0}
-					<!-- Right above the page it counts, and as few characters as say it. -->
-					<p
-						class="-mb-2 text-[13px] font-semibold text-ink-muted tabular-nums"
-						data-testid="page-position"
-					>
-						{current + 1} / {session.Pages.length}
-					</p>
-				{/if}
-
-				{#if shown}
-					<!--
-						At either end of the scan the arrow that has nowhere to go is not shown, but its
-						place is kept (disabled:invisible), so the page stays centred between the two.
-					-->
-					<div class="flex w-full items-center justify-center gap-2 lg:min-h-0 lg:flex-1">
-						<button
-							type="button"
-							class="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-surface shadow-nav transition-[background-color,transform] duration-150 hover:scale-105 hover:bg-accent-wash disabled:invisible"
-							onclick={() => step(-1)}
-							disabled={current === 0}
-							aria-label={t('review.previousPage')}
-							data-testid="stage-prev"
-						>
-							<Icon name="chevronLeft" />
-						</button>
-
-						<!--
-							The box is reserved at page proportions so the column does not reflow when
-							the image arrives; a rotated page letterboxes inside it.
-						-->
-						<!-- Beside the stage the page is as tall as the pane allows, and as wide
-						     as that height makes it; stacked it is as wide as the phone allows. -->
-						<div
-							bind:this={stage}
-							class="relative w-full max-w-[max(280px,calc((100dvh-230px)/1.414))] flex-1 lg:h-full lg:w-auto lg:max-w-none lg:flex-none"
-							style="aspect-ratio: 1 / 1.414"
-							aria-busy={stageLoaded?.hash !== shown.Hash}
-						>
-							<!-- A fresh element per page: swapping only the src keeps the previous page on
-							     screen until the new one has decoded, which reads as the arrows not working. -->
-							<!--
-								A fresh element per page, so the arrows never seem to do nothing; within a
-								page the same element, so an edit keeps the last render up until the new
-								one replaces it.
-							-->
-							{#key shown.Index}
-								<img
-									src={imageUrl(id, shown.Index, shown.Hash, 'preview')}
-									alt={t('review.pageN', { n: shown.Index + 1 })}
-									class="h-full w-full rounded-[6px] object-contain drop-shadow-[0_18px_36px_rgb(0_0_0_/_0.14)]"
-									style:transform={stageTurn
-										? `rotate(${stageTurn}deg) scale(${Math.abs(stageTurn) % 180 ? 0.707 : 1})`
-										: undefined}
-									onload={() =>
-										(stageLoaded = {
-											index: shown.Index,
-											hash: shown.Hash,
-											rotation: shown.Rotation
-										})}
-								/>
-							{/key}
-							{#if !stageReady}
-								<!-- The preview is rendered on demand, so the empty box sits there for a
-								     moment; the same spinner the thumbnails use says it is on the way. -->
-								<span
-									class="pointer-events-none absolute inset-0 flex items-center justify-center"
-									role="status"
-									aria-label={t('review.loadingPage', { n: shown.Index + 1 })}
-									data-testid="stage-loading"
-								>
-									<span
-										class="h-9 w-9 animate-spin rounded-full border-[3px] border-accent-100 border-t-accent"
-										aria-hidden="true"
-									></span>
-								</span>
-							{/if}
-						</div>
-
-						<button
-							type="button"
-							class="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-surface shadow-nav transition-[background-color,transform] duration-150 hover:scale-105 hover:bg-accent-wash disabled:invisible"
-							onclick={() => step(1)}
-							disabled={current >= session.Pages.length - 1}
-							aria-label={t('review.nextPage')}
-							data-testid="stage-next"
-						>
-							<Icon name="chevronRight" />
-						</button>
-					</div>
-				{:else}
-					<div
-						class="flex w-full max-w-[280px] flex-col items-center justify-center gap-3 rounded-[10px] border-[1.5px] border-dashed border-accent-dash text-sm text-ink-muted"
-						style="aspect-ratio: 1 / 1.414"
-						role={scanning ? 'status' : undefined}
-						data-testid="stage-empty"
-					>
-						{#if scanning}
-							<!-- The same spinner a thumbnail shows while its image is on the way. -->
-							<span
-								class="h-9 w-9 animate-spin rounded-full border-[3px] border-accent-100 border-t-accent"
-								aria-hidden="true"
-								data-testid="stage-spinner"
-							></span>
-							{t('review.waitingFirstPage')}
-						{:else}
-							{t('review.noPages')}
-						{/if}
-					</div>
-				{/if}
+				<ReviewStage sessionId={id} pages={session.Pages} {current} {scanning} onstep={step} />
 
 				{@render pageTools(false)}
 			</main>
