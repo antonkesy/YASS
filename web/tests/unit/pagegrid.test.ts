@@ -191,7 +191,22 @@ describe('PageGrid drag reorder', () => {
 			onreorder: vi.fn()
 		});
 		expect(screen.queryAllByTestId('page-select')).toHaveLength(0);
-		expect(grid()).toHaveAttribute('aria-multiselectable', 'false');
+	});
+
+	it('is a list of pages, with the page being scanned announced as it comes', () => {
+		render(PageGrid, {
+			sessionId: 's1',
+			pages,
+			selection: new Set<number>(),
+			scanning: true,
+			onshow: vi.fn(),
+			ontoggle: vi.fn(),
+			onopen: vi.fn(),
+			onreorder: vi.fn()
+		});
+		expect(grid()).toHaveAttribute('role', 'list');
+		expect(screen.getAllByRole('listitem')).toHaveLength(pages.length + 1);
+		expect(screen.getByRole('status', { name: 'Scanning the next page' })).toBeInTheDocument();
 	});
 
 	it('offers the overview only when the caller can open one', async () => {
