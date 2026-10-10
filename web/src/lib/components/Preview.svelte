@@ -96,7 +96,7 @@
 	}
 
 	const navBtn =
-		'flex h-11 w-11 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70 focus-visible:ring-4 focus-visible:ring-teal-300 focus-visible:outline-none disabled:opacity-30';
+		'flex h-11 w-11 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70 focus-visible:ring-4 focus-visible:ring-accent focus-visible:outline-none disabled:opacity-30';
 </script>
 
 <svelte:window onkeydown={keydown} />
@@ -119,14 +119,7 @@
 				onclick={onclose}
 				data-testid="preview-close"
 			>
-				<svg
-					class="h-6 w-6"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg
-				>
+				<Icon name="close" size={24} stroke={2} />
 			</button>
 			<span class="text-sm" data-testid="preview-counter"
 				>{index + 1} / {pages.length}{page.Deleted ? ` · ${t('review.deleted')}` : ''}</span
@@ -140,17 +133,7 @@
 					onclick={toggleZoom}
 					data-testid="preview-zoom"
 				>
-					<svg
-						class="h-5 w-5"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						aria-hidden="true"
-						><circle cx="11" cy="11" r="7" /><path d="M20 20l-4.5-4.5" /><path
-							d="M8 11h6{zoomed ? '' : 'M11 8v6'}"
-						/></svg
-					>
+					<Icon name={zoomed ? 'zoomOut' : 'zoomIn'} size={20} stroke={2} />
 				</button>
 				<button
 					type="button"
@@ -158,14 +141,7 @@
 					aria-label={t('review.rotateLeft')}
 					onclick={() => onrotate(index, -90)}
 				>
-					<svg
-						class="h-5 w-5"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" /></svg
-					>
+					<Icon name="rotateLeft" size={20} stroke={2} />
 				</button>
 				<button
 					type="button"
@@ -173,14 +149,7 @@
 					aria-label={t('review.rotateRight')}
 					onclick={() => onrotate(index, 90)}
 				>
-					<svg
-						class="h-5 w-5"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5" /></svg
-					>
+					<Icon name="rotateRight" size={20} stroke={2} />
 				</button>
 			</span>
 		</div>
@@ -226,14 +195,7 @@
 					onclick={() => onnavigate(index - 1)}
 					data-testid="preview-prev"
 				>
-					<svg
-						class="h-6 w-6"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg
-					>
+					<Icon name="chevronLeft" size={24} stroke={2} />
 				</button>
 			{/if}
 			{#if index < pages.length - 1}
@@ -244,14 +206,7 @@
 					onclick={() => onnavigate(index + 1)}
 					data-testid="preview-next"
 				>
-					<svg
-						class="h-6 w-6"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg
-					>
+					<Icon name="chevronRight" size={24} stroke={2} />
 				</button>
 			{/if}
 		</div>
