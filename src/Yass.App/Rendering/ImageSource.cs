@@ -13,6 +13,23 @@ public sealed record ImageRequest(Session Session, Page Page, string Hash, Image
 /// <summary>What <c>/img/{sessionId}/{pageIndex}/{kind}?h=HASH</c> points to, whichever host serves it.</summary>
 public sealed class ImageSource(SessionStore store, RenderCache cache)
 {
+    /// <summary>
+    /// Validates the address as a URL spells it, <paramref name="kind"/> being <c>thumb</c>,
+    /// <c>preview</c> or <c>frame</c>. An empty <paramref name="hash"/> means the page's current one.
+    /// </summary>
+    public bool TryResolve(string sessionId, int pageIndex, string kind, string? hash, out ImageRequest request)
+    {
+        request = null!;
+        ImageKind? parsed = kind switch
+        {
+            "thumb" => ImageKind.Thumb,
+            "preview" => ImageKind.Preview,
+            "frame" => ImageKind.Frame,
+            _ => null,
+        };
+        return parsed is { } k && TryResolve(sessionId, pageIndex, hash, k, out request);
+    }
+
     /// <summary>Validates the address. An empty <paramref name="hash"/> means the page's current one.</summary>
     public bool TryResolve(string sessionId, int pageIndex, string? hash, ImageKind kind, out ImageRequest request)
     {
