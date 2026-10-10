@@ -22,7 +22,9 @@ public sealed class AutoCropService(SessionStore store, ImageRenderer renderer, 
         }
 
         IReadOnlyList<int> indices = targets is { Count: > 0 } ? targets : Enumerable.Range(0, session.Pages.Count).ToArray();
-        var edits = new List<PageEdit>();
+        // Detection takes a while and pages can be reordered meanwhile, so what it finds is kept
+        // by page file and only turned into positions when the crops are applied.
+        var found = new Dictionary<string, CropBox>(StringComparer.Ordinal);
         foreach (int index in indices)
         {
             if (index < 0 || index >= session.Pages.Count)
@@ -32,17 +34,29 @@ public sealed class AutoCropService(SessionStore store, ImageRenderer renderer, 
 
             Page page = session.Pages[index];
             CropBox? box = await renderer.DetectBordersAsync(SessionPaths.Source(store.Root, session, page), cancellationToken).ConfigureAwait(false);
-            if (box is not null && box != page.Crop)
+            if (box is not null)
             {
-                edits.Add(PageEdit.SetCrop(box, index));
+                found[page.SourceFile] = box;
             }
         }
 
-        if (edits.Count > 0)
+        int cropped = 0;
+        if (found.Count > 0)
         {
-            await editor.ApplyAsync(sessionId, edits).ConfigureAwait(false);
+            await editor.ApplyAsync(sessionId, current =>
+            {
+                PageEdit[] edits =
+                [
+                    .. current.Pages
+                        .Select((page, index) => (page, index, box: found.GetValueOrDefault(page.SourceFile)))
+                        .Where(x => x.box is not null && x.box != x.page.Crop)
+                        .Select(x => PageEdit.SetCrop(x.box, x.index)),
+                ];
+                cropped = edits.Length;
+                return edits;
+            }).ConfigureAwait(false);
         }
 
-        return edits.Count;
+        return cropped;
     }
 }
