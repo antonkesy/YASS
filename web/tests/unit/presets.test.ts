@@ -159,6 +159,9 @@ describe('loading stored preferences', () => {
 		expect(get(createExportPrefs(fake({})))).toEqual(defaultExportPrefs);
 		expect(get(createExportPrefs(fake({ [EXPORT_KEY]: 'not json' })))).toEqual(defaultExportPrefs);
 		expect(get(createPresets(fake({ [PRESETS_KEY]: '7' })))).toEqual(defaultPresets);
+		// The wrong shape altogether: a record where the list belongs, and the other way round.
+		expect(get(createPresets(fake({ [PRESETS_KEY]: '{"id":"x"}' })))).toEqual(defaultPresets);
+		expect(get(createExportPrefs(fake({ [EXPORT_KEY]: '[1,2]' })))).toEqual(defaultExportPrefs);
 	});
 });
 
