@@ -19,6 +19,7 @@ function fakeConnection(sessions: SessionDto[] = []) {
 	const fake = {
 		state: HubConnectionState.Disconnected,
 		startFailures: 0,
+		folder: '/srv/consume' as string | Error,
 		start: vi.fn(async () => {
 			if (fake.startFailures > 0) {
 				fake.startFailures--;
@@ -42,6 +43,8 @@ function fakeConnection(sessions: SessionDto[] = []) {
 					return { State: ScannerState.Ready, CheckedAt: '' };
 				case 'ListSessions':
 					return sessions;
+				case 'GetServerFolder':
+					return fake.folder instanceof Error ? Promise.reject(fake.folder) : fake.folder;
 				case 'GetSession':
 					return sessions.find((s) => s.Id === args[0]) ?? Promise.reject(new Error('not found'));
 				default:
@@ -72,6 +75,18 @@ describe('hub client', () => {
 		expect(get(client.connection)).toBe('connected');
 		expect(get(client.scanner)?.State).toBe(ScannerState.Ready);
 		expect(get(client.sessions).get('a')?.Pages).toHaveLength(2);
+	});
+
+	it('asks for the server folder on every connect, and takes a refusal as none', async () => {
+		const conn = fakeConnection([]);
+		const client = createHubClient(conn as unknown as ConnectionLike);
+		expect(get(client.serverFolder)).toBeNull();
+		await client.start();
+		await vi.waitFor(() => expect(get(client.serverFolder)).toBe('/srv/consume'));
+
+		conn.folder = new Error('nope');
+		conn.reconnected();
+		await vi.waitFor(() => expect(get(client.serverFolder)).toBe(''));
 	});
 
 	it('applies server pushes to the stores', async () => {
