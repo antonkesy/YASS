@@ -72,7 +72,7 @@ public sealed class YassApi(
         }
 
         sessions.Delete(sessionId);
-        await clients.All.SessionChanged(mapper.ToDto(session with { State = SessionState.Done, Pages = [], Error = "deleted" })).ConfigureAwait(false);
+        await clients.All.SessionChanged(mapper.Removed(session, SessionMapper.Deleted)).ConfigureAwait(false);
     }
 
     public async Task<SessionDto> RenameSession(string sessionId, string? name)
@@ -128,7 +128,7 @@ public sealed class YassApi(
         foreach (Session session in removable)
         {
             sessions.Delete(session.Id);
-            await clients.All.SessionChanged(mapper.ToDto(session with { State = SessionState.Done, Pages = [], Error = "deleted" })).ConfigureAwait(false);
+            await clients.All.SessionChanged(mapper.Removed(session, SessionMapper.Deleted)).ConfigureAwait(false);
         }
 
         logger.LogInformation("Cleared {Count} session(s)", removable.Length);
