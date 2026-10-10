@@ -1,7 +1,4 @@
 <script lang="ts">
-	import { autoAnimate } from '$lib/autoAnimate';
-	import { slide } from 'svelte/transition';
-	import { ms } from '$lib/motion';
 	import { untrack } from 'svelte';
 	import { page as route } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -9,20 +6,10 @@
 	import { toast } from '$lib/toast';
 	import { t } from '$lib/i18n/index.svelte';
 	import { cameFrom } from '$lib/navigation';
-	import { getDesktop, getHub, imageUrl, sortedSessions } from '$lib/hub/hub';
+	import { getHub, imageUrl, sortedSessions } from '$lib/hub/hub';
 	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 	import type { CropBox, PageAdjust, PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
-	import {
-		activePageCount,
-		documentName,
-		colorLabel,
-		exportFormatLabels,
-		formatBytes,
-		formatTime,
-		pageSizeLabel,
-		sessionStateLabel,
-		sourceLabel
-	} from '$lib/format';
+	import { formatTime, sessionStateLabel } from '$lib/format';
 	import {
 		addCleanupEdit,
 		commonCleanup,
@@ -47,34 +34,17 @@
 	import PageOverview from '$lib/components/PageOverview.svelte';
 	import Toolbar from '$lib/components/Toolbar.svelte';
 	import Preview from '$lib/components/Preview.svelte';
-	import ExportBar from '$lib/components/ExportBar.svelte';
-	import { Icon } from '$lib/icons';
-	import NameField from '$lib/components/NameField.svelte';
+	import ReviewSidebar from '$lib/components/ReviewSidebar.svelte';
 	import CropModal from '$lib/components/CropModal.svelte';
 	import MergeModal from '$lib/components/MergeModal.svelte';
 	import StopScanButton from '$lib/components/StopScanButton.svelte';
-	import { canSave, exportBaseName, fileExtensions, savePicker } from '$lib/review/download';
+	import { canSave } from '$lib/review/download';
 	import { Review } from '$lib/review/review.svelte';
-	import {
-		DOCUMENT_META_FIELDS,
-		documentMeta,
-		exportPrefs,
-		metaFor,
-		reviewPrefs,
-		scannerPrefs,
-		setDocumentMeta,
-		type DocumentMeta
-	} from '$lib/presets';
-	import { scannerName } from '$lib/scanners';
-	import type { MessageKey } from '$lib/i18n/index.svelte';
-	import { ExportFormat } from '$lib/hub/generated/Yass.Core.Hub';
-	import Segmented from '$lib/components/Segmented.svelte';
+	import { exportPrefs, reviewPrefs } from '$lib/presets';
 
 	const client = getHub();
-	const desktop = getDesktop();
 	const sessions = client.sessions;
 	const connection = client.connection;
-	const scannerStatus = client.scanner;
 
 	/** The server's output folder, or "" when it has none; null until asked. */
 	let serverFolder = $state<string | null>(null);
@@ -86,7 +56,6 @@
 				.catch(() => (serverFolder = ''));
 		}
 	});
-	const exportProgress = client.exportProgress;
 
 	const id = $derived(route.params.id ?? '');
 	const session = $derived($sessions.get(id) ?? null);
@@ -114,8 +83,6 @@
 	>(null);
 	let previewIndex = $state<number | null>(null);
 
-	let confirmDiscard = $state(false);
-
 	$effect(() => {
 		if ($connection === 'connected' && !$sessions.has(id)) {
 			client.refresh(id).catch(() => (missing = true));
@@ -135,55 +102,8 @@
 	const editable = $derived(
 		session?.State === SessionState.Review || session?.State === SessionState.Done
 	);
-	const activePages = $derived(session ? activePageCount(session) : 0);
-	/** Why the sidebar's buttons are greyed while the scan is not in review, for their tooltips. */
-	const busyReason = $derived(
-		scanning
-			? t('review.waitScan')
-			: session?.State === SessionState.Exporting
-				? t('review.waitSave')
-				: t('review.notEditable')
-	);
 	const shown = $derived(session?.Pages[current] ?? null);
 
-	/** What this scan saves with: Settings' export preferences, its own PDF properties on top. */
-	const docPrefs = $derived(metaFor($exportPrefs, $documentMeta, id));
-	let propertiesOpen = $state(false);
-	const META_LABELS: Record<keyof DocumentMeta, MessageKey> = {
-		author: 'settings.author',
-		subject: 'settings.subject',
-		keywords: 'settings.keywords'
-	};
-	/** The properties as one line, for the closed disclosure. */
-	const metaSummary = $derived(
-		DOCUMENT_META_FIELDS.map((f) => docPrefs[f].trim())
-			.filter(Boolean)
-			.join(' · ')
-	);
-	const formatOptions = $derived(
-		[ExportFormat.Pdf, ExportFormat.Jpg, ExportFormat.Png].map((f) => ({
-			value: String(f),
-			label: exportFormatLabels[f]
-		}))
-	);
-	/** The scanner the scan ran on, by the name this browser gives it. */
-	const scannerLabel = $derived(
-		session?.OptionsUsed.Device
-			? scannerName($scannerPrefs, session.OptionsUsed.Device)
-			: ($scannerStatus?.DeviceName ?? '')
-	);
-	/** The settings the scan ran with, each on its own tile; one the scan did not record is left out. */
-	const scanSettings = $derived.by((): [MessageKey, string][] => {
-		const o = session?.OptionsUsed;
-		if (!o) return [];
-		const all: [MessageKey, string][] = [
-			['settings.source', sourceLabel(o.Source)],
-			['settings.resolution', o.Dpi ? t('home.dpi', { n: o.Dpi }) : ''],
-			['settings.colourMode', colorLabel(o.Color)],
-			['settings.paperSize', pageSizeLabel(o.PageSize)]
-		];
-		return all.filter(([, value]) => value);
-	});
 	// A view transition already slides the screen in; its own entrance would be a second slide.
 	const entrance = screenTransition.active ? '' : 'animate-slide-from-right';
 
@@ -222,13 +142,6 @@
 	/** The other half of it: what Delete would still have to work on. */
 	const anyActive = $derived(
 		session?.Pages.filter((p) => targets.has(p.Index)).some((p) => !p.Deleted) ?? false
-	);
-	/**
-	 * What the Scan section says while it is shut. Worded exactly as the line it replaces, which
-	 * sat under the download button: it is a fact about the paper, not about the saving.
-	 */
-	const pageSummary = $derived(
-		session ? t('review.pageSummary', { active: activePages, n: session.Pages.length }) : ''
 	);
 
 	/** Other scans that still have pages, newest first, for the merge dialog. */
@@ -339,20 +252,6 @@
 		return current;
 	}
 
-	/**
-	 * What the field shows, and the same thing the list of past scans shows for this scan: a
-	 * scan nobody has named reads as the template from settings, which is what it will be
-	 * saved as.
-	 */
-	const displayName = $derived(
-		session
-			? documentName(
-					{ ...session, Name: review.storedName ?? undefined },
-					$exportPrefs.nameTemplate
-				)
-			: null
-	);
-
 	/** Pages from another scan are added to the end of this one, once picked. */
 	function merge(sourceId: string) {
 		dialog = null;
@@ -383,9 +282,6 @@
 		if (page) send(setCropEdit(crop, new Set([page.Index])));
 	}
 
-	const ghost =
-		'flex h-[42px] items-center gap-2.5 rounded-[12px] px-2.5 text-left text-sm font-semibold transition-colors hover:bg-accent-hover50 disabled:pointer-events-none disabled:opacity-40';
-
 	function step(delta: number) {
 		const count = session?.Pages.length ?? 0;
 		current = Math.min(count - 1, Math.max(0, current + delta));
@@ -402,32 +298,6 @@
 <svelte:head>
 	<title>{session ? formatTime(session.CreatedAt) : t('review.sessionTitle')} · YASS</title>
 </svelte:head>
-
-{#snippet heading(title: string, value = '', testid = '')}
-	<div class="flex items-baseline gap-2">
-		<span class="text-[13px] font-semibold text-ink-muted">{title}</span>
-		{#if value}
-			<span
-				class="ml-auto min-w-0 truncate text-[13px] font-semibold text-ink-muted"
-				data-testid={testid || undefined}>{value}</span
-			>
-		{/if}
-	</div>
-{/snippet}
-
-{#snippet tile(label: string, value: string, wide = false)}
-	<!-- Label over value, two to a row: the facts of a scan read at a glance in a narrow card. -->
-	<div
-		class="flex min-w-0 flex-col gap-0.5 rounded-[12px] bg-app px-2.5 py-2 {wide
-			? 'col-span-2'
-			: ''}"
-	>
-		<span class="truncate text-[11px] text-ink-muted">{label}</span>
-		<span class="truncate text-[13px] font-bold tracking-[-0.01em] tabular-nums" title={value}
-			>{value}</span
-		>
-	</div>
-{/snippet}
 
 {#snippet pageTools(scoped: boolean)}
 	{#if session}
@@ -550,185 +420,13 @@
 				{@render pageTools(false)}
 			</main>
 
-			<!--
-				Width kept close to the filmstrip's: the stage sits between the two, so the page
-				on screen is only centred while the columns either side of it match. Neither can
-				be the other's exact width — thumbnails do not want 280px and this card does not
-				want 180 — so they meet in the middle and the page lands near enough to centre.
-			-->
-			<aside
-				class="order-3 flex w-full min-w-0 basis-full flex-col gap-3.5 rounded-[24px] bg-surface p-[22px] shadow-panel lg:min-h-0 lg:w-auto lg:basis-(--review-aside-w) lg:overflow-y-auto"
-				{@attach autoAnimate}
-			>
-				{@render heading(t('review.headingName'))}
-
-				<NameField
-					value={displayName}
-					placeholder={exportBaseName(session, $exportPrefs.nameTemplate)}
-					extension={fileExtensions[$exportPrefs.format]}
-					onrename={(name) => review.rename(name)}
-				/>
-
-				{@render heading(t('review.headingSave'))}
-
-				<ExportBar
-					{session}
-					progress={$exportProgress[id] ?? null}
-					busy={review.exporting}
-					picker={desktop !== null || savePicker() !== null}
-					ondownload={() => review.saveAs()}
-					serverFolder={$exportPrefs.serverSave && serverFolder ? serverFolder : null}
-					onserver={() => review.saveToServer()}
-					onstop={() => review.stop()}
-					stopping={review.stopping}
-				/>
-
-				<!-- What the file will be, together under the button that saves it. -->
-				<div class="flex flex-col rounded-[16px] bg-app p-3" data-testid="file-options">
-					<!-- Settings → Export holds the same choice; switching here switches it there. -->
-					<Segmented
-						name="review-format"
-						label={t('settings.fileFormat')}
-						hint={$exportPrefs.format === ExportFormat.Pdf
-							? t('settings.perDocument')
-							: t('settings.perPage')}
-						options={formatOptions}
-						value={String($exportPrefs.format)}
-						onchange={(v) =>
-							exportPrefs.set({ ...$exportPrefs, format: Number(v) as ExportFormat })}
-					/>
-
-					{#if $exportPrefs.format === ExportFormat.Pdf}
-						<!--
-							This scan's own PDF properties, starting from the ones Settings gives every scan.
-							Shut by default: a line saying what is set is all most saves need to see.
-						-->
-						<!-- The gap above is its own padding, so it opens and shuts with it. -->
-						<div
-							class="flex flex-col gap-2 pt-3"
-							transition:slide={{ duration: ms(220) }}
-							data-testid="pdf-properties"
-						>
-							<button
-								type="button"
-								class="flex items-center gap-2 rounded-[10px] text-left"
-								aria-expanded={propertiesOpen}
-								onclick={() => (propertiesOpen = !propertiesOpen)}
-								data-testid="pdf-properties-toggle"
-							>
-								<span class="text-[13px] font-semibold text-ink-muted"
-									>{t('review.pdfProperties')}</span
-								>
-								<span
-									class="ml-auto min-w-0 truncate text-[12px] text-ink-muted"
-									title={metaSummary}>{metaSummary || t('review.pdfNone')}</span
-								>
-								<span
-									class="flex-none text-ink-muted transition-transform {propertiesOpen
-										? 'rotate-90'
-										: ''}"
-									aria-hidden="true"><Icon name="chevronRight" /></span
-								>
-							</button>
-							{#if propertiesOpen}
-								<div
-									class="flex flex-col gap-2"
-									transition:slide={{ duration: ms(220) }}
-									data-testid="pdf-fields"
-								>
-									{#each DOCUMENT_META_FIELDS as field (field)}
-										<label class="flex flex-col gap-1">
-											<span class="text-xs text-ink-muted">{t(META_LABELS[field])}</span>
-											<input
-												class="field h-9 px-2.5 text-[13px]"
-												type="text"
-												autocomplete="off"
-												value={docPrefs[field]}
-												oninput={(e) =>
-													documentMeta.set(
-														setDocumentMeta(
-															$documentMeta,
-															id,
-															$exportPrefs,
-															field,
-															e.currentTarget.value
-														)
-													)}
-												data-testid="pdf-{field}"
-											/>
-										</label>
-									{/each}
-								</div>
-							{/if}
-						</div>
-					{/if}
-				</div>
-
-				<!-- The facts about the scan, with the page count up on the heading beside them. -->
-				<div class="flex flex-col gap-1.5" data-testid="scan-section">
-					{@render heading(t('review.headingScan'), pageSummary, 'page-count')}
-					<div class="mt-1 grid grid-cols-2 gap-1.5">
-						{@render tile(t('review.scanned'), formatTime(session.CreatedAt))}
-						<!-- The scanned pages on disk, not an estimate of the PDF the mockup guesses at. -->
-						{@render tile(t('review.size'), formatBytes(session.SizeBytes))}
-						{#if scannerLabel}
-							{@render tile(t('review.scanner'), scannerLabel, true)}
-						{/if}
-						{#each scanSettings as [label, value] (label)}
-							{@render tile(t(label), value)}
-						{/each}
-					</div>
-				</div>
-
-				<div class="flex flex-col gap-0.5" data-testid="more-section">
-					{@render heading(t('review.headingMore'))}
-					<!-- A greyed button says why on hover: rule of thumb, no dead control without a reason. -->
-					<button
-						type="button"
-						class={ghost}
-						onclick={() => review.scanMore()}
-						disabled={!editable}
-						title={editable ? undefined : busyReason}
-						data-testid="scan-more-button"
-					>
-						<Icon name="plus" />
-						{t('review.scanMorePages')}
-					</button>
-					<button
-						type="button"
-						class={ghost}
-						onclick={() => (dialog = { kind: 'merge' })}
-						disabled={!editable || mergeable.length === 0 || review.mergeBusy}
-						title={!editable
-							? busyReason
-							: mergeable.length === 0
-								? t('review.noMergeable')
-								: undefined}
-						data-testid="merge-button"
-					>
-						<Icon name="layers" />
-						{t('review.addFromPastScan')}
-					</button>
-				</div>
-
-				<!--
-					Alone at the foot, because it throws the scan away and has no business sitting
-					where a hand goes looking for Scan more. mt-auto puts it on the bottom edge
-					while the panel has room to spare, and is simply inert once it has not.
-				-->
-				<div class="mt-auto border-t border-line pt-4 max-lg:mt-4">
-					<button
-						type="button"
-						class="{ghost} w-full text-danger hover:bg-danger-bg"
-						onclick={() => (confirmDiscard ? review.discard() : (confirmDiscard = true))}
-						onblur={() => (confirmDiscard = false)}
-						data-testid="discard-button"
-					>
-						<Icon name="trash" />
-						{confirmDiscard ? t('review.reallyDiscard') : t('review.discardScan')}
-					</button>
-				</div>
-			</aside>
+			<ReviewSidebar
+				{session}
+				{review}
+				{serverFolder}
+				mergeable={mergeable.length}
+				onmerge={() => (dialog = { kind: 'merge' })}
+			/>
 		</div>
 	{/if}
 </div>
