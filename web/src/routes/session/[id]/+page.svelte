@@ -29,6 +29,7 @@
 	import { modified, typing, useLayer } from '$lib/keys.svelte';
 	import AdjustModal from '$lib/components/AdjustModal.svelte';
 	import StraightenModal from '$lib/components/StraightenModal.svelte';
+	import Alert from '$lib/components/Alert.svelte';
 	import PageGrid from '$lib/components/PageGrid.svelte';
 	import ReviewStage from '$lib/components/ReviewStage.svelte';
 	import PageOverview from '$lib/components/PageOverview.svelte';
@@ -328,24 +329,15 @@
 	class="mx-auto flex max-w-[2200px] {entrance} flex-col px-4 pt-2 pb-7 sm:px-7 lg:h-[calc(100dvh-var(--app-header-h))] lg:min-h-0"
 >
 	{#if missing}
-		<p class="rounded-[14px] bg-danger-bg px-4 py-3 font-semibold text-danger" role="alert">
-			{t('review.sessionGone')}
-		</p>
+		<Alert tall>{t('review.sessionGone')}</Alert>
 	{:else if !session}
 		<p class="text-ink-muted">{t('review.loading')}</p>
 	{:else}
 		{#if session.Error}
-			<p
-				class="mb-3 rounded-[14px] bg-warning-bg px-4 py-2 font-semibold text-warning-ink"
-				role="alert"
-			>
-				{session.Error}
-			</p>
+			<Alert tone="warning" class="mb-3">{session.Error}</Alert>
 		{/if}
 		{#if review.error}
-			<p class="mb-3 rounded-[14px] bg-danger-bg px-4 py-2 font-semibold text-danger" role="alert">
-				{review.error}
-			</p>
+			<Alert class="mb-3">{review.error}</Alert>
 		{/if}
 
 		<div class="flex min-h-0 flex-wrap items-start gap-5 lg:flex-1 lg:flex-nowrap lg:items-stretch">

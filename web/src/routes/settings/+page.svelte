@@ -9,6 +9,7 @@
 	import { getHub, sortedSessions } from '$lib/hub/hub';
 	import type { ScannerDeviceDto, ScanOptionsDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import { overrideKeys, scanOverrides, settings, type ScanOverrides } from '$lib/settings';
+	import Alert from '$lib/components/Alert.svelte';
 	import Segmented from '$lib/components/Segmented.svelte';
 	import Toggle from '$lib/components/Toggle.svelte';
 	import SettingsSection from '$lib/components/SettingsSection.svelte';
@@ -226,12 +227,7 @@
 	>
 		<SettingsSection title={t('settings.scanner')} icon="scan" testid="scanner-section">
 			{#if error}
-				<p
-					class="col-span-full rounded-[14px] bg-danger-bg px-4 py-2 font-semibold text-danger"
-					role="alert"
-				>
-					{error}
-				</p>
+				<Alert class="col-span-full">{error}</Alert>
 			{:else if !effective}
 				<div class="col-span-full grid gap-3" aria-label={t('settings.loading')} role="status">
 					{#each [0, 1, 2] as i (i)}
