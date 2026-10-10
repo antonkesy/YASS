@@ -9,72 +9,39 @@ namespace Yass.App.Scanning;
 public sealed class EffectiveOptions(ConfigStore config)
 {
     /// <summary>The defaults, for the settings UI.</summary>
-    public ScanOptionsDto Current()
-    {
-        return ToDto(config.Current.Scanner.Defaults);
-    }
+    public ScanOptionsDto Current() => ToDto(config.Current.Scanner.Defaults);
 
-    /// <summary>Applies <paramref name="requested"/> on top of the defaults.</summary>
+    /// <summary>
+    /// Applies <paramref name="requested"/> on top of the defaults, held to the same bounds as
+    /// <c>scanner.defaults</c> in yass.yaml: the client may change any option, not to anything.
+    /// </summary>
+    /// <exception cref="ArgumentException">An option is out of range.</exception>
     public ScanOptions Resolve(ScanOptionsDto? requested)
     {
-        ScannerConfig scanner = config.Current.Scanner;
-        ScanOptions options = scanner.Defaults;
-        if (requested is null)
+        ScanOptions d = config.Current.Scanner.Defaults;
+        if (requested is not { } r)
         {
-            return options;
+            return d;
         }
 
-        if (requested.Source is { } source)
+        ScanOptions options = d with
         {
-            options = options with { Source = source };
-        }
+            Source = r.Source ?? d.Source,
+            Dpi = r.Dpi ?? d.Dpi,
+            Color = r.Color ?? d.Color,
+            PageSize = r.PageSize ?? d.PageSize,
+            Brightness = r.Brightness ?? d.Brightness,
+            Contrast = r.Contrast ?? d.Contrast,
+            BlankPageDetection = r.BlankPageDetection ?? d.BlankPageDetection,
+            BlankPageThreshold = r.BlankPageThreshold ?? d.BlankPageThreshold,
+            AutoDeskew = r.AutoDeskew ?? d.AutoDeskew,
+            Device = r.Device ?? d.Device,
+        };
 
-        if (requested.Dpi is { } dpi)
-        {
-            options = options with { Dpi = dpi };
-        }
-
-        if (requested.Color is { } color)
-        {
-            options = options with { Color = color };
-        }
-
-        if (requested.PageSize is { } pageSize)
-        {
-            options = options with { PageSize = pageSize };
-        }
-
-        if (requested.Brightness is { } brightness)
-        {
-            options = options with { Brightness = brightness };
-        }
-
-        if (requested.Contrast is { } contrast)
-        {
-            options = options with { Contrast = contrast };
-        }
-
-        if (requested.BlankPageDetection is { } blank)
-        {
-            options = options with { BlankPageDetection = blank };
-        }
-
-        if (requested.BlankPageThreshold is { } threshold)
-        {
-            options = options with { BlankPageThreshold = threshold };
-        }
-
-        if (requested.AutoDeskew is { } deskew)
-        {
-            options = options with { AutoDeskew = deskew };
-        }
-
-        if (requested.Device is { } device)
-        {
-            options = options with { Device = device };
-        }
-
-        return options;
+        IReadOnlyList<ConfigError> errors = ConfigValidator.ValidateSection(options);
+        return errors.Count == 0
+            ? options
+            : throw new ArgumentException("Invalid scan options: " + string.Join("; ", errors), nameof(requested));
     }
 
     public static ScanOptionsDto ToDto(ScanOptions options)
