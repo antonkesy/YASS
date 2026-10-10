@@ -1,10 +1,11 @@
+import { play as animate } from '$lib/motion';
+
 /**
  * First-Last-Invert-Play: measure where things are, let the DOM reorder, then animate
  * each one from where it was to where it is. Without it a drag-reorder makes pages jump
  * to their new slots with no sense of what moved where.
  */
 export const FLIP_MS = 600;
-export const FLIP_EASING = 'cubic-bezier(.2,.8,.2,1)';
 
 export type Positions = Map<string, DOMRect>;
 
@@ -21,7 +22,8 @@ export function measure(container: HTMLElement | null, key = 'data-index'): Posi
 
 /**
  * Animates each element from its remembered position to its current one. Returns how many
- * actually moved, so a caller can tell a real reorder from a no-op.
+ * actually moved, so a caller can tell a real reorder from a no-op. With reduced motion asked
+ * for, they still count but simply land where they are.
  */
 export function play(container: HTMLElement | null, before: Positions, key = 'data-index'): number {
 	if (!container || typeof container.animate !== 'function') return 0;
@@ -39,10 +41,7 @@ export function play(container: HTMLElement | null, before: Positions, key = 'da
 		if (Math.abs(dx) < 1 && Math.abs(dy) < 1) continue;
 
 		moved++;
-		el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], {
-			duration: FLIP_MS,
-			easing: FLIP_EASING
-		});
+		animate(el, [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], FLIP_MS);
 	}
 
 	return moved;
