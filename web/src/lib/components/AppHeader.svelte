@@ -54,6 +54,7 @@
 	centred on the viewport and not on the space left between the two ends.
 -->
 <header
+	data-app-header
 	class="sticky top-0 z-20 grid h-16 grid-cols-[1fr_auto_1fr] items-center gap-2.5 bg-header px-4 backdrop-blur-[20px] backdrop-saturate-[1.8] sm:px-7"
 >
 	<div class="flex min-w-0 items-center gap-2.5">
