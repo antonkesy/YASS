@@ -1,6 +1,7 @@
 import type { DesktopHost } from '$lib/hub/bridge';
 import { ExportFormat, type ExportResult, type SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
-import { documentName } from '$lib/format';
+import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
+import { activePageCount, documentName } from '$lib/format';
 import { t } from '$lib/i18n/index.svelte';
 
 /**
@@ -28,6 +29,20 @@ export function savePicker(scope: object = globalThis): SavePicker | null {
 		typeof api.showDirectoryPicker === 'function'
 		? (api as SavePicker)
 		: null;
+}
+
+/**
+ * Whether a scan can be saved right now: it is in review or already saved, has a page left to
+ * save, and no save of it is under way (`busy`). The Save buttons and Ctrl/⌘+S both ask this,
+ * so the shortcut cannot start what the greyed-out button would not.
+ */
+export function canSave(session: SessionDto | null, busy = false): boolean {
+	return (
+		!!session &&
+		!busy &&
+		(session.State === SessionState.Review || session.State === SessionState.Done) &&
+		activePageCount(session) > 0
+	);
 }
 
 /** True when the user closed the save dialog, which is not an error to report. */

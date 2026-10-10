@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+	canSave,
 	cancelled,
 	numberedFileName,
 	numberedPath,
@@ -13,7 +14,8 @@ import {
 } from '$lib/review/download';
 import type { DesktopHost } from '$lib/hub/bridge';
 import { ExportFormat, type ExportResult } from '$lib/hub/generated/Yass.Core.Hub';
-import { session } from './fixtures';
+import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
+import { page, session, sessionOf } from './fixtures';
 
 const result = (...paths: string[]): ExportResult =>
 	({
@@ -51,6 +53,21 @@ describe('save picker', () => {
 		expect(cancelled(abort)).toBe(true);
 		expect(cancelled(new Error('disk full'))).toBe(false);
 		expect(cancelled('nope')).toBe(false);
+	});
+});
+
+describe('canSave', () => {
+	it('allows a scan in review or done with a page left, while nothing is saving it', () => {
+		expect(canSave(sessionOf('s', 2))).toBe(true);
+		expect(canSave(sessionOf('s', 2, { State: SessionState.Done }))).toBe(true);
+		expect(canSave(sessionOf('s', 2), true)).toBe(false);
+		expect(canSave(null)).toBe(false);
+	});
+
+	it('refuses while scanning or exporting, and with every page deleted', () => {
+		expect(canSave(sessionOf('s', 2, { State: SessionState.Scanning }))).toBe(false);
+		expect(canSave(sessionOf('s', 2, { State: SessionState.Exporting }))).toBe(false);
+		expect(canSave(session('s', { Pages: [page(0, { Deleted: true })] }))).toBe(false);
 	});
 });
 

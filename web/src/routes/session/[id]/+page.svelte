@@ -55,6 +55,7 @@
 	import MergeModal from '$lib/components/MergeModal.svelte';
 	import StopScanButton from '$lib/components/StopScanButton.svelte';
 	import {
+		canSave,
 		cancelled,
 		exportBaseName,
 		fileExtensions,
@@ -383,10 +384,12 @@
 	async function saveAsOnDesktop(base: string, extension: string) {
 		if (!desktop) return;
 		error = null;
+		// Busy from the dialog on, not from the export: a second press while the native dialog
+		// is still up would otherwise open another one over it.
+		exporting = true;
 		try {
 			const file = await desktop.pickSavePath(base + extension);
 			if (!file) return;
-			exporting = true;
 			const result = await client.hub.export(id, {
 				Format: $exportPrefs.format,
 				Name: exportName,
@@ -510,8 +513,9 @@
 	function keydown(e: KeyboardEvent) {
 		if (!session || !screen()?.top || typing(e)) return;
 		if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 's') {
+			// Taken from the browser either way: its own Save page is never what was meant here.
 			e.preventDefault();
-			void saveAs();
+			if (canSave(session, exporting)) void saveAs();
 			return;
 		}
 		if (modified(e)) return;
