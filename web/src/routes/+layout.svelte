@@ -6,7 +6,7 @@
 	import { screenTransition } from '$lib/motion';
 	import { escape, typing } from '$lib/keys.svelte';
 	import KeyboardHelp from '$lib/components/KeyboardHelp.svelte';
-	import { getHub } from '$lib/hub/hub';
+	import { getDesktop, getHub } from '$lib/hub/hub';
 	import AppHeader from '$lib/components/AppHeader.svelte';
 	import Toast from '$lib/components/Toast.svelte';
 	import { i18n } from '$lib/i18n/index.svelte';
@@ -36,6 +36,16 @@
 		const hub = getHub();
 		void hub.start();
 	});
+
+	function click(e: MouseEvent) {
+		const desktop = getDesktop();
+		const link = (e.target as Element | null)?.closest?.('a[href]');
+		if (!desktop || !(link instanceof HTMLAnchorElement) || e.defaultPrevented) return;
+		const url = new URL(link.href, location.href);
+		if (url.origin === location.origin || !/^https?:$/.test(url.protocol)) return;
+		e.preventDefault();
+		void desktop.openUrl(url.href);
+	}
 
 	/**
 	 * Screens slide rather than swap, through the browser's View Transitions API; one without
@@ -84,7 +94,7 @@
 
 <Toast />
 
-<svelte:window onkeydown={keydown} />
+<svelte:window onkeydown={keydown} onclick={click} />
 
 {#if shortcuts}
 	<KeyboardHelp onclose={() => (shortcuts = false)} />

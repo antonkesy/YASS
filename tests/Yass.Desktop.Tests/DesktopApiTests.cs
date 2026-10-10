@@ -8,13 +8,14 @@ namespace Yass.Desktop.Tests;
 public sealed class DesktopApiTests : IAsyncLifetime
 {
     private readonly FakeDialogs _dialogs = new();
+    private readonly FakeBrowser _browser = new();
     private DesktopHarness _desktop = null!;
     private DesktopApi _api = null!;
 
     public ValueTask InitializeAsync()
     {
         _desktop = new DesktopHarness();
-        _api = new DesktopApi(_dialogs, _desktop.Services.GetRequiredService<ExportDownloads>(), NullLogger<DesktopApi>.Instance);
+        _api = new DesktopApi(_dialogs, _browser, _desktop.Services.GetRequiredService<ExportDownloads>(), NullLogger<DesktopApi>.Instance);
         return ValueTask.CompletedTask;
     }
 
@@ -104,6 +105,34 @@ public sealed class DesktopApiTests : IAsyncLifetime
         Assert.Contains(nameof(DesktopApi.PickSavePath), bridge.Methods);
         Assert.Contains(nameof(DesktopApi.PickFolder), bridge.Methods);
         Assert.Contains(nameof(DesktopApi.SaveExport), bridge.Methods);
+        Assert.Contains(nameof(DesktopApi.OpenUrl), bridge.Methods);
+    }
+
+    [Fact]
+    public async Task A_web_address_from_the_page_opens_in_the_browser()
+    {
+        var bridge = new BridgeDispatcher(_desktop.Api, _ => { }, NullLogger.Instance, [_api], CancellationToken.None);
+        string? answer = await bridge.HandleAsync("""{"id":1,"method":"OpenUrl","args":["https://example.org/a?b=c"]}""");
+        Assert.DoesNotContain("error", answer, StringComparison.Ordinal);
+        Assert.Equal(new Uri("https://example.org/a?b=c"), Assert.Single(_browser.Opened));
+    }
+
+    [Theory]
+    [InlineData("file:///etc/passwd")]
+    [InlineData("javascript:alert(1)")]
+    [InlineData("/docs")]
+    [InlineData("")]
+    public void Anything_but_a_web_address_is_refused(string address)
+    {
+        Assert.Throws<BridgeException>(() => _api.OpenUrl(new Uri(address, UriKind.RelativeOrAbsolute)));
+        Assert.Empty(_browser.Opened);
+    }
+
+    private sealed class FakeBrowser : IBrowser
+    {
+        public List<Uri> Opened { get; } = [];
+
+        public void Open(Uri url) => Opened.Add(url);
     }
 
     private sealed class FakeDialogs : IDesktopDialogs

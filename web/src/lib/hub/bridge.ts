@@ -43,6 +43,8 @@ export type DesktopHost = {
 	 * user picked (the dialog already asked); otherwise a taken name gets -2, -3…. Returns the path written.
 	 */
 	saveExport(downloadPath: string, target: string, overwrite: boolean): Promise<string>;
+	/** The webview opens no windows, so links out of the app go to the system browser. */
+	openUrl(url: string): Promise<void>;
 };
 
 export function createDesktopHost(connection: Pick<ConnectionLike, 'invoke'>): DesktopHost {
@@ -50,7 +52,8 @@ export function createDesktopHost(connection: Pick<ConnectionLike, 'invoke'>): D
 		pickSavePath: (name) => connection.invoke<string | null>('PickSavePath', name),
 		pickFolder: () => connection.invoke<string | null>('PickFolder'),
 		saveExport: (path, target, overwrite) =>
-			connection.invoke<string>('SaveExport', path, target, overwrite)
+			connection.invoke<string>('SaveExport', path, target, overwrite),
+		openUrl: (url) => connection.invoke<void>('OpenUrl', url)
 	};
 }
 

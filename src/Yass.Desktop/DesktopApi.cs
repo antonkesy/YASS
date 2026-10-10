@@ -5,10 +5,10 @@ namespace Yass.Desktop;
 
 /// <summary>
 /// What only the desktop offers, callable over the bridge next to the hub methods: native save
-/// dialogs, and moving a finished export to where the user chose. A document never passes
-/// through the page: the host renames the file the export wrote.
+/// dialogs, moving a finished export to where the user chose, and opening links in the browser.
+/// A document never passes through the page: the host renames the file the export wrote.
 /// </summary>
-public sealed class DesktopApi(IDesktopDialogs dialogs, ExportDownloads downloads, ILogger<DesktopApi> logger)
+public sealed class DesktopApi(IDesktopDialogs dialogs, IBrowser browser, ExportDownloads downloads, ILogger<DesktopApi> logger)
 {
     private string _lastFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments, Environment.SpecialFolderOption.DoNotVerify);
 
@@ -79,5 +79,21 @@ public sealed class DesktopApi(IDesktopDialogs dialogs, ExportDownloads download
             downloads.Return(sessionId, file, download);
             throw new BridgeException($"Could not save to {target}: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Opens <paramref name="url"/> in the system's browser: a link out of the app, such as the
+    /// issue forms, which a webview with no windows of its own would otherwise swallow. Web
+    /// addresses only, so the page cannot have the host start a program or open a file.
+    /// </summary>
+    public void OpenUrl(Uri url)
+    {
+        ArgumentNullException.ThrowIfNull(url);
+        if (!url.IsAbsoluteUri || (url.Scheme != Uri.UriSchemeHttps && url.Scheme != Uri.UriSchemeHttp))
+        {
+            throw new BridgeException($"{url} is not a web address.");
+        }
+
+        browser.Open(url);
     }
 }

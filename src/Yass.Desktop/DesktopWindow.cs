@@ -15,7 +15,7 @@ internal static class DesktopWindow
         IHostApplicationLifetime lifetime = services.GetRequiredService<IHostApplicationLifetime>();
         PhotinoWindow? opened = null;
         var dialogs = new PhotinoDialogs(() => opened);
-        var desktop = new DesktopApi(dialogs, services.GetRequiredService<Yass.App.Export.ExportDownloads>(), services.GetRequiredService<ILogger<DesktopApi>>());
+        var desktop = new DesktopApi(dialogs, new ShellBrowser(logger), services.GetRequiredService<Yass.App.Export.ExportDownloads>(), services.GetRequiredService<ILogger<DesktopApi>>());
         var bridge = new BridgeDispatcher(
             services.GetRequiredService<Yass.App.Api.YassApi>(),
             message => opened?.SendWebMessage(message),
@@ -126,5 +126,26 @@ internal sealed class PhotinoDialogs(Func<PhotinoWindow?> window) : IDesktopDial
             }
         });
         return done.Task;
+    }
+}
+
+/// <summary>
+/// The system's default browser, through the shell: xdg-open on Linux, <c>open</c> on macOS, the
+/// registered handler on Windows.
+/// </summary>
+[ExcludeFromCodeCoverage(Justification = "Starts the user's browser.")]
+internal sealed class ShellBrowser(ILogger logger) : IBrowser
+{
+    public void Open(Uri url)
+    {
+        try
+        {
+            using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url.AbsoluteUri) { UseShellExecute = true });
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            logger.LogWarning(ex, "Could not open {Url} in a browser", url);
+            throw new BridgeException($"Could not open a browser for {url}.");
+        }
     }
 }
