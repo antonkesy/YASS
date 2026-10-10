@@ -6,6 +6,7 @@ import {
 	numberedPath,
 	exportBaseName,
 	exportFileName,
+	exportRequest,
 	safeFileName,
 	savePicker,
 	saveNatively,
@@ -13,6 +14,7 @@ import {
 	type SaveTarget
 } from '$lib/review/download';
 import type { DesktopHost } from '$lib/hub/bridge';
+import { defaultExportPrefs } from '$lib/presets';
 import { ExportFormat, type ExportResult } from '$lib/hub/generated/Yass.Core.Hub';
 import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 import { page, session, sessionOf } from './fixtures';
@@ -211,5 +213,41 @@ describe('saveNatively', () => {
 			'.jpg'
 		);
 		expect(calls).toEqual([['/export/s/a.jpg', '/tmp/out/letter.jpg', false]]);
+	});
+});
+
+describe('exportRequest', () => {
+	const prefs = { ...defaultExportPrefs, author: 'Ada', nameTemplate: '{YEAR}' };
+
+	it('names the scan, else leaves the template to the server, and stamps its own properties', () => {
+		const named = session('s1', { Name: ' Invoice ' });
+		expect(exportRequest(named, prefs, { s1: { subject: 'Tax' } })).toEqual({
+			Format: ExportFormat.Pdf,
+			Name: 'Invoice',
+			Metadata: { Author: 'Ada', Subject: 'Tax', Keywords: undefined },
+			ToServer: false
+		});
+		expect(exportRequest(session('s2'), prefs, { s1: { subject: 'Tax' } })).toMatchObject({
+			Name: '{YEAR}',
+			Metadata: { Author: 'Ada', Subject: undefined }
+		});
+	});
+
+	it('takes a name and a destination from the caller', () => {
+		const request = exportRequest(
+			session('s1', { Name: 'Old' }),
+			defaultExportPrefs,
+			{},
+			{
+				name: 'New',
+				toServer: true
+			}
+		);
+		expect(request).toEqual({
+			Format: ExportFormat.Pdf,
+			Name: 'New',
+			Metadata: undefined,
+			ToServer: true
+		});
 	});
 });

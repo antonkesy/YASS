@@ -13,6 +13,7 @@
 	import { getDesktop, getHub, imageUrl, sortedSessions } from '$lib/hub/hub';
 	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 	import type { CropBox, PageAdjust, PageEdit } from '$lib/hub/generated/Yass.Core.Domain';
+	import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 	import {
 		activePageCount,
 		documentName,
@@ -58,6 +59,7 @@
 		canSave,
 		cancelled,
 		exportBaseName,
+		exportRequest,
 		fileExtensions,
 		savePicker,
 		saveNatively,
@@ -68,7 +70,6 @@
 	import {
 		DOCUMENT_META_FIELDS,
 		documentMeta,
-		documentMetadata,
 		exportPrefs,
 		metaFor,
 		reviewPrefs,
@@ -322,8 +323,13 @@
 		}
 	}
 
-	/** The name field wins; the template is what an unnamed scan falls back to. */
-	const exportName = $derived(storedName?.trim() || $exportPrefs.nameTemplate.trim() || undefined);
+	/**
+	 * What every save of this scan asks the server for. The name is the one this browser asked
+	 * for, which a rename still in the air behind a page read has not reached the session with.
+	 */
+	function request(of: SessionDto, toServer: boolean) {
+		return exportRequest(of, $exportPrefs, $documentMeta, { name: storedName, toServer });
+	}
 
 	/**
 	 * Save as…: asks where the file goes first, while the click is still a user gesture —
@@ -332,13 +338,15 @@
 	 * the File System Access API, which needs a secure context, get a plain download.
 	 */
 	async function saveAs() {
+		if (!session) return;
 		const picker = savePicker();
 		let target: SaveTarget | null = null;
 		// The name this browser asked for, not the one the session has caught up to — a rename
 		// can still be in the air behind a page read when Save as… is pressed.
-		const base = session
-			? exportBaseName({ ...session, Name: storedName ?? undefined }, $exportPrefs.nameTemplate)
-			: 'scan';
+		const base = exportBaseName(
+			{ ...session, Name: storedName ?? undefined },
+			$exportPrefs.nameTemplate
+		);
 		const extension = fileExtensions[$exportPrefs.format];
 
 		if (desktop) {
@@ -360,12 +368,7 @@
 		error = null;
 		exporting = true;
 		try {
-			const result = await client.hub.export(id, {
-				Format: $exportPrefs.format,
-				Name: exportName,
-				Metadata: documentMetadata(docPrefs),
-				ToServer: false
-			});
+			const result = await client.hub.export(id, request(session, false));
 			const count = target
 				? await saveToDisk(result, target, base, extension)
 				: saveToBrowser(result);
@@ -382,7 +385,7 @@
 	 * finished export there. The document never passes through the page.
 	 */
 	async function saveAsOnDesktop(base: string, extension: string) {
-		if (!desktop) return;
+		if (!desktop || !session) return;
 		error = null;
 		// Busy from the dialog on, not from the export: a second press while the native dialog
 		// is still up would otherwise open another one over it.
@@ -390,12 +393,7 @@
 		try {
 			const file = await desktop.pickSavePath(base + extension);
 			if (!file) return;
-			const result = await client.hub.export(id, {
-				Format: $exportPrefs.format,
-				Name: exportName,
-				Metadata: documentMetadata(docPrefs),
-				ToServer: false
-			});
+			const result = await client.hub.export(id, request(session, false));
 			const saved = await saveNatively(result, desktop, { file }, base, extension);
 			toast.show(t('review.savedFiles', { n: saved.length }));
 		} catch (e) {
@@ -436,12 +434,7 @@
 		error = null;
 		exporting = true;
 		try {
-			const result = await client.hub.export(id, {
-				Format: $exportPrefs.format,
-				Name: exportName,
-				Metadata: documentMetadata(docPrefs),
-				ToServer: true
-			});
+			const result = await client.hub.export(id, request(session, true));
 			const saved = result.Documents.map((d) => d.SavedTo).filter((p): p is string => !!p);
 			const file = saved[0]?.split(/[/\\]/).pop() ?? '';
 			// On the desktop the "server" is this machine, and its folder just a folder.

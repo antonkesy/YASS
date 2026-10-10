@@ -17,13 +17,13 @@
 	import { settings } from '$lib/settings';
 	import {
 		exportBaseName,
+		exportRequest,
 		fileExtensions,
 		saveNatively,
 		saveToBrowser
 	} from '$lib/review/download';
 	import {
 		documentMeta,
-		documentMetadata,
 		exportPrefs,
 		historyPrefs,
 		pruneDocumentMeta,
@@ -161,14 +161,15 @@
 			working = true;
 			let files = 0;
 			for (const id of ids) {
-				const result = await client.hub.export(id, {
-					Format: $exportPrefs.format,
-					Metadata: documentMetadata($exportPrefs),
-					ToServer: false
-				});
+				// A scan deleted since it was ticked has nothing left to download.
+				const session = $sessions.get(id);
+				if (!session) continue;
+				const result = await client.hub.export(
+					id,
+					exportRequest(session, $exportPrefs, $documentMeta)
+				);
 				if (desktop && folder) {
-					const session = $sessions.get(id);
-					const base = session ? exportBaseName(session, $exportPrefs.nameTemplate) : id;
+					const base = exportBaseName(session, $exportPrefs.nameTemplate);
 					const extension = fileExtensions[$exportPrefs.format];
 					files += (await saveNatively(result, desktop, { folder }, base, extension)).length;
 				} else {
