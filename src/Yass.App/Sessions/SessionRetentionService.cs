@@ -9,7 +9,6 @@ namespace Yass.App.Sessions;
 public sealed class SessionRetentionService(
     SessionStore store,
     ConfigStore config,
-    ScanService scans,
     IClientNotifier hub,
     TimeProvider time,
     ILogger<SessionRetentionService> logger) : BackgroundService
@@ -43,7 +42,7 @@ public sealed class SessionRetentionService(
         DateTimeOffset cutoff = time.GetUtcNow().AddHours(-hours);
         foreach (Session session in store.List())
         {
-            if (session.CreatedAt >= cutoff || session.State is SessionState.Scanning or SessionState.Exporting || scans.IsScanning && session.State == SessionState.Scanning)
+            if (session.CreatedAt >= cutoff || session.State is SessionState.Scanning or SessionState.Exporting)
             {
                 continue;
             }
