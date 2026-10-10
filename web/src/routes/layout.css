@@ -573,7 +573,9 @@
  * screen in from the right, going back from the left; the settings sheet, which brings its
  * own entrance, only cross-fades. The header is its own layer, so it stays put throughout.
  */
-header {
+/* AppHeader's alone: a name may be on one element at a time, and the settings sheet's own
+   <header> would otherwise share it and make the browser skip the transition altogether. */
+[data-app-header] {
 	view-transition-name: app-header;
 }
 
