@@ -359,13 +359,18 @@
 		</button>
 	{/if}
 
+	<!--
+		A list of pages, each of whose own buttons are what a screen reader works: showing,
+		ticking and opening a page. The pointer and Alt+Arrow handlers here are delegated from
+		those buttons, for dragging and keyboard reordering, not a control of the list's own.
+	-->
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<div
 		class="{scroller} {drag ? 'cursor-grabbing touch-none select-none' : ''}"
 		style={overview
 			? `grid-template-columns: repeat(auto-fill, minmax(${tile}px, 1fr))`
 			: undefined}
-		role="listbox"
-		aria-multiselectable={overview}
+		role="list"
 		aria-label={t('review.gridLabel')}
 		tabindex="-1"
 		bind:this={grid}
@@ -387,8 +392,7 @@
 				class="{cell} animate-page-in transition-transform duration-200 ease-spring {held
 					? 'rounded-[14px] bg-accent-50 outline-[1.5px] -outline-offset-[1.5px] outline-accent-dash outline-dashed'
 					: ''} {pressing === page.Index ? 'scale-[0.95]' : ''}"
-				role="option"
-				aria-selected={overview ? selection.has(page.Index) : page.Index === current}
+				role="listitem"
 				data-index={page.Index}
 				data-held={held}
 				style="animation-delay: {Math.min(page.Index, 10) * 45}ms"
@@ -408,25 +412,31 @@
 			</div>
 		{/each}
 
+		<!-- Items of the list as well, without a box of their own to change the layout. -->
 		{#if scanning}
-			<div
-				class="{cell} rounded-[14px] bg-accent-50 shadow-ring-pending"
-				style="aspect-ratio: 1 / 1.2"
-				aria-label={t('review.scanningNext')}
-			></div>
+			<div class="contents" role="listitem">
+				<div
+					class="{cell} rounded-[14px] bg-accent-50 shadow-ring-pending"
+					style="aspect-ratio: 1 / 1.2"
+					role="status"
+					aria-label={t('review.scanningNext')}
+				></div>
+			</div>
 		{/if}
 
 		{#if onscanmore && !scanning}
-			<button
-				type="button"
-				onclick={onscanmore}
-				data-testid="scan-more-tile"
-				class="{cell} flex flex-col items-center justify-center gap-1 rounded-[14px] border-[1.5px] border-dashed border-accent-dash text-xs font-bold text-accent transition-colors hover:border-accent hover:bg-accent-hover50"
-				style="aspect-ratio: 1 / 1.2"
-			>
-				<Icon name="plus" size={16} />
-				{t('review.scanMore')}
-			</button>
+			<div class="contents" role="listitem">
+				<button
+					type="button"
+					onclick={onscanmore}
+					data-testid="scan-more-tile"
+					class="{cell} flex flex-col items-center justify-center gap-1 rounded-[14px] border-[1.5px] border-dashed border-accent-dash text-xs font-bold text-accent transition-colors hover:border-accent hover:bg-accent-hover50"
+					style="aspect-ratio: 1 / 1.2"
+				>
+					<Icon name="plus" size={16} />
+					{t('review.scanMore')}
+				</button>
+			</div>
 		{/if}
 	</div>
 </div>
