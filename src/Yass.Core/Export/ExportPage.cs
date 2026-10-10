@@ -4,28 +4,13 @@ namespace Yass.Core.Export;
 
 /// <summary>A page to export: the untouched source file plus the edits to apply while exporting.</summary>
 /// <param name="SourcePath">Absolute path of the original PNG.</param>
-/// <param name="Rotation">Rotation to apply.</param>
-/// <param name="Filter">Per-page treatment to apply.</param>
-/// <param name="ScanColor">Colour mode the page was scanned in, which <see cref="PageFilter.Original"/> keeps.</param>
-/// <param name="Crop">Trim to apply before rotating, or <c>null</c>.</param>
+/// <param name="Spec">
+/// What the pipeline renders: the same record the page's hash and its previews are made from, so
+/// an export cannot miss an edit they show.
+/// </param>
 /// <param name="Dpi">Resolution the page was scanned at; used for the PDF page size when the file carries none.</param>
-/// <param name="Adjust">Tone and sharpness, or <c>null</c>.</param>
-/// <param name="Cleanup">Clean-up passes.</param>
-/// <param name="Skew">Fine rotation in degrees.</param>
-public sealed record ExportPage(
-    string SourcePath,
-    Rotation Rotation,
-    PageFilter Filter,
-    ColorMode ScanColor,
-    CropBox? Crop,
-    int Dpi,
-    PageAdjust? Adjust = null,
-    PageCleanup Cleanup = PageCleanup.None,
-    double Skew = 0)
+public sealed record ExportPage(string SourcePath, RenderSpec Spec, int Dpi)
 {
-    /// <summary>What the pipeline renders: everything above but the file and the resolution.</summary>
-    public RenderSpec Spec => new(Rotation, Filter, ScanColor, Crop, Adjust, Cleanup, Skew);
-
     /// <summary>The colour mode this page actually renders in.</summary>
     public ColorMode ColorMode => Spec.ColorMode;
 }

@@ -39,7 +39,7 @@ public sealed class PdfAssemblyTests : IDisposable
     [Fact]
     public async Task Metadata_is_stamped_into_the_pdf_and_what_is_left_empty_stays_empty()
     {
-        ExportPage[] page = [new ExportPage(_fixtures[0], Rotation.R0, PageFilter.Original, ColorMode.Grayscale, null, 300)];
+        ExportPage[] page = [new ExportPage(_fixtures[0], new RenderSpec(Rotation.R0, PageFilter.Original, ColorMode.Grayscale, null), 300)];
 
         string stamped = await WriteAsync(page, metadata: new DocumentMetadata("Tax return", "Jane Doe", "Taxes 2026", "tax, receipt"));
         Assert.Matches(@"/Title\s*\(Tax return\)", stamped);
@@ -60,9 +60,9 @@ public sealed class PdfAssemblyTests : IDisposable
     public async Task Pdf_has_one_page_per_export_page_in_order()
     {
         string pdf = await WriteAsync([
-            new ExportPage(_fixtures[0], Rotation.R0, PageFilter.Original, ColorMode.Grayscale, null, 300),
-            new ExportPage(_fixtures[1], Rotation.R0, PageFilter.Original, ColorMode.Grayscale, null, 300),
-            new ExportPage(_fixtures[3], Rotation.R0, PageFilter.Original, ColorMode.Color, null, 300)]);
+            new ExportPage(_fixtures[0], new RenderSpec(Rotation.R0, PageFilter.Original, ColorMode.Grayscale, null), 300),
+            new ExportPage(_fixtures[1], new RenderSpec(Rotation.R0, PageFilter.Original, ColorMode.Grayscale, null), 300),
+            new ExportPage(_fixtures[3], new RenderSpec(Rotation.R0, PageFilter.Original, ColorMode.Color, null), 300)]);
 
         Assert.StartsWith("%PDF-", pdf, StringComparison.Ordinal);
         Assert.Equal(3, PageCount(pdf));
@@ -74,9 +74,9 @@ public sealed class PdfAssemblyTests : IDisposable
         // Fixtures are rendered A4 at 300 dpi, so 300 dpi is what makes them A4 (595x842 pt)
         // again on the page, and twice that halves it.
         string pdf = await WriteAsync([
-            new ExportPage(_fixtures[0], Rotation.R0, PageFilter.Original, ColorMode.Grayscale, null, 300),
-            new ExportPage(_fixtures[0], Rotation.R90, PageFilter.Original, ColorMode.Grayscale, null, 300),
-            new ExportPage(_fixtures[0], Rotation.R180, PageFilter.Original, ColorMode.Grayscale, null, 600)]);
+            new ExportPage(_fixtures[0], new RenderSpec(Rotation.R0, PageFilter.Original, ColorMode.Grayscale, null), 300),
+            new ExportPage(_fixtures[0], new RenderSpec(Rotation.R90, PageFilter.Original, ColorMode.Grayscale, null), 300),
+            new ExportPage(_fixtures[0], new RenderSpec(Rotation.R180, PageFilter.Original, ColorMode.Grayscale, null), 600)]);
 
         (double W, double H)[] boxes = MediaBoxes(pdf);
         Assert.Equal(3, boxes.Length);
@@ -90,7 +90,7 @@ public sealed class PdfAssemblyTests : IDisposable
     [Fact]
     public async Task Jpeg_compression_embeds_dct_and_lossless_does_not()
     {
-        ExportPage[] pages = [new ExportPage(_fixtures[3], Rotation.R0, PageFilter.Original, ColorMode.Color, null, 300)];
+        ExportPage[] pages = [new ExportPage(_fixtures[3], new RenderSpec(Rotation.R0, PageFilter.Original, ColorMode.Color, null), 300)];
 
         string jpeg = await WriteAsync(pages, new PdfConfig { Compression = PdfCompression.Jpeg, JpegQuality = 50 });
         string lossless = await WriteAsync(pages, new PdfConfig { Compression = PdfCompression.Lossless });
@@ -102,7 +102,7 @@ public sealed class PdfAssemblyTests : IDisposable
     [Fact]
     public async Task Lower_jpeg_quality_yields_smaller_file()
     {
-        ExportPage[] pages = [new ExportPage(_fixtures[3], Rotation.R0, PageFilter.Original, ColorMode.Color, null, 300)];
+        ExportPage[] pages = [new ExportPage(_fixtures[3], new RenderSpec(Rotation.R0, PageFilter.Original, ColorMode.Color, null), 300)];
 
         string hi = await WriteAsync(pages, new PdfConfig { JpegQuality = 95 });
         string lo = await WriteAsync(pages, new PdfConfig { JpegQuality = 30 });
@@ -117,8 +117,8 @@ public sealed class PdfAssemblyTests : IDisposable
         var handler = new SynchronousProgress(progress.Add);
 
         await WriteAsync([
-            new ExportPage(_fixtures[0], Rotation.R0, PageFilter.Original, ColorMode.Grayscale, null, 300),
-            new ExportPage(_fixtures[1], Rotation.R0, PageFilter.Original, ColorMode.Grayscale, null, 300)], progress: handler);
+            new ExportPage(_fixtures[0], new RenderSpec(Rotation.R0, PageFilter.Original, ColorMode.Grayscale, null), 300),
+            new ExportPage(_fixtures[1], new RenderSpec(Rotation.R0, PageFilter.Original, ColorMode.Grayscale, null), 300)], progress: handler);
 
         Assert.Equal([45, 90, 100], progress);
     }
