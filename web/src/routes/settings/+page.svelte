@@ -32,10 +32,10 @@
 	} from '$lib/presets';
 	import { TILE_SIZES } from '$lib/review/overview';
 	import { ExportFormat } from '$lib/hub/generated/Yass.Core.Hub';
-	import { exportFormatOptions } from '$lib/format';
+	import { ColorMode } from '$lib/hub/generated/Yass.Core.Domain';
+	import { colorLabel, exportFormatOptions } from '$lib/format';
 	import { fileExtensions } from '$lib/review/download';
 	import { expandTemplate, templateTokens, unknownTokens } from '$lib/template';
-	import { colorModeLabels } from '$lib/review/edits';
 	import { t, type MessageKey } from '$lib/i18n/index.svelte';
 	import { appearance, type Appearance } from '$lib/appearance.svelte';
 
@@ -124,7 +124,7 @@
 		preset: chosen?.name.replace(/\s+/g, '-') ?? 'Custom',
 		counter: 42,
 		dpi: $settings.Dpi ?? effective?.Dpi ?? 300,
-		color: colorModeLabels[$settings.Color ?? effective?.Color ?? 2] ?? 'Color'
+		color: colorLabel($settings.Color ?? effective?.Color ?? ColorMode.Color)
 	});
 	const templatePreview = $derived(
 		$exportPrefs.nameTemplate.trim()
