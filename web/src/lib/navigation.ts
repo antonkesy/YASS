@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 
 /**
  * Which session the user just came back from, so home can slide in from the left and
@@ -7,7 +7,8 @@ import { writable } from 'svelte/store';
  * and in history long after the animation finished.
  */
 function create() {
-	const { subscribe, set } = writable<string | null>(null);
+	const store = writable<string | null>(null);
+	const { subscribe, set } = store;
 	return {
 		subscribe,
 		leaving(sessionId: string) {
@@ -15,10 +16,9 @@ function create() {
 		},
 		/** Reads the hint and clears it, so it plays once. */
 		take() {
-			let value: string | null = null;
-			subscribe((v) => (value = v))();
+			const value = get(store);
 			set(null);
-			return value as string | null;
+			return value;
 		}
 	};
 }
