@@ -26,16 +26,18 @@ const result = (...paths: string[]): ExportResult =>
 
 /** A file handle that keeps what was written to it, standing in for a picked file. */
 function fakeFile() {
-	const written: Blob[] = [];
-	return {
-		written,
+	const written: Uint8Array<ArrayBuffer>[] = [];
+	const file = { written, closed: false, aborted: false, text: () => new Blob(written).text() };
+	return Object.assign(file, {
 		handle: {
-			createWritable: async () => ({
-				write: async (data: Blob) => void written.push(data),
-				close: async () => undefined
-			})
-		}
-	};
+			createWritable: async () =>
+				new WritableStream<Uint8Array<ArrayBuffer>>({
+					write: (chunk) => void written.push(chunk),
+					close: () => void (file.closed = true),
+					abort: () => void (file.aborted = true)
+				})
+		} as unknown as FileSystemFileHandle
+	});
 }
 
 const ok = (body = 'pdf-bytes') =>
@@ -116,7 +118,8 @@ describe('saving to a picked place', () => {
 		);
 		expect(written).toBe(1);
 		expect(get).toHaveBeenCalledWith('/export/s1/tok.pdf');
-		expect(await file.written[0].text()).toBe('pdf-bytes');
+		expect(await file.text()).toBe('pdf-bytes');
+		expect(file.closed).toBe(true);
 	});
 
 	it('writes a split scan into the picked folder, named per document', async () => {
@@ -137,6 +140,24 @@ describe('saving to a picked place', () => {
 		);
 		expect(written).toBe(2);
 		expect([...files.keys()]).toEqual(['Invoice.pdf', 'Invoice-2.pdf']);
+	});
+
+	it('abandons the file, rather than keep half a document, when the download breaks off', async () => {
+		const file = fakeFile();
+		const body = new ReadableStream<Uint8Array>({
+			start(controller) {
+				controller.enqueue(new TextEncoder().encode('%PDF-'));
+				controller.error(new Error('connection reset'));
+			}
+		});
+		const broken = vi.fn(
+			async () => new Response(body, { status: 200 })
+		) as unknown as typeof fetch;
+		await expect(
+			saveToDisk(result('/export/s1/a.pdf'), { file: file.handle }, 'Invoice', '.pdf', broken)
+		).rejects.toThrow(/reset/);
+		expect(file.aborted).toBe(true);
+		expect(file.closed).toBe(false);
 	});
 
 	it('refuses to write several documents over one file, and reports a refused fetch', async () => {

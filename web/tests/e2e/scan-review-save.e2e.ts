@@ -370,13 +370,13 @@ test('save as… writes the document where the save dialog points', async ({ pag
 				saved.name = options.suggestedName ?? null;
 				return Promise.resolve({
 					createWritable: () =>
-						Promise.resolve({
-							write: (data: Blob) => {
-								saved.bytes += data.size;
-								return Promise.resolve();
-							},
-							close: () => Promise.resolve()
-						})
+						Promise.resolve(
+							new WritableStream<Uint8Array | Blob>({
+								write: (chunk) => {
+									saved.bytes += chunk instanceof Blob ? chunk.size : chunk.byteLength;
+								}
+							})
+						)
 				});
 			},
 			showDirectoryPicker: () => Promise.reject(new Error('one document needs no folder'))
