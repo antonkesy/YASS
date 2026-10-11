@@ -197,69 +197,15 @@ Idle RSS ≤ 80 MB; 50-page 300 dpi color scan ≤ 400 MB peak; container image 
 
 80 % line coverage gate on `Yass.*` (excl. `Yass.Fake`). Fake scenarios: N pages, blank at k, error after k, slow pages, feeder-empty-after-N. Export tests assert page count, rotation, deleted pages absent, one-shot download URLs. Config tests: round-trip every key; invalid value names the key. Hub contract test: generated TS matches C#; drift fails CI. Playwright: desktop + mobile viewport, real server in `--fake` mode.
 
-## 11. Commit plan — DECIDED
+## 11. Commits — DECIDED
 
-No monolithic commits. Each item below is one commit (or a small series) with a Conventional Commit message, each passing `pre-commit run --all-files` and all tests at that point. Order is the build order.
-
-```
-chore: init repo, editorconfig, gitignore, license, readme skeleton
-chore(nix): add flake with dev shell (dotnet 10, node 24, pnpm, sane-backends)
-chore: add pre-commit config with dotnet, node, nix, yaml hooks
-chore(dotnet): create solution and empty projects with analyzers and warnaserror
-feat(core): add domain records for session, page and page edits
-feat(core): add config records with validation attributes
-test(core): add config round-trip and validation tests
-feat(core): define IScannerBackend, IDocumentWriter and hub contracts
-feat(fake): add FakeScannerBackend with scripted scenarios and png fixtures
-feat(server): bootstrap host, config binding, /healthz and static hosting
-feat(server): add SignalR hub with MessagePack and scanner status broadcast
-feat(server): implement session lifecycle and scan loop on fake backend
-feat(server): add page edit handling with non-destructive edit state
-feat(server): add thumbnail and preview rendering with disk cache and immutable http endpoints
-test(server): add hub integration tests via WebApplicationFactory
-chore(web): scaffold SvelteKit with static adapter, tailwind and pwa plugin
-chore(web): add hub type generation and contract check script
-feat(web): add hub connection store with reconnect
-feat(web): add home route with scanner status and scan button
-feat(web): add session review grid with selection and toolbar
-feat(web): add full-page preview with swipe navigation
-feat(web): add drag reorder and blank page badges
-feat(web): add settings route backed by localStorage
-feat(web): add save and download flow with progress
-test(web): add vitest unit tests for components and stores
-test(web): add playwright e2e for scan-review-save on desktop and mobile
-feat(scanning): implement Naps2ScannerBackend with device discovery and option mapping
-feat(scanning): add blank page detection and deskew via naps2
-test(scanning): add option mapping tests
-feat(export): assemble pdf via naps2 PdfExporter with applied edits
-feat(export): add filename templating and atomic write to consume directory
-test(export): add pdf assembly and atomic write tests
-ci: add github actions workflow for lint, test, e2e and coverage gate
-ci: add release-please and multi-arch image publish
-chore(docker): add multi-stage Dockerfile and compose example
-feat(nix): add package, docker image and NixOS module
-docs: write readme with quickstart, config reference and lan-only warning
-docs: add desktop deployment to spec
-refactor(server): broadcast through IClientNotifier
-refactor(server): move hub logic into YassApi
-refactor(app): extract Yass.App project
-feat(desktop): photino host serving the app over yass://
-feat(desktop): json message bridge for hub calls and events
-test(desktop): bridge dispatcher round-trip tests
-feat(web): message-bridge transport selected at runtime
-feat(web): native save dialogs on desktop
-feat(scanning): wia driver and escl as the macos default
-perf(desktop): local-first defaults
-feat(nix): yass-desktop package
-ci: build and release desktop for linux, windows and macos
-docs: readme desktop section
-```
+One logical change per commit, with a Conventional Commit message, each passing `pre-commit run --all-files` and all tests. No monolithic commits.
 
 Scopes: `core`, `app`, `fake`, `server`, `desktop`, `web`, `scanning`, `export`, `nix`, `docker`, `ci`. Fixes discovered while working get their own `fix(scope):` commit, not squashed into a feature.
 
 ## 12. Agent working rules
 
-1. Follow the commit plan order. The app must be fully usable in `--fake` mode before `Yass.Scanning` is written.
+1. Keep the app fully usable in `--fake` mode.
 2. No new dependency without a one-line ADR in `docs/decisions/`. Prefer BCL / already-listed packages.
 3. Never block a hub or request thread on scanning or rendering.
 4. If the NAPS2 API differs from assumptions here, adapt the adapter, keep the domain model, and note it in an ADR.
