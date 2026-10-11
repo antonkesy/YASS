@@ -1,24 +1,24 @@
 <div align="center">
 
-<img src="assets/logo/yass.svg" alt="YASS logo" width="120">
+<img src="assets/logo/yass.svg" alt="YASS logo: a scanned page cheering with both fists up" width="140">
 
 # YASS
 
-**Yet Another Slop Scanner**: scan from any device on your network, review the pages, save a PDF.
+**Yet Another Slop Scanner**: scan, fix up the pages, save a PDF. *Yasss.*
 
-[Features](#features) · [Quickstart](#quickstart) · [Desktop app](#desktop-app) · [Configuration](#configuration) · [Development](#development)
+A desktop app for **Linux, Windows and macOS** that can also run on another machine and be used from any browser on your network.
+
+[Features](#features) · [What you need](#what-you-need) · [Desktop app](#desktop-app) · [Run it on another machine](#run-it-on-another-machine) · [Configuration](#configuration) · [Development](#development)
 
 </div>
 
-YASS turns a scanner attached to a home server (USB via SANE, or a network scanner via eSCL) into
-a scanning station for every phone and laptop on your LAN. Press **Scan**, let the feeder run
-empty, fix up the pages, and save the document wherever you are. It also runs as a
-[desktop app](#desktop-app) that opens no network port at all.
+YASS is a scanning app for the scanner on your desk. Press **Scan**, let the feeder run empty,
+rotate, crop and reorder the pages, and save the document. It runs as a native window on Linux,
+Windows and macOS and opens no network port at all.
 
-> [!WARNING]
-> **No authentication. LAN only.** Anyone who can reach the port can scan, view and delete
-> documents. Bind YASS to a LAN address, keep it behind your firewall, and never expose it to
-> the internet or a public reverse proxy.
+The fun part: the same app can also run on another machine, such as the home server your scanner is
+plugged into, and every phone and laptop on your LAN gets the same screens in the browser. See
+[Run it on another machine](#run-it-on-another-machine).
 
 <p align="center">
   <img src="assets/screenshots/review-desktop.png" alt="Review screen on a desktop browser: page strip, the page on the stage, and the save panel" width="100%">
@@ -35,13 +35,13 @@ empty, fix up the pages, and save the document wherever you are. It also runs as
 
 | | |
 |---|---|
+| **Linux, Windows and macOS** | A native desktop app on all three, with no server and no open port. |
 | **Scan in one tap** | Live scanner status, presets, and pages that show up as they leave the feeder. |
 | **Review before saving** | Rotate, crop, straighten, adjust brightness and contrast, apply filters (Enhance, Grayscale, B&W, Despeckle, Auto-levels), reorder by dragging, delete and restore. Edits are non-destructive. |
 | **Blank pages handled** | Blank pages are detected and pre-marked deleted. |
 | **Edit many at once** | *All pages* shows the whole scan on one screen; tick pages and edit them together. |
 | **Save anywhere** | *Save as…* downloads a PDF, or one image per page, to the device you are holding. Optionally *Save to server* drops it into a fixed folder, such as a [paperless-ngx](https://docs.paperless-ngx.com/) consume folder. |
-| **Mobile first** | An installable PWA with swipe preview, full keyboard control and 44 px touch targets. |
-| **Desktop app** | Linux, Windows and macOS. Same UI, no server, no open port. |
+| **Also on your phone** | Run it on another machine and use it from any browser on your LAN: an installable PWA with swipe preview, full keyboard control and 44 px touch targets. |
 | **One config file** | `yass.yaml`, with every key overridable from the environment. |
 | **Try without hardware** | `--fake` simulates a scanner. |
 
@@ -49,7 +49,65 @@ Built with .NET 10 and [NAPS2.Sdk](https://www.naps2.com/sdk) for scanning, Svel
 Tailwind for the UI, and SignalR over MessagePack in between. No database: scans are plain
 directories.
 
-## Quickstart
+## What you need
+
+**A scanner** that one of these drivers can reach:
+
+| Driver | Platforms | Scanners |
+|---|---|---|
+| SANE | Linux | USB and network scanners supported by [`sane-backends`](http://www.sane-project.org/sane-supported-devices.html) |
+| WIA | Windows | Anything with a Windows scanner driver |
+| eSCL (AirScan) | Linux, Windows, macOS | Most modern network scanners and multifunction printers, no driver needed |
+
+No scanner at hand? `--fake` simulates one.
+
+**For the desktop app:**
+
+| Platform | Needs |
+|---|---|
+| Linux (x86-64) | WebKitGTK 4.1 (`webkit2gtk-4.1`), plus `sane-backends` for USB scanners |
+| Windows (x64) | Windows 10 or 11, which already ship the WebView2 runtime |
+| macOS (Apple Silicon) | A scanner that speaks eSCL; USB scanners only work if they do |
+
+.NET is bundled, so nothing else has to be installed.
+
+**For running it on another machine:** Docker, NixOS, or the .NET 10 SDK and Node 24 with pnpm to
+build it yourself. Any current browser works as the client: Chrome, Edge, Firefox or Safari, on a
+phone or a computer.
+
+## Desktop app
+
+For a scanner plugged into, or on the same network as, the computer you are sitting at. It shows
+the app in a native window ([Photino](https://www.tryphotino.io/)). The UI talks to the scanning
+code inside the same process, so it **opens no port, not even on localhost**.
+
+Download it from the [releases](https://github.com/antonkesy/YASS/releases):
+
+| Platform | File | Notes |
+|---|---|---|
+| Linux | `YASS-<version>-x86_64.AppImage` | Needs WebKitGTK 4.1 (`webkit2gtk-4.1`). |
+| Windows | `YASS-<version>-windows-x64-setup.exe` | Per-user install, no admin prompt. Not signed, so SmartScreen warns once. |
+| macOS (Apple Silicon) | `YASS-<version>-macos-arm64.zip` | Not notarised: allow it under *Privacy & Security*, or run `xattr -dr com.apple.quarantine /Applications/YASS.app`. |
+
+Portable zips and `SHA256SUMS` are attached as well. With Nix:
+`nix run github:antonkesy/YASS#desktop -- --fake`.
+
+The desktop app reads the same `yass.yaml` from `~/.config/yass/` (Linux), `%APPDATA%\yass\`
+(Windows) or `~/Library/Application Support/yass/` (macOS). The file is optional, and `server:` is
+ignored. The scanner driver defaults to SANE on Linux, WIA on Windows and eSCL on macOS; on a Mac,
+USB scanners work only if they speak eSCL ([ADR-004](docs/decisions/ADR-004-naps2-api-adaptation.md)).
+
+## Run it on another machine
+
+YASS can also run as a small web server on the machine the scanner is attached to, such as a home
+server. Every phone and laptop on your LAN then opens it in the browser and gets the same screens as the desktop app: scan from the couch, review on your phone, save the
+PDF to the device you are holding or straight into a folder on the server, such as a
+[paperless-ngx](https://docs.paperless-ngx.com/) consume folder.
+
+> [!WARNING]
+> **No authentication. LAN only.** Anyone who can reach the port can scan, view and delete
+> documents. Bind YASS to a LAN address, keep it behind your firewall, and never expose it to
+> the internet or a public reverse proxy.
 
 ### Try it
 
@@ -109,28 +167,6 @@ nix develop
 pnpm --dir web install && pnpm --dir web build
 YASS_WEBROOT=$PWD/web/build dotnet run --project src/Yass.Server -- --fake
 ```
-
-## Desktop app
-
-For a scanner plugged into the computer you are sitting at. It shows the same screens in a native
-window ([Photino](https://www.tryphotino.io/)). The UI talks to the scanning code inside the same
-process, so it **opens no port, not even on localhost**.
-
-Download it from the [releases](https://github.com/antonkesy/YASS/releases):
-
-| Platform | File | Notes |
-|---|---|---|
-| Linux | `YASS-<version>-x86_64.AppImage` | Needs WebKitGTK 4.1 (`webkit2gtk-4.1`). |
-| Windows | `YASS-<version>-windows-x64-setup.exe` | Per-user install, no admin prompt. Not signed, so SmartScreen warns once. |
-| macOS (Apple Silicon) | `YASS-<version>-macos-arm64.zip` | Not notarised: allow it under *Privacy & Security*, or run `xattr -dr com.apple.quarantine /Applications/YASS.app`. |
-
-Portable zips and `SHA256SUMS` are attached as well. With Nix:
-`nix run github:antonkesy/YASS#desktop -- --fake`.
-
-The desktop app reads the same `yass.yaml` from `~/.config/yass/` (Linux), `%APPDATA%\yass\`
-(Windows) or `~/Library/Application Support/yass/` (macOS). The file is optional, and `server:` is
-ignored. The scanner driver defaults to SANE on Linux, WIA on Windows and eSCL on macOS; on a Mac,
-USB scanners work only if they speak eSCL ([ADR-004](docs/decisions/ADR-004-naps2-api-adaptation.md)).
 
 ## Configuration
 
