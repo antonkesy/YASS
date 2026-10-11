@@ -1,29 +1,56 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- YASS logo: an original flat-colour "nailed it" figure pumping a fist and holding a scanned sheet.
-       Safe zone for maskable icons: keep everything inside the central 80%. -->
-  <rect width="512" height="512" rx="96" fill="#0f766e"/>
-  <!-- scanned sheet -->
-  <g transform="rotate(-8 300 300)">
-    <rect x="236" y="196" width="150" height="196" rx="10" fill="#ffffff"/>
-    <rect x="256" y="224" width="110" height="12" rx="6" fill="#94a3b8"/>
-    <rect x="256" y="252" width="90" height="12" rx="6" fill="#94a3b8"/>
-    <rect x="256" y="280" width="104" height="12" rx="6" fill="#94a3b8"/>
-    <rect x="256" y="308" width="70" height="12" rx="6" fill="#94a3b8"/>
-    <rect x="256" y="336" width="96" height="12" rx="6" fill="#0f766e"/>
+  <!-- YASS logo: an original freshly scanned page throwing both arms up, popping out of the scanner.
+       Safe zone for maskable icons: the page, face and fists stay inside the central 80%. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff4f9a"/>
+      <stop offset="1" stop-color="#7b3cf0"/>
+    </linearGradient>
+    <radialGradient id="beam" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#a5f3fc"/>
+      <stop offset="1" stop-color="#a5f3fc" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- triumph rays -->
+  <g fill="#ffffff" opacity="0.13">
+    <path d="M256 268 L120 0 H200 Z"/>
+    <path d="M256 268 L312 0 H392 Z"/>
+    <path d="M256 268 L512 60 V150 Z"/>
+    <path d="M256 268 L0 150 V60 Z"/>
+    <path d="M256 268 L512 300 V390 Z"/>
+    <path d="M256 268 L0 390 V300 Z"/>
   </g>
-  <!-- body -->
-  <rect x="140" y="236" width="128" height="150" rx="44" fill="#fbbf24"/>
-  <!-- head -->
-  <circle cx="204" cy="176" r="52" fill="#fde68a"/>
-  <!-- grin -->
-  <path d="M180 190 q24 22 48 0" stroke="#78350f" stroke-width="8" fill="none" stroke-linecap="round"/>
-  <circle cx="188" cy="168" r="6" fill="#78350f"/>
-  <circle cx="222" cy="168" r="6" fill="#78350f"/>
-  <!-- raised arm with fist -->
-  <path d="M150 262 L96 180" stroke="#fbbf24" stroke-width="34" stroke-linecap="round"/>
-  <circle cx="90" cy="168" r="30" fill="#fde68a"/>
-  <!-- arm holding sheet -->
-  <path d="M256 290 L288 302" stroke="#fbbf24" stroke-width="30" stroke-linecap="round"/>
-  <!-- legs -->
-  <path d="M176 380 L164 438 M232 380 L244 438" stroke="#fbbf24" stroke-width="30" stroke-linecap="round"/>
+  <!-- arms, behind the page -->
+  <g stroke="#ffffff" stroke-width="24" stroke-linecap="round" fill="none">
+    <path d="M178 278 Q126 252 118 180"/>
+    <path d="M334 278 Q386 252 394 180"/>
+  </g>
+  <circle cx="116" cy="164" r="25" fill="#ffffff"/>
+  <circle cx="396" cy="164" r="25" fill="#ffffff"/>
+  <!-- the page -->
+  <path d="M172 152 H306 L350 196 V400 H172 Z" fill="#1e1442" opacity="0.18" transform="translate(6 8)"/>
+  <path d="M182 146 H304 L348 190 V400 H164 V164 Q164 146 182 146 Z" fill="#ffffff"/>
+  <path d="M304 146 V176 Q304 190 318 190 H348 Z" fill="#e4dcff"/>
+  <!-- face -->
+  <g stroke="#1e1442" stroke-width="11" stroke-linecap="round" fill="none">
+    <path d="M200 236 q15 -20 30 0"/>
+    <path d="M282 236 q15 -20 30 0"/>
+  </g>
+  <circle cx="196" cy="268" r="13" fill="#ff4f9a" opacity="0.45"/>
+  <circle cx="316" cy="268" r="13" fill="#ff4f9a" opacity="0.45"/>
+  <path d="M218 258 H294 Q294 318 256 318 Q218 318 218 258 Z" fill="#1e1442"/>
+  <path d="M234 304 Q256 284 278 304 Q268 318 256 318 Q244 318 234 304 Z" fill="#ff6b9e"/>
+  <!-- scanner the page pops out of -->
+  <ellipse cx="256" cy="372" rx="170" ry="26" fill="url(#beam)"/>
+  <rect x="92" y="368" width="328" height="66" rx="22" fill="#1e1442"/>
+  <rect x="120" y="368" width="272" height="9" rx="4.5" fill="#67e8f9"/>
+  <circle cx="380" cy="404" r="8" fill="#4ade80"/>
+  <!-- sparkles -->
+  <g fill="#fff6a8">
+    <path d="M190 74 q5 22 27 27 q-22 5 -27 27 q-5 -22 -27 -27 q22 -5 27 -27 Z"/>
+    <path d="M338 92 q3 14 17 17 q-14 3 -17 17 q-3 -14 -17 -17 q14 -3 17 -17 Z"/>
+    <path d="M440 262 q3 14 17 17 q-14 3 -17 17 q-3 -14 -17 -17 q14 -3 17 -17 Z"/>
+    <path d="M70 250 q4 18 22 22 q-18 4 -22 22 q-4 -18 -22 -22 q18 -4 22 -22 Z"/>
+  </g>
 </svg>

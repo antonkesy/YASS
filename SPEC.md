@@ -267,7 +267,7 @@ Scopes: `core`, `app`, `fake`, `server`, `desktop`, `web`, `scanning`, `export`,
 
 ## 13. Branding
 
-**YASS** — Yet Another Slop Scanner. Logo: an original triumphant "nailed it" character — flat-color figure pumping a fist while holding a scanned sheet; readable at 16 px, maskable at 512 px. SVG + PNG 192/512 + favicon. No recognisable actor, film still or existing meme image.
+**YASS** — Yet Another Slop Scanner. Logo: the "YASS!" cheer as an original flat-color character — a freshly scanned page with a grin, popping out of the scanner with both fists up, on a pink-to-violet burst with sparkles; readable at 16 px, maskable at 512 px. SVG + PNG 192/512 + favicon. No recognisable actor, film still or existing meme image.
 
 ## 14. OPEN
 
