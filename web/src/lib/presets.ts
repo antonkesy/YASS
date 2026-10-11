@@ -174,6 +174,18 @@ export function activePreset(
 	);
 }
 
+/** Untouched settings that match no preset start on Document, so a first scan is a sensible one. */
+export function startingPreset(
+	presets: readonly Preset[],
+	overrides: ScanOverrides,
+	picked: string | null,
+	active: Preset | null
+): Preset | null {
+	if (picked !== null || active) return null;
+	if (Object.keys(overrides).some((key) => key !== 'Device')) return null;
+	return presets.find((p) => p.id === 'document') ?? null;
+}
+
 /** Replaces rather than merges, so keys of the previous preset do not leak into this one. */
 export function applyPreset(preset: Preset, current: ScanOverrides): ScanOverrides {
 	return current.Device ? { ...preset.settings, Device: current.Device } : { ...preset.settings };

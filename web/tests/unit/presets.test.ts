@@ -15,6 +15,7 @@ import {
 	presetsFor,
 	pruneDocumentMeta,
 	setDocumentMeta,
+	startingPreset,
 	type Preset
 } from '$lib/presets';
 import { get } from 'svelte/store';
@@ -106,6 +107,18 @@ describe('picking between presets that overlap', () => {
 
 	it('prefers the most specific match when nothing was picked', () => {
 		expect(activePreset(all, planned)?.id).toBe('office');
+	});
+
+	it('starts untouched settings on Document', () => {
+		expect(startingPreset(defaultPresets, {}, null, null)?.id).toBe('document');
+		expect(startingPreset(defaultPresets, { Device: 'scanner' }, null, null)?.id).toBe('document');
+	});
+
+	it('leaves a pick, an override or a matching default alone', () => {
+		expect(startingPreset(defaultPresets, {}, 'photo', null)).toBeNull();
+		expect(startingPreset(defaultPresets, { Dpi: 600 }, null, null)).toBeNull();
+		expect(startingPreset(defaultPresets, {}, null, defaultPresets[3])).toBeNull();
+		expect(startingPreset(defaultPresets.slice(1), {}, null, null)).toBeNull();
 	});
 
 	it('ignores a picked preset that no longer matches', () => {

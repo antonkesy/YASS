@@ -16,7 +16,8 @@
 		exportPrefs,
 		pickedPreset,
 		presets,
-		presetsFor
+		presetsFor,
+		startingPreset
 	} from '$lib/presets';
 	import { exportFormatLabels } from '$lib/format';
 	import { settings } from '$lib/settings';
@@ -94,6 +95,14 @@
 	const edited = $derived(
 		chosen || !options ? null : (offered.find((p) => p.id === $pickedPreset.id) ?? null)
 	);
+
+	$effect(() => {
+		if (!options) return;
+		const start = startingPreset(offered, $settings, $pickedPreset.id, chosen);
+		if (!start) return;
+		settings.set(applyPreset(start, $settings));
+		pickedPreset.set({ id: start.id });
+	});
 
 	const offline = $derived(connection !== 'connected');
 	const ready = $derived(!offline && status?.State === ScannerState.Ready);
