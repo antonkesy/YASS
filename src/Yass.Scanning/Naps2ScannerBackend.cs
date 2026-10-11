@@ -237,7 +237,7 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
         ScannerConfig config = _config();
         string with = OptionMapper.DriverLabel(config.Driver);
         return string.IsNullOrWhiteSpace(config.Device)
-            ? $"Looked with {with}."
-            : $"Nothing matches \u201c{config.Device}\u201d. Looked with {with}.";
+            ? $"Checked with {with}."
+            : $"Nothing matches \u201c{config.Device}\u201d. Checked with {with}.";
     }
 }

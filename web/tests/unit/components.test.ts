@@ -138,7 +138,7 @@ describe('ScanStage', () => {
 				State: ScannerState.NoDevice,
 				DeviceName: undefined,
 				CheckedAt: '',
-				Message: 'Looked with SANE.'
+				Message: 'Checked with SANE.'
 			},
 			connection: 'connected',
 			options: null,
@@ -149,7 +149,7 @@ describe('ScanStage', () => {
 		expect(card).toHaveAttribute('data-tone', 'warning');
 		expect(card).toHaveTextContent('No scanner found');
 		expect(card).toHaveTextContent(/switched on and connected/);
-		expect(screen.getByTestId('scanner-detail')).toHaveTextContent('Looked with SANE.');
+		expect(screen.getByTestId('scanner-detail')).toHaveTextContent('Checked with SANE.');
 		unmount();
 
 		stage(ScannerState.Error, 'connected', 'Cover open');
