@@ -1,56 +1,65 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- YASS logo: an original freshly scanned page throwing both arms up, popping out of the scanner.
-       Safe zone for maskable icons: the page, face and fists stay inside the central 80%. -->
+  <!-- Original YASS! cheering-page mascot. Outlined shapes keep the face clear at icon sizes. -->
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ff4f9a"/>
-      <stop offset="1" stop-color="#7b3cf0"/>
+    <linearGradient id="bg" x2="1" y2="1">
+      <stop stop-color="#ff68b3"/>
+      <stop offset="1" stop-color="#853fea"/>
     </linearGradient>
-    <radialGradient id="beam" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#a5f3fc"/>
-      <stop offset="1" stop-color="#a5f3fc" stop-opacity="0"/>
-    </radialGradient>
+    <linearGradient id="case" x2="0" y2="1">
+      <stop stop-color="#7463bd"/>
+      <stop offset="1" stop-color="#473477"/>
+    </linearGradient>
   </defs>
   <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <!-- triumph rays -->
-  <g fill="#ffffff" opacity="0.13">
-    <path d="M256 268 L120 0 H200 Z"/>
-    <path d="M256 268 L312 0 H392 Z"/>
-    <path d="M256 268 L512 60 V150 Z"/>
-    <path d="M256 268 L0 150 V60 Z"/>
-    <path d="M256 268 L512 300 V390 Z"/>
-    <path d="M256 268 L0 390 V300 Z"/>
+  <g fill="#fff" opacity=".12">
+    <path d="M256 283 78 68 151 32zM256 283 247 16h91zM256 283 420 40 482 114zM256 283 496 194v94zM256 283 480 396 418 474zM256 283 305 496h-98zM256 283 40 438 16 370zM256 283 16 206 40 110z"/>
   </g>
-  <!-- arms, behind the page -->
-  <g stroke="#ffffff" stroke-width="24" stroke-linecap="round" fill="none">
-    <path d="M178 278 Q126 252 118 180"/>
-    <path d="M334 278 Q386 252 394 180"/>
+  <g fill="none" stroke-linecap="round" stroke-width="9">
+    <path d="m69 119 9 15m351-34-10 14M66 319l-9 13m390-101 10 10" stroke="#ffdb68"/>
+    <path d="m126 67 12 7m251 261 9 13M95 253l-14 4m316-191 8-12" stroke="#a0ffeb"/>
   </g>
-  <circle cx="116" cy="164" r="25" fill="#ffffff"/>
-  <circle cx="396" cy="164" r="25" fill="#ffffff"/>
-  <!-- the page -->
-  <path d="M172 152 H306 L350 196 V400 H172 Z" fill="#1e1442" opacity="0.18" transform="translate(6 8)"/>
-  <path d="M182 146 H304 L348 190 V400 H164 V164 Q164 146 182 146 Z" fill="#ffffff"/>
-  <path d="M304 146 V176 Q304 190 318 190 H348 Z" fill="#e4dcff"/>
-  <!-- face -->
-  <g stroke="#1e1442" stroke-width="11" stroke-linecap="round" fill="none">
-    <path d="M200 236 q15 -20 30 0"/>
-    <path d="M282 236 q15 -20 30 0"/>
+  <g fill="#fff5b4" stroke="#39204f" stroke-width="4" stroke-linejoin="round">
+    <path d="m68 190 7 18 19 7-19 7-7 19-7-19-18-7 18-7zM424 294l8 22 22 8-22 8-8 22-8-22-22-8 22-8zM366 79l5 13 13 5-13 5-5 13-5-13-13-5 13-5z"/>
   </g>
-  <circle cx="196" cy="268" r="13" fill="#ff4f9a" opacity="0.45"/>
-  <circle cx="316" cy="268" r="13" fill="#ff4f9a" opacity="0.45"/>
-  <path d="M218 258 H294 Q294 318 256 318 Q218 318 218 258 Z" fill="#1e1442"/>
-  <path d="M234 304 Q256 284 278 304 Q268 318 256 318 Q244 318 234 304 Z" fill="#ff6b9e"/>
-  <!-- scanner the page pops out of -->
-  <ellipse cx="256" cy="372" rx="170" ry="26" fill="url(#beam)"/>
-  <rect x="92" y="368" width="328" height="66" rx="22" fill="#1e1442"/>
-  <rect x="120" y="368" width="272" height="9" rx="4.5" fill="#67e8f9"/>
-  <circle cx="380" cy="404" r="8" fill="#4ade80"/>
-  <!-- sparkles -->
-  <g fill="#fff6a8">
-    <path d="M190 74 q5 22 27 27 q-22 5 -27 27 q-5 -22 -27 -27 q22 -5 27 -27 Z"/>
-    <path d="M338 92 q3 14 17 17 q-14 3 -17 17 q-3 -14 -17 -17 q14 -3 17 -17 Z"/>
-    <path d="M440 262 q3 14 17 17 q-14 3 -17 17 q-3 -14 -17 -17 q14 -3 17 -17 Z"/>
-    <path d="M70 250 q4 18 22 22 q-18 4 -22 22 q-4 -18 -22 -22 q18 -4 22 -22 Z"/>
+  <ellipse cx="258" cy="438" rx="164" ry="23" fill="#532379" opacity=".35"/>
+  <!-- Raised arms and mitten fists, with a dark sticker outline. -->
+  <g stroke="#302044" stroke-width="9" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M177 291Q116 282 109 197l27-8q13 65 53 62M329 259q44-14 53-78l28 10q-3 87-73 109" fill="#fff9ed"/>
+    <path d="M107 211q-21-6-23-27l-2-22q0-12 11-13 1-16 15-15 8-13 21-6 17-4 21 12l4 25q15-7 20 4 5 8-6 21l-22 22z" fill="#fff9ed"/>
+    <path d="m383 201-19-18q-11-11-5-20 7-9 18-2l1-26q0-14 14-15 11-11 22-2 16-2 19 13 13 3 12 16l-3 26q-2 22-22 30z" fill="#fff9ed"/>
+    <path d="m105 152 2 17m16-23 2 18m16-19 2 16m252-24-1 18m17-16-1 18m17-12-1 13" fill="none" stroke-width="5"/>
+    <!-- A jaunty page with a folded corner. -->
+    <path d="m179 151 113-13 51 40 21 193-185 20-24-213q-2-24 24-27z" fill="#fffdf5"/>
+    <path d="m292 138 5 39q1 12 13 10l33-9z" fill="#c9b9f5"/>
+    <path d="m181 180 77-8" stroke="#e4d9f3" stroke-width="7"/>
+    <!-- Crown: the 'YAS queen' cheer, without borrowing a meme likeness. -->
+    <path d="m207 131-17-40 29 12 15-29 22 24 24-19-6 44z" fill="#ffda65" stroke-width="7"/>
+    <path d="m220 117 38-5" fill="none" stroke="#fff5b4" stroke-width="5"/>
+    <!-- Exuberant eyes, lashes, cheeks and a toothy open grin. -->
+    <path d="m190 231q10-26 30-5m51-6q12-26 31-5" fill="none" stroke-width="11"/>
+    <path d="m190 220-6-7m106-7 6-9" fill="none" stroke-width="5"/>
+    <g fill="#ff83ae" stroke="none">
+      <ellipse cx="189" cy="253" rx="17" ry="11" transform="rotate(-7 189 253)"/>
+      <ellipse cx="310" cy="240" rx="17" ry="11" transform="rotate(-7 310 240)"/>
+    </g>
+    <path d="m213 250 76-8q4 65-30 69-34 4-46-61z" fill="#302044" stroke-width="6"/>
+    <path d="m219 251 64-7-1 17-55 6z" fill="#fff" stroke="none"/>
+    <path d="M238 297q16-21 38-9-5 18-18 19-11 1-20-10" fill="#ff719e" stroke="none"/>
+    <path d="m211 339 63-7m-48 20 36-4" stroke="#d9cee9" stroke-width="6"/>
+    <!-- Scanner lid, luminous scan bed and tactile front panel. -->
+    <path d="m112 347 48-25 17 35 172-18 9-17 45 22 23 42H91z" fill="#8b7ac8"/>
+    <path d="m116 362 284-1 11 22H103z" fill="#302044" stroke-width="6"/>
+    <path d="M132 368h253" stroke="#8bffe5" stroke-width="9"/>
+    <rect x="88" y="382" width="338" height="60" rx="20" fill="url(#case)"/>
+    <path d="M109 395h294" stroke="#a99add" stroke-width="4"/>
+    <rect x="113" y="409" width="82" height="15" rx="7" fill="#302044" stroke="none"/>
+    <path d="M126 414h38" stroke="#8bffe5" stroke-width="4"/>
+    <circle cx="390" cy="416" r="10" fill="#8bffe5" stroke-width="5"/>
+    <path d="M344 414h14m-14 8h14" stroke="#b8a5e9" stroke-width="4"/>
+  </g>
+  <!-- Tiny celebratory details reward a closer look. -->
+  <g fill="#fff9ed">
+    <circle cx="91" cy="292" r="4"/><circle cx="451" cy="163" r="5"/>
+    <circle cx="332" cy="63" r="4"/><circle cx="151" cy="108" r="4"/>
   </g>
 </svg>
