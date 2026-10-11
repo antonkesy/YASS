@@ -24,7 +24,7 @@ buildDotnetModule {
   nugetDeps = ./deps-desktop.json;
 
   dotnet-sdk = dotnetCorePackages.sdk_10_0;
-  # The desktop host needs no ASP.NET Core (ADR-014).
+  # The desktop host needs no ASP.NET Core (SPEC.md §4).
   dotnet-runtime = dotnetCorePackages.runtime_10_0;
 
   # Yass.Fake renders the pages its scanner feeds from Markdown as part of the build.

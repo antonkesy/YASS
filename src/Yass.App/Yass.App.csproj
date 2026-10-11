@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Shared by both hosts: Microsoft.Extensions.* only, no ASP.NET Core or SignalR types (ADR-014). -->
+  <!-- Shared by both hosts: Microsoft.Extensions.* only, no ASP.NET Core or SignalR types (SPEC.md §4). -->
 
   <ItemGroup>
     <Using Include="Microsoft.Extensions.DependencyInjection" />

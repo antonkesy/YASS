@@ -49,7 +49,7 @@ public static class OptionMapper
     // NAPS2's blank threshold is 0..100; ours is a 0..1 fraction.
     public static int MapBlankThreshold(double threshold) => (int)Math.Clamp(Math.Round(threshold * 100), 0, 100);
 
-    /// <summary>Blank-page exclusion and deskew are done by NAPS2 itself (ADR-004).</summary>
+    /// <summary>Blank-page exclusion and deskew are done by NAPS2 itself (SPEC.md §6).</summary>
     public static Naps2Options ToNaps2(Core.Domain.ScanOptions options, ScannerDriver driver, ScanDevice device)
     {
         ArgumentNullException.ThrowIfNull(options);

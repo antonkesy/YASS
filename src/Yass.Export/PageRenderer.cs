@@ -10,7 +10,7 @@ using Yass.Core.Hub;
 
 namespace Yass.Export;
 
-/// <summary>Bakes edits into one file NAPS2 can embed as-is, with DPI set for the PDF page size. Outside NAPS2 per ADR-004.</summary>
+/// <summary>Bakes edits into one file NAPS2 can embed as-is, with DPI set for the PDF page size. Outside NAPS2 per SPEC.md §6.</summary>
 public static class PageRenderer
 {
     public static async Task<string> RenderToFileAsync(ExportPage page, PdfConfig pdf, string directory, CancellationToken cancellationToken)

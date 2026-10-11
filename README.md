@@ -95,7 +95,7 @@ Portable zips and `SHA256SUMS` are attached as well. With Nix:
 The desktop app reads the same `yass.yaml` from `~/.config/yass/` (Linux), `%APPDATA%\yass\`
 (Windows) or `~/Library/Application Support/yass/` (macOS). The file is optional, and `server:` is
 ignored. The scanner driver defaults to SANE on Linux, WIA on Windows and eSCL on macOS; on a Mac,
-USB scanners work only if they speak eSCL ([ADR-004](docs/decisions/ADR-004-naps2-api-adaptation.md)).
+USB scanners work only if they speak eSCL ([why](SPEC.md#6-scanning-and-export-with-naps2)).
 
 ## Run it on another machine
 
@@ -228,7 +228,7 @@ pnpm --dir web hub:generate    # TS hub client from the C# contract
 pnpm --dir web screenshots     # refresh the images above
 ```
 
-[SPEC.md](SPEC.md) holds the design; deviations are in [`docs/decisions/`](docs/decisions/).
+[SPEC.md](SPEC.md) holds the design and the reasons behind it.
 Commits follow Conventional Commits, and release-please cuts releases.
 
 | Path | What |

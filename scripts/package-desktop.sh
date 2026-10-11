@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: package-desktop.sh DIST_DIR  (AppImage, NSIS installer, macOS .app zip; ADR-016)
+# Usage: package-desktop.sh DIST_DIR  (AppImage, NSIS installer, macOS .app zip; SPEC.md §7)
 # appimagetool and the AppImage runtime are not in nixpkgs: fetched at pinned versions, SHA-256 checked.
 set -euo pipefail
 

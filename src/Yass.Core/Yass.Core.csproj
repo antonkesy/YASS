@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Attribute-only assemblies used to generate the TypeScript hub client; see ADR-002. -->
+    <!-- Attribute-only assemblies used to generate the TypeScript hub client; see SPEC.md §4. -->
     <PackageReference Include="TypedSignalR.Client.TypeScript.Attributes" />
   </ItemGroup>
 

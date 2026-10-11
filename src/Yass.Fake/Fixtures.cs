@@ -3,7 +3,7 @@ using SixLabors.ImageSharp.Processing;
 
 namespace Yass.Fake;
 
-/// <summary>Rendered at build time from Fixtures/*.md (ADR-012). The order is the demo scan's feed order, chosen on purpose.</summary>
+/// <summary>Rendered at build time from Fixtures/*.md (SPEC.md §10). The order is the demo scan's feed order, chosen on purpose.</summary>
 public static class Fixtures
 {
     public static IReadOnlyList<string> ContentPages { get; } =

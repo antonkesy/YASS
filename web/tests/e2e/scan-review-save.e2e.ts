@@ -419,7 +419,7 @@ test('post-processing: adjust, straighten, clean up and auto-crop a page', async
 	await page.getByRole('button', { name: 'Close filter menu' }).click({ position: { x: 5, y: 5 } });
 	await expect.poll(hashOf).not.toBe(straightened);
 
-	// The fake scanner's pages are clean renders with no frame round them (ADR-012).
+	// The fake scanner's pages are clean renders with no frame round them (SPEC.md §10).
 	await page.getByTestId('crop-button').click();
 	await page.getByTestId('autocrop').click();
 	await expect(page.getByTestId('toast')).toContainText('No borders found');

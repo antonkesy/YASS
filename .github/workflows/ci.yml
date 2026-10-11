@@ -131,7 +131,7 @@ jobs:
       - uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
-      # Yass.Fake renders its pages at build time (ADR-012).
+      # Yass.Fake renders its pages at build time (SPEC.md §10).
       - name: Fixture toolchain
         run: brew install pandoc typst poppler && brew install --cask font-dejavu
       - name: Test

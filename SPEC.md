@@ -1,221 +1,220 @@
 # YASS — Yet Another Slop Scanner
 
-Base prompt / project specification for a coding agent. Read fully before writing code. Sections marked **DECIDED** are not up for debate; sections marked **OPEN** may be resolved by the agent with a one-line justification in `docs/decisions/`.
+What YASS is, the decisions that shape it, and the constraints behind them. The code is the
+reference for details such as hub methods, config keys and UI layout; this file is for what stays
+true while those change.
 
----
+## 1. Summary
 
-## 1. One-paragraph summary
+YASS scans documents: press Scan, let the feeder run empty, review the pages (rotate, crop,
+straighten, adjust, filter, reorder, delete), and save a PDF or one image per page. It ships the
+same code as two hosts:
 
-YASS is a headless scanning service for a home server on Linux (bare metal, NixOS, Docker). A scanner is attached to the host (USB/SANE or network/eSCL). YASS exposes a small web UI where a user can see scanner readiness, start a scan that runs until the feeder is empty, review pages in a preview (rotate / delete / color mode, per page or for all), and download the result as a PDF (or one image per page) to the device at hand — or, where `output.directory` is configured, save it into that one folder on the server (e.g. a paperless-ngx consume folder). The server writes documents nowhere else. Everything is configured through a single file. Backend is .NET with **NAPS2.Sdk**; frontend is a **SvelteKit** mobile-first PWA. **There is no authentication**: the service is trusted-LAN only and must never be exposed to the internet (document this prominently in the README).
+1. **Desktop** (`Yass.Desktop`): a native app for Linux, Windows and macOS. The UI runs in the
+   platform webview inside the .NET process. **It opens no listening socket, not even on
+   loopback**: hub calls go over the webview's message bridge, and images and documents over a
+   custom scheme. The only network traffic is to an eSCL scanner, if one is used.
+2. **Server** (`Yass.Server`): the same app as a web service on the machine the scanner is
+   attached to (bare metal, NixOS, Docker), used from any browser on the LAN. It downloads to the
+   device at hand, or saves into the one folder set as `output.directory` (e.g. a paperless-ngx
+   consume folder), and writes documents nowhere else. **There is no authentication**: it is
+   trusted-LAN only and must never be exposed to the internet. The README says so prominently.
 
-The same code ships as two deployments (ADR-014):
+Everything is configured through one optional file, `yass.yaml` (see `yass.example.yaml`).
 
-1. **Server** (`Yass.Server`): the service above. It runs on the machine the scanner is attached to, a home server or just localhost, and any browser on the LAN uses it.
-2. **Desktop** (`Yass.Desktop`): one native app for Linux, Windows and macOS. The same UI runs in a native webview inside the .NET process (Photino.NET, ADR-015). **It opens no listening socket, not even on loopback**: hub calls go over the webview's message bridge, and images and documents over a `yass://` scheme. The only network traffic is to an eSCL scanner, if one is used. The focus is speed: nothing is serialized onto a socket, and a saved document moves on disk without passing through JavaScript.
+**Out of scope:** auth of any kind, OCR (paperless does it), cloud upload, barcode splitting,
+TWAIN, signed or notarised desktop packages.
 
-## 2. Guiding principle — DECIDED
+## 2. Guiding principle
 
-**Use existing tools; write as little bespoke code as possible.** Before implementing anything, check whether NAPS2.Sdk, ASP.NET Core, ImageSharp, SvelteKit, or an established package already does it. Bespoke code is only for the domain (sessions, edits, config) and glue.
+**Use existing tools; write as little bespoke code as possible.** Before implementing anything,
+check whether NAPS2.Sdk, .NET, ImageSharp, SvelteKit or an established package already does it.
+Bespoke code is for the domain (sessions, edits, config) and glue.
 
-## 3. Stack — DECIDED
+## 3. Stack
 
-| Layer | Choice | Why / existing tool used |
-|---|---|---|
-| Scanner backend | **NAPS2.Sdk** (NuGet, 1.2.x) + **NAPS2.Images.ImageSharp** | ImageSharp context = headless, no GTK. SANE from host `sane-backends`; eSCL built in. Use NAPS2's own `PdfExporter`, `ImageExporter`, blank-page detection and deskew — do not reimplement. |
-| Runtime | **.NET 10 LTS**, ASP.NET Core Minimal API, `PublishTrimmed`, `InvariantGlobalization=true` | |
-| Transport — state, commands, events | **SignalR** hub over WebSocket with **MessagePack** protocol (`Microsoft.AspNetCore.SignalR.Protocols.MessagePack`, `@microsoft/signalr` + `@microsoft/signalr-protocol-msgpack` on the client) | One persistent bidirectional connection: server pushes scanner status, page-added, progress; client invokes `StartScan`, `ApplyEdits`, `Export`. Auto-reconnect, typed hub, .NET-native, no polling, no per-request overhead. Better fit than REST for a local single-user app. |
-| Transport — binary | **Plain HTTP GET** for thumbnails/previews/PDF download | Browser cache + `ETag` + `Cache-Control: immutable` + `<img loading="lazy">` beats any custom channel for images. These are the only HTTP endpoints besides `/healthz`. |
-| Config | **YAML** via `YamlDotNet`, file `yass.yaml`, env overrides via ASP.NET's built-in configuration (`YASS__section__key`) | Bound to C# records with `IOptions<T>` + `ValidateDataAnnotations().ValidateOnStart()`. Fail fast, name the bad key. |
-| Frontend | **SvelteKit** (`@sveltejs/adapter-static`, SPA fallback), TypeScript, **Tailwind**, **`@vite-pwa/sveltekit`** | Installable PWA = "export as app". No component library. |
-| Shared types | Hub contract defined once in C# (`IYassHub`, `IYassClient`); TS types generated with **`TypedSignalR.Client.TypeScript`** in CI; drift fails the build | |
-| Backend tests | **xUnit** + `WebApplicationFactory` | Scanner behind `IScannerBackend`; `FakeScannerBackend` yields PNG fixtures. |
-| Frontend tests | **Vitest** + `@testing-library/svelte`; **Playwright** E2E (desktop Chromium + Pixel 7 profile) against server in `--fake` mode | |
-| Lint/format | `dotnet format` + analyzers (`TreatWarningsAsErrors`), `eslint`, `prettier`, `svelte-check`; **`pre-commit`** framework | |
-| Commits/releases | **Conventional Commits** enforced by `conventional-pre-commit`; **`release-please`** for changelog + tags | |
-| CI | **GitHub Actions** — `ci.yml`, `release.yml` (`nix build`) | |
-| Desktop shell | **Photino.NET** 4.x (ADR-015): WebKitGTK 4.1 on Linux, WebView2 on Windows, WKWebView on macOS | Hosts the same `web/` build in-process. `window.external.sendMessage` carries hub calls as JSON; a custom `yass://` scheme serves the app, `/img` and `/export`. Native save and folder dialogs. |
-| Packaging | **Nix flake** (dev shell, server and desktop packages, docker image via `dockerTools`, NixOS module `services.yass`) + plain multi-stage `Dockerfile`; desktop zips for linux-x64, win-x64 and osx-arm64 from CI | |
-| Storage | Filesystem only; session = directory with `session.json` + `page-NNN.png` | |
+| Layer | Choice |
+|---|---|
+| Scanning and PDF | **NAPS2.Sdk** + `NAPS2.Images.ImageSharp` (headless, no GTK). SANE from the host's `sane-backends`, WIA on Windows, eSCL built in. |
+| Runtime | **.NET 10 LTS**, `InvariantGlobalization`; the server is ASP.NET Core Minimal API with `PublishTrimmed`. |
+| Images | **ImageSharp** renders thumbnails, previews (WebP) and export pages. |
+| Transport | Server: **SignalR** over WebSocket with **MessagePack**, plus plain HTTP GET for images and downloads. Desktop: a JSON message bridge and a custom scheme. |
+| Config | YAML via `YamlDotNet`, env overrides `YASS__section__key`, bound to records validated on start; a bad value stops startup and names the key. |
+| Frontend | **SvelteKit** (static adapter, SPA fallback), TypeScript, **Tailwind**, `@vite-pwa/sveltekit`. No component library. |
+| Shared types | Hub contract defined once in C# (`IYassHub`, `IYassClient`); TypeScript generated with `TypedSignalR.Client.TypeScript`; drift fails CI. |
+| Desktop shell | **Photino.NET** 4.x: WebKitGTK 4.1 on Linux, WebView2 on Windows, WKWebView on macOS. |
+| Tests | xUnit v3 + `WebApplicationFactory`; Vitest + Testing Library; Playwright (Desktop Chrome and Pixel 7) against the server in `--fake` mode. |
+| Tooling | `pre-commit` (dotnet format, eslint, prettier, svelte-check, nixfmt, conventional-pre-commit), GitHub Actions, release-please, Nix flake (dev shell, packages, NixOS module `services.yass`), multi-stage `Dockerfile`. |
+| Storage | Filesystem only, no database: a session is a directory with `session.json` and its page images. |
 
-**Not in v1:** auth of any kind, OCR (paperless does it), multi-scanner UI, cloud upload, barcode splitting, TWAIN, signed or notarized desktop installers.
+### Versions held back on purpose
 
-## 4. Repository layout — DECIDED
+- **NAPS2.Sdk 1.2.x.** 1.3's net10.0 assembly is marked `[RequiresPreviewFeatures]`, which spreads
+  CA2252 errors through six projects. Move up when that marking is gone.
+- **ImageSharp 3.1.x**, the major `NAPS2.Images.ImageSharp` uses. Transitive pinning is off, so a
+  newer major would build and then break at runtime.
+- **NAPS2.Wia**, referenced directly to ask WIA for device types, stays at the version NAPS2.Sdk pins.
+- **TypeScript 6.x** until `svelte-check`, `@sveltejs/kit` and `typescript-eslint` accept 7.
+- Test projects use **`xunit.v3.mtp-off`**: the default `xunit.v3` brings Microsoft Testing
+  Platform, which would replace the VSTest coverage pipeline (`coverage.runsettings`,
+  `scripts/coverage-gate.py`).
 
-```
-yass/
-├── flake.nix / flake.lock
-├── Dockerfile
-├── docker-compose.example.yml
-├── yass.example.yaml
-├── .pre-commit-config.yaml
-├── .editorconfig
-├── .github/workflows/{ci,release}.yml
-├── release-please-config.json
-├── docs/decisions/ADR-000-template.md
-├── src/
-│   ├── Yass.Core/        # domain records, IScannerBackend, IDocumentWriter, hub contracts (IYassHub/IYassClient)
-│   ├── Yass.Scanning/    # NAPS2 adapter
-│   ├── Yass.Export/      # PDF and images via NAPS2 exporters, filename templating
-│   ├── Yass.App/         # host-agnostic app: config, sessions, scan loop, rendering, export, YassApi, IClientNotifier
-│   ├── Yass.Server/      # server host: SignalR hub, HTTP image endpoints, static frontend, /healthz
-│   ├── Yass.Desktop/     # desktop host: Photino window, yass:// scheme, JSON message bridge
-│   └── Yass.Fake/        # FakeScannerBackend + fixtures (tests and `--fake` dev mode)
-├── tests/Yass.{Core,Scanning,Export,Server,Desktop}.Tests/
-├── web/                   # SvelteKit
-│   ├── src/lib/hub/       # generated hub types + one thin `hub.ts` wrapper (svelte store of connection state)
-│   ├── src/lib/components/
-│   ├── src/routes/        # /, /session/[id], /settings
-│   └── tests/{unit,e2e}/
-└── assets/logo/
-```
-
-Rule: `Yass.Core` references nothing outside the BCL (plus `Microsoft.AspNetCore.SignalR.Core` abstractions for the hub interfaces). `Yass.App` references no ASP.NET Core or SignalR, only `Microsoft.Extensions.*`; the hosts hold the transports and nothing else.
-
-## 5. Configuration — DECIDED
-
-```yaml
-server:
-  listen: "0.0.0.0:8080"      # LAN bind; NO AUTH — never expose publicly
-  base_path: "/"
-scanner:
-  driver: auto                # auto | sane | escl | wia  (auto: SANE on Linux, WIA on Windows, eSCL on macOS)
-  device: ""                  # NAPS2 device id or substring; empty = first found
-  poll_interval_seconds: 5
-  defaults:
-    source: feeder            # flatbed | feeder | duplex
-    dpi: 300
-    color: grayscale          # bw | grayscale | color
-    page_size: a4
-    brightness: 0
-    contrast: 0
-    blank_page_detection: true
-    blank_page_threshold: 0.02
-    auto_deskew: false
-    device: ""                # exact device id; empty = whatever scanner.device resolves to
-  ui_editable: []             # deprecated, ignored: every default above can be changed from the UI
-output:                       # how a document is written, and the one server folder it may go to
-  directory: ""               # absolute; empty = off. Browsers opt in per browser in Settings
-  pdf:
-    compression: jpeg         # jpeg | lossless
-    jpeg_quality: 75
-processing:
-  max_concurrent_renders: 2
-  thumbnail_width: 320
-  preview_max_width: 1600
-sessions:
-  directory: /data/sessions
-  retention_hours: 24
-logging:
-  level: info
-  format: text                # text | json
-```
-
-`ReloadConfig` hub method re-reads non-`server` keys.
-
-The desktop app reads the same file from the per-user config folder (`yass/yass.yaml` under `Environment.SpecialFolder.ApplicationData`), and the file may be absent. It ignores `server`, and keeps sessions under `LocalApplicationData/yass/sessions` unless `sessions.directory` is set.
-
-## 6. Domain model — DECIDED
+## 4. Architecture
 
 ```
-Session  { Id, CreatedAt, State: Idle|Scanning|Review|Exporting|Done|Failed, Pages: Page[], OptionsUsed }
-Page     { Index, SourceFile, Rotation: 0|90|180|270, Filter: Original|Enhance|Grayscale|Bw, Crop?,
-           StartsDocument, Deleted, IsBlank, SourceHash, Hash,
-           Adjust? { Brightness -100..100, Contrast -100..100, Sharpen 0..100 },
-           Cleanup: None | Despeckle | AutoLevels (flags), Skew: -15..15° in 0.1° }
-PageEdit { Targets?: int[] (null = all), Op: Rotate(deg) | Delete | Restore | SetFilter(filter) | Reorder(int[])
-           | SetCrop(box?) | SetSplit(bool) | SetAdjust(adjust?) | AddCleanup(flags) | RemoveCleanup(flags) | SetSkew(deg) }
+src/Yass.Core      domain records, IScannerBackend, IDocumentWriter, hub contract
+src/Yass.Scanning  NAPS2 adapter
+src/Yass.Export    PDF and images, file name templates
+src/Yass.App       host-agnostic app: config, sessions, scan loop, rendering, export, YassApi
+src/Yass.Server    server host: SignalR hub, /img and /export endpoints, static web build, /healthz
+src/Yass.Desktop   desktop host: Photino window, app scheme, JSON message bridge, native dialogs
+src/Yass.Fake      simulated scanner and document writer (tests and --fake)
+web/               SvelteKit app, one build for both hosts
+nix/               packages and the NixOS module
 ```
 
-Edits are non-destructive and recorded in `session.json`; derived images are a pure function of `(source, edits)` cached on disk by hash. One `RenderSpec` feeds both the hash and the pixels, so nothing reaches the image without reaching the hash; edits added later are appended to the hash key only when set, so older pages keep their hashes.
+- **`Yass.Core`** references nothing outside the BCL, apart from the hub abstractions and the
+  attribute-only `TypedSignalR.Client.TypeScript.Attributes`. Enum members and DTOs need
+  `[TranspilationSource]`, or the contract check fails.
+- **`Yass.App`** uses no ASP.NET Core or SignalR types, only `Microsoft.Extensions.*`, so the
+  desktop app does not need the ASP.NET Core runtime. `YassApi : IYassHub` holds the logic,
+  `IClientNotifier` is the only way events go out, and `AddYassApp(...)` registers everything.
+- **The hosts hold the transports and nothing else.** The server's hub delegates to `YassApi` and
+  its HTTP endpoints only add ETag, cache headers and status codes. The desktop bridge dispatches
+  by reflection over `IYassHub`. A new hub method therefore goes in `IYassHub`, `YassApi` and the
+  hub's one-line delegation.
+- **The frontend does not know its host.** `getHub()` picks SignalR or the bridge at runtime; both
+  implement `ConnectionLike`.
+- **Images over HTTP, state over the hub.** Thumbnails, previews and downloads are GET endpoints
+  (`/img/{session}/{page}/{thumb|preview|frame}?h={hash}`, `/export/{session}/{file}`),
+  cached as immutable by content hash; downloads are one-shot URLs. Everything else is hub
+  calls and pushed events. The desktop serves the same paths from its scheme.
+- **Scan loop:** iterate NAPS2's scan until the feeder is empty or `StopScan`; write each page to
+  disk, push `PageAdded` at once, render the thumbnail in a bounded background queue, then push
+  `PageUpdated`. Never block a hub or request thread on scanning or rendering.
 
-Render order (`PagePipeline`): crop (on the scan as it came) → quarter turns → skew (rotated, then cropped back to the page's own proportions, so no corners show) → auto-levels → Enhance filter → brightness, contrast → despeckle → sharpen → grayscale / B&W threshold.
+## 5. Domain
 
-## 7. Hub contract + HTTP — DECIDED
+- A session holds pages and the options used; its state runs Idle → Scanning → Review →
+  Exporting → Done (or Failed).
+- **Edits are non-destructive.** They are recorded in `session.json`; the scanned image is never
+  changed. Derived images are a pure function of (source, edits), cached on disk by hash. One
+  `RenderSpec` feeds both the hash and the pixels, so nothing reaches the image without reaching
+  the hash. An edit added later joins the hash key only when set, so older pages keep their hashes.
+- **Render order** (`PagePipeline`): crop (on the scan as it came) → quarter turns → skew (then
+  cropped back to the page's proportions, so no corners show) → auto-levels → Enhance → brightness,
+  contrast → despeckle → sharpen → grayscale / B&W threshold.
 
-**SignalR hub `/hub`** (MessagePack):
+## 6. Scanning and export with NAPS2
 
-```
-// client -> server
-Task<SessionDto>   StartScan(ScanOptionsDto? overrides)
-Task               StopScan(string sessionId)
-Task<SessionDto>   GetSession(string sessionId)
-Task<SessionDto[]> ListSessions()
-Task               DeleteSession(string sessionId)
-Task<SessionDto>   ApplyEdits(string sessionId, PageEdit[] edits)
-Task<int>          AutoCrop(string sessionId, int[]? targets)     // finds the scanner's dark frame, applies it as SetCrop; returns pages cropped
-Task<ExportResult> Export(string sessionId, ExportRequest req)   // builds the document(s); one-shot download URLs, or with ToServer, files in output.directory
-Task<string>       GetServerFolder()                             // output.directory, or "" when saving to the server is off
-Task<ScannerStatusDto> GetScannerStatus()
-Task<ScanOptionsDto>   GetEffectiveOptions()
-Task               ReloadConfig()
+- `CreateProcessedImage` and `BlankDetectionImageOp` are internal. Blank-page skipping and deskew
+  are only available at scan time (`ScanOptions.ExcludeBlankPages`, `AutoDeskew`), so real scans
+  never produce `IsBlank` pages; the fake backend does. `blank_page_threshold` (0..1) is scaled to
+  NAPS2's 0..100.
+- **Export** renders each page once with ImageSharp (edits, DPI) into a JPEG at
+  `output.pdf.jpeg_quality` (PNG when lossless), imports it with `ImageImporter`, and assembles it
+  with `PdfExporter`. The export's `ScanningContext` needs a `FileStorageManager` on its own temp
+  folder: without one every page is decoded into memory (~26 MB per colour A4 page) and
+  re-encoded. A `NAPS2.Util.ProgressHandler` carries the cancellation, so cancelling stops NAPS2;
+  its reports fill the last 10 % of the progress bar.
+- **Drivers:** `auto` is SANE on Linux, WIA on Windows and eSCL on macOS. NAPS2's Apple driver
+  needs a `net8-macos` build that the NuGet package does not ship, so macOS gets eSCL only (USB
+  scanners only if they speak it). TWAIN needs a 32-bit worker process and is left out.
+- **Cameras are never listed.** SANE: drop ids from camera backends (`v4l`, `gphoto2`, `dc210`,
+  `dc240`, `dc25`, `dmc`, `qcam`, `stv680`). WIA: ask each device's `DIP_DEV_TYPE` and drop cameras
+  and video; if WIA cannot be asked, filter nothing rather than leave the list empty.
+- If the NAPS2 API differs from what this file says, adapt the adapter, keep the domain model, and
+  update this section.
 
-// server -> client
-ScannerStatusChanged(ScannerStatusDto)
-SessionChanged(SessionDto)              // state transitions
-PageAdded(string sessionId, PageDto)    // emitted before thumbnail exists
-PageUpdated(string sessionId, PageDto)  // after edit / thumbnail ready (carries new hash)
-ExportProgress(string sessionId, int percent)
-```
+## 7. Desktop app
 
-**HTTP:**
+- Photino wraps the platform webview: Linux needs `webkit2gtk-4.1`, `gtk3` and `libnotify`;
+  Windows needs WebView2, which ships with Windows 10 and 11; macOS needs nothing extra. Photino's
+  last release was January 2025; the bridge and scheme handler are small enough to move to another
+  webview wrapper if it stalls.
+- **The app is at `yass://app/`, except on Windows, where it is `https://yass.localhost/`.**
+  Photino registers no custom scheme with WebView2, which then refuses to navigate to `yass://`
+  and shows a black window. WebKitGTK and WKWebView do not let an app take over `https`. Either
+  way the request reaches the handler, never the network.
+- WebKitGTK and WKWebView have no `showSaveFilePicker`, so saving goes through the native dialog
+  and a host-side file move; a document never passes through JavaScript.
+- Config comes from `yass/yass.yaml` in the per-user config folder (`ApplicationData`) and may be
+  absent; `server:` is ignored. Sessions live under `LocalApplicationData/yass/sessions` unless
+  `sessions.directory` is set.
+- **Packages** are all built on Linux by `scripts/package-desktop.sh`:
+  - AppImage: appimagetool and its runtime are downloaded at pinned versions, checked by SHA-256,
+    and run extract-and-run (runners have no FUSE). WebKitGTK is not bundled.
+  - Windows: NSIS, per-user install into `%LOCALAPPDATA%\Programs\YASS` with no admin prompt.
+    Install and uninstall clear that folder whole; scans and settings live elsewhere.
+  - macOS: a zipped `YASS.app`, ad-hoc signed with rcodesign, since Apple Silicon will not start an
+    unsigned arm64 binary. A zip because Linux cannot make a compressed `.dmg`.
+  - Nothing is signed by a trusted identity, so SmartScreen and Gatekeeper warn on first launch.
+- Icons: `scripts/render-icons.sh` renders `assets/logo/yass.ico` and `yass.icns` from
+  `yass-512.png`; the outputs are committed.
 
-```
-GET /healthz
-GET /img/{sessionId}/{pageIndex}/thumb?h={hash}    -> webp, ETag=hash, Cache-Control: public, max-age=31536000, immutable
-GET /img/{sessionId}/{pageIndex}/preview?h={hash}
-GET /img/{sessionId}/{pageIndex}/frame?h={hash}      -> preview with every edit but crop and skew, for drawing a crop over
-GET /export/{sessionId}/{token}.pdf                -> one-shot download URL returned by Export
-GET /                                              -> static SvelteKit build
-```
+## 8. UI
 
-**Desktop transport** (same contract, no socket):
+- **The UI comes first.** It can change every scan option; `yass.yaml` only supplies defaults
+  (`scanner.defaults`), and nothing in the config hides a control. Scan settings, presets and
+  scanner names live per browser in `localStorage`.
+- The scanner is chosen on the home screen. Presets belong to the chosen scanner unless saved for
+  all of them. Untouched settings start on the Document preset.
+- Review: a page strip and a stage; the toolbar acts on the selected pages, or the page on the
+  stage when none are selected. Blank pages are pre-marked deleted. Edits show optimistically and
+  reconcile on `PageUpdated`.
+- *Save to server* shows only when `output.directory` is set and this browser switched it on. It
+  writes atomically and never overwrites (`-2`, `-3`… on a clash).
+- The UI font is the platform's own (SF on Apple), falling back to Inter, self-hosted in
+  `web/static/fonts/` because a home server may have no internet.
+- **Targets:** first paint < 1 s over LAN; JS ≤ 150 kB gzipped; no image bytes held in JS beyond
+  the current preview; every action keyboard-reachable; touch targets ≥ 44 px; works without the
+  service worker.
 
-```
-JS -> host   {"id": n, "method": "StartScan", "args": [...]}         // any IYassHub method, plus the desktop-only
-host -> JS   {"id": n, "result": ...} | {"id": n, "error": "msg"}     // PickSavePath, PickFolder, SaveExport
-host -> JS   {"event": "PageAdded", "args": [...]}                    // every IYassClient push
-yass://app/...                                                          -> the static build, /img/... and /export/... as above
-```
+## 9. Resource budget
 
-Scan loop: iterate `ScanController.Scan(options)` until the enumerable ends (feeder empty) or `StopScan`; write each page to disk, emit `PageAdded` immediately, generate thumbnail in a bounded background queue, emit `PageUpdated`.
+Idle RSS ≤ 80 MB; a 50-page 300 dpi colour scan ≤ 400 MB peak; container image ≤ 200 MB. Desktop:
+the same bounds for the .NET process (webview processes excluded), window up in < 1 s on a warm
+start. Never hold more than `processing.max_concurrent_renders` decoded bitmaps in memory.
 
-## 8. UI — DECIDED behaviour, OPEN styling
+## 10. Testing
 
-Routes: `/` (scanner picker, presets, big Scan button, recent sessions), `/session/[id]` (review, scanner status pill in the header), `/settings` (every scan option, stored in `localStorage`).
+- 80 % line coverage gate on `Yass.*` (excluding `Yass.Fake`). There is little headroom:
+  `Naps2ScannerBackend` has no tests because it needs a real scanner.
+- `Yass.Server.Tests` cover `YassApi` through SignalR, `Yass.Desktop.Tests` through the bridge.
+- Config tests round-trip every key and check that an invalid value names the key.
+- Playwright runs desktop and mobile viewports against the real server in `--fake` mode.
+- **The fake scanner's pages are real documents**: Markdown in `src/Yass.Fake/Fixtures`, rendered
+  at build time by `scripts/render-fixtures.sh` (pandoc → typst → poppler, A4 at 150 dpi) into
+  `obj/`, never committed. A build needs pandoc, typst, poppler-utils and a font on
+  `TYPST_FONT_PATHS` (DejaVu); all are in the dev shell, the Nix package and the Docker build
+  stage. The script decides what is stale, because MSBuild's `Inputs` takes wildcards literally.
+  The fake writer embeds the pages, so its PDFs can be looked at.
 
-The UI comes first: it can change every scan option, and `yass.yaml` only supplies the defaults (`scanner.defaults`). Nothing in the config hides a control; `scanner.ui_editable` is accepted for old files and ignored. The scanner is chosen on `/`, not in `/settings`: the picker shows whenever the server lists at least one scanner, with `scanner.defaults.device` as the default, and presets belong to whichever scanner is chosen unless saved as available for all scanners. `/settings` lists every scanner the server lists now, this browser has seen before or a past scan ran on; each can be renamed or hidden from the picker (per browser, in `localStorage`) and shows its driver, address and usage. One no longer listed stays as a faded ghost until forgotten.
+## 11. Commits
 
-Review: page strip (a row above the page on a phone, a column beside it on desktop); tap a thumbnail = show that page on the stage, its checkbox = multi-select; drag = reorder; toolbar acts on the selection, or the page on the stage when nothing is selected: rotate ⟲ ⟳, Adjust (brightness, contrast, sharpen with a live CSS preview), Crop menu (Crop…, Straighten… ±15° over a grid, Auto-crop borders), Filter menu (Original / Enhance / Grayscale / B&W, plus Despeckle and Auto-levels clean-ups), rescan, delete/restore. While a scan runs there is no edit bar. Tap → full preview with swipe, its own edit bar (Adjust, Crop, Straighten, Filter) for the page on screen, and previews preloaded nearest-first around the page in view. Blank pages pre-marked deleted with badge. Sticky bottom bar: page count, **Save as…** (browser download, through the save dialog where there is one), **Save to server** (only when `output.directory` is set and this browser switched it on in Settings; atomic write, never overwrites, `-2`, `-3`… on a clash), Discard. Edits apply optimistically (CSS rotate) and reconcile on `PageUpdated`.
+One logical change per commit, with a Conventional Commit message, each passing
+`pre-commit run --all-files` and all tests. No monolithic commits.
 
-Targets: first paint < 1 s over LAN; JS ≤ 150 kB gzipped; no image bytes held in JS beyond the current preview; all actions keyboard-reachable; touch targets ≥ 44 px; works without service worker.
+Scopes: `core`, `app`, `fake`, `server`, `desktop`, `web`, `scanning`, `export`, `nix`, `docker`,
+`ci`. Fixes discovered while working get their own `fix(scope):` commit, not squashed into a
+feature.
 
-## 9. Resource budget — DECIDED
+`AnalysisLevel=latest-all` with `TreatWarningsAsErrors` turns each new SDK's analyzer wave into
+build errors. Suppressions live in `.editorconfig` with their reasons; pin `AnalysisLevel` to
+`10.0-all` if a wave is too big for one commit.
 
-Idle RSS ≤ 80 MB; 50-page 300 dpi color scan ≤ 400 MB peak; container image ≤ 200 MB. Desktop: the same bounds for the .NET process (the webview's own processes excluded), window up in < 1 s on a warm start. Never hold more than `max_concurrent_renders` decoded bitmaps in memory.
-
-## 10. Testing — DECIDED
-
-80 % line coverage gate on `Yass.*` (excl. `Yass.Fake`). Fake scenarios: N pages, blank at k, error after k, slow pages, feeder-empty-after-N. Export tests assert page count, rotation, deleted pages absent, one-shot download URLs. Config tests: round-trip every key; invalid value names the key. Hub contract test: generated TS matches C#; drift fails CI. Playwright: desktop + mobile viewport, real server in `--fake` mode.
-
-## 11. Commits — DECIDED
-
-One logical change per commit, with a Conventional Commit message, each passing `pre-commit run --all-files` and all tests. No monolithic commits.
-
-Scopes: `core`, `app`, `fake`, `server`, `desktop`, `web`, `scanning`, `export`, `nix`, `docker`, `ci`. Fixes discovered while working get their own `fix(scope):` commit, not squashed into a feature.
-
-## 12. Agent working rules
+## 12. Working rules
 
 1. Keep the app fully usable in `--fake` mode.
-2. No new dependency without a one-line ADR in `docs/decisions/`. Prefer BCL / already-listed packages.
+2. No new dependency without a line in this file saying why. Prefer the BCL and packages already
+   in use.
 3. Never block a hub or request thread on scanning or rendering.
-4. If the NAPS2 API differs from assumptions here, adapt the adapter, keep the domain model, and note it in an ADR.
+4. The desktop app opens no listening socket.
 5. Ask before: changing the config schema, adding a database, adding any auth.
 
 ## 13. Branding
 
-**YASS** — Yet Another Slop Scanner. Logo: the "YASS!" cheer as an original flat-color character — a freshly scanned page with a grin, popping out of the scanner with both fists up, on a pink-to-violet burst with sparkles; readable at 16 px, maskable at 512 px. SVG + PNG 192/512 + favicon. No recognisable actor, film still or existing meme image.
-
-## 14. OPEN
-
-- Thumbnail format WebP vs JPEG (WebP unless ImageSharp encode cost is high).
-- Whether preview endpoint serves the edited image or the original + client-side CSS transform (prefer CSS for rotation, server for color mode).
+**YASS** — Yet Another Slop Scanner. Logo: the "YASS!" cheer as an original flat-colour character
+— a freshly scanned page with a grin, popping out of the scanner with both fists up, on a
+pink-to-violet burst with sparkles; readable at 16 px, maskable at 512 px. SVG + PNG 192/512 +
+favicon. No recognisable actor, film still or existing meme image.
