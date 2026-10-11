@@ -46,6 +46,7 @@ public static class YassAppServices
         services.AddSingleton<MergeService>();
         services.AddSingleton<DownloadTokens>();
         services.AddSingleton<ExportDownloads>();
+        services.AddSingleton<ExportDocumentWriter>();
         services.AddSingleton<ExportService>();
         services.AddSingleton<YassApi>();
         services.AddSingleton<SessionRetentionService>();

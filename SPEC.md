@@ -81,8 +81,10 @@ nix/               packages and the NixOS module
   `IClientNotifier` is the only way events go out, and `AddYassApp(...)` registers everything.
 - **Application responsibilities:** `YassApi` adapts calls and translates service errors;
   `SessionService` owns session history operations and notifications, while `SessionStore` owns
-  filesystem persistence. Keep these boundaries concrete; add an interface when there is a
-  replaceable adapter, not merely for every class.
+  filesystem persistence. `ExportService` coordinates session state, render admission and progress;
+  `ExportPlan` computes pages, names and metadata without I/O; `ExportDocumentWriter` writes and
+  publishes each document and cleans up unfinished files. Keep these boundaries concrete; add an
+  interface when there is a replaceable adapter, not merely for every class.
 - **The hosts hold the transports and nothing else.** The server's hub delegates to `YassApi` and
   its HTTP endpoints only add ETag, cache headers and status codes. The desktop bridge dispatches
   by reflection over `IYassHub`. A new hub method therefore goes in `IYassHub`, `YassApi` and the
