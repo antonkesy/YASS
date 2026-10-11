@@ -21,8 +21,8 @@ describe('format', () => {
 	it('says how a finished scan was saved', () => {
 		const done = (Kind: SessionEventKind) =>
 			session('s', { State: SessionState.Done, Events: [{ Kind, At: '' }] });
-		expect(sessionStateLabel(done(SessionEventKind.Downloaded))).toBe('Downloaded');
-		expect(sessionStateLabel(done(SessionEventKind.Exported))).not.toBe('Downloaded');
+		expect(sessionStateLabel(done(SessionEventKind.Downloaded))).toBe('Saved');
+		expect(sessionStateLabel(done(SessionEventKind.Exported))).not.toBe('Saved');
 		expect(sessionStateLabel(done(SessionEventKind.Exported))).toBe(statusLabels.exported);
 	});
 

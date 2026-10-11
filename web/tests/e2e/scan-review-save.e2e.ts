@@ -98,11 +98,11 @@ test('scan, review, edit, download and save', async ({ page }) => {
 	const file = await download;
 	expect(file.suggestedFilename()).toMatch(/\.pdf$/);
 
-	await expect(page.getByTestId('session-state')).toHaveText('Downloaded', { timeout: 20_000 });
+	await expect(page.getByTestId('session-state')).toHaveText('Saved', { timeout: 20_000 });
 
 	await page.getByRole('link', { name: 'Back to home' }).click();
 	const list = page.getByTestId('session-list');
-	await expect(list.getByTestId('session-status').first()).toHaveText('Downloaded');
+	await expect(list.getByTestId('session-status').first()).toHaveText('Saved');
 	await expect(list.getByTestId('session-tile').first()).toContainText('2 p');
 	await expect(list.getByTestId('session-tile').first()).toContainText('Tax return 2025');
 });
@@ -343,7 +343,7 @@ test('save as… writes the document where the save dialog points', async ({ pag
 	const saved = () => page.evaluate(() => (window as unknown as { __saved: Saved }).__saved);
 	await expect.poll(async () => (await saved()).bytes, { timeout: 20_000 }).toBeGreaterThan(500);
 	expect((await saved()).name).toBe('Tax return 2025.pdf');
-	await expect(page.getByTestId('session-state')).toHaveText('Downloaded');
+	await expect(page.getByTestId('session-state')).toHaveText('Saved');
 });
 
 test('scan more appends pages', async ({ page }) => {

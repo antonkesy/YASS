@@ -206,7 +206,7 @@ export const home = {
 		es: 'En el servidor'
 	},
 	statusSaved: { en: 'Saved', de: 'Gespeichert', fr: 'Enregistré', es: 'Guardado' },
-	statusDownloaded: { en: 'Downloaded', de: 'Heruntergeladen', fr: 'Téléchargé', es: 'Descargado' },
+	statusDownloaded: { en: 'Saved', de: 'Gespeichert', fr: 'Enregistré', es: 'Guardado' },
 	statusDiscarded: { en: 'Discarded', de: 'Verworfen', fr: 'Abandonné', es: 'Descartado' },
 
 	pastScans: {
@@ -286,12 +286,12 @@ export const home = {
 		fr: 'Supprimer tous les scans ?',
 		es: '¿Eliminar todos los escaneos?'
 	},
-	downloaded: { en: 'Downloaded', de: 'Heruntergeladen', fr: 'Téléchargé', es: 'Descargado' },
+	downloaded: { en: 'Saved', de: 'Gespeichert', fr: 'Enregistré', es: 'Guardado' },
 	downloadedFiles: {
-		en: { one: 'Downloaded {n} file', other: 'Downloaded {n} files' },
-		de: { one: '{n} Datei heruntergeladen', other: '{n} Dateien heruntergeladen' },
-		fr: { one: '{n} fichier téléchargé', other: '{n} fichiers téléchargés' },
-		es: { one: '{n} archivo descargado', other: '{n} archivos descargados' }
+		en: { one: 'Saved {n} file', other: 'Saved {n} files' },
+		de: { one: '{n} Datei gespeichert', other: '{n} Dateien gespeichert' },
+		fr: { one: '{n} fichier enregistré', other: '{n} fichiers enregistrés' },
+		es: { one: '{n} archivo guardado', other: '{n} archivos guardados' }
 	},
 	scansDeleted: {
 		en: { one: '{n} scan deleted', other: '{n} scans deleted' },
@@ -307,22 +307,22 @@ export const home = {
 		es: { one: '{n} página', other: '{n} páginas' }
 	},
 	downloadedToBrowser: {
-		en: 'Downloaded to this browser',
-		de: 'In diesen Browser heruntergeladen',
-		fr: 'Téléchargé dans ce navigateur',
-		es: 'Descargado en este navegador'
+		en: 'Saved to this browser',
+		de: 'Über diesen Browser gespeichert',
+		fr: 'Enregistré depuis ce navigateur',
+		es: 'Guardado desde este navegador'
 	},
 	notDownloaded: {
-		en: 'Not downloaded yet',
-		de: 'Noch nicht heruntergeladen',
-		fr: 'Pas encore téléchargé',
-		es: 'Aún no descargado'
+		en: 'Not saved yet',
+		de: 'Noch nicht gespeichert',
+		fr: 'Pas encore enregistré',
+		es: 'Aún no guardado'
 	},
 	downloadNamed: {
-		en: 'Download {title}',
-		de: '{title} herunterladen',
-		fr: 'Télécharger {title}',
-		es: 'Descargar {title}'
+		en: 'Save {title}',
+		de: '{title} speichern',
+		fr: 'Enregistrer {title}',
+		es: 'Guardar {title}'
 	},
 	deleteNamed: {
 		en: 'Delete {title}',
@@ -387,10 +387,10 @@ export const home = {
 		es: 'No seleccionar nada'
 	},
 	downloadSelected: {
-		en: 'Download selected',
-		de: 'Auswahl herunterladen',
-		fr: 'Télécharger la sélection',
-		es: 'Descargar selección'
+		en: 'Save selected',
+		de: 'Auswahl speichern',
+		fr: 'Enregistrer la sélection',
+		es: 'Guardar selección'
 	},
 	deleteSelected: {
 		en: 'Delete selected',
