@@ -11,12 +11,22 @@ export function isRemoval(session: SessionDto): boolean {
 	);
 }
 
+// Thumbnails are cached by hash and never removed, so a hash once ready stays ready. A snapshot the
+// server built before the render finished can arrive after the PageUpdated that reported it.
+function keepReady(known: SessionDto | undefined, page: PageDto): PageDto {
+	if (page.ThumbnailReady || !known?.Pages.some((p) => p.ThumbnailReady && p.Hash === page.Hash)) {
+		return page;
+	}
+	return { ...page, ThumbnailReady: true };
+}
+
 export function applySessionChanged(map: SessionMap, session: SessionDto): SessionMap {
 	const next = new Map(map);
 	if (isRemoval(session)) {
 		next.delete(session.Id);
 	} else {
-		next.set(session.Id, session);
+		const known = map.get(session.Id);
+		next.set(session.Id, { ...session, Pages: session.Pages.map((p) => keepReady(known, p)) });
 	}
 	return next;
 }
@@ -33,7 +43,8 @@ export function applyPageAdded(map: SessionMap, sessionId: string, page: PageDto
 export function applyPageUpdated(map: SessionMap, sessionId: string, page: PageDto): SessionMap {
 	const session = map.get(sessionId);
 	if (!session) return map;
-	const pages = session.Pages.map((p) => (p.Index === page.Index ? page : p));
+	const fresh = keepReady(session, page);
+	const pages = session.Pages.map((p) => (p.Index === page.Index ? fresh : p));
 	return new Map(map).set(sessionId, { ...session, Pages: pages });
 }
 

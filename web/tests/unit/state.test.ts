@@ -54,6 +54,16 @@ describe('session reducers', () => {
 		expect(updated.get('a')?.Pages[0].Hash).toBe('h0');
 	});
 
+	it('keeps a ready thumbnail ready when a stale snapshot or update arrives for the same hash', () => {
+		const m = replaceAll([session('a', [page(0), page(1, { ThumbnailReady: true })])]);
+		const snapshot = applySessionChanged(m, session('a', [page(0), page(1)]));
+		expect(snapshot.get('a')?.Pages.map((p) => p.ThumbnailReady)).toEqual([false, true]);
+		expect(applyPageUpdated(m, 'a', page(1)).get('a')?.Pages[1].ThumbnailReady).toBe(true);
+		expect(
+			applyPageUpdated(m, 'a', page(1, { Hash: 'new' })).get('a')?.Pages[1].ThumbnailReady
+		).toBe(false);
+	});
+
 	it('sorts newest first', () => {
 		const m = replaceAll([session('a'), session('bb'), session('ccc')]);
 		expect(sortedSessions(m).map((s) => s.Id)).toEqual(['ccc', 'bb', 'a']);
