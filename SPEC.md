@@ -77,8 +77,12 @@ nix/               packages and the NixOS module
   attribute-only `TypedSignalR.Client.TypeScript.Attributes`. Enum members and DTOs need
   `[TranspilationSource]`, or the contract check fails.
 - **`Yass.App`** uses no ASP.NET Core or SignalR types, only `Microsoft.Extensions.*`, so the
-  desktop app does not need the ASP.NET Core runtime. `YassApi : IYassHub` holds the logic,
+  desktop app does not need the ASP.NET Core runtime. `YassApi` implements the application side of the hub contract,
   `IClientNotifier` is the only way events go out, and `AddYassApp(...)` registers everything.
+- **Application responsibilities:** `YassApi` adapts calls and translates service errors;
+  `SessionService` owns session history operations and notifications, while `SessionStore` owns
+  filesystem persistence. Keep these boundaries concrete; add an interface when there is a
+  replaceable adapter, not merely for every class.
 - **The hosts hold the transports and nothing else.** The server's hub delegates to `YassApi` and
   its HTTP endpoints only add ETag, cache headers and status codes. The desktop bridge dispatches
   by reflection over `IYassHub`. A new hub method therefore goes in `IYassHub`, `YassApi` and the

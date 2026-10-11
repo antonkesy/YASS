@@ -30,6 +30,7 @@ public static class YassAppServices
 
         services.AddSingleton<SessionStore>();
         services.AddSingleton<SessionMapper>();
+        services.AddSingleton<SessionService>();
         services.AddSingleton<ImageRenderer>();
         services.AddSingleton<RenderCache>();
         services.AddSingleton<IThumbnailStatus>(sp => sp.GetRequiredService<RenderCache>());

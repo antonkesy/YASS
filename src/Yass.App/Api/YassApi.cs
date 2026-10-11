@@ -15,7 +15,7 @@ public sealed class YassApi(
     IScannerBackend backend,
     EffectiveOptions options,
     ConfigStore config,
-    SessionStore sessions,
+    SessionService sessions,
     SessionMapper mapper,
     ScanService scans,
     EditService editor,
@@ -23,7 +23,6 @@ public sealed class YassApi(
     MergeService merger,
     ExportService exporter,
     IClientNotifier clients,
-    TimeProvider time,
     ILogger<YassApi> logger)
 {
     public async Task<SessionDto> StartScan(ScanOptionsDto? requested)
@@ -41,60 +40,17 @@ public sealed class YassApi(
 
     public Task<SessionDto> GetSession(string sessionId) => Task.FromResult(mapper.ToDto(Find(sessionId)));
 
-    public Task<SessionDto[]> ListSessions() => Task.FromResult(sessions.List().Select(mapper.ToDto).ToArray());
+    public Task<SessionDto[]> ListSessions() => Task.FromResult(sessions.List());
 
-    public async Task DeleteSession(string sessionId)
-    {
-        Session session = Find(sessionId);
-        if (session.State == SessionState.Scanning)
-        {
-            throw new YassException("Stop the scan before deleting the session.");
-        }
+    public Task DeleteSession(string sessionId) => GuardAsync(() => sessions.DeleteSession(sessionId));
 
-        if (session.State == SessionState.Exporting)
-        {
-            throw new YassException("Wait for the export to finish before deleting the session.");
-        }
+    public Task<SessionDto> RenameSession(string sessionId, string? name) =>
+        GuardAsync(() => sessions.RenameSession(sessionId, name));
 
-        sessions.Delete(sessionId);
-        await clients.All.SessionChanged(mapper.Removed(session, SessionMapper.Deleted)).ConfigureAwait(false);
-    }
+    public Task<SessionDto> DiscardSession(string sessionId) =>
+        GuardAsync(() => sessions.DiscardSession(sessionId));
 
-    public async Task<SessionDto> RenameSession(string sessionId, string? name)
-    {
-        Find(sessionId);
-        string? trimmed = string.IsNullOrWhiteSpace(name) ? null : name.Trim();
-        if (trimmed is { Length: > 200 })
-        {
-            throw new YassException("Name is too long (200 characters maximum).");
-        }
-
-        SessionDto dto = mapper.ToDto(Guard(() => sessions.Update(sessionId, s => s with { Name = trimmed })));
-        await clients.All.SessionChanged(dto).ConfigureAwait(false);
-        return dto;
-    }
-
-    public async Task<SessionDto> DiscardSession(string sessionId)
-    {
-        Find(sessionId);
-        var discarded = new SessionEvent(SessionEventKind.Discarded, time.GetUtcNow());
-        SessionDto dto = mapper.ToDto(Guard(() => sessions.Discard(sessionId, discarded)));
-        await clients.All.SessionChanged(dto).ConfigureAwait(false);
-        return dto;
-    }
-
-    public async Task<int> ClearSessions()
-    {
-        Session[] removable = [.. sessions.List().Where(s => s.State is not (SessionState.Scanning or SessionState.Exporting))];
-        foreach (Session session in removable)
-        {
-            sessions.Delete(session.Id);
-            await clients.All.SessionChanged(mapper.Removed(session, SessionMapper.Deleted)).ConfigureAwait(false);
-        }
-
-        logger.LogInformation("Cleared {Count} session(s)", removable.Length);
-        return removable.Length;
-    }
+    public Task<int> ClearSessions() => GuardAsync(sessions.ClearSessions);
 
     public async Task<SessionDto> ApplyEdits(string sessionId, PageEdit[] edits)
     {
@@ -165,10 +121,7 @@ public sealed class YassApi(
         }
     }
 
-    private Session Find(string sessionId) =>
-        SessionPaths.IsValidId(sessionId) && sessions.TryGet(sessionId, out Session session)
-            ? session
-            : throw new YassException($"Session {sessionId} not found.");
+    private Session Find(string sessionId) => Guard(() => sessions.Get(sessionId));
 
     // BCL exceptions from the services become YassException for the caller; anything else is a bug and stays one.
     private static T Guard<T>(Func<T> work, string ioPrefix = "")
@@ -185,6 +138,15 @@ public sealed class YassApi(
         {
             throw new YassException(ioPrefix + ex.Message, ex);
         }
+    }
+
+    private static async Task GuardAsync(Func<Task> work)
+    {
+        await GuardAsync(async () =>
+        {
+            await work().ConfigureAwait(false);
+            return true;
+        }).ConfigureAwait(false);
     }
 
     private static async Task<T> GuardAsync<T>(Func<Task<T>> work, string ioPrefix = "")
