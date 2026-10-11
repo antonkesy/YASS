@@ -92,10 +92,12 @@ internal static class DesktopWindow
 [ExcludeFromCodeCoverage(Justification = "Needs a display and a native webview.")]
 internal sealed class PhotinoDialogs(Func<PhotinoWindow?> window) : IDesktopDialogs
 {
+    // Photino takes a starting folder only. On Windows a path that is not an existing folder, such
+    // as the suggested file, fails the shell lookup and the dialog never opens.
     public Task<string?> SaveFileAsync(string suggestedPath, string extension) =>
         OnWindowThread(w => w.ShowSaveFile(
             "Save as",
-            suggestedPath,
+            Path.GetDirectoryName(suggestedPath) is { } folder && Directory.Exists(folder) ? folder : null,
             string.IsNullOrEmpty(extension) ? [] : [(extension.TrimStart('.').ToUpperInvariant(), ["*" + extension])]));
 
     public Task<string?> PickFolderAsync(string startFolder) =>
