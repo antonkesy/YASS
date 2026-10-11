@@ -25,7 +25,8 @@ export function isDesktop(): boolean {
 }
 
 export type DesktopHost = {
-	pickSavePath(suggestedName: string): Promise<string | null>;
+	/** `suggestedName` without the extension; empty opens the dialog with no name filled in. */
+	pickSavePath(suggestedName: string, extension: string): Promise<string | null>;
 	pickFolder(): Promise<string | null>;
 	/** `overwrite` when the user picked the file; otherwise a taken name gets -2, -3…. */
 	saveExport(downloadPath: string, target: string, overwrite: boolean): Promise<string>;
@@ -34,7 +35,8 @@ export type DesktopHost = {
 
 export function createDesktopHost(connection: Pick<ConnectionLike, 'invoke'>): DesktopHost {
 	return {
-		pickSavePath: (name) => connection.invoke<string | null>('PickSavePath', name),
+		pickSavePath: (name, extension) =>
+			connection.invoke<string | null>('PickSavePath', name, extension),
 		pickFolder: () => connection.invoke<string | null>('PickFolder'),
 		saveExport: (path, target, overwrite) =>
 			connection.invoke<string>('SaveExport', path, target, overwrite),

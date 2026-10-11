@@ -8,15 +8,17 @@ import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 import type { SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
 import { t } from '$lib/i18n/index.svelte';
 import { cameFrom } from '$lib/navigation';
-import { documentMeta, exportPrefs } from '$lib/presets';
+import { documentMeta, exportPrefs, nameTemplate } from '$lib/presets';
 import { toast } from '$lib/toast';
 import { applyOptimistic, setCropEdit } from './edits';
 import {
 	cancelled,
+	dialogName,
 	exportBaseName,
 	exportRequest,
 	fileExtensions,
 	savePicker,
+	savePickerType,
 	saveNatively,
 	saveToBrowser,
 	saveToDisk,
@@ -120,20 +122,25 @@ export class Review {
 		const prefs = get(exportPrefs);
 		const picker = savePicker();
 		let target: SaveTarget | null = null;
-		const base = exportBaseName(
-			{ ...session, Name: this.storedName ?? undefined },
-			prefs.nameTemplate
-		);
+		const named = { ...session, Name: this.storedName ?? undefined };
+		const base = exportBaseName(named, nameTemplate(prefs));
+		const suggested = dialogName(named, prefs);
 		const extension = fileExtensions[prefs.format];
 
 		if (this.#desktop) {
-			await this.#saveAsOnDesktop(session, base, extension);
+			await this.#saveAsOnDesktop(session, suggested, base, extension);
 			return;
 		}
 
 		if (picker) {
 			try {
-				target = { file: await picker.showSaveFilePicker({ suggestedName: base + extension }) };
+				target = {
+					file: await picker.showSaveFilePicker({
+						suggestedName: suggested ? suggested + extension : undefined,
+						types: [savePickerType(prefs.format)],
+						excludeAcceptAllOption: true
+					})
+				};
 			} catch (e) {
 				if (cancelled(e)) return;
 				// The dialog exists but would not open: the plain download still gets the file out.
@@ -156,14 +163,14 @@ export class Review {
 		}
 	}
 
-	async #saveAsOnDesktop(session: SessionDto, base: string, extension: string) {
+	async #saveAsOnDesktop(session: SessionDto, suggested: string, base: string, extension: string) {
 		const desktop = this.#desktop;
 		if (!desktop) return;
 		this.error = null;
 		// Busy from the dialog on, so a second press cannot open another native dialog over it.
 		this.exporting = true;
 		try {
-			const file = await desktop.pickSavePath(base + extension);
+			const file = await desktop.pickSavePath(suggested, extension);
 			if (!file) return;
 			const result = await this.#client.hub.export(this.#id(), this.#request(session, false));
 			const saved = await saveNatively(result, desktop, { file }, base, extension);

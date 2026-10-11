@@ -8,11 +8,23 @@ import {
 import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 import { activePageCount, documentName } from '$lib/format';
 import { t } from '$lib/i18n/index.svelte';
-import { documentMetadata, metaFor, type DocumentMeta, type ExportPrefs } from '$lib/presets';
+import {
+	documentMetadata,
+	metaFor,
+	nameTemplate,
+	type DocumentMeta,
+	type ExportPrefs
+} from '$lib/presets';
 
 /** Not in lib.dom, and only present in a secure context (not on plain-http LAN hosts). */
+export type SavePickerType = { description: string; accept: Record<string, string[]> };
+
 export type SavePicker = {
-	showSaveFilePicker: (options: { suggestedName?: string }) => Promise<FileSystemFileHandle>;
+	showSaveFilePicker: (options: {
+		suggestedName?: string;
+		types?: SavePickerType[];
+		excludeAcceptAllOption?: boolean;
+	}) => Promise<FileSystemFileHandle>;
 	showDirectoryPicker: (options?: { mode?: 'readwrite' }) => Promise<FileSystemDirectoryHandle>;
 };
 
@@ -43,7 +55,7 @@ export function exportRequest(
 ): ExportRequest {
 	return {
 		Format: prefs.format,
-		Name: name?.trim() || prefs.nameTemplate.trim() || undefined,
+		Name: name?.trim() || nameTemplate(prefs).trim() || undefined,
 		Metadata: documentMetadata(metaFor(prefs, docMeta, session.Id)),
 		ToServer: toServer
 	};
@@ -58,6 +70,21 @@ export const fileExtensions: Record<ExportFormat, string> = {
 	[ExportFormat.Jpg]: '.jpg',
 	[ExportFormat.Png]: '.png'
 };
+
+const mimeTypes: Record<ExportFormat, string> = {
+	[ExportFormat.Pdf]: 'application/pdf',
+	[ExportFormat.Jpg]: 'image/jpeg',
+	[ExportFormat.Png]: 'image/png'
+};
+
+/** The one type the browser's save dialog offers, so it starts on the export's format. */
+export function savePickerType(format: ExportFormat): SavePickerType {
+	const extension = fileExtensions[format];
+	return {
+		description: extension.slice(1).toUpperCase(),
+		accept: { [mimeTypes[format]]: [extension] }
+	};
+}
 
 export function safeFileName(name: string): string {
 	const clean = name
@@ -77,6 +104,20 @@ export function exportBaseName(session: SessionDto, template: string, now = new 
 	const at = new Date(session.CreatedAt);
 	const createdAt = Number.isNaN(at.getTime()) ? now : at;
 	return safeFileName(`scan-${createdAt.toISOString().slice(0, 16).replace(/[T:]/g, '-')}`);
+}
+
+/**
+ * The name a save dialog opens with, without the extension. With the template switched off only a
+ * name given by hand is filled in; otherwise empty, rather than a made-up one.
+ */
+export function dialogName(
+	session: SessionDto,
+	prefs: Pick<ExportPrefs, 'nameTemplate' | 'useNameTemplate'>,
+	now = new Date()
+): string {
+	if (prefs.useNameTemplate) return exportBaseName(session, prefs.nameTemplate, now);
+	const name = documentName(session, '', now);
+	return name ? safeFileName(name) : '';
 }
 
 export function numberedFileName(base: string, index: number, extension: string): string {

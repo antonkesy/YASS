@@ -251,18 +251,29 @@
 
 		<!-- Outside the scanner section: must stay reachable while it is loading or has failed. -->
 		<SettingsSection title={t('settings.naming')} icon="pencil" testid="naming-section">
-			<div class="col-span-full flex flex-col gap-1.5">
-				<span class="text-[13px] font-bold text-ink-2">{t('settings.fileNameTemplate')}</span>
-				<TemplateEditor
-					value={$exportPrefs.nameTemplate}
-					tokens={templateTokens}
-					preview={templatePreview}
-					presets={templatePresets}
-					unknown={templateUnknown}
-					extension={fileExtensions[$exportPrefs.format]}
-					onchange={(v) => exportPrefs.set({ ...$exportPrefs, nameTemplate: v })}
+			<div class="col-span-full flex flex-col rounded-[16px] bg-app px-3.5 py-1.5">
+				<Toggle
+					name="use-name-template"
+					label={t('settings.useNameTemplate')}
+					hint={$exportPrefs.useNameTemplate ? '' : t('settings.useNameTemplateOff')}
+					checked={$exportPrefs.useNameTemplate}
+					onchange={(on) => exportPrefs.set({ ...$exportPrefs, useNameTemplate: on })}
 				/>
 			</div>
+			{#if $exportPrefs.useNameTemplate}
+				<div class="col-span-full flex flex-col gap-1.5">
+					<span class="text-[13px] font-bold text-ink-2">{t('settings.fileNameTemplate')}</span>
+					<TemplateEditor
+						value={$exportPrefs.nameTemplate}
+						tokens={templateTokens}
+						preview={templatePreview}
+						presets={templatePresets}
+						unknown={templateUnknown}
+						extension={fileExtensions[$exportPrefs.format]}
+						onchange={(v) => exportPrefs.set({ ...$exportPrefs, nameTemplate: v })}
+					/>
+				</div>
+			{/if}
 		</SettingsSection>
 
 		<SettingsSection title={t('settings.metadata')} icon="tag" testid="metadata-section">

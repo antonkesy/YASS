@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
 	canSave,
 	cancelled,
+	dialogName,
 	numberedFileName,
 	numberedPath,
 	exportBaseName,
@@ -9,6 +10,7 @@ import {
 	fileExtensions,
 	safeFileName,
 	savePicker,
+	savePickerType,
 	saveNatively,
 	saveToDisk,
 	type SaveTarget
@@ -96,6 +98,23 @@ describe('file names', () => {
 		const named = session('s', { Name: 'Invoice' });
 		expect(exportBaseName(named, '') + fileExtensions[ExportFormat.Pdf]).toBe('Invoice.pdf');
 		expect(exportBaseName(named, '') + fileExtensions[ExportFormat.Jpg]).toBe('Invoice.jpg');
+	});
+
+	it('fills the save dialog from the template, or only from a hand-given name once it is off', () => {
+		const at = '2026-03-04T15:30:00Z';
+		const on = { nameTemplate: 'scan-{YEAR}', useNameTemplate: true };
+		const off = { ...on, useNameTemplate: false };
+		expect(dialogName(session('s', { CreatedAt: at }), on)).toBe('scan-2026');
+		expect(dialogName(session('s', { CreatedAt: at }), off)).toBe('');
+		expect(dialogName(session('s', { Name: 'In/voice', CreatedAt: at }), off)).toBe('In-voice');
+	});
+
+	it('offers the browser save dialog only the export format', () => {
+		expect(savePickerType(ExportFormat.Pdf)).toEqual({
+			description: 'PDF',
+			accept: { 'application/pdf': ['.pdf'] }
+		});
+		expect(savePickerType(ExportFormat.Jpg).accept).toEqual({ 'image/jpeg': ['.jpg'] });
 	});
 
 	it('numbers documents only once there is more than one', () => {
@@ -238,7 +257,12 @@ describe('saveNatively', () => {
 });
 
 describe('exportRequest', () => {
-	const prefs = { ...defaultExportPrefs, author: 'Ada', nameTemplate: '{YEAR}' };
+	const prefs = {
+		...defaultExportPrefs,
+		author: 'Ada',
+		nameTemplate: '{YEAR}',
+		useNameTemplate: true
+	};
 
 	it('names the scan, else leaves the template to the server, and stamps its own properties', () => {
 		const named = session('s1', { Name: ' Invoice ' });
@@ -252,6 +276,11 @@ describe('exportRequest', () => {
 			Name: '{YEAR}',
 			Metadata: { Author: 'Ada', Subject: undefined }
 		});
+	});
+
+	it('sends no template while it is switched off', () => {
+		const off = { ...prefs, useNameTemplate: false };
+		expect(exportRequest(session('s2'), off, {}).Name).toBeUndefined();
 	});
 
 	it('takes a name and a destination from the caller', () => {

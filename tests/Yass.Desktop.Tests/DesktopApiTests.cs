@@ -33,15 +33,27 @@ public sealed class DesktopApiTests : IAsyncLifetime
     public async Task The_save_dialog_gets_a_safe_name_and_a_typed_name_keeps_the_extension()
     {
         _dialogs.SaveAnswer = Out("letter");
-        Assert.Equal(Out("letter.pdf"), await _api.PickSavePath("a/b letter.pdf"));
-        Assert.Equal("a-b letter.pdf", Path.GetFileName(_dialogs.LastSuggested));
+        Assert.Equal(Out("letter.pdf"), await _api.PickSavePath("a/b letter", ".pdf"));
+        Assert.Equal("a-b letter", _dialogs.LastName);
         Assert.Equal(".pdf", _dialogs.LastExtension);
+    }
+
+    [Fact]
+    public async Task The_save_dialog_name_is_given_without_its_extension_and_may_be_empty()
+    {
+        await _api.PickSavePath("invoice.PDF", "pdf");
+        Assert.Equal("invoice", _dialogs.LastName);
+        Assert.Equal(".pdf", _dialogs.LastExtension);
+
+        await _api.PickSavePath("  ", ".jpg");
+        Assert.Equal("", _dialogs.LastName);
+        Assert.Equal(".jpg", _dialogs.LastExtension);
     }
 
     [Fact]
     public async Task Cancelling_a_dialog_is_null()
     {
-        Assert.Null(await _api.PickSavePath("scan.pdf"));
+        Assert.Null(await _api.PickSavePath("scan", ".pdf"));
         Assert.Null(await _api.PickFolder());
     }
 
@@ -51,8 +63,8 @@ public sealed class DesktopApiTests : IAsyncLifetime
         _dialogs.FolderAnswer = Out("");
         Assert.Equal(Out(""), await _api.PickFolder());
         _dialogs.SaveAnswer = Out("x.pdf");
-        await _api.PickSavePath("x.pdf");
-        Assert.Equal(Out("x.pdf"), _dialogs.LastSuggested);
+        await _api.PickSavePath("x", ".pdf");
+        Assert.Equal(Out("x"), _dialogs.LastSuggested);
     }
 
     [Fact]
@@ -143,11 +155,14 @@ public sealed class DesktopApiTests : IAsyncLifetime
 
         public string LastSuggested { get; private set; } = "";
 
+        public string LastName { get; private set; } = "";
+
         public string LastExtension { get; private set; } = "";
 
-        public Task<string?> SaveFileAsync(string suggestedPath, string extension)
+        public Task<string?> SaveFileAsync(string folder, string name, string extension)
         {
-            LastSuggested = suggestedPath;
+            LastSuggested = Path.Combine(folder, name);
+            LastName = name;
             LastExtension = extension;
             return Task.FromResult(SaveAnswer);
         }

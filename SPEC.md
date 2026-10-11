@@ -144,6 +144,9 @@ nix/               packages and the NixOS module
   way the request reaches the handler, never the network.
 - WebKitGTK and WKWebView have no `showSaveFilePicker`, so saving goes through the native dialog
   and a host-side file move; a document never passes through JavaScript.
+- **The save dialog is opened directly** (`SaveDialog`: the Windows file dialog over COM, GTK 3's
+  native chooser, `NSSavePanel`), not through Photino, whose dialog takes a starting folder only:
+  it could not fill in the name, and on Windows did not select the format or add its extension.
 - Config comes from `yass/yass.yaml` in the per-user config folder (`ApplicationData`) and may be
   absent; `server:` is ignored. Sessions live under `LocalApplicationData/yass/sessions` unless
   `sessions.directory` is set.

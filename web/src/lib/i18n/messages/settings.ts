@@ -287,6 +287,18 @@ export const settings = {
 	},
 
 	naming: { en: 'Naming', de: 'Benennung', fr: 'Nommage', es: 'Nombres' },
+	useNameTemplate: {
+		en: 'Name files from a template',
+		de: 'Dateinamen aus einer Vorlage',
+		fr: 'Nommer les fichiers avec un modèle',
+		es: 'Nombrar archivos con una plantilla'
+	},
+	useNameTemplateOff: {
+		en: 'Off: the save dialog starts with an empty name',
+		de: 'Aus: Der Speichern-Dialog beginnt ohne Namen',
+		fr: 'Désactivé : la boîte d’enregistrement s’ouvre sans nom',
+		es: 'Desactivado: el diálogo de guardar empieza sin nombre'
+	},
 	fileNameTemplate: {
 		en: 'File name template',
 		de: 'Vorlage für Dateinamen',

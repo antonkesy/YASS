@@ -27,6 +27,7 @@
 		documentMeta,
 		exportPrefs,
 		historyPrefs,
+		nameTemplate,
 		pruneDocumentMeta,
 		scannerPrefs
 	} from '$lib/presets';
@@ -141,7 +142,7 @@
 					exportRequest(session, $exportPrefs, $documentMeta)
 				);
 				if (desktop && folder) {
-					const base = exportBaseName(session, $exportPrefs.nameTemplate);
+					const base = exportBaseName(session, nameTemplate($exportPrefs));
 					const extension = fileExtensions[$exportPrefs.format];
 					files += (await saveNatively(result, desktop, { folder }, base, extension)).length;
 				} else {

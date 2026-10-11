@@ -8,11 +8,18 @@ public sealed class DesktopApi(IDesktopDialogs dialogs, IBrowser browser, Export
 {
     private string _lastFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments, Environment.SpecialFolderOption.DoNotVerify);
 
-    public async Task<string?> PickSavePath(string suggestedName)
+    /// <summary>An empty <paramref name="suggestedName"/> opens the dialog with no name filled in.</summary>
+    public async Task<string?> PickSavePath(string? suggestedName, string? extension)
     {
-        string name = FileNames.Safe(suggestedName ?? "scan");
-        string extension = Path.GetExtension(name);
-        string? chosen = await dialogs.SaveFileAsync(Path.Combine(_lastFolder, name), extension).ConfigureAwait(false);
+        extension = string.IsNullOrWhiteSpace(extension) ? "" : "." + extension.Trim().TrimStart('.');
+        string name = suggestedName?.Trim() ?? "";
+        if (extension.Length > 0 && name.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
+        {
+            name = name[..^extension.Length];
+        }
+
+        name = name.Length == 0 ? "" : FileNames.Safe(name);
+        string? chosen = await dialogs.SaveFileAsync(_lastFolder, name, extension).ConfigureAwait(false);
         if (string.IsNullOrEmpty(chosen))
         {
             return null;

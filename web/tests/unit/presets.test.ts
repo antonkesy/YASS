@@ -151,6 +151,16 @@ describe('loading stored preferences', () => {
 		expect(prefs.author).toBe(defaultExportPrefs.author);
 	});
 
+	it('leaves the name template off, unless one was written before it could be switched off', () => {
+		expect(get(createExportPrefs(fake({}))).useNameTemplate).toBe(false);
+		const legacy = { [EXPORT_KEY]: JSON.stringify({ nameTemplate: '{YEAR}' }) };
+		expect(get(createExportPrefs(fake(legacy))).useNameTemplate).toBe(true);
+		const chosen = {
+			[EXPORT_KEY]: JSON.stringify({ nameTemplate: '{YEAR}', useNameTemplate: false })
+		};
+		expect(get(createExportPrefs(fake(chosen))).useNameTemplate).toBe(false);
+	});
+
 	it('keeps a stored value that happens to match a falsy default', () => {
 		const store = createExportPrefs(fake({ [EXPORT_KEY]: JSON.stringify({ format: 0 }) }));
 		expect(get(store).format).toBe(0);

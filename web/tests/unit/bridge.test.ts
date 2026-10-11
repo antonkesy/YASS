@@ -124,12 +124,12 @@ describe('createDesktopHost', () => {
 		const external = fakeExternal();
 		const host = createDesktopHost(createBridgeConnection(external));
 
-		const picked = host.pickSavePath('scan.pdf');
+		const picked = host.pickSavePath('scan', '.pdf');
 		const folder = host.pickFolder();
 		const saved = host.saveExport('/export/s1/t.pdf', '/home/me/scan.pdf', true);
 		void host.openUrl('https://example.org/');
 		expect(external.sent).toEqual([
-			{ id: 1, method: 'PickSavePath', args: ['scan.pdf'] },
+			{ id: 1, method: 'PickSavePath', args: ['scan', '.pdf'] },
 			{ id: 2, method: 'PickFolder', args: [] },
 			{ id: 3, method: 'SaveExport', args: ['/export/s1/t.pdf', '/home/me/scan.pdf', true] },
 			{ id: 4, method: 'OpenUrl', args: ['https://example.org/'] }

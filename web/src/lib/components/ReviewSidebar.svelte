@@ -16,7 +16,7 @@
 		pageSizeLabel,
 		sourceLabel
 	} from '$lib/format';
-	import { exportPrefs, scannerPrefs } from '$lib/presets';
+	import { exportPrefs, nameTemplate, scannerPrefs } from '$lib/presets';
 	import { exportBaseName, fileExtensions, savePicker } from '$lib/review/download';
 	import type { Review } from '$lib/review/review.svelte';
 	import { scannerName } from '$lib/scanners';
@@ -56,7 +56,7 @@
 
 	// Same fallback as the past scans list: an unnamed scan reads as the name template.
 	const displayName = $derived(
-		documentName({ ...session, Name: review.storedName ?? undefined }, $exportPrefs.nameTemplate)
+		documentName({ ...session, Name: review.storedName ?? undefined }, nameTemplate($exportPrefs))
 	);
 
 	const scannerLabel = $derived(
@@ -118,7 +118,9 @@
 
 	<NameField
 		value={displayName}
-		placeholder={exportBaseName(session, $exportPrefs.nameTemplate)}
+		placeholder={$exportPrefs.useNameTemplate
+			? exportBaseName(session, $exportPrefs.nameTemplate)
+			: t('review.documentName')}
 		extension={fileExtensions[$exportPrefs.format]}
 		onrename={(name) => review.rename(name)}
 	/>

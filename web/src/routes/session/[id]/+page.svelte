@@ -41,7 +41,7 @@
 	import StopScanButton from '$lib/components/StopScanButton.svelte';
 	import { canSave } from '$lib/review/download';
 	import { Review } from '$lib/review/review.svelte';
-	import { exportPrefs, reviewPrefs } from '$lib/presets';
+	import { exportPrefs, nameTemplate, reviewPrefs } from '$lib/presets';
 
 	const client = getHub();
 	const sessions = client.sessions;
@@ -359,7 +359,7 @@
 {#if dialog?.kind === 'merge'}
 	<MergeModal
 		sessions={mergeable}
-		template={$exportPrefs.nameTemplate}
+		template={nameTemplate($exportPrefs)}
 		onpick={merge}
 		oncancel={() => (dialog = null)}
 	/>

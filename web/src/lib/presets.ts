@@ -3,7 +3,8 @@ import { ColorMode, PageSize, ScanSource } from './hub/generated/Yass.Core.Domai
 import { ExportFormat, type DocumentMetadataDto } from './hub/generated/Yass.Core.Hub';
 import type { PresetIconName } from './icons';
 import type { ScanOverrides } from './settings';
-import { browserStorage, persisted } from './storage';
+import { get } from 'svelte/store';
+import { browserStorage, load, persisted } from './storage';
 
 export type Preset = {
 	id: string;
@@ -66,6 +67,8 @@ export const defaultPresets: Preset[] = [
 export type ExportPrefs = {
 	format: ExportFormat;
 	nameTemplate: string;
+	/** Off: scans are named only by hand, and the save dialog opens with no name filled in. */
+	useNameTemplate: boolean;
 	author: string;
 	subject: string;
 	keywords: string;
@@ -77,11 +80,17 @@ export const EXPORT_KEY = 'yass.export';
 export const defaultExportPrefs: ExportPrefs = {
 	format: ExportFormat.Pdf,
 	nameTemplate: '',
+	useNameTemplate: false,
 	author: '',
 	subject: '',
 	keywords: '',
 	serverSave: false
 };
+
+/** The template that names scans; empty while the template is switched off. */
+export function nameTemplate(prefs: Pick<ExportPrefs, 'nameTemplate' | 'useNameTemplate'>): string {
+	return prefs.useNameTemplate ? prefs.nameTemplate : '';
+}
 
 /** Undefined when nothing is set, so the server's defaults apply. */
 export function documentMetadata(prefs: ExportPrefs): DocumentMetadataDto | undefined {
@@ -208,8 +217,15 @@ export const defaultHistoryPrefs: HistoryPrefs = { autoClear: null };
 export const createPresets = (storage: Storage | undefined) =>
 	persisted<Preset[]>(storage, PRESETS_KEY, defaultPresets);
 
-export const createExportPrefs = (storage: Storage | undefined) =>
-	persisted<ExportPrefs>(storage, EXPORT_KEY, defaultExportPrefs);
+export function createExportPrefs(storage: Storage | undefined) {
+	const prefs = persisted<ExportPrefs>(storage, EXPORT_KEY, defaultExportPrefs);
+	// A template written before it could be switched off stays in use.
+	const stored = load<Partial<ExportPrefs>>(storage, EXPORT_KEY, {});
+	if (stored.useNameTemplate === undefined && stored.nameTemplate?.trim()) {
+		prefs.set({ ...get(prefs), useNameTemplate: true });
+	}
+	return prefs;
+}
 
 export const createReviewPrefs = (storage: Storage | undefined) =>
 	persisted<ReviewPrefs>(storage, REVIEW_KEY, defaultReviewPrefs);

@@ -3,7 +3,7 @@
 	import { browse, statusCounts, type SortOrder, type StatusFilter } from '$lib/sessions/browse';
 	import { formatBytes } from '$lib/format';
 	import { t } from '$lib/i18n/index.svelte';
-	import { exportPrefs } from '$lib/presets';
+	import { exportPrefs, nameTemplate } from '$lib/presets';
 	import SessionRow from './SessionRow.svelte';
 	import SessionTile from './SessionTile.svelte';
 	import SortMenu from './SortMenu.svelte';
@@ -37,7 +37,7 @@
 	let selecting = $state(false);
 	let picked = $state<Set<string>>(clear());
 
-	const template = $derived($exportPrefs.nameTemplate);
+	const template = $derived(nameTemplate($exportPrefs));
 
 	const counts = $derived(statusCounts(sessions));
 	// A filter with no matches left would strand the panel empty with no chip to go back.
