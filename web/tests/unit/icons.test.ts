@@ -16,14 +16,14 @@ describe('Icon', () => {
 		}
 	});
 
-	it('falls back to the mockup default size and stroke', () => {
+	it('falls back to the default size and stroke', () => {
 		const { container } = render(Icon, { name: 'plus' });
 		const svg = container.querySelector('svg')!;
 		expect(svg.getAttribute('width')).toBe(String(DEFAULT_SIZE));
 		expect(svg.getAttribute('stroke-width')).toBe(String(DEFAULT_STROKE));
 	});
 
-	it('uses the per-glyph size the mockup draws at', () => {
+	it('uses the size and stroke a glyph sets for itself', () => {
 		const { container } = render(Icon, { name: 'scan' });
 		const svg = container.querySelector('svg')!;
 		expect(svg.getAttribute('width')).toBe('24');

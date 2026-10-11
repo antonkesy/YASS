@@ -1,4 +1,4 @@
-/** Transcribed from the mockup; rect/circle kept unflattened so it diffs line for line. */
+/** Glyphs as SVG shapes; rect and circle stay unflattened so each glyph is easy to edit. */
 
 export type Shape =
 	| { readonly kind: 'path'; readonly d: string }

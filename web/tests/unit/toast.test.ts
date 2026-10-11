@@ -9,7 +9,7 @@ describe('toast', () => {
 		vi.useRealTimers();
 	});
 
-	it('shows a message and clears itself after the mockup lifetime', () => {
+	it('shows a message and clears itself after TOAST_MS', () => {
 		toast.show('Saved');
 		expect(get(toast)?.message).toBe('Saved');
 
