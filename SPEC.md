@@ -147,6 +147,9 @@ nix/               packages and the NixOS module
 - **The save dialog is opened directly** (`SaveDialog`: the Windows file dialog over COM, GTK 3's
   native chooser, `NSSavePanel`), not through Photino, whose dialog takes a starting folder only:
   it could not fill in the name, and on Windows did not select the format or add its extension.
+- **No browser behaviour in the window**: F5/Ctrl+R, print, find, save page, zoom (keys and
+  Ctrl+wheel) and history (Alt+arrows, mouse back/forward) have their default stopped in the page
+  (`$lib/browser-keys`). Only the default: the app's own shortcuts on those keys still run.
 - Config comes from `yass/yass.yaml` in the per-user config folder (`ApplicationData`) and may be
   absent; `server:` is ignored. Sessions live under `LocalApplicationData/yass/sessions` unless
   `sessions.directory` is set.
