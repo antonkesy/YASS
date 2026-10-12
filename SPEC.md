@@ -228,5 +228,5 @@ build errors. Suppressions live in `.editorconfig` with their reasons; pin `Anal
 
 **YASS** — Yet Another Slop Scanner. Logo: the "YASS!" cheer as an original flat-colour character
 — a freshly scanned page with a grin, popping out of the scanner with both fists up, on a
-pink-to-violet burst with sparkles; readable at 16 px, maskable at 512 px. SVG + PNG 192/512 +
+sky-blue-to-deep-blue burst with sparkles; readable at 16 px, maskable at 512 px. SVG + PNG 192/512 +
 favicon. No recognisable actor, film still or existing meme image.
