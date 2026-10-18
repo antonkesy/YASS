@@ -357,6 +357,8 @@ test('scan more appends pages', async ({ page }) => {
 
 test('the name a scan is shown under ends in the format that will be written', async ({ page }) => {
 	await page.goto('/settings');
+	// Off by default: the save dialog then starts with no name.
+	await page.getByTestId('toggle-use-name-template').locator('input').check();
 	await page.getByTestId('template-input').fill('{YEAR}-{MONTH}-{DAY}');
 	await expect(page.getByTestId('template-preview')).toContainText('.pdf');
 
