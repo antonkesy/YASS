@@ -161,9 +161,11 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
         return stream.ToArray();
     }
 
-    public async Task<IReadOnlyList<ScannerDevice>> ListDevicesAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ScannerDevice>> ListDevicesAsync(bool refresh, CancellationToken cancellationToken)
     {
-        DeviceCache found = await FindDeviceAsync(force: false, cancellationToken).ConfigureAwait(false);
+        // Not mid-scan: enumerating SANE while it feeds pages can disturb the scan.
+        bool force = refresh && Volatile.Read(ref _scanning) == 0;
+        DeviceCache found = await FindDeviceAsync(force, cancellationToken).ConfigureAwait(false);
         return [.. found.Devices.Select(d => new ScannerDevice(d.ID, d.Name, d.Driver.ToString().ToLowerInvariant(), string.IsNullOrWhiteSpace(d.ConnectionUri) ? null : d.ConnectionUri))];
     }
 

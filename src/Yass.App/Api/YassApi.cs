@@ -98,7 +98,7 @@ public sealed class YassApi(
 
     public async Task<ScannerDeviceDto[]> ListDevices(CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<ScannerDevice> devices = await backend.ListDevicesAsync(cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<ScannerDevice> devices = await backend.ListDevicesAsync(refresh: false, cancellationToken).ConfigureAwait(false);
         return [.. devices.Select(d => new ScannerDeviceDto(d.Id, d.Name, d.Driver, d.Connection))];
     }
 

@@ -12,7 +12,7 @@ public sealed class FakeScannerBackend(FakeScenario scenario) : IScannerBackend
 
     public ScanOptions? LastOptions { get; private set; }
 
-    public Task<IReadOnlyList<ScannerDevice>> ListDevicesAsync(CancellationToken cancellationToken)
+    public Task<IReadOnlyList<ScannerDevice>> ListDevicesAsync(bool refresh, CancellationToken cancellationToken)
     {
         IReadOnlyList<ScannerDevice> devices = Scenario.NoDevice
             ? []
