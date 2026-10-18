@@ -3,12 +3,13 @@ import { blockBrowserShortcuts, browserShortcut, historyButton } from '$lib/brow
 
 const key = (
 	key: string,
-	mods: Partial<Record<'ctrlKey' | 'metaKey' | 'altKey', boolean>> = {}
+	mods: Partial<Record<'ctrlKey' | 'metaKey' | 'altKey' | 'shiftKey', boolean>> = {}
 ) => ({
 	key,
 	ctrlKey: false,
 	metaKey: false,
 	altKey: false,
+	shiftKey: false,
 	...mods
 });
 
@@ -22,6 +23,15 @@ describe('browser shortcuts', () => {
 		expect(browserShortcut(key('=', { ctrlKey: true }))).toBe(true);
 		expect(browserShortcut(key('ArrowLeft', { altKey: true }))).toBe(true);
 		expect(browserShortcut(key('BrowserBack'))).toBe(true);
+	});
+
+	it('stops WebView2’s history, downloads, favourites, new window and clear data', () => {
+		for (const k of ['h', 'j', 'd', 'n']) {
+			expect(browserShortcut(key(k, { ctrlKey: true }))).toBe(true);
+		}
+		expect(browserShortcut(key('Delete', { ctrlKey: true, shiftKey: true }))).toBe(true);
+		expect(browserShortcut(key('Delete', { ctrlKey: true }))).toBe(false);
+		expect(browserShortcut(key('Delete'))).toBe(false);
 	});
 
 	it('leaves editing and the app’s own keys alone', () => {

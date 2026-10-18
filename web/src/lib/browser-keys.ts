@@ -1,4 +1,5 @@
-type Keys = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey'>;
+type Keys = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey'> &
+	Partial<Pick<KeyboardEvent, 'shiftKey'>>;
 
 const plain = new Set([
 	'F3',
@@ -10,8 +11,26 @@ const plain = new Set([
 	'BrowserHome',
 	'BrowserSearch'
 ]);
-// Reload, print, find, save page, open file, view source, zoom.
-const withCtrl = new Set(['r', 'p', 'f', 'g', 's', 'o', 'u', '+', '=', '-', '_', '0']);
+// Reload, print, find, save page, open file, view source, zoom, and WebView2's history, downloads,
+// favourites and new window.
+const withCtrl = new Set([
+	'r',
+	'p',
+	'f',
+	'g',
+	's',
+	'o',
+	'u',
+	'h',
+	'j',
+	'd',
+	'n',
+	'+',
+	'=',
+	'-',
+	'_',
+	'0'
+]);
 
 /**
  * Keys the desktop webview would act on as a browser: reload, print, find, zoom and history.
@@ -21,7 +40,9 @@ export function browserShortcut(e: Keys): boolean {
 	const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
 	if (plain.has(key)) return true;
 	const ctrl = e.ctrlKey || e.metaKey;
-	if (ctrl && !e.altKey) return withCtrl.has(key) || key === 'F5';
+	// Ctrl+Shift+Delete: WebView2's clear browsing data.
+	if (ctrl && !e.altKey)
+		return withCtrl.has(key) || key === 'F5' || (key === 'Delete' && e.shiftKey === true);
 	return e.altKey && !ctrl && (key === 'ArrowLeft' || key === 'ArrowRight' || key === 'Home');
 }
 
