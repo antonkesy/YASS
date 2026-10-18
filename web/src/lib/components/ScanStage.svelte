@@ -191,8 +191,12 @@
 	{#if canPickDevice}
 		<div class="flex flex-col items-center gap-2" data-testid="device-picker">
 			<span class="text-[13px] font-semibold text-ink-muted">{t('home.scanner')}</span>
-			<!-- The look button sits beside the pills, so it adds no row to a full stage. -->
+			<!-- The look button sits beside the pills, so it adds no row to a full stage; a spacer as
+			     wide on the other side keeps the pills centred. -->
 			<div class="flex items-center gap-1">
+				{#if onfound && canLook}
+					<span class="w-11 flex-none" aria-hidden="true"></span>
+				{/if}
 				<div
 					class="flex flex-wrap justify-center gap-1.5 rounded-[24px] bg-ctl-track p-[4px]"
 					role="radiogroup"
