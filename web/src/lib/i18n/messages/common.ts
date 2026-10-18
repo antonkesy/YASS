@@ -14,6 +14,30 @@ export const common = {
 		es: 'Yet Another Slop Scanner'
 	},
 	language: { en: 'Language', de: 'Sprache', fr: 'Langue', es: 'Idioma' },
+	lookForScanners: {
+		en: 'Look for scanners',
+		de: 'Nach Scannern suchen',
+		fr: 'Rechercher des scanners',
+		es: 'Buscar escáneres'
+	},
+	lookingForScanners: {
+		en: 'Looking…',
+		de: 'Suche…',
+		fr: 'Recherche…',
+		es: 'Buscando…'
+	},
+	scannersFoundNone: {
+		en: 'No scanner found',
+		de: 'Kein Scanner gefunden',
+		fr: 'Aucun scanner trouvé',
+		es: 'No se encontró ningún escáner'
+	},
+	scannersFound: {
+		en: { one: 'Found {n} scanner', other: 'Found {n} scanners' },
+		de: { one: '{n} Scanner gefunden', other: '{n} Scanner gefunden' },
+		fr: { one: '{n} scanner trouvé', other: '{n} scanners trouvés' },
+		es: { one: '{n} escáner encontrado', other: '{n} escáneres encontrados' }
+	},
 	switchToDark: {
 		en: 'Switch to dark',
 		de: 'Dunkel darstellen',

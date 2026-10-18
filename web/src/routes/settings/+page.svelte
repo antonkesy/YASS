@@ -15,6 +15,7 @@
 	import SettingsSection from '$lib/components/SettingsSection.svelte';
 	import TemplateEditor from '$lib/components/TemplateEditor.svelte';
 	import ScannerList from '$lib/components/ScannerList.svelte';
+	import FindScannersButton from '$lib/components/FindScannersButton.svelte';
 	import PresetManager from '$lib/components/PresetManager.svelte';
 	import ScanDefaultsForm from '$lib/components/ScanDefaultsForm.svelte';
 	import AutoClearSetting from '$lib/components/AutoClearSetting.svelte';
@@ -217,6 +218,11 @@
 				onhide={(id, hidden) => scannerPrefs.set(setHidden($scannerPrefs, id, hidden))}
 				onforget={(id) => scannerPrefs.set(forget($scannerPrefs, id))}
 			/>
+			{#if $connection === 'connected'}
+				<div class="col-span-full -mt-2 flex">
+					<FindScannersButton onfound={(d) => (devices = d)} />
+				</div>
+			{/if}
 		</SettingsSection>
 
 		<SettingsSection title={t('settings.export')} icon="download" testid="export-section">

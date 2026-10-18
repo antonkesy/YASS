@@ -28,6 +28,7 @@
 	import { Icon } from '$lib/icons';
 	import ScannerDetails from './ScannerDetails.svelte';
 	import ScannerNotice from './ScannerNotice.svelte';
+	import FindScannersButton from './FindScannersButton.svelte';
 
 	let {
 		status,
@@ -38,7 +39,8 @@
 		busy = false,
 		onscan,
 		onsettings,
-		onsavepreset
+		onsavepreset,
+		onfound
 	}: {
 		status: ScannerStatusDto | null;
 		connection: ConnectionState;
@@ -49,6 +51,7 @@
 		onscan: () => void;
 		onsettings: () => void;
 		onsavepreset?: () => void;
+		onfound?: (devices: ScannerDeviceDto[]) => void;
 	} = $props();
 
 	let details = $state<'hover' | 'pinned' | null>(null);
@@ -106,6 +109,8 @@
 
 	const offline = $derived(connection !== 'connected');
 	const ready = $derived(!offline && status?.State === ScannerState.Ready);
+	// Not mid-scan: the server would only hand back its cached list then.
+	const canLook = $derived(!offline && status?.State !== ScannerState.Busy);
 
 	const blocked = $derived(
 		offline
@@ -231,6 +236,10 @@
 				{/each}
 			</div>
 		</div>
+	{/if}
+
+	{#if onfound && canLook}
+		<FindScannersButton {onfound} />
 	{/if}
 
 	<PresetPills

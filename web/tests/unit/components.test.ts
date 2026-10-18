@@ -178,6 +178,25 @@ describe('ScanStage', () => {
 		expect(screen.getByRole('alert')).toHaveAttribute('data-tone', 'danger');
 	});
 
+	it('offers to look for scanners, except offline or mid-scan', async () => {
+		const props = {
+			connection: 'connected' as const,
+			options: null,
+			onscan: vi.fn(),
+			onsettings: vi.fn(),
+			onfound: vi.fn()
+		};
+		const { rerender } = render(ScanStage, {
+			...props,
+			status: { State: ScannerState.NoDevice, CheckedAt: '' }
+		});
+		expect(screen.getByTestId('find-scanners')).toBeInTheDocument();
+		await rerender({ status: { State: ScannerState.Busy, DeviceName: 'ADF', CheckedAt: '' } });
+		expect(screen.queryByTestId('find-scanners')).toBeNull();
+		await rerender({ status: null, connection: 'reconnecting' });
+		expect(screen.queryByTestId('find-scanners')).toBeNull();
+	});
+
 	it('keeps checking and busy to a quiet line: nothing is wrong yet', () => {
 		stage(ScannerState.Busy);
 		expect(screen.queryByRole('alert')).toBeNull();

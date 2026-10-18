@@ -240,6 +240,7 @@
 			onscan={scan}
 			onsettings={openSettings}
 			onsavepreset={savePreset}
+			onfound={(d) => (devices = d)}
 		/>
 		<PastScansPanel
 			sessions={recent}
