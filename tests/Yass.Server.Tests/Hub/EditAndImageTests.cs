@@ -43,7 +43,7 @@ public sealed class EditAndImageTests : IAsyncLifetime
         Assert.NotEqual(hashBefore, edited.Pages[0].Hash);
         Assert.False(edited.Pages[1].Deleted);
         Assert.Equal(PageFilter.Bw, edited.Pages[2].Filter);
-        Assert.Contains(_hub.PagesUpdated, p => p.SessionId == done.Id && p.Page.Index == 0 && p.Page.Rotation == Rotation.R90);
+        await _hub.WaitForPageUpdate(done.Id, p => p.Index == 0 && p.Rotation == Rotation.R90);
 
         SessionDto reloaded = await _hub.GetSession(done.Id);
         Assert.Equal(edited.Pages.Select(p => p.Hash), reloaded.Pages.Select(p => p.Hash));
@@ -132,7 +132,7 @@ public sealed class EditAndImageTests : IAsyncLifetime
         Assert.Equal(0, box.Left);
         Assert.NotEqual(done.Pages[0].Hash, after.Pages[0].Hash);
         Assert.All(after.Pages.Skip(1), p => Assert.Null(p.Crop));
-        Assert.Contains(_hub.PagesUpdated, p => p.SessionId == done.Id && p.Page.Index == 0 && p.Page.Crop != null);
+        await _hub.WaitForPageUpdate(done.Id, p => p.Index == 0 && p.Crop != null);
 
         Assert.Equal(0, await _hub.AutoCrop(done.Id, 0));
         await Assert.ThrowsAsync<HubException>(() => _hub.AutoCrop(done.Id, 42));
@@ -286,7 +286,7 @@ public sealed class EditAndImageTests : IAsyncLifetime
         SessionDto ready = await _hub.WaitFor(done.Id, s => s.Pages.All(p => p.ThumbnailReady));
 
         Assert.All(ready.Pages, p => Assert.True(p.ThumbnailReady));
-        Assert.Contains(_hub.PagesUpdated, p => p.SessionId == done.Id && p.Page.ThumbnailReady);
+        await _hub.WaitForPageUpdate(done.Id, p => p.ThumbnailReady);
         Assert.True(File.Exists(Path.Combine(_factory.Config.Sessions.Directory, done.Id, "cache", $"{ready.Pages[0].Hash}-thumb.webp")));
     }
 }

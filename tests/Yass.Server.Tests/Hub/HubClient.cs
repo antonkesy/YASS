@@ -24,7 +24,13 @@ public sealed class HubClient : IAsyncDisposable
             }
         });
         connection.On<string, PageDto>(nameof(IYassClient.PageAdded), (id, p) => PagesAdded.Add((id, p)));
-        connection.On<string, PageDto>(nameof(IYassClient.PageUpdated), (id, p) => PagesUpdated.Add((id, p)));
+        connection.On<string, PageDto>(nameof(IYassClient.PageUpdated), (id, p) =>
+        {
+            lock (_pushes)
+            {
+                PagesUpdated.Add((id, p));
+            }
+        });
         connection.On<string, int>(nameof(IYassClient.ExportProgress), (id, p) => Progress.Add((id, p)));
     }
 
@@ -108,6 +114,32 @@ public sealed class HubClient : IAsyncDisposable
             if (DateTime.UtcNow > deadline)
             {
                 throw new TimeoutException($"Session {id} did not reach the expected state; last state {session.State} with {session.Pages.Length} pages.");
+            }
+
+            await Task.Delay(25);
+        }
+    }
+
+    /// <summary>Like <see cref="WaitForPush"/>, for a <c>PageUpdated</c> push.</summary>
+    public async Task<PageDto> WaitForPageUpdate(string sessionId, Func<PageDto, bool> predicate, TimeSpan? timeout = null)
+    {
+        DateTime deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(10));
+        while (true)
+        {
+            (string SessionId, PageDto Page)[] seen;
+            lock (_pushes)
+            {
+                seen = [.. PagesUpdated];
+            }
+
+            if (seen.FirstOrDefault(u => u.SessionId == sessionId && predicate(u.Page)) is { Page: { } page })
+            {
+                return page;
+            }
+
+            if (DateTime.UtcNow > deadline)
+            {
+                throw new TimeoutException($"No matching PageUpdated push arrived; saw {seen.Length}.");
             }
 
             await Task.Delay(25);
