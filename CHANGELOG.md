@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.2.0](https://github.com/antonkesy/YASS/compare/v1.1.0...v1.2.0) (2026-10-18)
+
+
+### Features
+
+* **app:** add a RefreshDevices hub call ([cb8e542](https://github.com/antonkesy/YASS/commit/cb8e5428040e03e028e078fd89cffc02a00c805b))
+* **desktop:** fill in the save dialog's name and format, with an optional name template ([f7428e9](https://github.com/antonkesy/YASS/commit/f7428e9d01e77cce8d9739d144e73c2542de7657))
+* **desktop:** stop the webview's browser shortcuts ([438c099](https://github.com/antonkesy/YASS/commit/438c099b68952f3e30e9281b84e268350d11d396))
+* **scanning:** let a device listing skip the enumeration cache ([3e7cf82](https://github.com/antonkesy/YASS/commit/3e7cf82c70511d47ac7cc9298f52702aaf6a0a81))
+* **web:** add a Look for scanners button ([e719f9d](https://github.com/antonkesy/YASS/commit/e719f9d5b083157d454cc094c2e08576a2f20c2c))
+* **web:** hint at missing drivers in the empty scanner list ([7ee4657](https://github.com/antonkesy/YASS/commit/7ee4657c9bb20df9e50d515bfe52767be33b0e53))
+* **web:** hint that a scanner not found may need its driver ([22f67d6](https://github.com/antonkesy/YASS/commit/22f67d64d6c161c8f7152b6262e6be32f5a4a2f4))
+* **web:** scale the whole UI up on big screens ([b138efd](https://github.com/antonkesy/YASS/commit/b138efd19b3898fe25f24d16aee07a408eefa1e1))
+
+
+### Bug Fixes
+
+* **web:** change logo palette to blue ([9d3cc34](https://github.com/antonkesy/YASS/commit/9d3cc34305839ea7b4d013f0bc9f283904668b1d))
+* **web:** drop the gap under PDF properties in WebKit ([ff72b94](https://github.com/antonkesy/YASS/commit/ff72b9441a438908af354f94f971f11b63e71d3c))
+* **web:** keep middle and modified link clicks in the desktop window ([1e6ef64](https://github.com/antonkesy/YASS/commit/1e6ef648236185b8d9f3ac0fc9a476c7d7b3c234))
+* **web:** keep the desktop app's labels and buttons from selecting like text ([d43b940](https://github.com/antonkesy/YASS/commit/d43b9405b329c1d12ec7b06051f85b91e9abf28a))
+* **web:** let nothing be dragged out of or dropped into the desktop app ([c3d9e9f](https://github.com/antonkesy/YASS/commit/c3d9e9f9c59fe4906541194106a04d83a4319eb0))
+* **web:** let the review and home panes reach the window edges ([4a72516](https://github.com/antonkesy/YASS/commit/4a725167e823fa294f66fa6f620eb25009bd1cf9))
+* **web:** say "saved" instead of "downloaded" in the scans overview ([e758254](https://github.com/antonkesy/YASS/commit/e758254f54e6d658f0786d694a1e8594f9c5411e))
+* **web:** stop WebView2's other browser shortcuts in the desktop app ([ddf1062](https://github.com/antonkesy/YASS/commit/ddf1062cbaa3d9098e66db5088b4c3c77741f170))
+
+
+### Documentation
+
+* list what the desktop window stops of a browser's behaviour ([ebbbe96](https://github.com/antonkesy/YASS/commit/ebbbe962bf80a46c6742363f3500b53aaa088e7e))
+
 ## [1.1.0](https://github.com/antonkesy/YASS/compare/v1.0.0...v1.1.0) (2026-10-11)
 
 
