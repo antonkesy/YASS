@@ -40,8 +40,9 @@
 			<span class="text-[13px] leading-snug text-ink-2">{hint}</span>
 		{/if}
 		{#if detail}
-			<span class="text-[12px] leading-snug break-words text-ink-muted" data-testid="scanner-detail"
-				>{detail}</span
+			<span
+				class="text-[12px] leading-snug break-words text-ink-muted select-text"
+				data-testid="scanner-detail">{detail}</span
 			>
 		{/if}
 	</span>

@@ -60,7 +60,7 @@
 	<p class="mb-2 text-[12px] font-semibold text-ink-faint">
 		{t('home.scanner')}
 	</p>
-	<dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-[13px]">
+	<dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-[13px] select-text">
 		{#each rows as [key, value] (key)}
 			<dt class="font-semibold text-ink-muted">{key}</dt>
 			<dd class="min-w-0 font-medium break-words text-ink">{value}</dd>

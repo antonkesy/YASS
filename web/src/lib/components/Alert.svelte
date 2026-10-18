@@ -15,7 +15,7 @@
 </script>
 
 <p
-	class="rounded-[14px] px-4 font-semibold {tall ? 'py-3' : 'py-2'} {tone === 'warning'
+	class="rounded-[14px] px-4 font-semibold select-text {tall ? 'py-3' : 'py-2'} {tone === 'warning'
 		? 'bg-warning-bg text-warning-ink'
 		: 'bg-danger-bg text-danger'} {place}"
 	role="alert"

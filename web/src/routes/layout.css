@@ -340,6 +340,19 @@
 	--vw: calc(1vw * var(--vu));
 }
 
+/* The desktop app is an app, not a page: only inputs and .select-text (errors, scanner
+   details) can be selected. Set by +layout.svelte. */
+:root[data-desktop] {
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+/* WebKit keeps a field inside user-select: none from being selected. */
+:root[data-desktop] :is(input, textarea, [contenteditable]) {
+	-webkit-user-select: text;
+	user-select: text;
+}
+
 :root[data-unzoomed-viewport-units] {
 	--vu: 1;
 }

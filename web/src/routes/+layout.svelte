@@ -34,7 +34,10 @@
 		const hub = getHub();
 		void hub.start();
 		// In the desktop app F5, drops and the like would reload, zoom or replace the whole window.
-		if (getDesktop()) return blockBrowserBehaviour();
+		if (!getDesktop()) return;
+		// layout.css: labels and buttons are not selectable like text on a web page.
+		document.documentElement.dataset.desktop = '';
+		return blockBrowserBehaviour();
 	});
 
 	function click(e: MouseEvent) {
