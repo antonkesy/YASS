@@ -8,7 +8,14 @@
 	import { remember } from '$lib/scanners';
 	import { toast } from '$lib/toast';
 
-	let { onfound }: { onfound: (devices: ScannerDeviceDto[]) => void } = $props();
+	let {
+		onfound,
+		compact = false
+	}: {
+		onfound: (devices: ScannerDeviceDto[]) => void;
+		/** Icon only, to sit beside the scanner pills without adding a row. */
+		compact?: boolean;
+	} = $props();
 
 	let looking = $state(false);
 
@@ -35,12 +42,18 @@
 
 <button
 	type="button"
-	class="flex h-11 flex-none items-center gap-1.5 rounded-full px-3.5 text-[13px] font-bold text-accent transition-colors hover:bg-accent-hover50 disabled:opacity-60"
+	class="flex h-11 flex-none items-center justify-center gap-1.5 rounded-full text-[13px] font-bold text-accent transition-colors hover:bg-accent-hover50 disabled:opacity-60 {compact
+		? 'w-11'
+		: 'px-3.5'}"
 	onclick={look}
 	disabled={looking}
 	aria-busy={looking}
+	aria-label={compact ? t('common.lookForScanners') : undefined}
+	title={compact ? t('common.lookForScanners') : undefined}
 	data-testid="find-scanners"
 >
 	<span class="flex {looking ? 'animate-spin' : ''}"><Icon name="rescan" size={16} /></span>
-	{looking ? t('common.lookingForScanners') : t('common.lookForScanners')}
+	{#if !compact}
+		{looking ? t('common.lookingForScanners') : t('common.lookForScanners')}
+	{/if}
 </button>

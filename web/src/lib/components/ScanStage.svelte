@@ -169,7 +169,11 @@
 	{#if !ready}
 		{#key trouble?.tone + blocked}
 			{#if trouble}
-				<ScannerNotice {...trouble} />
+				<ScannerNotice {...trouble}>
+					{#if onfound && trouble.tone === 'warning' && canLook}
+						<FindScannersButton {onfound} />
+					{/if}
+				</ScannerNotice>
 			{:else}
 				<!-- Our own words: the server's for these ("Not checked yet.") are not translated. -->
 				<p
@@ -185,61 +189,63 @@
 	{#if canPickDevice}
 		<div class="flex flex-col items-center gap-2" data-testid="device-picker">
 			<span class="text-[13px] font-semibold text-ink-muted">{t('home.scanner')}</span>
-			<div
-				class="flex flex-wrap justify-center gap-1.5 rounded-[24px] bg-ctl-track p-[4px]"
-				role="radiogroup"
-				aria-label={t('home.scanner')}
-				tabindex="-1"
-				bind:this={pills}
-				onkeydown={rove}
-				data-testid="device-pills"
-			>
-				{#each listed as scanner (scanner.Id)}
-					{@const lit = shown === scanner.Id}
-					<div
-						class="relative"
-						role="presentation"
-						onmouseenter={() => {
-							if (lit && details === null) details = 'hover';
-						}}
-						onmouseleave={() => {
-							if (details === 'hover') details = null;
-						}}
-					>
-						<button
-							type="button"
-							role="radio"
-							class="flex h-[38px] max-w-[min(340px,80*var(--vw))] items-center rounded-full px-3.5 text-[13px] font-bold transition-[background-color,color,box-shadow,transform] duration-200 ease-spring active:scale-[0.97] {lit
-								? 'bg-seg text-ink shadow-seg'
-								: 'text-ink-2 hover:text-ink'}"
-							aria-checked={lit}
-							tabindex={lit ? 0 : -1}
-							onclick={() => {
-								if (lit) details = details === 'pinned' ? null : 'pinned';
-								else settings.set({ ...$settings, Device: scanner.Id });
+			<!-- The look button sits beside the pills, so it adds no row to a full stage. -->
+			<div class="flex items-center gap-1">
+				<div
+					class="flex flex-wrap justify-center gap-1.5 rounded-[24px] bg-ctl-track p-[4px]"
+					role="radiogroup"
+					aria-label={t('home.scanner')}
+					tabindex="-1"
+					bind:this={pills}
+					onkeydown={rove}
+					data-testid="device-pills"
+				>
+					{#each listed as scanner (scanner.Id)}
+						{@const lit = shown === scanner.Id}
+						<div
+							class="relative"
+							role="presentation"
+							onmouseenter={() => {
+								if (lit && details === null) details = 'hover';
 							}}
-							data-device={scanner.Id}
-							{@attach bounce(scanner.Id)}
+							onmouseleave={() => {
+								if (details === 'hover') details = null;
+							}}
 						>
-							<span class="truncate">{scanner.Name}</span>
-						</button>
-						{#if lit && details !== null}
-							<ScannerDetails
-								{status}
-								{connection}
-								name={scanner.Name}
-								pinned={details === 'pinned'}
-								onclose={() => (details = null)}
-							/>
-						{/if}
-					</div>
-				{/each}
+							<button
+								type="button"
+								role="radio"
+								class="flex h-[38px] max-w-[min(340px,80*var(--vw))] items-center rounded-full px-3.5 text-[13px] font-bold transition-[background-color,color,box-shadow,transform] duration-200 ease-spring active:scale-[0.97] {lit
+									? 'bg-seg text-ink shadow-seg'
+									: 'text-ink-2 hover:text-ink'}"
+								aria-checked={lit}
+								tabindex={lit ? 0 : -1}
+								onclick={() => {
+									if (lit) details = details === 'pinned' ? null : 'pinned';
+									else settings.set({ ...$settings, Device: scanner.Id });
+								}}
+								data-device={scanner.Id}
+								{@attach bounce(scanner.Id)}
+							>
+								<span class="truncate">{scanner.Name}</span>
+							</button>
+							{#if lit && details !== null}
+								<ScannerDetails
+									{status}
+									{connection}
+									name={scanner.Name}
+									pinned={details === 'pinned'}
+									onclose={() => (details = null)}
+								/>
+							{/if}
+						</div>
+					{/each}
+				</div>
+				{#if onfound && canLook}
+					<FindScannersButton {onfound} compact />
+				{/if}
 			</div>
 		</div>
-	{/if}
-
-	{#if onfound && canLook}
-		<FindScannersButton {onfound} />
 	{/if}
 
 	<PresetPills

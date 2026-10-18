@@ -178,7 +178,7 @@ describe('ScanStage', () => {
 		expect(screen.getByRole('alert')).toHaveAttribute('data-tone', 'danger');
 	});
 
-	it('offers to look for scanners, except offline or mid-scan', async () => {
+	it('offers to look for scanners in the no-scanner card or beside the pills, except offline or mid-scan', async () => {
 		const props = {
 			connection: 'connected' as const,
 			options: null,
@@ -190,7 +190,15 @@ describe('ScanStage', () => {
 			...props,
 			status: { State: ScannerState.NoDevice, CheckedAt: '' }
 		});
-		expect(screen.getByTestId('find-scanners')).toBeInTheDocument();
+		expect(screen.getByRole('alert')).toContainElement(screen.getByTestId('find-scanners'));
+		await rerender({
+			status: { State: ScannerState.Ready, DeviceName: 'ADF', CheckedAt: '' },
+			devices: [{ Id: 'adf', Name: 'ADF', Driver: 'fake' }]
+		});
+		// Beside the pills, icon only, so it adds no row to the stage.
+		expect(screen.getByTestId('device-picker')).toContainElement(
+			screen.getByRole('button', { name: 'Look for scanners' })
+		);
 		await rerender({ status: { State: ScannerState.Busy, DeviceName: 'ADF', CheckedAt: '' } });
 		expect(screen.queryByTestId('find-scanners')).toBeNull();
 		await rerender({ status: null, connection: 'reconnecting' });

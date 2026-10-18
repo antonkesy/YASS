@@ -1,16 +1,20 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { Icon } from '$lib/icons';
 
 	let {
 		tone,
 		title,
 		hint = null,
-		detail = null
+		detail = null,
+		children
 	}: {
 		tone: 'warning' | 'danger';
 		title: string;
 		hint?: string | null;
 		detail?: string | null;
+		/** An action under the text. */
+		children?: Snippet;
 	} = $props();
 </script>
 
@@ -44,6 +48,9 @@
 				class="text-[12px] leading-snug break-words text-ink-muted select-text"
 				data-testid="scanner-detail">{detail}</span
 			>
+		{/if}
+		{#if children}
+			<span class="-ml-3.5 flex pt-1">{@render children()}</span>
 		{/if}
 	</span>
 </div>

@@ -58,9 +58,10 @@
 	});
 </script>
 
-<!-- The height follows the chips' rows over a moment, so the Scan button below glides instead of jumping. -->
+<!-- The height follows the chips' rows over a moment, so the Scan button below glides instead of jumping.
+     flex-none: a crowded stage scrolls rather than squeezing the chips. -->
 <div
-	class="w-full max-w-[520px] overflow-hidden transition-[height] duration-[240ms] ease-[cubic-bezier(0.2,0.8,0.2,1)]"
+	class="w-full max-w-[520px] flex-none overflow-hidden transition-[height] duration-[240ms] ease-[cubic-bezier(0.2,0.8,0.2,1)]"
 	style:height={rowHeight ? `${rowHeight}px` : undefined}
 	data-testid="settings-chips-area"
 >
