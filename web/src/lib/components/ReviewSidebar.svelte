@@ -139,7 +139,8 @@
 		stopping={review.stopping}
 	/>
 
-	<div class="flex flex-col rounded-[16px] bg-app p-3" data-testid="file-options">
+	<!-- Block, not flex: WebKit counts a wrapped legend twice in a flex column's fieldset. -->
+	<div class="rounded-[16px] bg-app p-3" data-testid="file-options">
 		<Segmented
 			name="review-format"
 			label={t('settings.fileFormat')}
