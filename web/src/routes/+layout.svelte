@@ -5,7 +5,7 @@
 	import { resolve } from '$app/paths';
 	import { screenTransition } from '$lib/motion';
 	import { escape, typing } from '$lib/keys.svelte';
-	import { blockBrowserShortcuts } from '$lib/browser-keys';
+	import { blockBrowserBehaviour } from '$lib/browser-keys';
 	import KeyboardHelp from '$lib/components/KeyboardHelp.svelte';
 	import { getDesktop, getHub } from '$lib/hub/hub';
 	import AppHeader from '$lib/components/AppHeader.svelte';
@@ -33,8 +33,8 @@
 	onMount(() => {
 		const hub = getHub();
 		void hub.start();
-		// In the desktop app F5 and the like would reload or zoom the whole window.
-		if (getDesktop()) return blockBrowserShortcuts();
+		// In the desktop app F5, drops and the like would reload, zoom or replace the whole window.
+		if (getDesktop()) return blockBrowserBehaviour();
 	});
 
 	function click(e: MouseEvent) {

@@ -51,8 +51,16 @@ export function historyButton(e: Pick<MouseEvent, 'button'>): boolean {
 	return e.button === 3 || e.button === 4;
 }
 
+function isEditable(target: EventTarget | null): boolean {
+	return (
+		target instanceof HTMLInputElement ||
+		target instanceof HTMLTextAreaElement ||
+		(target instanceof HTMLElement && target.isContentEditable)
+	);
+}
+
 /** Keeps the desktop app from behaving like a browser tab. Returns the undo. */
-export function blockBrowserShortcuts(target: Window = window): () => void {
+export function blockBrowserBehaviour(target: Window = window): () => void {
 	const key = (e: KeyboardEvent) => {
 		if (browserShortcut(e)) e.preventDefault();
 	};
@@ -63,12 +71,27 @@ export function blockBrowserShortcuts(target: Window = window): () => void {
 		// Ctrl+wheel, and a touchpad pinch, would zoom the whole window.
 		if (e.ctrlKey) e.preventDefault();
 	};
-	target.addEventListener('keydown', key, { capture: true });
-	target.addEventListener('mouseup', mouse, { capture: true });
-	target.addEventListener('wheel', wheel, { capture: true, passive: false });
+	// The app has no HTML drag and drop: a dragged image or link only leaves as a browser one,
+	// and a file dropped on the window would replace the app with it.
+	const drag = (e: DragEvent) => {
+		if (!isEditable(e.target)) e.preventDefault();
+	};
+	const drop = (e: DragEvent) => {
+		e.preventDefault();
+		if (e.dataTransfer) e.dataTransfer.dropEffect = 'none';
+	};
+	const listeners = [
+		['keydown', key],
+		['mouseup', mouse],
+		['wheel', wheel],
+		['dragstart', drag],
+		['dragover', drop],
+		['drop', drop]
+	] as const;
+	for (const [type, listener] of listeners)
+		target.addEventListener(type, listener as EventListener, { capture: true, passive: false });
 	return () => {
-		target.removeEventListener('keydown', key, { capture: true });
-		target.removeEventListener('mouseup', mouse, { capture: true });
-		target.removeEventListener('wheel', wheel, { capture: true });
+		for (const [type, listener] of listeners)
+			target.removeEventListener(type, listener as EventListener, { capture: true });
 	};
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { blockBrowserShortcuts, browserShortcut, historyButton } from '$lib/browser-keys';
+import { blockBrowserBehaviour, browserShortcut, historyButton } from '$lib/browser-keys';
 
 const key = (
 	key: string,
@@ -51,7 +51,7 @@ describe('browser shortcuts', () => {
 	});
 
 	it('stops only the default, and can be undone', () => {
-		const undo = blockBrowserShortcuts(window);
+		const undo = blockBrowserBehaviour(window);
 		let seen = false;
 		const listener = () => (seen = true);
 		window.addEventListener('keydown', listener);
@@ -65,5 +65,30 @@ describe('browser shortcuts', () => {
 		window.dispatchEvent(again);
 		expect(again.defaultPrevented).toBe(false);
 		window.removeEventListener('keydown', listener);
+	});
+
+	it('lets nothing be dragged out of the window or dropped into it', () => {
+		const undo = blockBrowserBehaviour(window);
+		const img = document.body.appendChild(document.createElement('img'));
+		const input = document.body.appendChild(document.createElement('input'));
+		try {
+			const out = new Event('dragstart', { bubbles: true, cancelable: true });
+			img.dispatchEvent(out);
+			expect(out.defaultPrevented).toBe(true);
+
+			const text = new Event('dragstart', { bubbles: true, cancelable: true });
+			input.dispatchEvent(text);
+			expect(text.defaultPrevented).toBe(false);
+
+			for (const type of ['dragover', 'drop']) {
+				const file = new Event(type, { bubbles: true, cancelable: true });
+				document.body.dispatchEvent(file);
+				expect(file.defaultPrevented).toBe(true);
+			}
+		} finally {
+			undo();
+			img.remove();
+			input.remove();
+		}
 	});
 });
