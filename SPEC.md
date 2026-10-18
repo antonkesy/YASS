@@ -148,8 +148,12 @@ nix/               packages and the NixOS module
   native chooser, `NSSavePanel`), not through Photino, whose dialog takes a starting folder only:
   it could not fill in the name, and on Windows did not select the format or add its extension.
 - **No browser behaviour in the window**: F5/Ctrl+R, print, find, save page, zoom (keys and
-  Ctrl+wheel) and history (Alt+arrows, mouse back/forward) have their default stopped in the page
-  (`$lib/browser-keys`). Only the default: the app's own shortcuts on those keys still run.
+  Ctrl+wheel), history (Alt+arrows, mouse back/forward), WebView2's history, downloads, favourites,
+  new window and clear-data keys, middle-button autoscroll, drags out and file drops have their
+  default stopped in the page (`$lib/browser-keys`). Only the default: the app's own shortcuts on
+  those keys still run. Photino cannot turn off WebView2's accelerator keys natively, so this is the
+  only guard. Middle and modified link clicks stay in the window, and only fields and
+  `.select-text` (errors, scanner details) select like text.
 - Config comes from `yass/yass.yaml` in the per-user config folder (`ApplicationData`) and may be
   absent; `server:` is ignored. Sessions live under `LocalApplicationData/yass/sessions` unless
   `sessions.directory` is set.
