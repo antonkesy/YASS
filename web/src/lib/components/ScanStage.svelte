@@ -154,7 +154,7 @@
 </script>
 
 <section
-	class="flex min-h-0 animate-fade-in flex-col items-center justify-center gap-[clamp(8px,1.4vh,18px)] overflow-y-auto rounded-[28px] bg-surface px-5 py-8 shadow-stage sm:px-8 sm:py-[clamp(1rem,2.6vh,3rem)]"
+	class="flex min-h-0 animate-fade-in flex-col items-center justify-center gap-[clamp(8px,1.4*var(--vh),18px)] overflow-y-auto rounded-[28px] bg-surface px-5 py-8 shadow-stage sm:px-8 sm:py-[clamp(1rem,2.6*var(--vh),3rem)]"
 	style:flex="2 1 520px"
 	data-testid="scan-stage"
 	{@attach autoAnimate}
@@ -204,7 +204,7 @@
 						<button
 							type="button"
 							role="radio"
-							class="flex h-[38px] max-w-[min(340px,80vw)] items-center rounded-full px-3.5 text-[13px] font-bold transition-[background-color,color,box-shadow,transform] duration-200 ease-spring active:scale-[0.97] {lit
+							class="flex h-[38px] max-w-[min(340px,80*var(--vw))] items-center rounded-full px-3.5 text-[13px] font-bold transition-[background-color,color,box-shadow,transform] duration-200 ease-spring active:scale-[0.97] {lit
 								? 'bg-seg text-ink shadow-seg'
 								: 'text-ink-2 hover:text-ink'}"
 							aria-checked={lit}

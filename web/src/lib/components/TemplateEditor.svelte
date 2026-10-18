@@ -83,7 +83,7 @@
 				<Popover
 					label={t('settings.closeReadyMade')}
 					onclose={() => (open = false)}
-					class="absolute top-[calc(100%+4px)] left-0 z-35 flex min-w-[min(420px,80vw)] animate-pop-in flex-col rounded-[14px] bg-surface p-1.5 shadow-popover"
+					class="absolute top-[calc(100%+4px)] left-0 z-35 flex min-w-[min(420px,80*var(--vw))] animate-pop-in flex-col rounded-[14px] bg-surface p-1.5 shadow-popover"
 					raised
 				>
 					{#each presets as preset (preset.template)}

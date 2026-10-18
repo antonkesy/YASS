@@ -1,4 +1,5 @@
 import { reduced } from '$lib/motion';
+import { uiZoom } from '$lib/zoom';
 
 /**
  * FLIP-animates a container's direct children when they move, enter or leave. Only jumps are
@@ -38,13 +39,15 @@ export function autoAnimate(container: HTMLElement): () => void {
 	// Set by the ResizeObserver's first report; measuring during setup would force an early layout.
 	let width = -1;
 
+	// In the container's own pixels, as the moves and exit copies are styled in them.
 	function measure(child: Element, origin: DOMRect): Rect {
 		const r = child.getBoundingClientRect();
+		const zoom = uiZoom();
 		return {
-			top: r.top - origin.top,
-			left: r.left - origin.left,
-			width: r.width,
-			height: r.height
+			top: (r.top - origin.top) / zoom,
+			left: (r.left - origin.left) / zoom,
+			width: r.width / zoom,
+			height: r.height / zoom
 		};
 	}
 

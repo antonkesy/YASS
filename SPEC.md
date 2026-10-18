@@ -178,6 +178,10 @@ nix/               packages and the NixOS module
   writes atomically and never overwrites (`-2`, `-3`… on a clash).
 - The UI font is the platform's own (SF on Apple), falling back to Inter, self-hosted in
   `web/static/fonts/` because a home server may have no internet.
+- **Big screens scale the whole UI** with CSS `zoom` on the root, in steps that keep at least
+  1920×1000 to lay out in. Chromium and Firefox scale `vh`/`vw` by `zoom` and WebKit does not, so
+  layout uses `--dvh`/`--vh`/`--vw` (`app.html` probes which), and pixels measured with
+  `getBoundingClientRect()` are divided by `uiZoom()` before going into a style.
 - **Targets:** first paint < 1 s over LAN; JS ≤ 150 kB gzipped; no image bytes held in JS beyond
   the current preview; every action keyboard-reachable; touch targets ≥ 44 px; works without the
   service worker.

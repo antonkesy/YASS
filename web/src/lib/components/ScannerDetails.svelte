@@ -50,7 +50,7 @@
 <Popover
 	label={t('home.closeScannerDetails')}
 	{onclose}
-	class="absolute top-[calc(100%+8px)] left-1/2 z-31 w-max max-w-[min(320px,calc(100vw-32px))] -translate-x-1/2 animate-pop-in rounded-[16px] bg-surface p-4 text-left shadow-menu"
+	class="absolute top-[calc(100%+8px)] left-1/2 z-31 w-max max-w-[min(320px,calc(100*var(--vw)-32px))] -translate-x-1/2 animate-pop-in rounded-[16px] bg-surface p-4 text-left shadow-menu"
 	role="dialog"
 	name={t('home.scannerDetails')}
 	catcher={pinned}

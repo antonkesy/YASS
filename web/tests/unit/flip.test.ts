@@ -41,6 +41,19 @@ describe('flip', () => {
 		expect(options.duration).toBe(FLIP_MS);
 	});
 
+	it('moves in the zoomed UI’s own pixels', () => {
+		document.documentElement.style.setProperty('--ui-zoom', '2');
+		try {
+			const before = measure(grid({ '0': [0, 0] }).container);
+			const after = grid({ '0': [0, 100] });
+			play(after.container, before);
+
+			expect(after.animate.mock.calls[0][0][0].transform).toBe('translate(0px, -50px)');
+		} finally {
+			document.documentElement.style.removeProperty('--ui-zoom');
+		}
+	});
+
 	it('leaves alone anything that did not move', () => {
 		const same = grid({ '0': [0, 0], '1': [0, 100] });
 		const before = measure(same.container);

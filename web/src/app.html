@@ -12,6 +12,14 @@
 			} catch (e) {}
 			if (mode !== 'auto')
 				document.documentElement.dataset.theme = mode === 'dark' ? 'dark' : 'light';
+
+			// The --vu factor in layout.css: does this engine scale vh by `zoom` (WebKit does not)?
+			var probe = document.createElement('div');
+			probe.style.cssText = 'position:absolute;visibility:hidden;height:100vh;zoom:2';
+			document.documentElement.appendChild(probe);
+			if (probe.getBoundingClientRect().height < innerHeight * 1.5)
+				document.documentElement.dataset.unzoomedViewportUnits = '';
+			probe.remove();
 		</script>
 		%sveltekit.head%
 	</head>

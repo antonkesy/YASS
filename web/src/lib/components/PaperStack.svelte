@@ -26,7 +26,7 @@
 	element, Chrome stops running its CSS animations on the compositor.
 -->
 <div
-	class="relative mt-1.5 mb-3.5 w-[150px] flex-none sm:w-[clamp(118px,min(18vw,17vh),300px)]"
+	class="relative mt-1.5 mb-3.5 w-[150px] flex-none sm:w-[clamp(118px,min(18*var(--vw),17*var(--vh)),300px)]"
 	style="aspect-ratio: 1 / 1.414"
 	aria-hidden="true"
 >

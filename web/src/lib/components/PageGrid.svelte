@@ -6,6 +6,7 @@
 	import { measure, play, type Positions } from '$lib/review/flip';
 	import { imageUrl } from '$lib/hub/hub';
 	import { portal } from '$lib/review/portal';
+	import { uiZoom } from '$lib/zoom';
 	import { DEFAULT_TILE } from '$lib/review/overview';
 	import PageThumb from './PageThumb.svelte';
 
@@ -65,6 +66,8 @@
 	let rects: DOMRectReadOnly[] = [];
 	let at = $state({ x: 0, y: 0 });
 	let scrolling: number | null = null;
+	// Taken when a drag begins: the ghost is styled in zoomed pixels, the pointer is not.
+	let zoom = 1;
 	let settleTimer: ReturnType<typeof setTimeout> | null = null;
 
 	const SETTLE_MS = 200;
@@ -95,6 +98,7 @@
 	function begin(index: number, pointerId: number, pressed: { x: number; y: number }) {
 		pressing = null;
 		clearSettle();
+		zoom = uiZoom();
 		rects = slots().map((el) => el.getBoundingClientRect());
 		const tile = rects[index] ?? new DOMRect(pressed.x, pressed.y, 0, 0);
 		// From the current pointer, so a quick flick-and-release doesn't drop on the start slot.
@@ -129,8 +133,8 @@
 			const { scrollLeft, scrollTop } = grid;
 			grid.scrollBy?.({ left: dx, top: dy });
 			// Shifted, not re-measured: mid-slide a tile's box is wherever its animation has it.
-			const movedX = grid.scrollLeft - scrollLeft;
-			const movedY = grid.scrollTop - scrollTop;
+			const movedX = (grid.scrollLeft - scrollLeft) * zoom;
+			const movedY = (grid.scrollTop - scrollTop) * zoom;
 			if (movedX || movedY) {
 				rects = rects.map((r) => new DOMRect(r.x - movedX, r.y - movedY, r.width, r.height));
 				hover(slotAt(rects, at.x, at.y));
@@ -382,7 +386,8 @@
 		class="pointer-events-none fixed top-0 left-0 z-[70] {settle
 			? 'transition-transform duration-200 ease-spring'
 			: ''}"
-		style="width: {ghost.w}px; height: {ghost.h}px; transform: translate({ghost.x}px, {ghost.y}px)"
+		style="width: {ghost.w / zoom}px; height: {ghost.h / zoom}px; transform: translate({ghost.x /
+			zoom}px, {ghost.y / zoom}px)"
 		aria-hidden="true"
 		data-testid="drag-ghost"
 		data-lifted={lifted}

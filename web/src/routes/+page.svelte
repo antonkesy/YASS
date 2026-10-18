@@ -228,7 +228,7 @@
 
 	<!-- From lg the panes get exactly the height under the header and main's padding (2.5rem). -->
 	<div
-		class="flex flex-wrap items-stretch gap-6 lg:h-[calc(100dvh-var(--app-header-h)-2.5rem)] lg:min-h-0 lg:flex-nowrap"
+		class="flex flex-wrap items-stretch gap-6 lg:h-[calc(100*var(--dvh)-var(--app-header-h)-2.5rem)] lg:min-h-0 lg:flex-nowrap"
 	>
 		<ScanStage
 			status={$scanner}

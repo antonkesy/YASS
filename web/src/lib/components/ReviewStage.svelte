@@ -73,7 +73,7 @@
 
 		<div
 			bind:this={stage}
-			class="relative w-full max-w-[max(280px,calc((100dvh-230px)/1.414))] flex-1 lg:h-full lg:w-auto lg:max-w-none lg:flex-none"
+			class="relative w-full max-w-[max(280px,calc((100*var(--dvh)-230px)/1.414))] flex-1 lg:h-full lg:w-auto lg:max-w-none lg:flex-none"
 			style="aspect-ratio: 1 / 1.414"
 			aria-busy={stageLoaded?.hash !== shown.Hash}
 		>

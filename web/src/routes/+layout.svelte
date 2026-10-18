@@ -78,7 +78,7 @@
 </svelte:head>
 
 <!-- *:w-full: a page's mx-auto would otherwise drop the column's stretch and overflow a phone. -->
-<div class="flex min-h-dvh flex-col bg-page text-ink *:w-full">
+<div class="flex min-h-[calc(100*var(--dvh))] flex-col bg-page text-ink *:w-full">
 	<AppHeader />
 	{@render children()}
 </div>

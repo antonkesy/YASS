@@ -324,8 +324,48 @@
 	--app-header-h: 4rem;
 
 	/* Shared with AppHeader, which centres the scanner pill between these panes. */
-	--review-strip-w: clamp(180px, 14vw, 260px);
-	--review-aside-w: clamp(250px, 16vw, 280px);
+	--review-strip-w: clamp(180px, 14 * var(--vw), 260px);
+	--review-aside-w: clamp(250px, 16 * var(--vw), 280px);
+
+	/* Big screens get the whole UI scaled up, in steps that keep at least 1920×1000 to lay out in.
+	   Read by $lib/zoom. */
+	--ui-zoom: 1;
+	zoom: var(--ui-zoom);
+
+	/* Chromium and Firefox scale viewport units by `zoom`, WebKit does not; app.html marks
+	   which. Use these instead of dvh/vw so 100 of them is still the window. */
+	--vu: calc(1 / var(--ui-zoom));
+	--dvh: calc(1dvh * var(--vu));
+	--vh: calc(1vh * var(--vu));
+	--vw: calc(1vw * var(--vu));
+}
+
+:root[data-unzoomed-viewport-units] {
+	--vu: 1;
+}
+
+@media (min-width: 2400px) and (min-height: 1250px) {
+	:root {
+		--ui-zoom: 1.25;
+	}
+}
+
+@media (min-width: 2880px) and (min-height: 1500px) {
+	:root {
+		--ui-zoom: 1.5;
+	}
+}
+
+@media (min-width: 3360px) and (min-height: 1750px) {
+	:root {
+		--ui-zoom: 1.75;
+	}
+}
+
+@media (min-width: 3840px) and (min-height: 2000px) {
+	:root {
+		--ui-zoom: 2;
+	}
 }
 
 :focus-visible {
