@@ -96,9 +96,20 @@ public sealed class YassApi(
 
     public Task<ScannerStatusDto> GetScannerStatus() => Task.FromResult(scanner.Current);
 
-    public async Task<ScannerDeviceDto[]> ListDevices(CancellationToken cancellationToken = default)
+    public Task<ScannerDeviceDto[]> ListDevices(CancellationToken cancellationToken = default) =>
+        Devices(refresh: false, cancellationToken);
+
+    public async Task<ScannerDeviceDto[]> RefreshDevices(CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<ScannerDevice> devices = await backend.ListDevicesAsync(refresh: false, cancellationToken).ConfigureAwait(false);
+        ScannerDeviceDto[] devices = await Devices(refresh: true, cancellationToken).ConfigureAwait(false);
+        // From the list just taken, so a scanner plugged in since is Ready now, not at the next poll.
+        await scanner.RefreshAsync(cancellationToken).ConfigureAwait(false);
+        return devices;
+    }
+
+    private async Task<ScannerDeviceDto[]> Devices(bool refresh, CancellationToken cancellationToken)
+    {
+        IReadOnlyList<ScannerDevice> devices = await backend.ListDevicesAsync(refresh, cancellationToken).ConfigureAwait(false);
         return [.. devices.Select(d => new ScannerDeviceDto(d.Id, d.Name, d.Driver, d.Connection))];
     }
 

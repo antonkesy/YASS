@@ -145,6 +145,10 @@ class IYassHub_HubProxy implements IYassHub {
         return await this.connection.invoke("ListDevices");
     }
 
+    public readonly refreshDevices = async (): Promise<ScannerDeviceDto[]> => {
+        return await this.connection.invoke("RefreshDevices");
+    }
+
     public readonly getEffectiveOptions = async (): Promise<ScanOptionsDto> => {
         return await this.connection.invoke("GetEffectiveOptions");
     }

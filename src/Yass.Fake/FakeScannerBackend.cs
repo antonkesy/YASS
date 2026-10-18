@@ -12,8 +12,17 @@ public sealed class FakeScannerBackend(FakeScenario scenario) : IScannerBackend
 
     public ScanOptions? LastOptions { get; private set; }
 
+    public int Refreshes => Volatile.Read(ref _refreshes);
+
+    private int _refreshes;
+
     public Task<IReadOnlyList<ScannerDevice>> ListDevicesAsync(bool refresh, CancellationToken cancellationToken)
     {
+        if (refresh)
+        {
+            Interlocked.Increment(ref _refreshes);
+        }
+
         IReadOnlyList<ScannerDevice> devices = Scenario.NoDevice
             ? []
             : [.. Scenario.AllDevices.Select(name => new ScannerDevice(name, name, "fake"))];

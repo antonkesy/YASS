@@ -44,6 +44,9 @@ public interface IYassHub
 
     Task<ScannerDeviceDto[]> ListDevices();
 
+    /// <summary>Looks for scanners again now rather than from the cache, and re-checks the status.</summary>
+    Task<ScannerDeviceDto[]> RefreshDevices();
+
     Task<ScanOptionsDto> GetEffectiveOptions();
 
     /// <summary>Empty when saving to the server is off.</summary>

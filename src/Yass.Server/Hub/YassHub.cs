@@ -39,6 +39,8 @@ public sealed class YassHub(YassApi api) : Hub<IYassClient>, IYassHub
 
     public Task<ScannerDeviceDto[]> ListDevices() => api.ListDevices(Context.ConnectionAborted);
 
+    public Task<ScannerDeviceDto[]> RefreshDevices() => api.RefreshDevices(Context.ConnectionAborted);
+
     public Task<ScanOptionsDto> GetEffectiveOptions() => api.GetEffectiveOptions();
 
     public Task<string> GetServerFolder() => api.GetServerFolder();

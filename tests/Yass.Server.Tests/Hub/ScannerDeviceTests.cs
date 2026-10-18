@@ -1,5 +1,6 @@
 using Yass.Core.Domain;
 using Yass.Core.Hub;
+using Yass.Core.Scanning;
 using Yass.Fake;
 
 namespace Yass.Server.Tests.Hub;
@@ -22,6 +23,22 @@ public sealed class ScannerDeviceTests
         Assert.All(devices, d => Assert.Equal(d.Name, d.Id));
         Assert.All(devices, d => Assert.Equal("fake", d.Driver));
         Assert.All(devices, d => Assert.Null(d.Connection));
+    }
+
+    [Fact]
+    public async Task Refresh_looks_again_instead_of_using_the_cache()
+    {
+        await using var factory = new YassFactory(FakeScenario.Pages(1) with { ExtraDevices = ["Epson DS-530"] });
+        await using HubClient hub = await HubClient.ConnectAsync(factory);
+
+        await hub.ListDevices();
+        Assert.Equal(0, factory.Backend.Refreshes);
+
+        ScannerDeviceDto[] devices = await hub.RefreshDevices();
+
+        Assert.Equal(1, factory.Backend.Refreshes);
+        Assert.Contains(devices, d => d.Name == "Epson DS-530");
+        Assert.Equal(ScannerState.Ready, (await hub.GetScannerStatus()).State);
     }
 
     [Fact]

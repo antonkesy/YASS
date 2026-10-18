@@ -55,6 +55,7 @@ public sealed class BridgeDispatcherTests : IAsyncLifetime
 
         Assert.Equal(JsonValueKind.Array, (await ResultAsync(nameof(IYassHub.ListSessions))).ValueKind);
         Assert.Equal("", (await ResultAsync(nameof(IYassHub.GetServerFolder))).GetString());
+        Assert.Equal(JsonValueKind.Array, (await ResultAsync(nameof(IYassHub.RefreshDevices))).ValueKind);
     }
 
     [Fact]

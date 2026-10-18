@@ -96,6 +96,11 @@ export type IYassHub = {
     */
     listDevices(): Promise<ScannerDeviceDto[]>;
     /**
+    * Looks for scanners again now rather than from the cache, and re-checks the status.
+    * @returns Transpiled from System.Threading.Tasks.Task<Yass.Core.Hub.ScannerDeviceDto[]>
+    */
+    refreshDevices(): Promise<ScannerDeviceDto[]>;
+    /**
     * @returns Transpiled from System.Threading.Tasks.Task<Yass.Core.Hub.ScanOptionsDto>
     */
     getEffectiveOptions(): Promise<ScanOptionsDto>;
