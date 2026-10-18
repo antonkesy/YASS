@@ -166,10 +166,10 @@ export const settings = {
 
 	devices: { en: 'Devices', de: 'Geräte', fr: 'Appareils', es: 'Dispositivos' },
 	noScanners: {
-		en: 'No scanner has been seen yet. Once the server finds one it is listed here, and stays listed while it is unplugged.',
-		de: 'Noch kein Scanner gefunden. Sobald der Server einen findet, steht er hier – auch wenn er ausgesteckt ist.',
-		fr: "Aucun scanner vu pour l'instant. Dès que le serveur en trouve un, il apparaît ici, même débranché.",
-		es: 'Aún no se ha visto ningún escáner. Cuando el servidor encuentre uno, aparecerá aquí, incluso desconectado.'
+		en: 'No scanner has been seen yet. Once the server finds one it is listed here, and stays listed while it is unplugged. If yours never shows up, the machine running YASS may need its driver: a SANE backend on Linux, the maker’s WIA driver on Windows.',
+		de: 'Noch kein Scanner gefunden. Sobald der Server einen findet, steht er hier – auch wenn er ausgesteckt ist. Taucht deiner nie auf, braucht der Rechner, auf dem YASS läuft, vielleicht seinen Treiber: ein SANE-Backend unter Linux, den WIA-Treiber des Herstellers unter Windows.',
+		fr: "Aucun scanner vu pour l'instant. Dès que le serveur en trouve un, il apparaît ici, même débranché. Si le vôtre n’apparaît jamais, la machine qui exécute YASS a peut-être besoin de son pilote : un backend SANE sous Linux, le pilote WIA du fabricant sous Windows.",
+		es: 'Aún no se ha visto ningún escáner. Cuando el servidor encuentre uno, aparecerá aquí, incluso desconectado. Si el tuyo nunca aparece, puede que el equipo que ejecuta YASS necesite su controlador: un backend de SANE en Linux, el controlador WIA del fabricante en Windows.'
 	},
 	hidden: { en: 'Hidden', de: 'Ausgeblendet', fr: 'Masqué', es: 'Oculto' },
 	connected: { en: 'Connected', de: 'Verbunden', fr: 'Connecté', es: 'Conectado' },

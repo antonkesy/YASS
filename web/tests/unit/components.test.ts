@@ -17,6 +17,7 @@ import PresetPills from '$lib/components/PresetPills.svelte';
 import SessionRow from '$lib/components/SessionRow.svelte';
 import SelectBar from '$lib/components/SelectBar.svelte';
 import PastScansPanel from '$lib/components/PastScansPanel.svelte';
+import ScannerList from '$lib/components/ScannerList.svelte';
 import { ScannerState } from '$lib/hub/generated/Yass.Core.Scanning';
 import {
 	ColorMode,
@@ -103,6 +104,15 @@ describe('StatusPill', () => {
 		expect(screen.queryByRole('button', { name: 'Close scanner details' })).toBeNull();
 		await fireEvent.mouseLeave(wrapper);
 		expect(screen.queryByRole('dialog')).toBeNull();
+	});
+});
+
+describe('ScannerList', () => {
+	it('says a scanner that never shows up may need its driver', () => {
+		render(ScannerList, { rows: [], onrename: vi.fn(), onhide: vi.fn(), onforget: vi.fn() });
+		expect(screen.getByText(/No scanner has been seen yet/)).toHaveTextContent(
+			/SANE backend on Linux/
+		);
 	});
 });
 
