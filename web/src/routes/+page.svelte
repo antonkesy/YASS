@@ -221,7 +221,7 @@
 
 <svelte:head><title>YASS</title></svelte:head>
 
-<main class="mx-auto flex max-w-[2200px] flex-col gap-6 px-4 pt-3 pb-7 sm:px-7 {entrance}">
+<main class="flex flex-col gap-6 px-4 pt-3 pb-7 sm:px-7 {entrance}">
 	{#if error}
 		<Alert>{error}</Alert>
 	{/if}

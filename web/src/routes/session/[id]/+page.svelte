@@ -283,7 +283,7 @@
 
 <!-- From lg the panes get exactly the height under the header and scroll on their own. -->
 <div
-	class="mx-auto flex max-w-[2200px] {entrance} flex-col px-4 pt-2 pb-7 sm:px-7 lg:h-[calc(100dvh-var(--app-header-h))] lg:min-h-0"
+	class="flex {entrance} flex-col px-4 pt-2 pb-7 sm:px-7 lg:h-[calc(100dvh-var(--app-header-h))] lg:min-h-0"
 >
 	{#if missing}
 		<Alert tall>{t('review.sessionGone')}</Alert>
