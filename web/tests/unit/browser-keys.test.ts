@@ -67,6 +67,27 @@ describe('browser shortcuts', () => {
 		window.removeEventListener('keydown', listener);
 	});
 
+	it('stops the middle button’s autoscroll, but not its paste into a field', () => {
+		const undo = blockBrowserBehaviour(window);
+		const input = document.body.appendChild(document.createElement('input'));
+		try {
+			const scroll = new MouseEvent('mousedown', { button: 1, bubbles: true, cancelable: true });
+			document.body.dispatchEvent(scroll);
+			expect(scroll.defaultPrevented).toBe(true);
+
+			const paste = new MouseEvent('mousedown', { button: 1, bubbles: true, cancelable: true });
+			input.dispatchEvent(paste);
+			expect(paste.defaultPrevented).toBe(false);
+
+			const left = new MouseEvent('mousedown', { button: 0, bubbles: true, cancelable: true });
+			document.body.dispatchEvent(left);
+			expect(left.defaultPrevented).toBe(false);
+		} finally {
+			undo();
+			input.remove();
+		}
+	});
+
 	it('lets nothing be dragged out of the window or dropped into it', () => {
 		const undo = blockBrowserBehaviour(window);
 		const img = document.body.appendChild(document.createElement('img'));

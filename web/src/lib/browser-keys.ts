@@ -67,6 +67,10 @@ export function blockBrowserBehaviour(target: Window = window): () => void {
 	const mouse = (e: MouseEvent) => {
 		if (historyButton(e)) e.preventDefault();
 	};
+	// The middle button would start the browser's autoscroll; in a field it still pastes.
+	const press = (e: MouseEvent) => {
+		if (e.button === 1 && !isEditable(e.target)) e.preventDefault();
+	};
 	const wheel = (e: WheelEvent) => {
 		// Ctrl+wheel, and a touchpad pinch, would zoom the whole window.
 		if (e.ctrlKey) e.preventDefault();
@@ -83,6 +87,7 @@ export function blockBrowserBehaviour(target: Window = window): () => void {
 	const listeners = [
 		['keydown', key],
 		['mouseup', mouse],
+		['mousedown', press],
 		['wheel', wheel],
 		['dragstart', drag],
 		['dragover', drop],

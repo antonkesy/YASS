@@ -1,7 +1,7 @@
 <script lang="ts">
 	import './layout.css';
 	import { onMount } from 'svelte';
-	import { onNavigate } from '$app/navigation';
+	import { goto, onNavigate } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { screenTransition } from '$lib/motion';
 	import { escape, typing } from '$lib/keys.svelte';
@@ -40,12 +40,22 @@
 		return blockBrowserBehaviour();
 	});
 
+	// Also the middle button's auxclick: like a modified click, it would open a second window.
 	function click(e: MouseEvent) {
 		const desktop = getDesktop();
 		const link = (e.target as Element | null)?.closest?.('a[href]');
 		if (!desktop || !(link instanceof HTMLAnchorElement) || e.defaultPrevented) return;
+		const middle = e.type === 'auxclick';
+		if (middle && e.button !== 1) return;
 		const url = new URL(link.href, location.href);
-		if (url.origin === location.origin || !/^https?:$/.test(url.protocol)) return;
+		if (url.origin === location.origin) {
+			if (!middle && !e.ctrlKey && !e.metaKey && !e.shiftKey) return;
+			e.preventDefault();
+			// eslint-disable-next-line svelte/no-navigation-without-resolve -- already an app URL
+			if (!middle) void goto(url.pathname + url.search + url.hash);
+			return;
+		}
+		if (!/^https?:$/.test(url.protocol)) return;
 		e.preventDefault();
 		void desktop.openUrl(url.href);
 	}
@@ -88,7 +98,7 @@
 
 <Toast />
 
-<svelte:window onkeydown={keydown} onclick={click} />
+<svelte:window onkeydown={keydown} onclick={click} onauxclick={click} />
 
 {#if shortcuts}
 	<KeyboardHelp onclose={() => (shortcuts = false)} />
