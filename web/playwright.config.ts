@@ -13,16 +13,13 @@ export default defineConfig({
 	workers: 1,
 	reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
 	use: { baseURL: `http://127.0.0.1:${port}`, trace: 'retain-on-failure' },
-	projects: [
-		{ name: 'desktop', use: { ...devices['Desktop Chrome'] } },
-		{ name: 'mobile', use: { ...devices['Pixel 7'] } }
-	],
+	// One viewport: these check that the paths work end to end, not how they look.
+	projects: [{ name: 'desktop', use: { ...devices['Desktop Chrome'] } }],
 	webServer: {
-		// 400 ms/page so "stop a scan early" still has a running scan once review has slid in.
-		// Two extra scanners so the picker and per-scanner presets have something to choose from.
+		// 1 s/page so "stop a scan" still has a running scan once review has slid in.
 		command:
 			`pnpm build && dotnet run --project ../src/Yass.Server --no-launch-profile -- ` +
-			`--fake 'pages=3,blank=2,delay=400ms,devices=Epson DS-530;Canon LiDE 400'`,
+			`--fake 'pages=3,blank=2,delay=1s'`,
 		url: `http://127.0.0.1:${port}/healthz`,
 		timeout: 180_000,
 		reuseExistingServer: !process.env.CI,

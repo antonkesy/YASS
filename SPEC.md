@@ -43,7 +43,7 @@ Bespoke code is for the domain (sessions, edits, config) and glue.
 | Frontend | **SvelteKit** (static adapter, SPA fallback), TypeScript, **Tailwind**, `@vite-pwa/sveltekit`. No component library. |
 | Shared types | Hub contract defined once in C# (`IYassHub`, `IYassClient`); TypeScript generated with `TypedSignalR.Client.TypeScript`; drift fails CI. |
 | Desktop shell | **Photino.NET** 4.x: WebKitGTK 4.1 on Linux, WebView2 on Windows, WKWebView on macOS. |
-| Tests | xUnit v3 + `WebApplicationFactory`; Vitest + Testing Library; Playwright (Desktop Chrome and Pixel 7) against the server in `--fake` mode. |
+| Tests | xUnit v3 + `WebApplicationFactory`; Vitest + Testing Library; a few Playwright smoke tests (Desktop Chrome) against the server in `--fake` mode. |
 | Tooling | `pre-commit` (dotnet format, eslint, prettier, svelte-check, nixfmt, conventional-pre-commit), GitHub Actions, release-please, Nix flake (dev shell, packages, NixOS module `services.yass`), multi-stage `Dockerfile`. |
 | Storage | Filesystem only, no database: a session is a directory with `session.json` and its page images. |
 
@@ -202,7 +202,10 @@ start. Never hold more than `processing.max_concurrent_renders` decoded bitmaps 
   `Naps2ScannerBackend` has no tests because it needs a real scanner.
 - `Yass.Server.Tests` cover `YassApi` through SignalR, `Yass.Desktop.Tests` through the bridge.
 - Config tests round-trip every key and check that an invalid value names the key.
-- Playwright runs desktop and mobile viewports against the real server in `--fake` mode.
+- Playwright runs a few smoke tests (scan to download, stopping a scan, saving to the server
+  folder) on one desktop viewport against the real server in `--fake` mode. Only paths unit tests
+  cannot reach go there: layout, animation and component behaviour are unit-tested, because
+  browser timing made those e2e tests flaky and slow.
 - **The fake scanner's pages are real documents**: Markdown in `src/Yass.Fake/Fixtures`, rendered
   at build time by `scripts/render-fixtures.sh` (pandoc → typst → poppler, A4 at 150 dpi) into
   `obj/`, never committed. A build needs pandoc, typst, poppler-utils and a font on

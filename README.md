@@ -223,7 +223,7 @@ UI and is remembered per browser.
 nix develop && pre-commit install
 dotnet test                    # backend
 pnpm --dir web test            # unit tests
-pnpm --dir web test:e2e        # Playwright against --fake, desktop and mobile
+pnpm --dir web test:e2e        # Playwright smoke tests against --fake
 pnpm --dir web hub:generate    # TS hub client from the C# contract
 pnpm --dir web screenshots     # refresh the images above
 ```
