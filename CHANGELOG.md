@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.1](https://github.com/antonkesy/YASS/compare/v1.2.0...v1.2.1) (2026-10-18)
+
+
+### Bug Fixes
+
+* **web:** fit Look for scanners into the home stage without a new row ([877fc27](https://github.com/antonkesy/YASS/commit/877fc27c2be2c94b420974ca52f6c5753e50167f))
+* **web:** make the drag ghost's zoom reactive ([0c0dbda](https://github.com/antonkesy/YASS/commit/0c0dbdabee7e6f0e56d90d0d41d0c02b70ef4a00))
+
 ## [1.2.0](https://github.com/antonkesy/YASS/compare/v1.1.0...v1.2.0) (2026-10-18)
 
 
