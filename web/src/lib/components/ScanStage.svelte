@@ -158,8 +158,10 @@
 	);
 </script>
 
+<!-- Full at a short window: *:flex-none and safe centring scroll it rather than squeeze a row
+     (the Scan button would jump) or cut off its top. -->
 <section
-	class="flex min-h-0 animate-fade-in flex-col items-center justify-center gap-[clamp(8px,1.4*var(--vh),18px)] overflow-y-auto rounded-[28px] bg-surface px-5 py-8 shadow-stage sm:px-8 sm:py-[clamp(1rem,2.6*var(--vh),3rem)]"
+	class="flex min-h-0 animate-fade-in flex-col items-center justify-center-safe gap-[clamp(8px,1.4*var(--vh),18px)] overflow-y-auto rounded-[28px] bg-surface px-5 py-8 shadow-stage *:flex-none sm:px-8 sm:py-[clamp(1rem,2.6*var(--vh),3rem)]"
 	style:flex="2 1 520px"
 	data-testid="scan-stage"
 	{@attach autoAnimate}
