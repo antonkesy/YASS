@@ -67,7 +67,7 @@
 	let at = $state({ x: 0, y: 0 });
 	let scrolling: number | null = null;
 	// Taken when a drag begins: the ghost is styled in zoomed pixels, the pointer is not.
-	let zoom = 1;
+	let zoom = $state(1);
 	let settleTimer: ReturnType<typeof setTimeout> | null = null;
 
 	const SETTLE_MS = 200;
