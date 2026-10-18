@@ -46,10 +46,10 @@ export const home = {
 		es: 'El escáner informa de un problema'
 	},
 	noDeviceHint: {
-		en: 'Make sure it is switched on and connected: by USB to the machine running YASS, or on the same network.',
-		de: 'Prüfe, ob er eingeschaltet und verbunden ist: per USB mit dem Rechner, auf dem YASS läuft, oder im selben Netzwerk.',
-		fr: 'Vérifiez qu’il est allumé et connecté : en USB à la machine qui exécute YASS, ou sur le même réseau.',
-		es: 'Comprueba que esté encendido y conectado: por USB al equipo que ejecuta YASS o en la misma red.'
+		en: 'Make sure it is switched on and connected: by USB to the machine running YASS, or on the same network. If it is still not found, that machine may need its driver: a SANE backend on Linux, the maker’s WIA driver on Windows.',
+		de: 'Prüfe, ob er eingeschaltet und verbunden ist: per USB mit dem Rechner, auf dem YASS läuft, oder im selben Netzwerk. Wird er dann noch nicht gefunden, braucht dieser Rechner vielleicht seinen Treiber: ein SANE-Backend unter Linux, den WIA-Treiber des Herstellers unter Windows.',
+		fr: 'Vérifiez qu’il est allumé et connecté : en USB à la machine qui exécute YASS, ou sur le même réseau. S’il reste introuvable, cette machine a peut-être besoin de son pilote : un backend SANE sous Linux, le pilote WIA du fabricant sous Windows.',
+		es: 'Comprueba que esté encendido y conectado: por USB al equipo que ejecuta YASS o en la misma red. Si sigue sin aparecer, puede que ese equipo necesite su controlador: un backend de SANE en Linux, el controlador WIA del fabricante en Windows.'
 	},
 	errorHint: {
 		en: 'Check the scanner itself (paper, cover, cable). It is checked again on its own.',

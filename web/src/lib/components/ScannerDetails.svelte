@@ -24,6 +24,7 @@
 
 	const offline = $derived(connection !== 'connected');
 	const scanning = $derived(!offline && status?.State === ScannerState.Busy);
+	const missing = $derived(!offline && status?.State === ScannerState.NoDevice);
 
 	const connectionLabel = $derived(
 		connection === 'connected'
@@ -65,4 +66,9 @@
 			<dd class="min-w-0 font-medium break-words text-ink">{value}</dd>
 		{/each}
 	</dl>
+	{#if missing}
+		<p class="mt-3 text-[12px] leading-snug text-ink-muted" data-testid="scanner-details-hint">
+			{t('home.noDeviceHint')}
+		</p>
+	{/if}
 </Popover>

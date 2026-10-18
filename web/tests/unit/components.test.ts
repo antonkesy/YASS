@@ -81,6 +81,17 @@ describe('StatusPill', () => {
 		expect(screen.queryByRole('dialog')).toBeNull();
 	});
 
+	it('says in the details that a missing scanner may need its driver', async () => {
+		const { rerender } = render(StatusPill, {
+			status: { State: ScannerState.NoDevice, CheckedAt: '' },
+			connection: 'connected'
+		});
+		await fireEvent.click(screen.getByTestId('status-pill'));
+		expect(screen.getByTestId('scanner-details-hint')).toHaveTextContent(/driver/);
+		await rerender({ status: { State: ScannerState.Ready, DeviceName: 'ADF', CheckedAt: '' } });
+		expect(screen.queryByTestId('scanner-details-hint')).toBeNull();
+	});
+
 	it('shows the details while hovered, without a click-catcher', async () => {
 		render(StatusPill, {
 			status: { State: ScannerState.Ready, DeviceName: 'ADF', CheckedAt: '' },
@@ -149,6 +160,7 @@ describe('ScanStage', () => {
 		expect(card).toHaveAttribute('data-tone', 'warning');
 		expect(card).toHaveTextContent('No scanner found');
 		expect(card).toHaveTextContent(/switched on and connected/);
+		expect(card).toHaveTextContent(/SANE backend on Linux/);
 		expect(screen.getByTestId('scanner-detail')).toHaveTextContent('Checked with SANE.');
 		unmount();
 
