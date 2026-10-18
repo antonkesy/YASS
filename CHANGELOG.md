@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.2](https://github.com/antonkesy/YASS/compare/v1.2.1...v1.2.2) (2026-10-18)
+
+
+### Bug Fixes
+
+* **web:** centre the scanner pills beside Look for scanners ([d9bbbec](https://github.com/antonkesy/YASS/commit/d9bbbeca547ceb63c6e9b0adb028dbd5e9136079))
+* **web:** scroll a full home stage instead of squeezing its rows ([6acde75](https://github.com/antonkesy/YASS/commit/6acde758b6c48b44b745c05e480ad60b145d28ef))
+
 ## [1.2.1](https://github.com/antonkesy/YASS/compare/v1.2.0...v1.2.1) (2026-10-18)
 
 
