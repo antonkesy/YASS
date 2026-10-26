@@ -20,6 +20,8 @@ namespace Yass.Android;
 /// </summary>
 [ExcludeFromCodeCoverage(Justification = "Needs a device and a WebView; the logic it wires is tested through the desktop host.")]
 [Activity(
+    // A stable Java name instead of a generated crc64 one, so `adb shell am start` can name it.
+    Name = "io.github.antonkesy.yass.MainActivity",
     Label = "YASS",
     MainLauncher = true,
     Icon = "@mipmap/ic_launcher",
@@ -49,7 +51,7 @@ public sealed class MainActivity : Activity
         {
             string? fake = null;
 #if DEBUG
-            // adb shell am start -n io.github.antonkesy.yass/crc….MainActivity -e fake "pages=3,blank=2"
+            // adb shell am start -n io.github.antonkesy.yass/.MainActivity -e fake "pages=3,blank=2"
             fake = Intent?.GetStringExtra("fake");
 #endif
             services = AndroidHost.Start(this, fake);
