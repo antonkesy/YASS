@@ -11,13 +11,35 @@ type Answer = { id: number; result?: unknown; error?: string };
 type Event = { event: string; args?: unknown[] };
 type Handler = (...args: unknown[]) => unknown;
 
+/** What AndroidX WebKit's `addWebMessageListener` injects into the Android app's page. */
+export type AndroidChannel = {
+	postMessage(message: string): void;
+	onmessage: ((event: { data: string }) => void) | null;
+};
+
 export function desktopExternal(): DesktopExternal | null {
 	if (typeof window === 'undefined') return null;
-	const external = (window as unknown as { external?: Partial<DesktopExternal> }).external;
+	const host = window as unknown as {
+		external?: Partial<DesktopExternal>;
+		yassBridge?: Partial<AndroidChannel>;
+	};
+	const android = host.yassBridge;
+	if (typeof android?.postMessage === 'function') return androidExternal(android as AndroidChannel);
+	const external = host.external;
 	return typeof external?.sendMessage === 'function' &&
 		typeof external.receiveMessage === 'function'
 		? (external as DesktopExternal)
 		: null;
+}
+
+/** The Android app's channel, shaped like Photino's: the same bridge protocol runs over both. */
+function androidExternal(channel: AndroidChannel): DesktopExternal {
+	return {
+		sendMessage: (message) => channel.postMessage(message),
+		receiveMessage: (callback) => {
+			channel.onmessage = (event) => callback(event.data);
+		}
+	};
 }
 
 export function isDesktop(): boolean {

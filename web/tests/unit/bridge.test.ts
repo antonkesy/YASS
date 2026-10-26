@@ -5,6 +5,7 @@ import {
 	createBridgeConnection,
 	createDesktopHost,
 	desktopExternal,
+	type AndroidChannel,
 	type DesktopExternal
 } from '$lib/hub/bridge';
 import { createHubClient } from '$lib/hub/client';
@@ -115,6 +116,21 @@ describe('desktopExternal', () => {
 			expect(desktopExternal()).toBe(external);
 		} finally {
 			Object.defineProperty(window, 'external', { value: undefined, configurable: true });
+		}
+	});
+
+	it("adapts the Android app's message listener to the same channel", () => {
+		const sent: string[] = [];
+		const channel: AndroidChannel = { postMessage: (m) => sent.push(m), onmessage: null };
+		Object.defineProperty(window, 'yassBridge', { value: channel, configurable: true });
+		try {
+			const connection = createBridgeConnection(desktopExternal()!);
+			const call = connection.invoke('ListSessions');
+			expect(sent.map((m) => JSON.parse(m))).toEqual([{ id: 1, method: 'ListSessions', args: [] }]);
+			channel.onmessage?.({ data: JSON.stringify({ id: 1, result: [] }) });
+			return expect(call).resolves.toEqual([]);
+		} finally {
+			Object.defineProperty(window, 'yassBridge', { value: undefined, configurable: true });
 		}
 	});
 });
