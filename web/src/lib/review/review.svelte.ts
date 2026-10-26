@@ -182,6 +182,23 @@ export class Review {
 		}
 	}
 
+	/** Android: export, then hand the documents to the system share sheet. */
+	async share() {
+		const session = this.#session();
+		const desktop = this.#desktop;
+		if (!session || !desktop) return;
+		this.error = null;
+		this.exporting = true;
+		try {
+			const result = await this.#client.hub.export(this.#id(), this.#request(session, false));
+			await desktop.shareExport(result.Documents.map((d) => d.DownloadPath));
+		} catch (e) {
+			this.error = hubError(e);
+		} finally {
+			this.exporting = false;
+		}
+	}
+
 	async saveToServer() {
 		const session = this.#session();
 		if (!session) return;

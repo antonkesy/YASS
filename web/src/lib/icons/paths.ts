@@ -92,6 +92,15 @@ export const icons = {
 	download: {
 		shapes: [p('M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'), p('m7 10 5 5 5-5'), p('M12 15V3')]
 	},
+	share: {
+		shapes: [
+			circle(18, 5, 3),
+			circle(6, 12, 3),
+			circle(18, 19, 3),
+			p('m8.59 13.51 6.83 3.98'),
+			p('m15.41 6.51-6.82 3.98')
+		]
+	},
 	archive: {
 		shapes: [rect(2, 3, 20, 5, 1), p('M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8'), p('M10 12h4')]
 	},

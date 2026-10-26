@@ -17,6 +17,7 @@
 		stopping = false,
 		ondownload,
 		onserver,
+		onshare,
 		onstop
 	}: {
 		session: SessionDto;
@@ -26,6 +27,7 @@
 		ondownload: () => void;
 		serverFolder?: string | null;
 		onserver?: () => void;
+		onshare?: () => void;
 		onstop?: () => void;
 		stopping?: boolean;
 	} = $props();
@@ -34,6 +36,8 @@
 	const exporting = $derived(session.State === SessionState.Exporting || busy);
 	const canExport = $derived(canSave(session, busy));
 
+	const secondary =
+		'flex h-[46px] w-full items-center justify-center gap-2 rounded-[14px] bg-accent-tint text-[14px] font-extrabold text-accent-deep transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-40';
 	const primary =
 		'flex h-[50px] items-center justify-center gap-2 rounded-[14px] bg-accent hover:bg-accent-hover text-[15px] font-extrabold text-white shadow-export transition-[transform,box-shadow,background-color] duration-200 hover:shadow-export-hover active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40';
 </script>
@@ -67,10 +71,22 @@
 			<Icon name="download" />
 			{picker ? t('review.saveAs') : t('review.download')}
 		</button>
+		{#if onshare}
+			<button
+				type="button"
+				class={secondary}
+				onclick={onshare}
+				disabled={!canExport}
+				data-testid="share-button"
+			>
+				<Icon name="share" />
+				{t('review.share')}
+			</button>
+		{/if}
 		{#if serverFolder && onserver}
 			<button
 				type="button"
-				class="flex h-[46px] w-full items-center justify-center gap-2 rounded-[14px] bg-accent-tint text-[14px] font-extrabold text-accent-deep transition-colors hover:bg-accent-100 disabled:pointer-events-none disabled:opacity-40"
+				class={secondary}
 				onclick={onserver}
 				disabled={!canExport}
 				title={t('review.saveInto', { folder: serverFolder })}
