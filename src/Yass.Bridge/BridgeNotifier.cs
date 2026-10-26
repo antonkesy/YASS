@@ -2,7 +2,7 @@ using System.Text.Json;
 using Yass.App.Api;
 using Yass.Core.Hub;
 
-namespace Yass.Desktop;
+namespace Yass.Bridge;
 
 /// <summary>Events before <see cref="Attach"/> are dropped: the client loads the whole state once it starts.</summary>
 public sealed class BridgeNotifier : IClientNotifier, IYassClient

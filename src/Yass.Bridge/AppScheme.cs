@@ -2,22 +2,23 @@ using System.Web;
 using Yass.App.Export;
 using Yass.App.Rendering;
 
-namespace Yass.Desktop;
+namespace Yass.Bridge;
 
 /// <summary>The stream is the webview's to close.</summary>
 public sealed record SchemeResponse(Stream Body, string ContentType);
 
 /// <summary>
-/// <c>yass://app</c>, except on Windows: Photino does not register a custom scheme with WebView2, which then shows
-/// a blank window. There it is <c>https://yass.localhost</c>, answered by the same handler; nothing listens on a socket.
+/// <c>yass://app</c>, except on Windows and Android: Photino does not register a custom scheme with WebView2, which
+/// then shows a blank window, and Android's WebView only intercepts http(s). There it is <c>https://yass.localhost</c>,
+/// answered by the same handler; nothing listens on a socket.
 /// </summary>
 public sealed record AppOrigin(string Scheme, string Host)
 {
     public static readonly AppOrigin Custom = new("yass", "app");
 
-    public static readonly AppOrigin Windows = new("https", "yass.localhost");
+    public static readonly AppOrigin Https = new("https", "yass.localhost");
 
-    public static AppOrigin ForThisPlatform() => OperatingSystem.IsWindows() ? Windows : Custom;
+    public static AppOrigin ForThisPlatform() => OperatingSystem.IsWindows() || OperatingSystem.IsAndroid() ? Https : Custom;
 
     public Uri Root => new($"{Scheme}://{Host}/");
 
@@ -30,8 +31,8 @@ public sealed record AppOrigin(string Scheme, string Host)
     }
 }
 
-/// <summary>The server's HTTP paths, read off disk; anything else that is not a file gets <c>index.html</c> (SPA route).</summary>
-public sealed class AppScheme(string webRoot, ImageSource images, ExportDownloads downloads, AppOrigin origin)
+/// <summary>The server's HTTP paths; anything else that is not a file gets <c>index.html</c> (SPA route).</summary>
+public sealed class AppScheme(IStaticFiles files, ImageSource images, ExportDownloads downloads, AppOrigin origin)
 {
     public AppOrigin Origin { get; } = origin;
 
@@ -50,8 +51,6 @@ public sealed class AppScheme(string webRoot, ImageSource images, ExportDownload
         [".woff2"] = "font/woff2",
         [".txt"] = "text/plain; charset=utf-8",
     };
-
-    private readonly string _root = Path.GetFullPath(webRoot);
 
     /// <summary>Null when nothing is there, or when the URL is not the app's own (on Windows another https host), which the webview then fetches itself.</summary>
     public SchemeResponse? Resolve(Uri uri, CancellationToken cancellationToken = default)
@@ -95,28 +94,29 @@ public sealed class AppScheme(string webRoot, ImageSource images, ExportDownload
 
     private SchemeResponse? Static(string[] segments)
     {
-        string candidate = Path.GetFullPath(Path.Combine([_root, .. segments]));
-        bool inside = candidate.StartsWith(_root + Path.DirectorySeparatorChar, StringComparison.Ordinal) || candidate == _root;
-        if (!inside)
+        if (segments.Any(s => s is "." or ".." || s.Contains('/', StringComparison.Ordinal) || s.Contains('\\', StringComparison.Ordinal)))
         {
             return null;
         }
 
-        if (!File.Exists(candidate))
+        string path = string.Join('/', segments);
+        Stream? body = path.Length == 0 ? null : files.Open(path);
+        if (body is null)
         {
-            if (Path.HasExtension(candidate) && candidate != _root)
+            if (Path.HasExtension(path))
             {
                 return null;
             }
 
-            candidate = Path.Combine(_root, "index.html");
-            if (!File.Exists(candidate))
+            path = "index.html";
+            body = files.Open(path);
+            if (body is null)
             {
                 return null;
             }
         }
 
-        string type = ContentTypes.GetValueOrDefault(Path.GetExtension(candidate), "application/octet-stream");
-        return new SchemeResponse(File.OpenRead(candidate), type);
+        string type = ContentTypes.GetValueOrDefault(Path.GetExtension(path), "application/octet-stream");
+        return new SchemeResponse(body, type);
     }
 }

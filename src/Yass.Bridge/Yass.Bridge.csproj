@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- What the in-process hosts share (SPEC.md §4): the JSON message bridge and the app scheme. No webview types. -->
+
+  <ItemGroup>
+    <Using Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Yass.App/Yass.App.csproj" />
+  </ItemGroup>
+
+</Project>

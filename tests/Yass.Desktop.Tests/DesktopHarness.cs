@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Yass.App.Api;
 using Yass.App.Hosting;
+using Yass.Bridge;
 using Yass.Core.Config;
 using Yass.Core.Domain;
 using Yass.Core.Export;

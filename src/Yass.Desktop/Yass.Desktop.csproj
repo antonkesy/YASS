@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Yass.App/Yass.App.csproj" />
+    <ProjectReference Include="../Yass.Bridge/Yass.Bridge.csproj" />
   </ItemGroup>
 
   <ItemGroup>

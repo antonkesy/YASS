@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Yass.App.Rendering;
+using Yass.Bridge;
 using Yass.Core.Hub;
 
 namespace Yass.Desktop.Tests;
@@ -120,7 +121,7 @@ public sealed class AppSchemeTests : IAsyncLifetime
     [Fact]
     public async Task On_windows_the_app_is_an_https_host_and_other_hosts_are_left_alone()
     {
-        await using var windows = new DesktopHarness(origin: AppOrigin.Windows);
+        await using var windows = new DesktopHarness(origin: AppOrigin.Https);
         SchemeResponse index = Assert.IsType<SchemeResponse>(windows.Scheme.Resolve(new Uri("https://yass.localhost/")));
         Assert.StartsWith("text/html", index.ContentType, StringComparison.Ordinal);
         await index.Body.DisposeAsync();
@@ -134,8 +135,8 @@ public sealed class AppSchemeTests : IAsyncLifetime
     public void Each_platform_gets_its_origin()
     {
         Assert.Equal(new Uri("yass://app/"), AppOrigin.Custom.Root);
-        Assert.Equal(new Uri("https://yass.localhost/"), AppOrigin.Windows.Root);
-        Assert.Equal(OperatingSystem.IsWindows() ? AppOrigin.Windows : AppOrigin.Custom, AppOrigin.ForThisPlatform());
-        Assert.True(AppOrigin.Windows.Owns(new Uri("HTTPS://YASS.LOCALHOST/img/x")));
+        Assert.Equal(new Uri("https://yass.localhost/"), AppOrigin.Https.Root);
+        Assert.Equal(OperatingSystem.IsWindows() || OperatingSystem.IsAndroid() ? AppOrigin.Https : AppOrigin.Custom, AppOrigin.ForThisPlatform());
+        Assert.True(AppOrigin.Https.Owns(new Uri("HTTPS://YASS.LOCALHOST/img/x")));
     }
 }

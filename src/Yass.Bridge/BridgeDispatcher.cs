@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 using Yass.App.Api;
 using Yass.Core.Hub;
 
-namespace Yass.Desktop;
+namespace Yass.Bridge;
 
 /// <summary>
 /// Call: <c>{"id": n, "method": "Name", "args": [...]}</c>; answer: <c>{"id": n, "result": ...}</c> or <c>{"id": n, "error": "message"}</c>.

@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Photino.NET;
+using Yass.Bridge;
 
 namespace Yass.Desktop;
 

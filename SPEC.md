@@ -67,7 +67,8 @@ src/Yass.Scanning  NAPS2 adapter
 src/Yass.Export    PDF and images, file name templates
 src/Yass.App       host-agnostic app: config, sessions, scan loop, rendering, export, YassApi
 src/Yass.Server    server host: SignalR hub, /img and /export endpoints, static web build, /healthz
-src/Yass.Desktop   desktop host: Photino window, app scheme, JSON message bridge, native dialogs
+src/Yass.Bridge    JSON message bridge and app scheme, shared by the in-process hosts
+src/Yass.Desktop   desktop host: Photino window, native dialogs
 src/Yass.Fake      simulated scanner and document writer (tests and --fake)
 web/               SvelteKit app, one build for both hosts
 nix/               packages and the NixOS module
