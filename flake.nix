@@ -121,6 +121,50 @@
             export PATH="$HOME/.dotnet/tools:$PATH"
           '';
         };
+
+        # The Android SDK is unfree, so it lives in its own shell rather than the default one.
+        # nixpkgs' SDK carries the `userlocal` marker: `dotnet workload install android` goes to ~/.dotnet.
+        # The install can drop its own packs after updating its manifests; `dotnet workload repair` puts them back.
+        devShells.android =
+          let
+            androidPkgs = import nixpkgs {
+              inherit system;
+              config = {
+                allowUnfree = true;
+                android_sdk.accept_license = true;
+              };
+            };
+            androidSdk = androidPkgs.androidenv.composeAndroidPackages {
+              platformVersions = [ "36" ];
+              buildToolsVersions = [ "36.0.0" ];
+              includeEmulator = false;
+              includeSources = false;
+              includeSystemImages = false;
+              includeNDK = false;
+            };
+            sdkRoot = "${androidSdk.androidsdk}/libexec/android-sdk";
+          in
+          pkgs.mkShell {
+            inputsFrom = [ self.devShells.${system}.default ];
+            packages = [
+              androidSdk.androidsdk
+              pkgs.jdk21_headless
+            ];
+            ANDROID_HOME = sdkRoot;
+            ANDROID_SDK_ROOT = sdkRoot;
+            JAVA_HOME = "${pkgs.jdk21_headless}";
+            TYPST_FONT_PATHS = "${pkgs.dejavu_fonts}/share/fonts";
+            DOTNET_ROOT = "${dotnet}";
+            DOTNET_CLI_TELEMETRY_OPTOUT = "1";
+            DOTNET_NOLOGO = "1";
+            MSBUILDDISABLENODEREUSE = "1";
+            DOTNET_CLI_USE_MSBUILD_SERVER = "0";
+            shellHook = ''
+              export PATH="$HOME/.dotnet/tools:$PATH"
+              dotnet workload list 2>/dev/null | grep -q '^android ' \
+                || echo "Run 'dotnet workload install android && dotnet workload repair' once (it installs into ~/.dotnet)."
+            '';
+          };
       }
     );
 }
