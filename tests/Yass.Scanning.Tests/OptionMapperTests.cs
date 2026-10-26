@@ -15,13 +15,13 @@ public class OptionMapperTests
     [InlineData(ScannerDriver.Sane, Driver.Sane)]
     [InlineData(ScannerDriver.Escl, Driver.Escl)]
     [InlineData(ScannerDriver.Wia, Driver.Wia)]
-    public void Driver_maps(ScannerDriver ours, Driver naps2) => Assert.Equal(naps2, OptionMapper.MapDriver(ours, macOS: false));
+    public void Driver_maps(ScannerDriver ours, Driver naps2) => Assert.Equal(naps2, OptionMapper.MapDriver(ours, esclOnly: false));
 
     [Theory]
     [InlineData(ScannerDriver.Auto, Driver.Escl)]
     [InlineData(ScannerDriver.Sane, Driver.Sane)]
     [InlineData(ScannerDriver.Escl, Driver.Escl)]
-    public void On_macOS_auto_is_escl(ScannerDriver ours, Driver naps2) => Assert.Equal(naps2, OptionMapper.MapDriver(ours, macOS: true));
+    public void On_macOS_and_Android_auto_is_escl(ScannerDriver ours, Driver naps2) => Assert.Equal(naps2, OptionMapper.MapDriver(ours, esclOnly: true));
 
     [Theory]
     [InlineData(ScanSource.Flatbed, PaperSource.Flatbed)]
@@ -175,6 +175,6 @@ public class OptionMapperTests
     [InlineData(ScannerDriver.Escl, false, false, "eSCL (network scanners)")]
     [InlineData(ScannerDriver.Wia, false, false, "WIA")]
     [InlineData(ScannerDriver.Sane, true, false, "SANE")]
-    public void Drivers_are_named_for_people_and_auto_for_what_it_resolves_to(ScannerDriver driver, bool windows, bool macOS, string label) =>
-        Assert.Equal(label, OptionMapper.DriverLabel(driver, windows, macOS));
+    public void Drivers_are_named_for_people_and_auto_for_what_it_resolves_to(ScannerDriver driver, bool windows, bool esclOnly, string label) =>
+        Assert.Equal(label, OptionMapper.DriverLabel(driver, windows, esclOnly));
 }

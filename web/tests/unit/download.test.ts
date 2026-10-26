@@ -219,6 +219,7 @@ describe('saveNatively', () => {
 			pickSavePath: async () => null,
 			openUrl: async () => {},
 			pickFolder: async () => null,
+			shareExport: async () => {},
 			saveExport: async (path, target, overwrite) => {
 				calls.push([path, target, overwrite]);
 				return target;

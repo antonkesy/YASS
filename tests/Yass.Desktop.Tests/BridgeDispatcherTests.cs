@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging.Abstractions;
+using Yass.Bridge;
 using Yass.Core.Domain;
 using Yass.Core.Hub;
 

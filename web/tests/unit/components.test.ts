@@ -654,6 +654,20 @@ describe('ExportBar', () => {
 		);
 	});
 
+	it('offers Share only when the host can share, and not while scanning', async () => {
+		const onshare = vi.fn();
+		const { rerender } = render(ExportBar, { session: session(), ondownload: vi.fn() });
+		expect(screen.queryByTestId('share-button')).toBeNull();
+
+		await rerender({ session: session(), ondownload: vi.fn(), onshare });
+		expect(screen.getByTestId('share-button')).toHaveTextContent('Share');
+		await fireEvent.click(screen.getByTestId('share-button'));
+		expect(onshare).toHaveBeenCalledOnce();
+
+		await rerender({ session: session(SessionState.Review, 3), ondownload: vi.fn(), onshare });
+		expect(screen.getByTestId('share-button')).toBeDisabled();
+	});
+
 	it('disables the download while scanning or with everything deleted', () => {
 		const { rerender } = render(ExportBar, {
 			session: session(SessionState.Scanning),

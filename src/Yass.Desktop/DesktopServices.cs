@@ -3,6 +3,7 @@ using Yass.App.Api;
 using Yass.App.Export;
 using Yass.App.Hosting;
 using Yass.App.Rendering;
+using Yass.Bridge;
 using Yass.Core.Config;
 
 namespace Yass.Desktop;
@@ -26,7 +27,7 @@ public static class DesktopServices
         services.AddSingleton(notifier);
         services.AddSingleton<IClientNotifier>(notifier);
         services.AddSingleton<IDownloadPaths>(new DownloadPaths());
-        services.AddSingleton(sp => new AppScheme(webRoot, sp.GetRequiredService<ImageSource>(), sp.GetRequiredService<ExportDownloads>(), origin));
+        services.AddSingleton(sp => new AppScheme(new DiskStaticFiles(webRoot), sp.GetRequiredService<ImageSource>(), sp.GetRequiredService<ExportDownloads>(), origin));
         return services;
     }
 }

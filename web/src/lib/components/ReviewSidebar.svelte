@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { autoAnimate } from '$lib/autoAnimate';
+	import { canShare } from '$lib/hub/bridge';
 	import { getDesktop, getHub } from '$lib/hub/hub';
 	import { SessionState } from '$lib/hub/generated/Yass.Core.Domain';
 	import { ExportFormat, type SessionDto } from '$lib/hub/generated/Yass.Core.Hub';
@@ -135,6 +136,7 @@
 		ondownload={() => review.saveAs()}
 		serverFolder={$exportPrefs.serverSave && $serverFolder ? $serverFolder : null}
 		onserver={() => review.saveToServer()}
+		onshare={canShare() ? () => review.share() : undefined}
 		onstop={() => review.stop()}
 		stopping={review.stopping}
 	/>

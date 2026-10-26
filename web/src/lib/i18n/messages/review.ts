@@ -125,6 +125,7 @@ export const review = {
 		es: 'Guardar como…'
 	},
 	download: { en: 'Download', de: 'Herunterladen', fr: 'Télécharger', es: 'Descargar' },
+	share: { en: 'Share', de: 'Teilen', fr: 'Partager', es: 'Compartir' },
 	saveToServer: {
 		en: 'Save to server',
 		de: 'Auf dem Server speichern',

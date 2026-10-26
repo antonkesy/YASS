@@ -35,6 +35,13 @@ dotnet_diagnostic.CA1873.severity = none
 # migration. Off until that is done deliberately.
 dotnet_diagnostic.xUnit1051.severity = none
 
+[src/Yass.Android/**.cs]
+# CA2000: listeners, clients and views handed to Android belong to the Java side from then on;
+# disposing the .NET peer would cut the callback off while Android still holds it.
+dotnet_diagnostic.CA2000.severity = none
+# CA2213: Android ends an activity with OnDestroy, which tears its WebView down; nothing calls Dispose.
+dotnet_diagnostic.CA2213.severity = none
+
 [*.{csproj,props,targets,sln}]
 indent_size = 2
 

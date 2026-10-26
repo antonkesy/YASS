@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Yass.App.Export;
+using Yass.Bridge;
 using Yass.Core.Hub;
 
 namespace Yass.Desktop.Tests;

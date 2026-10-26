@@ -3,7 +3,7 @@ using Yass.Core.Domain;
 
 namespace Yass.Core.Config;
 
-/// <summary>auto: SANE on Linux, WIA on Windows, eSCL on macOS (NAPS2's Apple driver needs a macOS-only build, SPEC.md §6).</summary>
+/// <summary>auto: SANE on Linux, WIA on Windows, eSCL on macOS and Android (NAPS2's Apple driver needs a macOS-only build, SPEC.md §6).</summary>
 public enum ScannerDriver
 {
     Auto = 0,

@@ -1,5 +1,6 @@
 using Yass.App.Config;
 using Yass.App.Hosting;
+using Yass.Bridge;
 using Yass.Core.Config;
 
 namespace Yass.Desktop;

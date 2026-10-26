@@ -11,8 +11,22 @@ type Answer = { id: number; result?: unknown; error?: string };
 type Event = { event: string; args?: unknown[] };
 type Handler = (...args: unknown[]) => unknown;
 
+/** What AndroidX WebKit's `addWebMessageListener` injects into the Android app's page. */
+export type AndroidChannel = {
+	postMessage(message: string): void;
+	onmessage: ((event: { data: string }) => void) | null;
+};
+
+function androidChannel(): AndroidChannel | null {
+	if (typeof window === 'undefined') return null;
+	const channel = (window as unknown as { yassBridge?: Partial<AndroidChannel> }).yassBridge;
+	return typeof channel?.postMessage === 'function' ? (channel as AndroidChannel) : null;
+}
+
 export function desktopExternal(): DesktopExternal | null {
 	if (typeof window === 'undefined') return null;
+	const android = androidChannel();
+	if (android) return androidExternal(android);
 	const external = (window as unknown as { external?: Partial<DesktopExternal> }).external;
 	return typeof external?.sendMessage === 'function' &&
 		typeof external.receiveMessage === 'function'
@@ -20,8 +34,23 @@ export function desktopExternal(): DesktopExternal | null {
 		: null;
 }
 
+/** The Android app's channel, shaped like Photino's: the same bridge protocol runs over both. */
+function androidExternal(channel: AndroidChannel): DesktopExternal {
+	return {
+		sendMessage: (message) => channel.postMessage(message),
+		receiveMessage: (callback) => {
+			channel.onmessage = (event) => callback(event.data);
+		}
+	};
+}
+
 export function isDesktop(): boolean {
 	return desktopExternal() !== null;
+}
+
+/** The Android app hands documents to other apps through the system share sheet. */
+export function canShare(): boolean {
+	return androidChannel() !== null;
 }
 
 export type DesktopHost = {
@@ -31,6 +60,8 @@ export type DesktopHost = {
 	/** `overwrite` when the user picked the file; otherwise a taken name gets -2, -3…. */
 	saveExport(downloadPath: string, target: string, overwrite: boolean): Promise<string>;
 	openUrl(url: string): Promise<void>;
+	/** Android only (`canShare()`): the export's documents go to the system share sheet. */
+	shareExport(downloadPaths: string[]): Promise<void>;
 };
 
 export function createDesktopHost(connection: Pick<ConnectionLike, 'invoke'>): DesktopHost {
@@ -40,7 +71,8 @@ export function createDesktopHost(connection: Pick<ConnectionLike, 'invoke'>): D
 		pickFolder: () => connection.invoke<string | null>('PickFolder'),
 		saveExport: (path, target, overwrite) =>
 			connection.invoke<string>('SaveExport', path, target, overwrite),
-		openUrl: (url) => connection.invoke<void>('OpenUrl', url)
+		openUrl: (url) => connection.invoke<void>('OpenUrl', url),
+		shareExport: (paths) => connection.invoke<void>('ShareExport', paths)
 	};
 }
 

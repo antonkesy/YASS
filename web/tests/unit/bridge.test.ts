@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { get } from 'svelte/store';
 import { HubConnectionState } from '@microsoft/signalr';
 import {
+	canShare,
 	createBridgeConnection,
 	createDesktopHost,
 	desktopExternal,
+	type AndroidChannel,
 	type DesktopExternal
 } from '$lib/hub/bridge';
 import { createHubClient } from '$lib/hub/client';
@@ -117,6 +119,23 @@ describe('desktopExternal', () => {
 			Object.defineProperty(window, 'external', { value: undefined, configurable: true });
 		}
 	});
+
+	it("adapts the Android app's message listener to the same channel", () => {
+		const sent: string[] = [];
+		const channel: AndroidChannel = { postMessage: (m) => sent.push(m), onmessage: null };
+		expect(canShare()).toBe(false);
+		Object.defineProperty(window, 'yassBridge', { value: channel, configurable: true });
+		try {
+			expect(canShare()).toBe(true);
+			const connection = createBridgeConnection(desktopExternal()!);
+			const call = connection.invoke('ListSessions');
+			expect(sent.map((m) => JSON.parse(m))).toEqual([{ id: 1, method: 'ListSessions', args: [] }]);
+			channel.onmessage?.({ data: JSON.stringify({ id: 1, result: [] }) });
+			return expect(call).resolves.toEqual([]);
+		} finally {
+			Object.defineProperty(window, 'yassBridge', { value: undefined, configurable: true });
+		}
+	});
 });
 
 describe('createDesktopHost', () => {
@@ -128,11 +147,13 @@ describe('createDesktopHost', () => {
 		const folder = host.pickFolder();
 		const saved = host.saveExport('/export/s1/t.pdf', '/home/me/scan.pdf', true);
 		void host.openUrl('https://example.org/');
+		void host.shareExport(['/export/s1/a.pdf', '/export/s1/b.pdf']);
 		expect(external.sent).toEqual([
 			{ id: 1, method: 'PickSavePath', args: ['scan', '.pdf'] },
 			{ id: 2, method: 'PickFolder', args: [] },
 			{ id: 3, method: 'SaveExport', args: ['/export/s1/t.pdf', '/home/me/scan.pdf', true] },
-			{ id: 4, method: 'OpenUrl', args: ['https://example.org/'] }
+			{ id: 4, method: 'OpenUrl', args: ['https://example.org/'] },
+			{ id: 5, method: 'ShareExport', args: [['/export/s1/a.pdf', '/export/s1/b.pdf']] }
 		]);
 
 		external.push({ id: 1, result: null });

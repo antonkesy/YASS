@@ -1,0 +1,67 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Not in Yass.sln: it needs the .NET Android workload and the Android SDK (`nix develop .#android`).
+    Build with `just android`; see SPEC.md §7.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <!-- Android 10: MediaStore.Downloads, so a second document saves without a storage permission. -->
+    <SupportedOSPlatformVersion>29</SupportedOSPlatformVersion>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Yass.Android</RootNamespace>
+    <ApplicationId>io.github.antonkesy.yass</ApplicationId>
+    <ApplicationTitle>YASS</ApplicationTitle>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <!-- One ABI per APK, at half the size of both. Phones are arm64; `-r android-x64` builds one for the emulator. -->
+    <RuntimeIdentifier>android-arm64</RuntimeIdentifier>
+    <!--
+      CoreCLR, not Mono: under Mono, ImageSharp's encoders read past the end of their native buffers
+      and the app segfaults on the first thumbnail (SPEC.md §7). Experimental on Android in .NET 10.
+    -->
+    <UseMonoRuntime>false</UseMonoRuntime>
+    <NoWarn>$(NoWarn);XA1040</NoWarn>
+    <!-- Only the framework is trimmed: the bridge, YAML binding and NAPS2 go by reflection. -->
+    <TrimMode>partial</TrimMode>
+    <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+    <!-- LibraryImport and Java callbacks generate unsafe marshalling code. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <!-- 1.2.3 is version 10203: Android wants a rising integer beside the name. -->
+  <PropertyGroup>
+    <YassVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)../../version.txt').Trim())</YassVersion>
+    <ApplicationDisplayVersion>$(YassVersion)</ApplicationDisplayVersion>
+    <ApplicationVersion>$([MSBuild]::Add($([MSBuild]::Add($([MSBuild]::Multiply($(YassVersion.Split('.')[0]), 10000)), $([MSBuild]::Multiply($(YassVersion.Split('.')[1]), 100)))), $(YassVersion.Split('.')[2])))</ApplicationVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Microsoft.Extensions.DependencyInjection" />
+    <Using Include="Microsoft.Extensions.Hosting" />
+    <Using Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Yass.Bridge/Yass.Bridge.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Xamarin.AndroidX.WebKit" />
+  </ItemGroup>
+
+  <!-- The web build goes into the APK's assets under wwwroot/, served by AssetStaticFiles. -->
+  <PropertyGroup>
+    <YassWebBuild>$(MSBuildThisFileDirectory)../../web/build</YassWebBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AndroidAsset Include="$(YassWebBuild)/**" Link="wwwroot/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <Target Name="YassRequireWebBuild" BeforeTargets="Build">
+    <Error Condition="!Exists('$(YassWebBuild)/index.html')" Text="web/build is missing; run `just web` first." />
+  </Target>
+
+</Project>

@@ -1,4 +1,5 @@
 using Yass.App.Export;
+using Yass.Bridge;
 using Yass.Core.Export;
 
 namespace Yass.Desktop;
