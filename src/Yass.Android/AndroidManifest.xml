@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- eSCL: find scanners over mDNS, then talk HTTP(S) to them. Nothing listens on a socket. -->
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+  <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+  <!-- Scanners answer eSCL over plain HTTP on the LAN. -->
+  <application android:allowBackup="false" android:usesCleartextTraffic="true" />
+</manifest>

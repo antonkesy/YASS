@@ -8,7 +8,7 @@ true while those change.
 
 YASS scans documents: press Scan, let the feeder run empty, review the pages (rotate, crop,
 straighten, adjust, filter, reorder, delete), and save a PDF or one image per page. It ships the
-same code as two hosts:
+same code as three hosts:
 
 1. **Desktop** (`Yass.Desktop`): a native app for Linux, Windows and macOS. The UI runs in the
    platform webview inside the .NET process. **It opens no listening socket, not even on
@@ -19,6 +19,9 @@ same code as two hosts:
    device at hand, or saves into the one folder set as `output.directory` (e.g. a paperless-ngx
    consume folder), and writes documents nowhere else. **There is no authentication**: it is
    trusted-LAN only and must never be exposed to the internet. The README says so prominently.
+3. **Android** (`Yass.Android`): the desktop app's design on a phone. The UI runs in Android's
+   WebView inside the .NET process and scans from eSCL network scanners over Wi-Fi. Like the
+   desktop app it **opens no listening socket**.
 
 Everything is configured through one optional file, `yass.yaml` (see `yass.example.yaml`).
 
@@ -43,6 +46,7 @@ Bespoke code is for the domain (sessions, edits, config) and glue.
 | Frontend | **SvelteKit** (static adapter, SPA fallback), TypeScript, **Tailwind**, `@vite-pwa/sveltekit`. No component library. |
 | Shared types | Hub contract defined once in C# (`IYassHub`, `IYassClient`); TypeScript generated with `TypedSignalR.Client.TypeScript`; drift fails CI. |
 | Desktop shell | **Photino.NET** 4.x: WebKitGTK 4.1 on Linux, WebView2 on Windows, WKWebView on macOS. |
+| Android shell | **.NET for Android** (Mono runtime) and the system WebView; **`Xamarin.AndroidX.WebKit`** for `addWebMessageListener`, the origin-restricted message channel the bridge runs over. |
 | Tests | xUnit v3 + `WebApplicationFactory`; Vitest + Testing Library; a few Playwright smoke tests (Desktop Chrome) against the server in `--fake` mode. |
 | Tooling | `pre-commit` (dotnet format, eslint, prettier, svelte-check, nixfmt, conventional-pre-commit), GitHub Actions, release-please, Nix flake (dev shell, packages, NixOS module `services.yass`), multi-stage `Dockerfile`. |
 | Storage | Filesystem only, no database: a session is a directory with `session.json` and its page images. |
@@ -69,6 +73,7 @@ src/Yass.App       host-agnostic app: config, sessions, scan loop, rendering, ex
 src/Yass.Server    server host: SignalR hub, /img and /export endpoints, static web build, /healthz
 src/Yass.Bridge    JSON message bridge and app scheme, shared by the in-process hosts
 src/Yass.Desktop   desktop host: Photino window, native dialogs
+src/Yass.Android   Android host: WebView activity, system file pickers (not in Yass.sln)
 src/Yass.Fake      simulated scanner and document writer (tests and --fake)
 web/               SvelteKit app, one build for both hosts
 nix/               packages and the NixOS module
@@ -133,7 +138,7 @@ nix/               packages and the NixOS module
 - If the NAPS2 API differs from what this file says, adapt the adapter, keep the domain model, and
   update this section.
 
-## 7. Desktop app
+## 7. Desktop and Android apps
 
 - Photino wraps the platform webview: Linux needs `webkit2gtk-4.1`, `gtk3` and `libnotify`;
   Windows needs WebView2, which ships with Windows 10 and 11; macOS needs nothing extra. Photino's
@@ -166,8 +171,32 @@ nix/               packages and the NixOS module
   - macOS: a zipped `YASS.app`, ad-hoc signed with rcodesign, since Apple Silicon will not start an
     unsigned arm64 binary. A zip because Linux cannot make a compressed `.dmg`.
   - Nothing is signed by a trusted identity, so SmartScreen and Gatekeeper warn on first launch.
-- Icons: `scripts/render-icons.sh` renders `assets/logo/yass.ico` and `yass.icns` from
-  `yass-512.png`; the outputs are committed.
+- Icons: `scripts/render-icons.sh` renders `assets/logo/yass.ico`, `yass.icns` and the Android
+  launcher icons from `yass-512.png`; the outputs are committed.
+
+### Android
+
+- The same bridge and scheme as the desktop (`Yass.Bridge`), in an activity holding one WebView
+  at `https://yass.localhost/`: `shouldInterceptRequest` (and the service worker client) answers
+  it from `AppScheme`, which reads the web build from the APK's assets. The bridge object
+  `window.yassBridge` comes from `addWebMessageListener`, allowed for that origin only.
+- The services start once per process and outlive the activity, so a rotation or a trip through
+  the file picker does not stop a scan.
+- Only eSCL: Android has no scanner stack .NET can reach. mDNS needs a `MulticastLock`, held
+  while the app is in front, and scanners speak plain HTTP, so cleartext traffic is allowed.
+- **Saving uses the system pickers** (Storage Access Framework) behind the desktop's bridge
+  methods, so the page saves the same way on both. A picked file is the one file the picker
+  grants; further documents of the same export go to Downloads.
+- **Mono runs with SIMD off** (`MONO_ENV_OPTIONS=--optimize=-simd`): with it, ImageSharp's WebP
+  encoder reads past the end of its buffers on Android and the app segfaults on the first
+  thumbnail. CoreCLR does not have the bug but is experimental on Android in .NET 10.
+- **One ABI per APK** (arm64 for phones, x64 for the emulator): a Release APK carrying two fails
+  at start with no JNI implementation for the activity.
+- `yass.yaml` and sessions live in the app's private storage; `--fake` is an intent extra in
+  Debug builds only.
+- The project needs the .NET Android workload and the Android SDK (`nix develop .#android`), so
+  it is not in `Yass.sln` and `dotnet test` runs without them. The APK is signed with the
+  build's own debug key, not a trusted one.
 
 ## 8. UI
 
@@ -219,8 +248,8 @@ start. Never hold more than `processing.max_concurrent_renders` decoded bitmaps 
 One logical change per commit, with a Conventional Commit message, each passing
 `pre-commit run --all-files` and all tests. No monolithic commits.
 
-Scopes: `core`, `app`, `fake`, `server`, `desktop`, `web`, `scanning`, `export`, `nix`, `docker`,
-`ci`. Fixes discovered while working get their own `fix(scope):` commit, not squashed into a
+Scopes: `core`, `app`, `fake`, `server`, `desktop`, `android`, `web`, `scanning`, `export`, `nix`,
+`docker`, `ci`. Fixes discovered while working get their own `fix(scope):` commit, not squashed into a
 feature.
 
 `AnalysisLevel=latest-all` with `TreatWarningsAsErrors` turns each new SDK's analyzer wave into
@@ -233,7 +262,7 @@ build errors. Suppressions live in `.editorconfig` with their reasons; pin `Anal
 2. No new dependency without a line in this file saying why. Prefer the BCL and packages already
    in use.
 3. Never block a hub or request thread on scanning or rendering.
-4. The desktop app opens no listening socket.
+4. The desktop and Android apps open no listening socket.
 5. Ask before: changing the config schema, adding a database, adding any auth.
 
 ## 13. Branding
