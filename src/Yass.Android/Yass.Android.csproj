@@ -14,11 +14,14 @@
     <ApplicationId>io.github.antonkesy.yass</ApplicationId>
     <ApplicationTitle>YASS</ApplicationTitle>
     <AndroidPackageFormat>apk</AndroidPackageFormat>
-    <!--
-      One ABI per APK: a Release APK with two fails at start (no JNI implementation for MainActivity.n_onCreate).
-      Phones are arm64; `-r android-x64` builds one for the emulator.
-    -->
+    <!-- One ABI per APK, at half the size of both. Phones are arm64; `-r android-x64` builds one for the emulator. -->
     <RuntimeIdentifier>android-arm64</RuntimeIdentifier>
+    <!--
+      CoreCLR, not Mono: under Mono, ImageSharp's encoders read past the end of their native buffers
+      and the app segfaults on the first thumbnail (SPEC.md §7). Experimental on Android in .NET 10.
+    -->
+    <UseMonoRuntime>false</UseMonoRuntime>
+    <NoWarn>$(NoWarn);XA1040</NoWarn>
     <!-- Only the framework is trimmed: the bridge, YAML binding and NAPS2 go by reflection. -->
     <TrimMode>partial</TrimMode>
     <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
@@ -32,11 +35,6 @@
     <ApplicationDisplayVersion>$(YassVersion)</ApplicationDisplayVersion>
     <ApplicationVersion>$([MSBuild]::Add($([MSBuild]::Add($([MSBuild]::Multiply($(YassVersion.Split('.')[0]), 10000)), $([MSBuild]::Multiply($(YassVersion.Split('.')[1]), 100)))), $(YassVersion.Split('.')[2])))</ApplicationVersion>
   </PropertyGroup>
-
-  <ItemGroup>
-    <!-- Mono's SIMD off: with it ImageSharp's WebP encoder reads past its buffers and the app segfaults (SPEC.md §7). -->
-    <AndroidEnvironment Include="Environment.txt" />
-  </ItemGroup>
 
   <ItemGroup>
     <Using Include="Microsoft.Extensions.DependencyInjection" />

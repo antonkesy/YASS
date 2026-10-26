@@ -46,7 +46,7 @@ Bespoke code is for the domain (sessions, edits, config) and glue.
 | Frontend | **SvelteKit** (static adapter, SPA fallback), TypeScript, **Tailwind**, `@vite-pwa/sveltekit`. No component library. |
 | Shared types | Hub contract defined once in C# (`IYassHub`, `IYassClient`); TypeScript generated with `TypedSignalR.Client.TypeScript`; drift fails CI. |
 | Desktop shell | **Photino.NET** 4.x: WebKitGTK 4.1 on Linux, WebView2 on Windows, WKWebView on macOS. |
-| Android shell | **.NET for Android** (Mono runtime) and the system WebView; **`Xamarin.AndroidX.WebKit`** for `addWebMessageListener`, the origin-restricted message channel the bridge runs over. |
+| Android shell | **.NET for Android** on the CoreCLR runtime, and the system WebView; **`Xamarin.AndroidX.WebKit`** for `addWebMessageListener`, the origin-restricted message channel the bridge runs over. |
 | Tests | xUnit v3 + `WebApplicationFactory`; Vitest + Testing Library; a few Playwright smoke tests (Desktop Chrome) against the server in `--fake` mode. |
 | Tooling | `pre-commit` (dotnet format, eslint, prettier, svelte-check, nixfmt, conventional-pre-commit), GitHub Actions, release-please, Nix flake (dev shell, packages, NixOS module `services.yass`), multi-stage `Dockerfile`. |
 | Storage | Filesystem only, no database: a session is a directory with `session.json` and its page images. |
@@ -190,11 +190,13 @@ nix/               packages and the NixOS module
 - **Share** hands an export's documents to the system share sheet: the host moves them into
   `cache/share` and grants read access through AndroidX Core's `FileProvider` (which AndroidX
   WebKit already brings). The page shows it when the Android channel is there (`canShare()`).
-- **Mono runs with SIMD off** (`MONO_ENV_OPTIONS=--optimize=-simd`): with it, ImageSharp's WebP
-  encoder reads past the end of its buffers on Android and the app segfaults on the first
-  thumbnail. CoreCLR does not have the bug but is experimental on Android in .NET 10.
-- **One ABI per APK** (arm64 for phones, x64 for the emulator): a Release APK carrying two fails
-  at start with no JNI implementation for the activity.
+- **CoreCLR, not Mono.** Under Mono, ImageSharp's encoders read past the end of their native
+  buffers, on x64 and arm64 alike, and Android's allocator puts a guard page there: the app
+  segfaults on the first thumbnail. Turning Mono's SIMD off (`--optimize=-simd`) helped in some
+  builds and not others. CoreCLR runs the same code without fault, but is experimental on Android
+  in .NET 10 (warning XA1040, silenced); move with it as it becomes the default.
+- **One ABI per APK** (arm64 for phones, x64 for the emulator), each about half the size of one
+  carrying both.
 - `yass.yaml` and sessions live in the app's private storage; `--fake` is an intent extra in
   Debug builds only.
 - The project needs the .NET Android workload and the Android SDK (`nix develop .#android`), so

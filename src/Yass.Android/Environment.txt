@@ -1,1 +1,0 @@
-MONO_ENV_OPTIONS=--optimize=-simd
