@@ -65,9 +65,9 @@ jobs:
           'apk add --no-cache pandoc-cli typst poppler-utils font-dejavu python3 &&
           TYPST_FONT_PATHS=/usr/share/fonts scripts/publish-desktop.sh dist'
       - name: Native packages
-        # The container wrote dist/ as root.
+        # The container wrote dist/ and every project's obj/ and bin/ as root; the Android build reuses those.
         run: |
-          sudo chown -R "$(id -u):$(id -g)" dist
+          sudo chown -R "$(id -u):$(id -g)" .
           YASS_VERSION="${TAG#v}" nix develop -c scripts/package-desktop.sh dist
       - name: Android APKs
         run: YASS_VERSION="${TAG#v}" nix develop .#android -c scripts/publish-android.sh dist
