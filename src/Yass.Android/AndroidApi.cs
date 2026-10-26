@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Android.Content;
+using Android.OS;
 using Android.Provider;
 using Android.Webkit;
 using Yass.App.Export;
@@ -23,6 +24,9 @@ namespace Yass.Android;
 public sealed class AndroidApi(MainActivity activity, ExportDownloads downloads, ILogger<AndroidApi> logger)
 {
     private const string Picked = "picked:";
+
+    /// <summary>The FileProvider in AndroidManifest.xml.</summary>
+    private const string ShareAuthority = "io.github.antonkesy.yass.share";
 
     private readonly Dictionary<string, AndroidUri> _picked = new(StringComparer.Ordinal);
     private int _picks;
@@ -93,6 +97,67 @@ public sealed class AndroidApi(MainActivity activity, ExportDownloads downloads,
             downloads.Return(sessionId, file, download);
             throw new BridgeException($"Could not save {Path.GetFileName(target)}: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Hands the export's documents to the system share sheet. They move into the cache folder the
+    /// <see cref="ShareAuthority"/> provider serves; the previous share's files go first.
+    /// </summary>
+    public void ShareExport(string[] downloadPaths)
+    {
+        ArgumentNullException.ThrowIfNull(downloadPaths);
+        string folder = Path.Combine(activity.CacheDir!.AbsolutePath, "share");
+        if (Directory.Exists(folder))
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+
+        Directory.CreateDirectory(folder);
+        var uris = new List<AndroidUri>();
+        var types = new HashSet<string>(StringComparer.Ordinal);
+        foreach (string downloadPath in downloadPaths)
+        {
+            string[] parts = downloadPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (parts is not ["export", string sessionId, string file] || !downloads.TryRedeem(sessionId, file, out ExportDownload download))
+            {
+                throw new BridgeException("That document has already been shared or is gone; export it again.");
+            }
+
+            string shared = FileNames.Unique(folder, download.DownloadName);
+            File.Move(download.Path, shared);
+            using var sharedFile = new Java.IO.File(shared);
+            uris.Add(AndroidX.Core.Content.FileProvider.GetUriForFile(activity, ShareAuthority, sharedFile)
+                ?? throw new IOException($"{shared} is outside the shared folder"));
+            types.Add(download.ContentType);
+        }
+
+        if (uris.Count == 0)
+        {
+            return;
+        }
+
+        using var send = new Intent(uris.Count == 1 ? Intent.ActionSend : Intent.ActionSendMultiple);
+        send.SetType(types.Count == 1 ? types.First() : "*/*");
+        if (uris.Count == 1)
+        {
+            send.PutExtra(Intent.ExtraStream, uris[0]);
+        }
+        else
+        {
+            send.PutParcelableArrayListExtra(Intent.ExtraStream, [.. uris.Cast<IParcelable>()]);
+        }
+
+        // The receiving app may read these URIs, and only these.
+        send.AddFlags(ActivityFlags.GrantReadUriPermission);
+        send.ClipData = ClipData.NewRawUri((string?)null, uris[0]);
+        foreach (AndroidUri uri in uris.Skip(1))
+        {
+            send.ClipData!.AddItem(new ClipData.Item(uri));
+        }
+
+        Intent chooser = Intent.CreateChooser(send, (string?)null)!;
+        activity.RunOnUiThread(() => activity.StartActivity(chooser));
+        logger.LogInformation("Shared {Count} document(s)", uris.Count);
     }
 
     /// <summary>Web addresses only, so the page cannot start another app or open a file.</summary>

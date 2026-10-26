@@ -6,5 +6,13 @@
   <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
   <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
   <!-- Scanners answer eSCL over plain HTTP on the LAN. -->
-  <application android:allowBackup="false" android:usesCleartextTraffic="true" />
+  <application android:allowBackup="false" android:usesCleartextTraffic="true">
+    <!-- Shared documents: read-only URIs into cache/share, granted per share. -->
+    <provider android:name="androidx.core.content.FileProvider"
+              android:authorities="io.github.antonkesy.yass.share"
+              android:exported="false"
+              android:grantUriPermissions="true">
+      <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/share_paths" />
+    </provider>
+  </application>
 </manifest>

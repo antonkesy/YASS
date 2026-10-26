@@ -187,6 +187,9 @@ nix/               packages and the NixOS module
 - **Saving uses the system pickers** (Storage Access Framework) behind the desktop's bridge
   methods, so the page saves the same way on both. A picked file is the one file the picker
   grants; further documents of the same export go to Downloads.
+- **Share** hands an export's documents to the system share sheet: the host moves them into
+  `cache/share` and grants read access through AndroidX Core's `FileProvider` (which AndroidX
+  WebKit already brings). The page shows it when the Android channel is there (`canShare()`).
 - **Mono runs with SIMD off** (`MONO_ENV_OPTIONS=--optimize=-simd`): with it, ImageSharp's WebP
   encoder reads past the end of its buffers on Android and the app segfaults on the first
   thumbnail. CoreCLR does not have the bug but is experimental on Android in .NET 10.
