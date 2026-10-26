@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.3.0](https://github.com/antonkesy/YASS/compare/v1.2.2...v1.3.0) (2026-10-26)
+
+
+### Features
+
+* **android:** add the Android host ([a9cf40d](https://github.com/antonkesy/YASS/commit/a9cf40d866f62a63803b2a91a1e542225135c68b))
+* **android:** Android app for network scanners ([736803a](https://github.com/antonkesy/YASS/commit/736803ac4cac9c61eab6c4dfcba8e5941d06a75b))
+* **android:** share a finished document ([7849f0a](https://github.com/antonkesy/YASS/commit/7849f0a9dba9717d60a6b3de109dbb6e09ab82d6))
+* **scanning:** auto means eSCL on Android ([ca0fe33](https://github.com/antonkesy/YASS/commit/ca0fe33d5eb12476d3b0ac95258e1e82ad89f008))
+* **web:** share button in the Android app ([11a332b](https://github.com/antonkesy/YASS/commit/11a332bb896f52a8a3a1d71adad06f2c300d70e6))
+* **web:** talk to the Android host over its message channel ([bb00fec](https://github.com/antonkesy/YASS/commit/bb00fec13363999b7b5cea49318fb580eb4047ff))
+
+
+### Bug Fixes
+
+* **android:** give the activity a stable name ([ee80e52](https://github.com/antonkesy/YASS/commit/ee80e5294487a5af549be17e5e7bfb6c311c460b))
+* **android:** run on CoreCLR instead of Mono ([d62cba2](https://github.com/antonkesy/YASS/commit/d62cba2f7754ce9cf63b4ae7164f1aa2724c6388))
+
+
+### Documentation
+
+* document the Android app ([809cd0b](https://github.com/antonkesy/YASS/commit/809cd0b7bcb136f8942fe40f831aea6981528922))
+
 ## [1.2.2](https://github.com/antonkesy/YASS/compare/v1.2.1...v1.2.2) (2026-10-18)
 
 
