@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.1](https://github.com/antonkesy/YASS/compare/v1.3.0...v1.3.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* **ci:** let the release's Android build write the build folders ([ca5e143](https://github.com/antonkesy/YASS/commit/ca5e143801b6d43733878213f1f340672c083a37))
+* **ci:** let the release's Android build write the build folders ([ef1deb2](https://github.com/antonkesy/YASS/commit/ef1deb29832be3a1a2498dec8f772501661b949b))
+
 ## [1.3.0](https://github.com/antonkesy/YASS/compare/v1.2.2...v1.3.0) (2026-10-26)
 
 
