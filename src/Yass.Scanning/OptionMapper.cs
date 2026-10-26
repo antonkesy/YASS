@@ -12,15 +12,20 @@ public static class OptionMapper
     /// <summary>NAPS2 brightness/contrast run -1000..1000; ours -100..100.</summary>
     public const int BrightnessContrastScale = 10;
 
-    public static Driver MapDriver(ScannerDriver driver) => MapDriver(driver, OperatingSystem.IsMacOS());
+    /// <summary>
+    /// On macOS NAPS2's default Apple driver needs a -macos SDK build, and Android has no scanner stack at all:
+    /// plain .NET can only scan via eSCL there.
+    /// </summary>
+    public static bool EsclOnly => OperatingSystem.IsMacOS() || OperatingSystem.IsAndroid();
 
-    // On macOS NAPS2's default Apple driver needs a -macos SDK build; plain .NET can only scan via eSCL.
-    public static Driver MapDriver(ScannerDriver driver, bool macOS) => driver switch
+    public static Driver MapDriver(ScannerDriver driver) => MapDriver(driver, EsclOnly);
+
+    public static Driver MapDriver(ScannerDriver driver, bool esclOnly) => driver switch
     {
         ScannerDriver.Sane => Driver.Sane,
         ScannerDriver.Escl => Driver.Escl,
         ScannerDriver.Wia => Driver.Wia,
-        _ when macOS => Driver.Escl,
+        _ when esclOnly => Driver.Escl,
         _ => Driver.Default,
     };
 
@@ -117,15 +122,15 @@ public static class OptionMapper
     public static IReadOnlyList<ScanDevice> ScannersOnly(IEnumerable<ScanDevice> devices, IReadOnlySet<string>? wiaCameras = null) =>
         [.. devices.Where(d => !IsCamera(d, wiaCameras))];
 
-    public static string DriverLabel(ScannerDriver driver) => DriverLabel(driver, OperatingSystem.IsWindows(), OperatingSystem.IsMacOS());
+    public static string DriverLabel(ScannerDriver driver) => DriverLabel(driver, OperatingSystem.IsWindows(), EsclOnly);
 
-    public static string DriverLabel(ScannerDriver driver, bool windows, bool macOS) => driver switch
+    public static string DriverLabel(ScannerDriver driver, bool windows, bool esclOnly) => driver switch
     {
         ScannerDriver.Sane => "SANE",
         ScannerDriver.Escl => "eSCL (network scanners)",
         ScannerDriver.Wia => "WIA",
         _ when windows => "WIA",
-        _ when macOS => "eSCL (network scanners)",
+        _ when esclOnly => "eSCL (network scanners)",
         _ => "SANE",
     };
 }

@@ -124,7 +124,7 @@ nix/               packages and the NixOS module
   folder: without one every page is decoded into memory (~26 MB per colour A4 page) and
   re-encoded. A `NAPS2.Util.ProgressHandler` carries the cancellation, so cancelling stops NAPS2;
   its reports fill the last 10 % of the progress bar.
-- **Drivers:** `auto` is SANE on Linux, WIA on Windows and eSCL on macOS. NAPS2's Apple driver
+- **Drivers:** `auto` is SANE on Linux, WIA on Windows and eSCL on macOS and Android. NAPS2's Apple driver
   needs a `net8-macos` build that the NuGet package does not ship, so macOS gets eSCL only (USB
   scanners only if they speak it). TWAIN needs a 32-bit worker process and is left out.
 - **Cameras are never listed.** SANE: drop ids from camera backends (`v4l`, `gphoto2`, `dc210`,
