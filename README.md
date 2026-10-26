@@ -6,9 +6,9 @@
 
 **Yet Another Slop Scanner**: scan, fix up the pages, save a PDF. *Yasss.*
 
-A desktop app for **Linux, Windows and macOS** that can also run on another machine and be used from any browser on your network.
+A desktop app for **Linux, Windows and macOS**, an **Android** app for network scanners, and a server you can run on another machine and use from any browser on your network.
 
-[Features](#features) · [What you need](#what-you-need) · [Desktop app](#desktop-app) · [Run it on another machine](#run-it-on-another-machine) · [Configuration](#configuration) · [Development](#development)
+[Features](#features) · [What you need](#what-you-need) · [Desktop app](#desktop-app) · [Android app](#android-app) · [Run it on another machine](#run-it-on-another-machine) · [Configuration](#configuration) · [Development](#development)
 
 </div>
 
@@ -36,6 +36,7 @@ plugged into, and every phone and laptop on your LAN gets the same screens in th
 | | |
 |---|---|
 | **Linux, Windows and macOS** | A native desktop app on all three, with no server and no open port. |
+| **Android** | The same app on your phone, scanning straight from a network scanner over Wi-Fi. Save the PDF anywhere on the phone, or share it to another app. |
 | **Scan in one tap** | Live scanner status, presets, and pages that show up as they leave the feeder. |
 | **Review before saving** | Rotate, crop, straighten, adjust brightness and contrast, apply filters (Enhance, Grayscale, B&W, Despeckle, Auto-levels), reorder by dragging, delete and restore. Edits are non-destructive. |
 | **Blank pages handled** | Blank pages are detected and pre-marked deleted. |
@@ -57,7 +58,7 @@ directories.
 |---|---|---|
 | SANE | Linux | USB and network scanners supported by [`sane-backends`](http://www.sane-project.org/sane-supported-devices.html) |
 | WIA | Windows | Anything with a Windows scanner driver |
-| eSCL (AirScan) | Linux, Windows, macOS | Most modern network scanners and multifunction printers, no driver needed |
+| eSCL (AirScan) | Linux, Windows, macOS, Android | Most modern network scanners and multifunction printers, no driver needed |
 
 No scanner at hand? `--fake` simulates one.
 
@@ -96,6 +97,23 @@ The desktop app reads the same `yass.yaml` from `~/.config/yass/` (Linux), `%APP
 (Windows) or `~/Library/Application Support/yass/` (macOS). The file is optional, and `server:` is
 ignored. The scanner driver defaults to SANE on Linux, WIA on Windows and eSCL on macOS; on a Mac,
 USB scanners work only if they speak eSCL ([why](SPEC.md#6-scanning-and-export-with-naps2)).
+
+## Android app
+
+For a network scanner (eSCL/AirScan) on the same Wi-Fi as your phone. The whole app runs on the
+phone, with no server: like the desktop app it **opens no port**. *Save as…* opens Android's own
+file picker, and *Share* hands the PDF to another app (mail, Drive, a paperless app).
+
+Download `yass-<version>-android-arm64.apk` from the
+[releases](https://github.com/antonkesy/YASS/releases) and open it on the phone; Android asks
+once to allow installs from that app. Android 10 or newer. (`android-x64` is for the emulator and
+x86 Chromebooks.)
+
+The APK is signed with the build's own key, not a published one, so Android cannot tell two
+releases apart as the same app: **to update, uninstall the old version first**. That deletes the
+scans kept on the phone, so save what you need before.
+
+Settings live in the app; a `yass.yaml` is read from the app's private storage if one is there.
 
 ## Run it on another machine
 
@@ -226,7 +244,13 @@ pnpm --dir web test            # unit tests
 pnpm --dir web test:e2e        # Playwright smoke tests against --fake
 pnpm --dir web hub:generate    # TS hub client from the C# contract
 pnpm --dir web screenshots     # refresh the images above
+just android                   # Android APK into dist/ (`just android android-x64` for the emulator)
 ```
+
+The Android app needs the .NET Android workload and the Android SDK, so it is not in `Yass.sln`:
+`nix develop .#android` brings the SDK, and the first `just android` installs the workload into
+`~/.dotnet`. A Debug build takes `--fake` as an intent extra:
+`adb shell am start -n io.github.antonkesy.yass/.MainActivity -e fake "pages=3,blank=2"`.
 
 [SPEC.md](SPEC.md) holds the design and the reasons behind it.
 Commits follow Conventional Commits, and release-please cuts releases.
@@ -236,11 +260,13 @@ Commits follow Conventional Commits, and release-please cuts releases.
 | `src/Yass.Core` | Domain, config, hub contract |
 | `src/Yass.Scanning` | NAPS2 adapter |
 | `src/Yass.Export` | PDF and image output, file name templates |
-| `src/Yass.App` | Sessions, scan loop, rendering, export: everything both hosts share |
+| `src/Yass.App` | Sessions, scan loop, rendering, export: everything the hosts share |
 | `src/Yass.Server` | Web host: SignalR hub, image endpoints |
-| `src/Yass.Desktop` | Desktop host: Photino window, `yass://` scheme, message bridge |
+| `src/Yass.Bridge` | Message bridge and app scheme for the in-process hosts |
+| `src/Yass.Desktop` | Desktop host: Photino window, native dialogs |
+| `src/Yass.Android` | Android host: WebView activity, system file pickers, share sheet |
 | `src/Yass.Fake` | Simulated scanner |
-| `web/` | SvelteKit PWA, one build for both hosts |
+| `web/` | SvelteKit PWA, one build for every host |
 | `nix/` | Packages and the NixOS module |
 
 ## License
