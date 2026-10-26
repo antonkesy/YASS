@@ -14,10 +14,9 @@ server scenario="pages=3,blank=2": web
 # Inside `nix develop .#android` (ANDROID_HOME is a real SDK): run as is. Otherwise wrap in it.
 android_dev := if path_exists(env("ANDROID_HOME", "/nonexistent")) == "true" { "" } else { "nix develop .#android -c" }
 
-# The Android APK for one ABI: android-arm64 for phones, android-x64 for the emulator.
+# The Android APK for one ABI into dist/: android-arm64 for phones, android-x64 for the emulator.
 android rid="android-arm64": web
-    {{ android_dev }} dotnet publish src/Yass.Android -c Release -r {{ rid }} -o "dist/android/{{ rid }}"
-    @echo "dist/android/{{ rid }}/io.github.antonkesy.yass-Signed.apk"
+    {{ android_dev }} scripts/publish-android.sh dist {{ rid }}
 
 # Build the web app (installs its packages the first time).
 web:

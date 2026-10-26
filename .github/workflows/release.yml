@@ -33,7 +33,7 @@ jobs:
           manifest-file: .release-please-manifest.json
 
   assets:
-    name: attach desktop packages
+    name: attach desktop packages and android apks
     needs: release-please
     # On a tag push release-please is skipped, which would skip this too without !cancelled().
     if: ${{ !cancelled() && (needs.release-please.outputs.created == 'true' || github.ref_type == 'tag') }}
@@ -69,11 +69,13 @@ jobs:
         run: |
           sudo chown -R "$(id -u):$(id -g)" dist
           YASS_VERSION="${TAG#v}" nix develop -c scripts/package-desktop.sh dist
+      - name: Android APKs
+        run: YASS_VERSION="${TAG#v}" nix develop .#android -c scripts/publish-android.sh dist
       - name: Checksums
         # The macOS zip of the bare folder is dropped: the .app is how it runs there.
         run: |
           cd dist
           rm -f yass-desktop-*-osx-arm64.zip
-          sha256sum YASS-* yass-desktop-*.zip > SHA256SUMS
+          sha256sum YASS-* yass-desktop-*.zip yass-*-android-*.apk > SHA256SUMS
       - name: Attach to the release
-        run: gh release upload "$TAG" dist/YASS-* dist/yass-desktop-*.zip dist/SHA256SUMS --clobber
+        run: gh release upload "$TAG" dist/YASS-* dist/yass-desktop-*.zip dist/yass-*-android-*.apk dist/SHA256SUMS --clobber
