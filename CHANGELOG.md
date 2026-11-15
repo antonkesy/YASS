@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.3](https://github.com/antonkesy/YASS/compare/v1.3.2...v1.3.3) (2026-11-15)
+
+
+### Bug Fixes
+
+* **scanning:** every probe starts from a fresh sane_init, look for sc… ([e7d6b4f](https://github.com/antonkesy/YASS/commit/e7d6b4feb73dae68871fb8253a53dab0e715de36))
+* **scanning:** every probe starts from a fresh sane_init, look for scanners finds a scanner plugged in later ([353c6d5](https://github.com/antonkesy/YASS/commit/353c6d5afc863a9b341507f3d36aeec8835b6bae))
+
 ## [1.3.2](https://github.com/antonkesy/YASS/compare/v1.3.1...v1.3.2) (2026-11-15)
 
 
