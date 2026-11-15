@@ -51,6 +51,16 @@ public static class OptionMapper
         _ => Naps2PageSize.A4,
     };
 
+    /// <summary>
+    /// SANE backends look for devices in sane_init only, and NAPS2 by default calls it once per process: a scanner
+    /// plugged in, or made accessible, after the first probe was never found. Ending SANE after every operation
+    /// makes each probe start from a fresh sane_init (SPEC.md §6).
+    /// </summary>
+    public static SaneOptions FreshSane() => new() { KeepInitialized = false };
+
+    /// <summary>What device discovery passes to NAPS2.</summary>
+    public static Naps2Options ForDiscovery(ScannerDriver driver) => new() { Driver = MapDriver(driver), SaneOptions = FreshSane() };
+
     // NAPS2's blank threshold is 0..100; ours is a 0..1 fraction.
     public static int MapBlankThreshold(double threshold) => (int)Math.Clamp(Math.Round(threshold * 100), 0, 100);
 
@@ -76,6 +86,7 @@ public static class OptionMapper
             ExcludeBlankPages = options.BlankPageDetection,
             BlankPageCoverageThreshold = MapBlankThreshold(options.BlankPageThreshold),
             AutoDeskew = options.AutoDeskew,
+            SaneOptions = FreshSane(),
         };
     }
 

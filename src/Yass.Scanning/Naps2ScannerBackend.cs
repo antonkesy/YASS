@@ -192,7 +192,7 @@ public sealed class Naps2ScannerBackend : IScannerBackend, IDisposable
             try
             {
                 List<ScanDevice> found = await _controller
-                    .GetDeviceList(new NAPS2.Scan.ScanOptions { Driver = OptionMapper.MapDriver(config.Driver) })
+                    .GetDeviceList(OptionMapper.ForDiscovery(config.Driver))
                     .WaitAsync(cancellationToken)
                     .ConfigureAwait(false);
                 IReadOnlySet<string> wiaCameras = found.Any(d => d.Driver == Driver.Wia) ? WiaCameras() : EmptyIds;
