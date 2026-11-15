@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.2](https://github.com/antonkesy/YASS/compare/v1.3.1...v1.3.2) (2026-11-15)
+
+
+### Bug Fixes
+
+* **nix:** point SANE at NixOS's config, the module's /etc/sane.d does not exist there ([1d8e1ac](https://github.com/antonkesy/YASS/commit/1d8e1acff0b5d0d879315c1d70b8cca0d246ba7a))
+* **nix:** point SANE at NixOS's config, the module's /etc/sane.d does… ([56cab90](https://github.com/antonkesy/YASS/commit/56cab9005f8a3a2b8643695ec6087eddc16c78d0))
+
 ## [1.3.1](https://github.com/antonkesy/YASS/compare/v1.3.0...v1.3.1) (2026-10-26)
 
 
