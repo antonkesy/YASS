@@ -94,9 +94,12 @@ in
           YASS_CONFIG = configFile';
           DOTNET_CLI_TELEMETRY_OPTOUT = "1";
         }
+        # What hardware.sane gives login shells. NixOS has no /etc/sane.d: without its dll.conf SANE
+        # loads no backend and finds no scanner. /etc/sane-libs holds the backends, extraBackends too;
+        # libsane itself, which NAPS2 dlopens, comes from the package.
         // lib.optionalAttrs config.hardware.sane.enable {
-          SANE_CONFIG_DIR = "/etc/sane.d";
-          LD_LIBRARY_PATH = lib.makeLibraryPath [ pkgs.sane-backends ];
+          SANE_CONFIG_DIR = "/etc/sane-config";
+          LD_LIBRARY_PATH = "${lib.makeLibraryPath [ config.hardware.sane.backends-package ]}:/etc/sane-libs";
         };
         serviceConfig = {
           ExecStart = "${lib.getExe cfg.package}" + lib.optionalString cfg.fake " --fake";
