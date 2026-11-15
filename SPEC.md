@@ -135,6 +135,11 @@ nix/               packages and the NixOS module
 - **Cameras are never listed.** SANE: drop ids from camera backends (`v4l`, `gphoto2`, `dc210`,
   `dc240`, `dc25`, `dmc`, `qcam`, `stv680`). WIA: ask each device's `DIP_DEV_TYPE` and drop cameras
   and video; if WIA cannot be asked, filter nothing rather than leave the list empty.
+- **Every probe starts from a fresh `sane_init`.** SANE backends look for devices only there, and
+  NAPS2 calls it once per process by default (`SaneOptions.KeepInitialized`): a scanner plugged in,
+  or given its permissions, after the first probe stayed missing until a restart, *Look for
+  scanners* included. Discovery and scans pass `KeepInitialized = false`, so SANE is ended after
+  each; a scan's `sane_open` loads only its own backend, so this costs a scan almost nothing.
 - If the NAPS2 API differs from what this file says, adapt the adapter, keep the domain model, and
   update this section.
 

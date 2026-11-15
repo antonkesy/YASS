@@ -78,6 +78,17 @@ public class OptionMapperTests
     }
 
     [Fact]
+    public void Discovery_and_scans_end_sane_so_the_next_probe_starts_fresh()
+    {
+        NAPS2.Scan.ScanOptions discovery = OptionMapper.ForDiscovery(ScannerDriver.Sane);
+        NAPS2.Scan.ScanOptions scan = OptionMapper.ToNaps2(new Core.Domain.ScanOptions(), ScannerDriver.Sane, Device);
+
+        Assert.Equal(Driver.Sane, discovery.Driver);
+        Assert.False(discovery.SaneOptions.KeepInitialized);
+        Assert.False(scan.SaneOptions.KeepInitialized);
+    }
+
+    [Fact]
     public void Blank_detection_off_and_deskew_off_are_passed_through()
     {
         NAPS2.Scan.ScanOptions naps2 = OptionMapper.ToNaps2(new Core.Domain.ScanOptions { BlankPageDetection = false, AutoDeskew = false }, ScannerDriver.Auto, Device);
